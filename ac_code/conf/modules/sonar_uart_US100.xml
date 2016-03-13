@@ -1,0 +1,34 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="sonar">
+  <doc>
+    <description>
+     Reads an anlog sonar sensor and outputs sonar distance in [m]
+    </description>
+    <define name="USE_UART2" value="true"/>
+    <define name="SONAR_PORT" value="UART2" />
+    <define name="UART2_BAUD" value="B9600" />
+    <define name="USE_SONAR" value="true" description="activate use of sonar in INS extended filter (only rotorcraft)"/>
+    <define name="SENSOR_SYNC_SEND_SONAR" value="true"/>
+    
+    <!--define name="SONAR_OFFSET" value="0" description="sensor offset in [adc] - default is 0"-->
+    <!--define name="SONAR_SCALE" value="0.0166" description="sensor scale factor [m/adc] - default is 0.0166"-->
+
+  </doc>
+
+  <header>
+    <file name="sonar_uart_US100.h"/>
+  </header>
+  <periodic fun="sonar_get_distance()" freq="20"/>
+ 
+  <makefile target="ap|sim">
+    <file name="sonar_uart_US100.c"/>
+  </makefile>
+  <makefile target="ap">
+    <define name="USE_UART2"/>
+    <define name="UART2_BAUD" value="B9600"/>
+    <define name="USE_SONAR"  value="true"/>
+    <define name="SENSOR_SYNC_SEND_SONAR"  value="true"/>
+  </makefile>
+
+</module>

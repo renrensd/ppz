@@ -1,0 +1,83 @@
+<!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
+
+<flight_plan alt="17.3" ground_alt="16" lat0="22.540722" lon0="113.923635" max_dist_from_home="1000" name="Rotorcraft Basic (Enac)" security_height="1.0">
+  <header>
+#include "autopilot.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="-13.7" y="-19.1"/>
+    <waypoint name="CLIMB" x="-1.0" y="0.8"/>
+    <waypoint name="ENTER" x="-20.0" y="-4.0"/>
+    <waypoint name="OUT" x="-20.1" y="-5.9"/>
+    <waypoint name="S1" x="-20.1" y="-1.8"/>
+    <waypoint name="S2" x="-6.5" y="-1.0"/>
+    <waypoint name="S3" x="-6.4" y="-7.0"/>
+    <waypoint name="S4" x="-19.7" y="-7.5"/>
+    <waypoint name="S5" x="13.6" y="-13.1"/>
+  </waypoints>
+  <sectors>
+    <sector name="PolySector" type="dynamic">
+      <corner name="S1"/>
+      <corner name="S2"/>
+      <corner name="S3"/>
+      <corner name="S4"/>
+    </sector>
+  </sectors>
+  <blocks>
+    <block name="Wait GPS">
+      <call fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+    </block>
+    <block name="Holding point">
+      <call fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine">
+      <call fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <exception cond="MoreThan(NavBlockTime(), 1)" deroute="Takeoff"/>
+    </block>
+    <block name="Takeoff" post_call="NavSetWaypointHere(WP_CLIMB)" strip_button="Takeoff" strip_icon="up.png">
+      <exception cond="stateGetPositionEnu_f()->z > 0.4" deroute="Climb"/>
+      <call fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay height="1.3" wp="CLIMB"/>
+    </block>
+    <block name="Climb">
+      <exception cond="stateGetPositionEnu_f()->z > 1.1" deroute="Standby"/>
+      <stay height="1.3" wp="CLIMB"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="standby.png">
+      <call fun="nav_set_heading_towards_waypoint(WP_ENTER)"/>
+      <while cond="fabs(stateGetSpeedEnu_f()->z) > 0.2 "/>
+      <while cond="LessThan(NavBlockTime(), 4)"/>
+      <go from="CLIMB" hmode="route" wp="ENTER"/>
+    </block>
+    <block name="SURVEY" strip_button="Poly Survey" strip_icon="bungee_launch.png">
+      <call fun="nav_survey_poly_osam_setup_towards(WP_S1,4,3.0,WP_S2)"/>
+      <call fun="nav_survey_poly_osam_run()"/>
+    </block>
+    <block name="BACK HOME">
+      <call fun="NavSetWaypointHere(WP_OUT)"/>
+      <call fun="nav_set_heading_towards_waypoint(WP_CLIMB)"/>
+      <while cond="LessThan(NavBlockTime(), 4)"/>
+      <go from="OUT" hmode="route" wp="CLIMB"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call fun="NavSetWaypointHere(WP_CLIMB)"/>
+    </block>
+    <block name="land">
+      <go wp="CLIMB"/>
+    </block>
+    <block name="flare">
+      <exception cond="0.38 > agl_dist_value_filtered" deroute="Holding point"/>
+      <exception cond="!nav_is_in_flight()" deroute="Holding point"/>
+      <stay climb="-0.15" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>

@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="px4_flow_i2c" dir="optical_flow">
+  <doc>
+    <description>PX4FLOW optical flow sensor (I2C)</description>
+    <define name="PX4_FLOW_I2C_DEV" value="i2c1" description="select i2c peripheral to use (default i2c0)"/>
+    <define name="SENSOR_SYNC_SEND" description="flag to transmit the data as it is acquired"/>
+  </doc>
+  <header>
+    <file name="px4_flow_i2c.h"/>
+  </header>
+  <init fun="px4_flow_init()"/>
+  <periodic fun="px4_flow_periodic()" freq="200"/>
+  <makefile target="ap">
+    <file name="px4_flow_i2c.c"/>
+  </makefile>
+</module>
+

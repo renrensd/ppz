@@ -1,0 +1,26 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="sonar">
+  <doc>
+    <description>
+     Reads an anlog sonar sensor and outputs sonar distance in [m]
+    </description>
+  </doc>
+
+  <header>
+    <file name="sonar_uart_MB12xx.h"/>
+  </header>
+  <periodic fun="sonar_uart_read()" freq="25"/>
+ 
+  <makefile target="ap|sim">
+    <file name="sonar_uart_MB12xx.c"/>
+  </makefile>
+  
+  <makefile target="ap">
+    <define name="USE_UART6"/>
+    <define name="UART6_BAUD" value="B9600" />
+    <define name="USE_SONAR" value="true" />
+    <define name="SENSOR_SYNC_SEND_SONAR" value="true" /> 
+  </makefile>
+
+</module>

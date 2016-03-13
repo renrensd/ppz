@@ -1,0 +1,20 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="bat_manager" dir="energy">
+  <doc>
+    <description>Battery checker module</description>
+    <define name="BAT_CHECKER_DELAY" value="delay" description="number of seconds the battery voltage has to below LOW_BAT_LEVEL before warning signal is activated"/>
+    <define name="BAT_CHECKER_LED" value="X" description="led number to use for the warning signal"/>
+  </doc>
+  <header>
+    <file name="bat_manager.h"/>
+  </header>
+  <init fun="bm_init()"/>
+  <periodic fun="bat_periodic()" freq="5"/>
+  <event fun="bat_event()" />
+  <makefile target="ap">
+    <file name="bat_manager.c"/>
+    <define name="USE_I2C1" value="true" />
+  </makefile>
+</module>
+

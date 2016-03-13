@@ -1,0 +1,21 @@
+[submodule "sw/ext/libopencm3"]
+	path = sw/ext/libopencm3
+	url = https://github.com/libopencm3/libopencm3.git
+[submodule "sw/ext/luftboot"]
+	path = sw/ext/luftboot
+	url = https://github.com/paparazzi/luftboot.git
+[submodule "sw/ext/fatfs"]
+	path = sw/ext/fatfs
+	url = https://github.com/enacuavlab/fatfs.git
+[submodule "sw/ext/libzbar"]
+	path = sw/ext/libzbar
+	url = https://github.com/paparazzi/libzbar
+[submodule "sw/ext/libsbp"]
+	path = sw/ext/libsbp
+	url = https://github.com/swift-nav/libsbp.git
+[submodule "sw/ext/mavlink"]
+	path = sw/ext/mavlink
+	url = https://github.com/paparazzi/mavlink.git
+[submodule "sw/ext/chibios"]
+	path = sw/ext/chibios
+	url = https://github.com/ChibiOS/ChibiOS.git

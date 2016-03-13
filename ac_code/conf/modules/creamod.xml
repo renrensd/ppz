@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="creamod">
+  <doc>
+    <description>create module test.</description>
+  </doc>
+  <header>
+    <file name="creamod.h"/>
+  </header>
+  <datalink message="dlcreamod" fun="callcreamod"/>
+  <makefile>
+    <file name="creamod.c"/>
+  </makefile>
+</module>
+
