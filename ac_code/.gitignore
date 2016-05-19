@@ -24,10 +24,10 @@
 *.gdb_history
 
 # Eclipse IDE project files
-*.cproject
-*.project
+#*.cproject
+#*.project
 *.externalToolBuilders
-.settings
+#.settings
 .pydevproject
 .metadata
 /build.properties
