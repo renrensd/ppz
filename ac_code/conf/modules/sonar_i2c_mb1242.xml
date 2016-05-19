@@ -1,0 +1,25 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="sonar">
+  <doc>
+    <description>
+     Reads an anlog sonar sensor and outputs sonar distance in [m]
+    </description>
+  </doc>
+
+  <header>
+    <file name="sonar_i2c_mb1242.h"/>
+  </header>
+  <init fun="sonar_init()"/>
+  <periodic fun="sonar_i2c_read()" freq="35"/> 
+                                                
+  <makefile target="ap|sim">
+    <file name="sonar_i2c_mb1242.c"/>
+  </makefile>
+  <makefile target="ap">
+    <define name="USE_SONAR" value="true" />
+    <define name="SENSOR_SYNC_SEND_SONAR" value="true" /> 
+  </makefile>
+
+</module>
+
