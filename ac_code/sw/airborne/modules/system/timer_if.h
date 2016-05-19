@@ -89,6 +89,8 @@ extern void tm_task_tick_polling(void);
 extern U16 tm_get_system_timer_tick(void);
 extern BOOL tm_is_time_passed(U16 tick, U16 duration);
 extern BOOL tm_is_timer_active(U8 timer_id);
+
+
 #endif /*_TIMER_IF_H_*/
 
 /****************************** END OF FILE ***************************/

@@ -106,10 +106,10 @@ static inline void main_init(void)
 
   downlink_init();
 
-  register_periodic_telemetry(DefaultPeriodic, "AUTOPILOT_VERSION", send_autopilot_version);
-  register_periodic_telemetry(DefaultPeriodic, "ALIVE", send_alive);
-  register_periodic_telemetry(DefaultPeriodic, "COMMANDS", send_commands);
-  register_periodic_telemetry(DefaultPeriodic, "ACTUATORS", send_actuators);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AUTOPILOT_VERSION, send_autopilot_version);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ALIVE, send_alive);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_COMMANDS, send_commands);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
 
   // send body_to_imu from here for now
   AbiSendMsgBODY_TO_IMU_QUAT(1, orientationGetQuat_f(&imu.body_to_imu));
@@ -148,7 +148,6 @@ void dl_parse_msg(void)
   switch (msg_id) {
 
     case  DL_PING: {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_PONG(DefaultChannel, DefaultDevice);
     }
     break;
@@ -157,7 +156,6 @@ void dl_parse_msg(void)
         uint8_t i = DL_SETTING_index(dl_buffer);
         float val = DL_SETTING_value(dl_buffer);
         DlSetting(i, val);
-		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
         DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
       }
       break;
@@ -165,7 +163,6 @@ void dl_parse_msg(void)
       if (DL_GET_SETTING_ac_id(dl_buffer) != AC_ID) { break; }
       uint8_t i = DL_GET_SETTING_index(dl_buffer);
       float val = settings_get_value(i);
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
     }
     break;
@@ -176,7 +173,6 @@ void dl_parse_msg(void)
 
 static void send_alive(struct transport_tx *trans, struct link_device *dev)
 {
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ALIVE(trans, dev, AC_ID, 16, MD5SUM);
 }
 
@@ -184,18 +180,15 @@ void send_autopilot_version(struct transport_tx *trans, struct link_device *dev)
 {
   static uint32_t ap_version = PPRZ_VERSION_INT;
   static char *ver_desc = PPRZ_VERSION_DESC;
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_AUTOPILOT_VERSION(trans, dev, AC_ID, &ap_version, strlen(ver_desc), ver_desc);
 }
 
 static void send_actuators(struct transport_tx *trans, struct link_device *dev)
 {
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ACTUATORS(trans, dev, AC_ID , ACTUATORS_NB, actuators);
 }
 
 static void send_commands(struct transport_tx *trans, struct link_device *dev)
-{ 
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);	
+{
   pprz_msg_send_COMMANDS(trans, dev, AC_ID, COMMANDS_NB, commands);
 }

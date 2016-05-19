@@ -79,11 +79,11 @@
 #ifndef MOTOR_MIXING_MAX_NEGATIVE_MOTOR_STEP
 #define MOTOR_MIXING_MAX_NEGATIVE_MOTOR_STEP INT32_MIN
 #endif
-// change to use,older is not used
+/*
 #ifndef MOTOR_MIXING_MAX_POSITIVE_MOTOR_STEP
 #define MOTOR_MIXING_MAX_POSITIVE_MOTOR_STEP INT32_MAX
 #endif
-
+*/
 #endif
 
 static const int32_t roll_coef[MOTOR_MIXING_NB_MOTOR]   = MOTOR_MIXING_ROLL_COEF;
@@ -93,6 +93,7 @@ static const int32_t thrust_coef[MOTOR_MIXING_NB_MOTOR] = MOTOR_MIXING_THRUST_CO
 
 struct MotorMixing motor_mixing;
 
+#if PERIODIC_TELEMETRY
 static void send_motormixing(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
@@ -104,6 +105,7 @@ static void send_motormixing(struct transport_tx *trans, struct link_device *dev
 			    &motor_mixing.commands[4],
 			    &motor_mixing.commands[5]);
 }
+#endif
 
 void motor_mixing_init(void)
 {
@@ -119,7 +121,9 @@ void motor_mixing_init(void)
   }
   motor_mixing.nb_failure = 0;
   motor_mixing.nb_saturation = 0;
-  register_periodic_telemetry(DefaultPeriodic, "MOTOR_MIXING", send_motormixing);
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MOTOR_MIXING, send_motormixing);
+#endif
 }
 
 static void offset_commands(int32_t offset)
@@ -276,9 +280,7 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
     }
     bound_commands();
     bound_commands_step();
-  } 
-  
-  else {   //in HITL
+  } else {
     for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
       motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
     }

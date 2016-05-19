@@ -46,8 +46,12 @@
 #include "subsystems/actuators/motor_mixing.h"
 #endif
 
+#if USE_IMU
 #include "subsystems/imu.h"
+#endif
+#if USE_GPS
 #include "subsystems/gps.h"
+#endif
 
 #if USE_BARO_BOARD
 #include "subsystems/sensors/baro.h"
@@ -86,6 +90,14 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include"subsystems/ops/ops_app_if.h"
 #endif	/* OPS_OPTION */
 
+#ifdef MONITORING_OPTION
+#include "subsystems/monitoring/monitoring.h"
+#endif
+
+#ifdef CALIBRATION_OPTION
+#include "calibration.h"
+#endif
+
 /* if PRINT_CONFIG is defined, print some config options */
 PRINT_CONFIG_VAR(PERIODIC_FREQUENCY)
 
@@ -114,15 +126,20 @@ INFO_VALUE("it is recommended to configure in your airframe PERIODIC_FREQUENCY t
 tid_t main_periodic_tid; ///< id for main_periodic() timer
 tid_t modules_tid;       ///< id for modules_periodic_task() timer
 tid_t failsafe_tid;      ///< id for failsafe_check() timer
+#ifndef WITHOUT_RADIO
 tid_t radio_control_tid; ///< id for radio_control_periodic_task() timer
+#endif
 tid_t electrical_tid;    ///< id for electrical_periodic() timer
 tid_t telemetry_tid;     ///< id for telemetry_periodic() timer
 #if USE_BARO_BOARD
 tid_t baro_tid;          ///< id for baro_periodic() timer
 #endif
 #ifdef OPS_OPTION
-tid_t ops_tid;          ///< id for ops_task() timer
+tid_t ops_tid;           ///< id for ops_task() timer
 #endif	/* OPS_OPTION */
+#ifdef MONITORING_OPTION
+tid_t monitor_tid;         ///< id for monitoring_periodic() timer
+#endif
 
 #ifndef SITL
 int main(void)
@@ -151,9 +168,13 @@ int main(void)
     }
   }
 #else
-  while (1) {
-    handle_periodic_tasks();
-    main_event();
+  while (1) 
+  {
+      handle_periodic_tasks();
+      main_event();
+	  #ifdef CALIBRATION_OPTION
+	  cali_task();
+	  #endif
   }
 #endif
 
@@ -165,21 +186,36 @@ STATIC_INLINE void main_init(void)
 {
   mcu_init();
 
+#if defined(PPRZ_TRIG_INT_COMPR_FLASH)
+  pprz_trig_int_init();
+#endif
+
   electrical_init();
 
   stateInit();
 
+#ifndef INTER_MCU_AP
   actuators_init();
+#else
+  intermcu_init();
+#endif
+
 #if USE_MOTOR_MIXING
   motor_mixing_init();
 #endif
 
+#ifndef INTER_MCU_AP
+ #ifndef WITHOUT_RADIO
   radio_control_init();
+ #endif
+#endif
 
 #if USE_BARO_BOARD
   baro_init();
 #endif
+#if USE_IMU
   imu_init();
+#endif
 #if USE_AHRS_ALIGNER
   ahrs_aligner_init();
 #endif
@@ -203,29 +239,49 @@ STATIC_INLINE void main_init(void)
   mcu_int_enable();
 
 #if DOWNLINK
-  downlink_init();
+  downlink_init();  //requested after settings_init(),to get flash data set var
+#endif
+
+#ifdef INTER_MCU_AP
+  intermcu_init();
 #endif
 
 #ifdef OPS_OPTION
 	ops_init();
 #endif	/* OPS_OPTION */
 
+#ifdef MONITORING_OPTION
+    monitoring_init();
+#endif
+
   // register the timers for the periodic functions
   main_periodic_tid = sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
   modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
+  #ifndef WITHOUT_RADIO
   radio_control_tid = sys_time_register_timer((1. / 60.), NULL);
+  #endif
   failsafe_tid = sys_time_register_timer(0.05, NULL);
   electrical_tid = sys_time_register_timer(0.1, NULL);
   telemetry_tid = sys_time_register_timer((1. / TELEMETRY_FREQUENCY), NULL);
 #if USE_BARO_BOARD
   baro_tid = sys_time_register_timer(1. / BARO_PERIODIC_FREQUENCY, NULL);
 #endif
+
 #ifdef OPS_OPTION
-	ops_tid = sys_time_register_timer(1. / OPS_PERIODIC_FREQUENCY, NULL);
+  ops_tid = sys_time_register_timer(1. / OPS_PERIODIC_FREQUENCY, NULL);
 #endif	/* OPS_OPTION */
 
+#ifdef MONITORING_OPTION
+  monitor_tid = sys_time_register_timer(1. /MONITORING_FREQUENCY, NULL);
+#endif
+#if USE_IMU
   // send body_to_imu from here for now
   AbiSendMsgBODY_TO_IMU_QUAT(1, orientationGetQuat_f(&imu.body_to_imu));
+#endif
+
+
+  // Do a failsafe check first
+  failsafe_check();
 }
 
 STATIC_INLINE void handle_periodic_tasks(void)
@@ -236,9 +292,11 @@ STATIC_INLINE void handle_periodic_tasks(void)
   if (sys_time_check_and_ack_timer(modules_tid)) {
     modules_periodic_task();
   }
+  #ifndef WITHOUT_RADIO
   if (sys_time_check_and_ack_timer(radio_control_tid)) {
     radio_control_periodic_task();
   }
+  #endif
   if (sys_time_check_and_ack_timer(failsafe_tid)) {
     failsafe_check();
   }
@@ -259,12 +317,20 @@ STATIC_INLINE void handle_periodic_tasks(void)
     ops_task();
   }
 #endif	/* OPS_OPTION */
+
+#ifdef MONITORING_OPTION
+  if (sys_time_check_and_ack_timer(monitor_tid)) {
+  	 monitoring_periodic();
+  }
+#endif
 }
 
 STATIC_INLINE void main_periodic(void)
 {
-
+	
+#if USE_IMU
   imu_periodic();
+#endif
 
   //FIXME: temporary hack, remove me
 #ifdef InsPeriodic
@@ -275,7 +341,11 @@ STATIC_INLINE void main_periodic(void)
   autopilot_periodic();
   /* set actuators     */
   //actuators_set(autopilot_motors_on);
+#ifndef INTER_MCU_AP
   SetActuatorsFromCommands(commands, autopilot_mode);
+#else
+  intermcu_set_actuators(commands, autopilot_mode);
+#endif
 
   if (autopilot_in_flight) {
     RunOnceEvery(PERIODIC_FREQUENCY, autopilot_flight_time++);
@@ -295,7 +365,9 @@ STATIC_INLINE void telemetry_periodic(void)
   /* initialisation phase during boot */
   if (boot) {
 #if DOWNLINK
+ #if PERIODIC_TELEMETRY
     send_autopilot_version(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
+ #endif
 #endif
     boot = FALSE;
   }
@@ -318,40 +390,49 @@ STATIC_INLINE void telemetry_periodic(void)
 
 STATIC_INLINE void failsafe_check(void)
 {
-  if (radio_control.status == RC_REALLY_LOST &&
-      autopilot_mode != AP_MODE_KILL &&
-      autopilot_mode != AP_MODE_HOME &&
-      autopilot_mode != AP_MODE_FAILSAFE &&
-      autopilot_mode != AP_MODE_NAV) {
-    autopilot_set_mode(RC_LOST_MODE);
-  }
+	autopilot_check_in_flight(autopilot_motors_on);
+   #if USE_GPS
+    gps_periodic_check();
+   #endif
 
-#if FAILSAFE_ON_BAT_CRITICAL
-  if (autopilot_mode != AP_MODE_KILL &&
-      electrical.bat_critical) {
-    autopilot_set_mode(AP_MODE_FAILSAFE);
-  }
-#endif
+   #ifndef USE_MISSION   //our flight use mission,not use radio and only AP_MODE_NAV
+   
+	  if (radio_control.status == RC_REALLY_LOST &&
+	      autopilot_mode != AP_MODE_KILL &&
+	      autopilot_mode != AP_MODE_HOME &&
+	      autopilot_mode != AP_MODE_FAILSAFE &&
+	      autopilot_mode != AP_MODE_NAV) {   //radio lost,will set mode kill
+	    autopilot_set_mode(RC_LOST_MODE);
+	  }
 
-#if USE_GPS
-  gps_periodic_check();
-  if (autopilot_mode == AP_MODE_NAV &&
-      autopilot_motors_on &&
-#if NO_GPS_LOST_WITH_RC_VALID
-      radio_control.status != RC_OK &&
-#endif
-      GpsIsLost()) {
-    autopilot_set_mode(AP_MODE_FAILSAFE);
-  }
+    #if FAILSAFE_ON_BAT_CRITICAL
+	  if (autopilot_mode != AP_MODE_KILL &&
+	      electrical.bat_critical) {
+	    autopilot_set_mode(AP_MODE_FAILSAFE);
+	  }
+    #endif
 
-  if (autopilot_mode == AP_MODE_HOME &&
-      autopilot_motors_on && GpsIsLost()) {
-    autopilot_set_mode(AP_MODE_FAILSAFE);
-  }
-#endif
+    #if USE_GPS
+	  if (autopilot_mode == AP_MODE_NAV &&
+	      autopilot_motors_on &&
+    #if NO_GPS_LOST_WITH_RC_VALID
+	      radio_control.status != RC_OK &&
+    #endif
+	      GpsIsLost()) {
+	    autopilot_set_mode(AP_MODE_FAILSAFE);
+	  }
 
-  autopilot_check_in_flight(autopilot_motors_on);
+	  if (autopilot_mode == AP_MODE_HOME &&
+	      autopilot_motors_on && GpsIsLost()) {
+	    autopilot_set_mode(AP_MODE_FAILSAFE);
+	  }
+    #endif
+
+  #endif
+
 }
+
+
 
 STATIC_INLINE void main_event(void)
 {
@@ -360,11 +441,23 @@ STATIC_INLINE void main_event(void)
 
   DatalinkEvent();
 
-  if (autopilot_rc) {
+  if(autopilot_rc) 
+  {
     RadioControlEvent(autopilot_on_rc_frame);
   }
+  else  //use ground_check_pass to set mode,instead of radio control
+  {
+  	autopilot_ready_check();
+  }
 
+#if USE_IMU
   ImuEvent();
+#endif
+
+#ifdef InsEvent
+  TODO("calling InsEvent, remove me..")
+  InsEvent();
+#endif
 
 #if USE_BARO_BOARD
   BaroEvent();

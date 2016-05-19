@@ -125,7 +125,6 @@ void mf_ptu_periodic(void)
   ptu_data[0] = (float)(PTU_PRESSURE_SCALE * ((int16_t)pressure_adc - PTU_PRESSURE_OFFSET));
   ptu_data[1] = (float)(PTU_TEMPERATURE_SCALE * ((int16_t)temp_adc - PTU_TEMPERATURE_OFFSET));
   ptu_data[2] = (float)(PTU_HUMIDTY_SCALE * ((int16_t)humid_period - PTU_HUMIDTY_OFFSET));
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, PTU_DATA_SIZE, ptu_data);
 #endif
 }

@@ -42,7 +42,7 @@ MCU   = cortex-m4
 else
 MCU   = cortex-m3
 endif
-OPT ?= s
+OPT ?= 3
 # Slightly bigger .elf files but gains the ability to decode macros
 DEBUG_FLAGS ?= -ggdb3
 
@@ -121,7 +121,7 @@ AFLAGS  = -ahls -mapcs-32
 AFLAGS += -mcpu=$(MCU) -mthumb
 AFLAGS += -x assembler-with-cpp -Wa,-adhlns=$(OBJDIR)/$(<:.S=.lst)
 
-LDFLAGS += -L../ext/libopencm3/lib
+LDFLAGS += -L../ext/libopencm3/lib -specs=nosys.specs
 LDFLAGS += -T$(LDSCRIPT) -nostartfiles -O$(OPT) -mthumb -mcpu=$(MCU)
 
 ifeq ($(ARCH_L), )

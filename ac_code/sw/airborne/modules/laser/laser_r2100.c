@@ -156,10 +156,11 @@ void laser_r2100_event(void)
 				laser_data.dis[i] = laser_r2100.payload[i*4] | (laser_r2100.payload[i*4+1] << 8);
 				laser_data.echo[i] = laser_r2100.payload[i*4+2] | (laser_r2100.payload[i*4+3] << 8);
 			}
-		    RunOnceEvery(100,   {
+		#if 0//PERIODIC_TELEMETRY
+		    RunOnceEvery(10,   {
 		    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-		    DOWNLINK_SEND_LASER_DATA(DefaultChannel, DefaultDevice, &laser_data.dis[0],&laser_data.echo[0]);}
-		    );
+		    DOWNLINK_SEND_LASER_DATA(DefaultChannel, DefaultDevice, &laser_data.dis[0],&laser_data.echo[0]);}    );
+		#endif
 	    }
 	}
 }

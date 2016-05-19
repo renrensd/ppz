@@ -58,7 +58,6 @@ void xtend_rssi_periodic(void)
     rssi_dB_fade_margin = (2 * duty_percent + 10) / 3; //not sure if this is right, datasheet isn't very informative
     pwm_input_duty_valid[XTEND_RSSI_PWM_ARRAY_INDEX] = FALSE;
   }
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_XTEND_RSSI(DefaultChannel, DefaultDevice,
                            &datalink_time,
                            &rssi_dB_fade_margin,

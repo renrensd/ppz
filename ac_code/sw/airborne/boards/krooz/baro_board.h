@@ -9,6 +9,7 @@
 #define BOARDS_KROOZ_BARO_H
 
 // only for printing the baro type during compilation
+//#define BARO_BOARD BARO_BOARD_MS5611_I2C
 
 extern void baro_event(void);
 #define BaroEvent baro_event

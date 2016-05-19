@@ -336,7 +336,6 @@ void humid_sht_periodic(void)
       s_connectionreset();
       s_start_measure(HUMI);
       humid_sht_status = SHT_MEASURING_HUMID;
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_SHT_STATUS(DefaultChannel, DefaultDevice, &humidsht, &tempsht, &fhumidsht, &ftempsht);
       humid_sht_available = FALSE;
     }

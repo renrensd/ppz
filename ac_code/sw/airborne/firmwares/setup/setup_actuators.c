@@ -24,6 +24,16 @@
 
 #define DATALINK_C
 
+/* PERIODIC_C_MAIN is defined before generated/periodic_telemetry.h
+ * in order to implement telemetry_mode_Main_*
+ */
+#define PERIODIC_C_MAIN
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "generated/periodic_telemetry.h"
+#pragma GCC diagnostic pop
+
 #include "generated/airframe.h"
 #include "generated/settings.h"
 
@@ -80,10 +90,11 @@ static inline void main_periodic(void)
   AllActuatorsCommit();
 
   LED_PERIODIC();
-  
+  #if PERIODIC_TELEMETRY
   RunOnceEvery(100, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice,  16, MD5SUM);});
   RunOnceEvery(300, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
      DOWNLINK_SEND_ACTUATORS(DefaultChannel, DefaultDevice, ACTUATORS_NB, actuators);});
+  #endif
 }
 
 static inline void main_event(void)
@@ -101,7 +112,7 @@ void dl_parse_msg(void)
   uint8_t msg_id = IdOfMsg(dl_buffer);
   if (msg_id == DL_SET_ACTUATOR) {
     uint8_t actuator_no = DL_SET_ACTUATOR_no(dl_buffer);
-    uint16_t actuator_value = DL_SET_ACTUATOR_value(dl_buffer);
+    uint16_t actuator_value __attribute__((unused)) = DL_SET_ACTUATOR_value(dl_buffer);
     LED_TOGGLE(2);
 
     /* bad hack:
@@ -179,10 +190,12 @@ void dl_parse_msg(void)
 #endif
     xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
-  } else if (msg_id == DL_GET_SETTING && DL_GET_SETTING_ac_id(dl_buffer) == AC_ID) {
+  } 
+  else if (msg_id == DL_GET_SETTING && DL_GET_SETTING_ac_id(dl_buffer) == AC_ID) 
+  {
     uint8_t i = DL_GET_SETTING_index(dl_buffer);
     float val = settings_get_value(i);
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	 xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
   }
 #endif

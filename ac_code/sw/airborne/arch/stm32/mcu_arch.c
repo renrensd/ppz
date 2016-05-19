@@ -70,6 +70,11 @@ void mcu_arch_init(void)
   PRINT_CONFIG_MSG("Using 16MHz external clock to PLL it to 168MHz.")
   rcc_clock_setup_hse_3v3(&hse_16mhz_3v3[CLOCK_3V3_168MHZ]);
 #endif
+#elif EXT_CLK == 24000000
+#if defined(STM32F4)
+  PRINT_CONFIG_MSG("Using 24MHz external clock to PLL it to 168MHz.")
+  rcc_clock_setup_hse_3v3(&hse_24mhz_3v3[CLOCK_3V3_168MHZ]);
+#endif
 #elif EXT_CLK == 25000000
 #if defined(STM32F4)
   PRINT_CONFIG_MSG("Using 25MHz external clock to PLL it to 168MHz.")
@@ -83,9 +88,9 @@ void mcu_arch_init(void)
    * this was previously in i2c driver
    * FIXME is it really needed ?
    */
-//#ifndef RTOS_IS_CHIBIOS
+#ifndef RTOS_IS_CHIBIOS
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_NOGROUP_SUB16);
-//#endif
+#endif
 
 }
 

@@ -36,8 +36,8 @@ extern struct FloatVect2 local_flow_pos;
 
 extern void flow_hff_init(float init_x, float init_xdot, float init_y, float init_ydot);
 extern void hff_update_flow(struct FloatVect2 *pos_flow, struct FloatVect2 *speed_flow ,unsigned char qual);
-//extern void flow_hff_update_pos(struct FloatVect2 pos, struct FloatVect2 Rpos);
-//extern void flow_hff_update_vel(struct FloatVect2 vel, struct FloatVect2 Rvel);
-//extern void flow_hff_realign(struct FloatVect2 pos, struct FloatVect2 vel);
+extern void flow_hff_update_pos(struct FloatVect2 pos, struct FloatVect2 Rpos);
+extern void flow_hff_update_vel(struct FloatVect2 vel, struct FloatVect2 Rvel);
+extern void flow_hff_realign(struct FloatVect2 pos, struct FloatVect2 vel);
 
 #endif /* FLOW_HF_FLOAT_H */

@@ -80,7 +80,6 @@ static inline void main_periodic_task(void)
   ppz_can_transmit(0, tx_data, 8);
 
   LED_PERIODIC();
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);
 }
 

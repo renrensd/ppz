@@ -1,8 +1,0 @@
-
-TF5CD7740 000:000 SEGGER J-Link V4.80 Log File (0000ms, 0000ms total)
-TF5CD7740 000:000 DLL Compiled: Dec 20 2013 19:40:51 (0000ms, 0000ms total)
-TF5CD7740 000:000 Logging started @ 2015-11-11 12:34 (0000ms, 0000ms total)
-TF5CD7740 000:000 JLINK_SetWarnOutHandler(...) (0000ms, 0000ms total)
-TF5CD7740 000:000 JLINK_SelectUSB(Port = 0)  returns 0x00 (0000ms, 0000ms total)
-TF5CD7740 000:000 JLINK_OpenEx(...)
-  ***** Error: Can not connect to J-Link via USB.  returns "Can not connect to J-Link via USB." (0001ms, 0001ms total)

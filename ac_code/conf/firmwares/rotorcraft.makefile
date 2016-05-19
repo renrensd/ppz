@@ -36,16 +36,21 @@ ROTORCRAFT_INC = -I$(SRC_FIRMWARE) -I$(SRC_BOARD)
 
 ap.ARCHDIR = $(ARCH)
 
+#NPS_OPTION=yes
 
 ######################################################################
 ##
 ## COMMON ROTORCRAFT ALL TARGETS (AP + NPS)
 ##
+$(TARGET).CFLAGS += -I$(PAPARAZZI_SRC)/sw/ext/libstm32
 
 $(TARGET).CFLAGS += $(ROTORCRAFT_INC)
 $(TARGET).CFLAGS += -DBOARD_CONFIG=$(BOARD_CFG)
 $(TARGET).CFLAGS += -DPERIPHERALS_AUTO_INIT
+ifndef NPS_OPTION
+#$(TARGET).CFLAGS += -DCALIBRATION_OPTION
 $(TARGET).CFLAGS += -DSYS_TIMER_OPTION
+endif
 $(TARGET).srcs   += mcu.c
 $(TARGET).srcs   += $(SRC_ARCH)/mcu_arch.c
 
@@ -70,29 +75,56 @@ endif
 # Systime
 #
 $(TARGET).srcs += mcu_periph/sys_time.c $(SRC_ARCH)/mcu_periph/sys_time_arch.c
+ifndef NPS_OPTION
 $(TARGET).srcs += modules/system/timer.c
+endif
 ifeq ($(ARCH), linux)
 # seems that we need to link against librt for glibc < 2.17
 $(TARGET).LDFLAGS += -lrt
 endif
 
+
+
+ifndef NPS_OPTION
+#
+# add libstm32
+#
+ PATH_LIBSTM32=$(PAPARAZZI_SRC)/sw/ext/libstm32
+ include $(PATH_LIBSTM32)/libstm32.makefile
+
 #
 # OPS_SYSTEM
 #
-include $(CFG_SHARED)/ops.makefile
+ include $(CFG_SHARED)/ops.makefile
+
+#
+# AUTOFLIGHT_XBEE  (use dynamic mission replay flight plan,add key RC control)
+#
+ include $(CFG_ROTORCRAFT)/autoflight_xbee.makefile 
+
+#
+# MONITORING_SYSTEM
+#
+ include $(CFG_SHARED)/monitoring.makefile
+
+endif
+
 
 
 #
 # Math functions
 #
+ifneq ($(TARGET), fbw)
 $(TARGET).srcs += math/pprz_geodetic_int.c math/pprz_geodetic_float.c math/pprz_geodetic_double.c math/pprz_trig_int.c math/pprz_orientation_conversion.c math/pprz_algebra_int.c math/pprz_algebra_float.c math/pprz_algebra_double.c
 
 $(TARGET).srcs += subsystems/settings.c
 $(TARGET).srcs += $(SRC_ARCH)/subsystems/settings_arch.c
+endif
 
 $(TARGET).srcs += subsystems/actuators.c
 $(TARGET).srcs += subsystems/commands.c
 
+ifneq ($(TARGET), fbw)
 $(TARGET).srcs += state.c
 
 #
@@ -110,25 +142,36 @@ $(TARGET).srcs += $(SRC_FIRMWARE)/guidance/guidance_h_ref.c
 $(TARGET).srcs += $(SRC_FIRMWARE)/guidance/guidance_v.c
 $(TARGET).srcs += $(SRC_FIRMWARE)/guidance/guidance_v_ref.c
 $(TARGET).srcs += $(SRC_FIRMWARE)/guidance/guidance_v_adapt.c
+$(TARGET).srcs += $(SRC_FIRMWARE)/guidance/guidance_flip.c
 
 include $(CFG_ROTORCRAFT)/navigation.makefile
-
-ifeq ($(RTOS), chibios-libopencm3)
- ns_srcs += $(SRC_FIRMWARE)/main_chibios_libopencm3.c
- ns_srcs += $(SRC_FIRMWARE)/chibios-libopencm3/chibios_init.c
 else
-$(TARGET).srcs += $(SRC_FIRMWARE)/main.c
+$(TARGET).CFLAGS += -DFBW=1
 endif
 
+ifneq ($(TARGET), fbw)
+	ifeq ($(RTOS), chibios-libopencm3)
+	 $(TARGET).srcs += $(SRC_FIRMWARE)/main_chibios_libopencm3.c
+	 $(TARGET).srcs += $(SRC_FIRMWARE)/chibios-libopencm3/chibios_init.c
+	else
+	 $(TARGET).srcs += $(SRC_FIRMWARE)/main.c
+	endif
 $(TARGET).srcs += $(SRC_FIRMWARE)/autopilot.c
+else
+$(TARGET).srcs += $(SRC_FIRMWARE)/main_fbw.c
+endif
 
 ######################################################################
 ##
 ## COMMON HARDWARE SUPPORT FOR ALL TARGETS
 ##
 
+ifneq ($(TARGET), fbw)
 $(TARGET).srcs += mcu_periph/i2c.c
 $(TARGET).srcs += $(SRC_ARCH)/mcu_periph/i2c_arch.c
+endif
+
+include $(CFG_SHARED)/uart.makefile
 
 
 #
@@ -178,14 +221,6 @@ ifeq ($(BOARD), ardrone)
 ns_srcs += $(SRC_BOARD)/gpio_ardrone.c
 endif
 
-
-ns_srcs += mcu_periph/uart.c
-ns_srcs += $(SRC_ARCH)/mcu_periph/uart_arch.c
-ifeq ($(ARCH), linux)
-ns_srcs += $(SRC_ARCH)/serial_port.c
-endif
-
-
 #
 # add other subsystems to rotorcraft firmware in airframe file:
 #
@@ -198,6 +233,7 @@ endif
 # ins
 #
 
+
 ######################################################################
 ##
 ## Final Target Allocations
@@ -205,3 +241,5 @@ endif
 
 ap.CFLAGS 		+= $(ns_CFLAGS)
 ap.srcs 		+= $(ns_srcs)
+fbw.CFLAGS 		+= $(ns_CFLAGS)
+fbw.srcs 		+= $(ns_srcs)

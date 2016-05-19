@@ -11,7 +11,7 @@
 #ifndef USE_LED_1
 #define USE_LED_1 1
 #endif
-//#define LED_STP08
+#define LED_STP08
 
 /* SPI slave mapping */
 

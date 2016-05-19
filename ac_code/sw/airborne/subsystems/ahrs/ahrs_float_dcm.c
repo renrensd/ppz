@@ -177,7 +177,7 @@ void ahrs_dcm_update_gps(struct GpsState *gps_s)
   static float last_gps_speed_3d = 0;
 
 #if USE_GPS
-  if (gps_s->fix == GPS_FIX_3D) {
+  if (gps_s->fix >= GPS_FIX_3D) {
     ahrs_dcm.gps_age = 0;
     ahrs_dcm.gps_speed = gps_s->speed_3d / 100.;
 
@@ -274,10 +274,10 @@ void ahrs_dcm_update_mag(struct Int32Vect3 *mag)
   ltp_mag.y = MAG_Heading_Y;
 
 #if FLOAT_DCM_SEND_DEBUG
-  // Downlink
-  
+  #if PERIODIC_TELEMETRY  
   RunOnceEvery(10, { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
        DOWNLINK_SEND_IMU_MAG(DefaultChannel, DefaultDevice, &ltp_mag.x, &ltp_mag.y, &ltp_mag.z);} );
+  #endif
 #endif
 
   // Magnetic Heading

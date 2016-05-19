@@ -30,6 +30,7 @@
 #include "subsystems/datalink/xbee.h"
 #include "subsystems/datalink/downlink.h"
 #include "uplink_ac.h"
+
 #ifdef XBEE_RESET_GPIO
 #include "mcu_periph/gpio.h"
 
@@ -40,7 +41,7 @@
 
 
 /** Ground station address */
-#define GROUND_STATION_ADDR 0x3b44
+#define GROUND_STATION_ADDR 0x3b3f
 /** Aircraft address */
 #define XBEE_MY_ADDR AC_ID
 
@@ -53,8 +54,8 @@ struct xbee_transport xbee_tp;
 
 #ifdef GCS_V1_OPTION
 struct xbee_connect_info xbee_con_info;
-tid_t xbee_bc_tid; //id for xbee_msg_aircraft_ready_broadcast() timer.
-tid_t xbee_heart_beat_tid;
+//tid_t xbee_bc_tid; //id for xbee_msg_aircraft_ready_broadcast() timer.
+//tid_t xbee_heart_beat_tid;
 #endif//GCS_V1_OPTION
 
 #define AT_COMMAND_SEQUENCE "+++"
@@ -183,7 +184,7 @@ static void start_message(struct xbee_transport *trans, struct link_device *dev,
   	     ||(xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_BC)||(xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_PC) )
 	#endif //GCS_V1_OPTION
 	{
-	  downlink.nb_msgs++;
+	  dev->nb_msgs++;
 	  dev->put_byte(dev->periph, XBEE_START);
 	  const uint16_t len = payload_len + XBEE_TX_OVERHEAD + 1;
 	  dev->put_byte(dev->periph, (len >> 8));
@@ -214,13 +215,13 @@ static void end_message(struct xbee_transport *trans, struct link_device *dev)
 static void overrun(struct xbee_transport *trans __attribute__((unused)),
                     struct link_device *dev __attribute__((unused)))
 {
-  downlink.nb_ovrn++;
+  dev->nb_ovrn++;
 }
 
 static void count_bytes(struct xbee_transport *trans __attribute__((unused)),
                         struct link_device *dev __attribute__((unused)), uint8_t bytes)
 {
-  downlink.nb_bytes += bytes;
+  dev->nb_bytes += bytes;
 }
 
 static int check_available_space(struct xbee_transport *trans __attribute__((unused)), struct link_device *dev,
@@ -350,7 +351,12 @@ void xbee_init(void)
 #endif
 
 #ifdef GCS_V1_OPTION
-xbee_bc_tid = sys_time_register_timer(1./XBEE_BC_PERIODIC_FREQUENCY, (sys_time_cb)xbee_msg_aircraft_ready_broadcast); 
+  xbee_con_info.rc_con_available = FALSE;
+  xbee_con_info.gcs_con_available = FALSE;
+  xbee_con_info.ppzcenter_con_available = FALSE;
+/*stop register timer call back,use timer.c*/  //xbee_bc_tid = sys_time_register_timer(1./XBEE_BC_PERIODIC_FREQUENCY, (sys_time_cb)xbee_msg_aircraft_ready_broadcast);
+//TIMER(TIMER_XBEE_HEARTBEAT_MSG,                 xbee_msg_aircraft_ready_broadcast,      TIMER_TASK_TELEMETRY)
+  tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC,0);
 #endif //GCS_V1_OPTION
 }
 
@@ -358,6 +364,7 @@ void xbee_periodic(void)
 {
 #ifdef GCS_V1_OPTION
  //xbee_msg_aircraft_ready_broadcast();
+ tm_stimulate(TIMER_TASK_TELEMETRY);
 #endif
 }
 
@@ -371,7 +378,7 @@ void xbee_msg_aircraft_ready_broadcast(void)  //call by xbee_init,priodic send u
 
 void xbee_msg_heart_beat(void)  //give up
 {
-	uint8_t state;
+	//uint8_t state;
 	const uint8_t serialcode[] = A2R_SERIAL_CODE;	
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_BIND_RC(DefaultChannel, DefaultDevice, serialcode);
@@ -379,8 +386,8 @@ void xbee_msg_heart_beat(void)  //give up
 
 void xbee_msg_rc_ready_response(void) //give up
 {
-	const uint8_t serialcode[] = A2R_SERIAL_CODE;
-	xbee_tx_header(XBEE_ACK,XBEE_ADDR_RC);
+	//const uint8_t serialcode[] = A2R_SERIAL_CODE;
+	//xbee_tx_header(XBEE_ACK,XBEE_ADDR_RC);
 	//DOWNLINK_SEND_RC_READY_RESPONSE(DefaultChannel, DefaultDevice, 0x09 , serialcode);
 }
 

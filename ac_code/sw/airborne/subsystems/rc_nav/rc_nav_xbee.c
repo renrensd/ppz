@@ -1,52 +1,97 @@
-/**
- * @file subsystem/rc_nav_xbee.c
-    rc cmd(motion/set) parse
-    something as initial/reset/check function
- */
+/***********************************************************************
+*   Copyright (C) Shenzhen Efficien Tech Co., Ltd.				   *
+*				  All Rights Reserved.          					   *
+*   Department : R&D SW      									   *
+*   AUTHOR	   :             										   *
+************************************************************************
+* Object        : 
+* Module        : 
+* Instance      : 
+* Description   : 
+*-----------------------------------------------------------------------
+* Version: 
+* Date: 
+* Author: 
+***********************************************************************/
+/*-History--------------------------------------------------------------
+* Version       Date    Name    Changes and comments
+* 
+*=====================================================================*/
 
+/**** System include files ****/  
 
 #include "subsystems/rc_nav/rc_nav_xbee.h"
+#include "subsystems/rc_nav/rc_nav_drift.h"
 #include "state.h"
 #include "firmwares/rotorcraft/autopilot.h"
 #include "firmwares/rotorcraft/nav_flight.h"
-#include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "math.h"
+
+#include "subsystems/ops/ops_app_if.h"
 #ifdef OPS_OPTION
 #include "subsystems/ops/ops_msg_if.h"   
 #endif
+#include "subsystems/monitoring/monitoring.h" 
+#include "subsystems/datalink/xbee.h"
 
 //rc_set_cmd
-#define set_manual_rc 1    //0x01,
-#define open_spray_rc 2    //0x02,
-#define land_rc       3    //0x03,
-#define home_stop_rc  4    //0x04,
-#define mainpower_off_rc 5 //0x05,
-#define set_auto_rc   16   //0x10,
-#define stop_spray_rc 32   //0x20,
-#define take_off_rc   48   //0x30,    
-#define home_rc       64   //0x40,    
-#define mainpower_on_rc 80 //0x50,    
+#define RC_SET_AUTO 0x10
+#define RC_SET_MANUAL 0x01
+#define RC_TAKE_OFF 0x30
+#define RC_LAND 0x03
+#define RC_HOME 0x40
+#define RC_STOP_HOME 0x04
+#define RC_LOCK 0x06
+#define RC_UNLOCK 0x60
+#define RC_ADD_SPRAY 0x20
+#define RC_REDUCE_SPRAY 0x02
+#define RC_MAINPOWER_ON 0x50
+#define RC_MAINPOWER_OFF 0x05
+
+//orientation
+#define ORIENT_FOR  1
+#define ORIENT_BACK -1
+#define ORIENT_NONE 0
+
+//rc_motion_cmd
+#define K_FORWARD    37
+#define K_BACKWARD   41
+#define K_RIGHT      69
+#define K_LEFT       73
+#define K_UP         21
+#define K_DOWN       25
+#define K_HOLD       16
+#define K_CW         133
+#define K_CCW        137
+#define K_HOVER      0
 
 #define RC_MAX_COUNT  10   //lost_time_out =10/(2hz)=5s
 
 struct rc_set rc_set_info;   //rc mode information
-uint8_t last_response;       //set cmd response record
+struct rc_motion rc_motion_info;
+
 uint8_t rc_motion_cmd;
 uint8_t rc_set_cmd;
 uint8_t rc_count;   //rc lost counter
 bool_t  rc_lost;
 
 
-/********************************
- *****rc_motion_cmd execution****
- ********************************/
-//globle var,use save rc_cmd speed
-float fb_speed=0.0;   //forward or backward speed
-float rl_speed=0.0;   //right or left speed
+static uint8_t rc_motion_cmd_verify(uint8_t cmd);
 
-static void rc_setpoint_speed_parse(float speed_fb,float speed_rl);
 
-//convert body speed to earth speed,according to psi
-static void rc_setpoint_speed_parse(float speed_fb,float speed_rl)
+void rc_nav_init(void)
+{
+    rc_motion_info_init();
+	rc_set_info_init();
+}
+
+/***********************************************************************
+* FUNCTION    : rc_setpoint_speed_parse
+* DESCRIPTION : convert body speed to earth speed,using heading
+* INPUTS      : body speed from rc
+* RETURN      : none
+***********************************************************************/
+void rc_setpoint_speed_parse(float speed_fb,float speed_rl)
 {  
    float psi= stateGetNedToBodyEulers_f()->psi; //yaw angle
    float s_psi = sinf(psi);
@@ -55,236 +100,417 @@ static void rc_setpoint_speed_parse(float speed_fb,float speed_rl)
    float speed_x=c_psi * speed_fb - s_psi * speed_rl;
    float speed_y=s_psi * speed_fb + c_psi * speed_rl;
    
-   Bound(speed_x,-RC_H_Max_Speed,+RC_H_Max_Speed);
-   Bound(speed_y,-RC_H_Max_Speed,+RC_H_Max_Speed);
+   BoundAbs(speed_x,FB_Max_Speed);
+   BoundAbs(speed_y,FB_Max_Speed);
    
-   guidance_h_speed_sp.x = SPEED_BFP_OF_REAL(speed_x);
-   guidance_h_speed_sp.y = SPEED_BFP_OF_REAL(speed_y);
+   guidance_h.sp.speed.x = SPEED_BFP_OF_REAL(speed_x);
+   guidance_h.sp.speed.y = SPEED_BFP_OF_REAL(speed_y);
+   horizontal_mode = HORIZONTAL_MODE_RC;    //request to set mode
 }
 
+/***********************************************************************
+* FUNCTION    : rc_motion_cmd_verify
+* DESCRIPTION : check take_off cmd and the condition for rc_motion_cmd
+* INPUTS      : rc_motion_cmd
+* RETURN      : error_code,pass is 0
+***********************************************************************/
+static uint8_t rc_motion_cmd_verify(uint8_t cmd)
+{
+	uint8_t error_code =0;
+	if(flight_mode!=nav_rc_mode)
+	{//error,not in manual mode
+		return error_code=10; 
+	}
+
+	/*in ground ,up_key give take_off cmd*/
+	if( cmd==K_UP 
+		&& !rc_set_info.locked
+		&& !autopilot_in_flight 
+	   #ifdef USE_MISSION 
+		&& flight_state==ready
+	   #else 
+		&& rc_set_info.vtol==LOCKED
+	   #endif   
+	                               )   
+	{  
+		rc_set_info.vtol = TAKE_OFF;  /*give take off cmd*/
+		return error_code = 0; 
+	}
+
+	/*on ground,execute stop spray*/
+	if( cmd==K_HOLD && !autopilot_in_flight)
+	{
+		#ifdef OPS_OPTION
+		 ops_stop_spraying(); 
+		#endif
+	}
+   
+	if(!autopilot_in_flight) 
+	{//error,ac need take off
+		return error_code=11;  
+	}
+	
+	if(rc_set_info.home || rc_set_info.vtol==LOCKED) 
+	{//error,refuse action while aircraft in home mode
+		return error_code =12; 
+	}
+	
+	if(rc_set_info.vtol==TAKE_OFF || rc_set_info.vtol==LAND)
+	{//error,aircraft is taking off/landing, can not interrupt
+		return error_code =13; 
+	}
+
+	return error_code;  //all pass
+}	
+
+/***********************************************************************
+* FUNCTION    : rc_motion_orientation_parse
+* DESCRIPTION : according to hover_cmd,set the for/backward orientation
+* INPUTS      : current cmd, pointer of speed_grade
+* RETURN      : void
+***********************************************************************/
+static void rc_motion_orientation_parse(uint8_t cmd, int8_t *speed_grade)
+{
+	switch(cmd)
+	{
+		case K_HOVER:
+			rc_motion_info.orientation_flag =0;
+			*speed_grade=0;
+			break;
+		case K_FORWARD:
+			if(!rc_motion_info.orientation_flag)
+			{
+				rc_motion_info.orientation_fb =ORIENT_FOR;
+				rc_motion_info.orientation_flag =1;
+			}
+			break;
+		case K_BACKWARD:
+			if(!rc_motion_info.orientation_flag)
+			{
+				rc_motion_info.orientation_fb =ORIENT_BACK;
+				rc_motion_info.orientation_flag =1;
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+/***********************************************************************
+* FUNCTION    : rc_motion_cmd_execution
+* DESCRIPTION : 
+* INPUTS      : current cmd
+* RETURN      : unuseful
+***********************************************************************/
 uint8_t rc_motion_cmd_execution( uint8_t cmd )
 {   
-	rc_motion_cmd=cmd;
-	//check error before motion execution
+	static int8_t fb_grade=0;
 	uint8_t error_code=0;
-	if(flight_mode!=nav_rc_mode) return error_code=10; //error,not in manual mode
-   #ifdef USE_MISSION
-    //change in ground ,up_key give take_off cmd(21=lowest,23=highest)
-	if(cmd==21 && !autopilot_in_flight && flight_state==ready)   
-	{  rc_set_info.vtol=TAKE_OFF;  return error_code=0; }
-   #else
-    //change in ground ,up_key give take_off cmd(21=lowest,23=highest)
-	if(cmd==21 && !autopilot_in_flight && rc_set_info.vtol==LOCKED)   
-	{  rc_set_info.vtol=TAKE_OFF;  return error_code=0; }
-   #endif
-	if(!autopilot_in_flight) return error_code=11;  //error,not in flight
-	if(rc_set_info.home) return error_code =12; //error,aircraft is in home mode
-	if(rc_set_info.vtol==LOCKED) return error_code =13;  //aircraft is not take off
-	if(rc_set_info.vtol==TAKE_OFF) return error_code =14; //error,aircraft is taking off
-	if(rc_set_info.vtol==LAND) return error_code =15; //error,aircraft is landing
-
-	enum motion_type rc_motion_type=(enum motion_type)( (cmd >>4)&0x0F );   //get motion type,see in message_new.xml
+	rc_motion_cmd=cmd;
 	
-	uint8_t rc_orientation= (cmd>>2)&0x03;       //get orientation,see in message_new.xml
-	if(rc_orientation==3) return error_code=1;   //rc_orientation wrong
+	/*check error before motion execution*/	
+    error_code = rc_motion_cmd_verify(rc_motion_cmd);
+	if(error_code) 
+	{//something error,return
+		return error_code; 
+	}
 
-	
-	uint8_t rc_grade= cmd&0x03;   //get speed grade
+    /*parse for/backward orientation*/	
+    rc_motion_orientation_parse(rc_motion_cmd, &fb_grade);
 
-	switch(rc_motion_type)
+	switch(rc_motion_cmd)
 	{
-        case  hover:
+        case  K_HOVER:
 		{
-			if(rc_orientation!=0) return error_code=2; //hover orientation wrong
-			if(rc_grade!=0) return error_code=3;// hover speed grade wrong
-			RC_HOVER();   //do hover
+			RC_HOVER();     //do hover
 	        break;
         }
 			
-		case  virtical:
-		{
-			if(rc_orientation==1) 
-			{  
-				RC_Climb(rc_grade);
-				break;
-			}
-			else if(rc_orientation==2)
-			{
-				RC_Decline(rc_grade);
-				break;
-		    }
-			else 
+		case  K_UP: 
+			RC_Climb(V_DEFAULT_GRADE);
+			break;
+		case  K_DOWN:
+			RC_Decline(V_DEFAULT_GRADE);
+			break;
+			
+		case  K_HOLD:
+			if(nav_climb)
 			{
 				RC_Z_HOLD();
-				break;
-		    }
-		}	
-		case  fb_ward:
-		{
-			if(rc_orientation==0) return error_code=4;  //orientation wrong in fb_ward type
-			else if(rc_orientation==1)
-			{
-				fb_speed=(RC_FORWARD(rc_grade));
-				break;
 			}
 			else
 			{
-				fb_speed=(RC_BACKWARD(rc_grade));
+			  #ifdef OPS_OPTION    //back home,need stop spraying
+			   ops_stop_spraying(); 
+			  #endif 				
+			}
+			break;
+
+		case  K_FORWARD:
+			if( 0==(fb_grade+1) )
+			{   //avoid reverse orientation
 				break;
-			}			
-		}
+			}
+			fb_grade++;
+			BoundAbs(fb_grade,5);   //avoid out of limit grade		
+			rc_motion_info.speed_fb = ( RC_FB_SPEED(fb_grade) );
+			break;
+		case  K_BACKWARD:
+			if( 0==(fb_grade-1) )
+			{   //avoid reverse orientation
+				break;
+			}
+			fb_grade--;
+			BoundAbs(fb_grade,5);   //avoid out of limit grade	
+			rc_motion_info.speed_fb = ( RC_FB_SPEED(fb_grade) );
+			break;
 			
-		case  rl_ward:
+			
+		case  K_RIGHT:
 		{
-			if(rc_orientation==0) return error_code=5;  //orientation wrong in rl_ward type
-			else if(rc_orientation==1)
+			if(rc_motion_info.speed_fb!=0.0)
 			{
-				rl_speed=(RC_RIGHT(rc_grade));
-				break;
+				rc_speed_rl_drift(1);
 			}
-			else
+			else 
 			{
-				rl_speed=(RC_LEFT(rc_grade));
-				break;
-			}			
+				rc_motion_info.speed_rl= RL_SPEED;
+			}
+			break;
+		}		
+		case  K_LEFT:
+		{
+			if(rc_motion_info.speed_fb!=0.0)
+			{
+				rc_speed_rl_drift(-1);
+			}
+			else 
+			{
+				rc_motion_info.speed_rl= -RL_SPEED;
+			}
+			break;
 		}
+
+		case  K_CW:
+			if(rc_motion_info.speed_fb!=0.0)
+			{
+				rc_rate_rotation_drift(1);
+			}
+			else 
+			{
+				rc_motion_info.rotation_rate= ROTATION_RATE;
+				rc_turn_rate=RATE_BFP_OF_REAL( rc_motion_info.rotation_rate );
+			}
+			break;
+		case  K_CCW:
+			if(rc_motion_info.speed_fb!=0.0)
+			{
+				rc_rate_rotation_drift(-1);
+			}
+			else 
+			{
+				rc_motion_info.rotation_rate= -ROTATION_RATE;
+				rc_turn_rate=RATE_BFP_OF_REAL( rc_motion_info.rotation_rate );
+			}
+			break;
 		
-		case  rotation:   //rc_turn_rate will use when horizontal mode==HORIZONTAL_MODE_RC
-		{
-			if(rc_orientation==0) return error_code=6;  //orientation wrong in rotation type
-			else if(rc_orientation==1)
-			{
-		 	    rc_turn_rate=RATE_BFP_OF_REAL( RC_TURN_RIGHT(rc_grade) ); 
-				break;
-			}
-			else
-			{
-		 	    rc_turn_rate=RATE_BFP_OF_REAL( RC_TURN_LEFT(rc_grade) ); 
-				break;
-			}			
-		}
-			
 		default: return error_code=7; //motion_type wrong
 	}
 
 	//execution set guidance_h_speed_sp
-	rc_setpoint_speed_parse(fb_speed, rl_speed);	
+	rc_setpoint_speed_parse(rc_motion_info.speed_fb,rc_motion_info.speed_rl);
+
+	//use for monitoring process
+	rc_cmd_interrupt=TRUE;
 	
 	return error_code=0;  //process success
 }
 
 
 
-/********************************
- *******pasre rc_set_cmd********
- ********************************/
+/***********************************************************************
+* FUNCTION    : rc_set_cmd_pasre
+* DESCRIPTION : leave take_off/mainpower/mode unused
+* INPUTS      : current cmd
+* RETURN      : unuseful
+***********************************************************************/
  uint8_t rc_set_cmd_pasre(uint8_t cmd)
  {    
  	  rc_set_cmd=cmd;
-      uint8_t response=0;
-	  bool_t success=1;
-	  switch(cmd)
-	  {    //in taking_off or landing motion,refuse mode change
-	  	   case set_auto_rc:
-		   	  #ifdef USE_MISSION
-		   	   //success=0; break;  //modify later
-		   	   if(autopilot_mode!=AP_MODE_NAV || flight_state==taking_off ||flight_state==landing)  { success=0;break; }
-			   //if(autopilot_in_flight)  { success=0;break; }
-			  #else
-			   if(autopilot_mode!=AP_MODE_NAV || autopilot_in_flight) { success=0;break; }  //in flight,refuse to change			   	
-			  #endif
-			   rc_set_info.mode_state=nav_gcs_mode;
-			   flight_mode_enter(nav_gcs_mode);
+
+	  switch(rc_set_cmd)
+	  {    
+	       #if 1
+		   //in taking_off or landing motion,refuse mode change
+	  	   case RC_SET_AUTO:
+		   	   if( AP_MODE_NAV == autopilot_mode)
+		   	   {
+				  #ifdef USE_MISSION  /*current can not set auto from manual in flight*/
+			   	   if(flight_state==taking_off || flight_state==landing || autopilot_in_flight)  
+				   	{ 
+						break;
+					}
+				  #else
+				   if( autopilot_in_flight ) 
+				   	{
+						break;
+					}		   	
+				  #endif
+				  
+				   rc_set_info.mode_state = nav_gcs_mode;
+				   flight_mode_enter(nav_gcs_mode);			   		
+		   	   	}		   	  
 			   break;
-		   case set_manual_rc:
-		   	  #ifdef USE_MISSION
-		   	   if(autopilot_mode!=AP_MODE_NAV || flight_state==taking_off ||flight_state==landing)  { success=0;break; }
-			  #else
-			   if(autopilot_mode!=AP_MODE_NAV)  { success=0;break; }
-			  #endif
-			   rc_set_info.mode_state=nav_rc_mode;
-			   flight_mode_enter(nav_rc_mode); 
+			   
+		   case RC_SET_MANUAL:
+		   		if( AP_MODE_NAV == autopilot_mode)
+		   		{
+				  #ifdef USE_MISSION
+			   	   if(flight_state==taking_off || flight_state==landing)  
+				   	{ 
+						break;
+					}
+				  #endif		
+				  
+				   rc_set_info.mode_state = nav_rc_mode;
+				   flight_mode_enter(nav_rc_mode); 
+		   		}
 			   break;
-		   case mainpower_on_rc:
-		   	   //error deal
+		   #endif
+		   
+		   case  RC_ADD_SPRAY:
+		   	   if(flight_mode==nav_rc_mode) 
+		   	   {
+			   	   rc_set_info.spray_grade++;
+				   Bound(rc_set_info.spray_grade, 0, 5);
+				   rc_update_ops_config_param(rc_set_info.spray_grade);
+			   	  #ifdef OPS_OPTION
+                   ops_start_spraying();  //make sure ops is opened
+			      #endif 
+		   	   }
+		   	   break;
+		   case  RC_REDUCE_SPRAY:
+		   	   if(flight_mode==nav_rc_mode) 
+		   	   {
+			   	   if(rc_set_info.spray_grade)  
+			   	   {				   	
+				   	   rc_set_info.spray_grade--;
+					   //Bound(rc_set_info.spray_grade, 0, 5);
+					   rc_update_ops_config_param(rc_set_info.spray_grade);
+					  #ifdef OPS_OPTION
+					   if(!rc_set_info.spray_grade)
+					   {
+					   	    ops_stop_spraying();  //if set 0 grade,stop spray
+					   }
+					   else
+					   {
+					   		ops_start_spraying();
+					   }
+				      #endif 
+			   	   }
+		   	   }
+		   	   break;			   
+
+		   case  RC_LAND:
+		   	   if(flight_mode==nav_rc_mode && autopilot_in_flight) 
+			   {
+			   	    if( 
+					   #ifdef USE_MISSION
+						flight_state==cruising || flight_state==home
+					   #else 
+						rc_set_info.vtol==CRUISE
+					   #endif
+						                                              )
+					{
+						rc_set_info.vtol = LAND;
+						
+			            //use for monitoring process
+	                   rc_cmd_interrupt = TRUE;
+					}
+			   }		
+		   	   break;
+			   
+		   case  RC_HOME:
+		   	   if( flight_mode==nav_rc_mode && autopilot_in_flight 
+			   	  #ifdef USE_MISSION
+		   	       && flight_state==cruising
+			      #else
+			       && rc_set_info.vtol==CRUISE
+			      #endif                                            
+				                                                      )
+			   {
+				   rc_set_info.home = TRUE;
+				  #ifdef OPS_OPTION    
+				   ops_stop_spraying(); //back home,make sure spray stop
+				  #endif 
+				   //use for monitoring process
+		           rc_cmd_interrupt = TRUE;
+			   }
+		   	   break;
+			   
+		   case  RC_STOP_HOME:
+		   	   if( flight_mode==nav_rc_mode && autopilot_in_flight 
+			   	  #ifdef USE_MISSION
+		   	       && flight_state==home
+			      #else
+			       && rc_set_info.home==TRUE
+			      #endif                                           
+				                                                       )
+			   {
+				   rc_set_info.home = FALSE;
+				  	//use for monitoring process
+		           rc_cmd_interrupt = TRUE;
+			   }
+		   	   break;
+			   
+		   case  RC_LOCK:
+		   	   if(rc_set_info.vtol==LOCKED)   //request ac is not in flight cmd
+		   	   {
+			   	   rc_set_info.locked = TRUE;
+		   	   }
+		   	   break;
+		   case  RC_UNLOCK:
+		   	   if(rc_set_info.vtol==LOCKED)   //request ac is not in flight cmd
+		   	   {
+			   	   rc_set_info.locked = FALSE;
+		   	   }
+		   	   break;
+		   #if 0   
+		   /*reserve function*/ 
+		   case RC_MAINPOWER_ON:
 	    	   rc_set_info.m_power=1;
 		   	   break;
-		   case mainpower_off_rc:
-		   	   //error deal
+		   case RC_MAINPOWER_OFF:
 	    	   rc_set_info.m_power=0;
 		   	   break;
-		   case stop_spray_rc:
-		   	   if(flight_mode!=nav_rc_mode)  {success=0;break;}
-            #ifdef OPS_OPTION
-			   ops_stop_spraying(); 
-			#endif 
-		   	   rc_set_info.spray=0;
-		   	   break;
-		   case open_spray_rc:
-		   	   if(flight_mode!=nav_rc_mode)  {success=0;break;}
-             #ifdef OPS_OPTION
-			   ops_start_spraying();
-			 #endif
-	    	   rc_set_info.spray=1;						
-		   	   break;
-		   case take_off_rc:
+		   /*not use, instead of K_UP*/   
+		   case RC_TAKE_OFF:
 		   	  #ifdef USE_MISSION
 		   	   if(flight_mode!=nav_rc_mode || autopilot_in_flight || flight_state!=ready)  
-			   {   success=0;  break;  }			   
+			   {   break;  }			   
 	    	   
 			  #else
 			   if(flight_mode!=nav_rc_mode || autopilot_in_flight || rc_set_info.vtol!=LOCKED) 
-			   {   success=0;  break;  }
+			   {   break;  }
 			  #endif
 			   rc_set_info.vtol=TAKE_OFF;
 		   	   break;
-		   case land_rc:
-		   	   if(flight_mode!=nav_rc_mode || !autopilot_in_flight)  {   success=0;  break;  }		
-			  #ifdef USE_MISSION
-			   if( !(flight_state==cruising || flight_state==home) ) {   success=0;  break;  }
-			  #else
-			   if( rc_set_info.vtol!=CRUISE ) {   success=0;  break;  }
-			  #endif
-			   rc_set_info.vtol=LAND;
-		   	   break;
-		   case home_rc:
-		      #ifdef USE_MISSION
-		   	   if(flight_mode!=nav_rc_mode || !autopilot_in_flight || flight_state!=cruising)
-			   {   success=0;  break;  }
-			  #else
-			   if(flight_mode!=nav_rc_mode || !autopilot_in_flight || rc_set_info.vtol!=CRUISE)
-			   {   success=0;  break;  }
-			  #endif
-			   rc_set_info.home=1;
-		   	   break;
-		   case home_stop_rc:
-		      #ifdef USE_MISSION
-		   	   if(flight_mode!=nav_rc_mode || !autopilot_in_flight || flight_state!=home)  
-			   {   success=0;  break;  }
-			  #else
-			   if(flight_mode!=nav_rc_mode || !autopilot_in_flight || !(rc_set_info.home) )  
-			   {   success=0;  break;  }
-			  #endif
-			   rc_set_info.home=0;
-		   	   break;
+		   #endif
 
-		   default: success=0;
+		   default:
+		   	   break;
 	  }
-	  
-	  response=rc_set_response_pack();
-	  if(success) response +=2;       //set success status
-	  last_response=response;
-	  return response;
+	  return TRUE;
  }
 
-//communication with rc,ack response code
+/*communication with rc,ack response code
 uint8_t rc_set_response_pack(void)
 { 
 	 uint8_t response=0;
 	 if(rc_set_info.mode_state==nav_gcs_mode) response =0; //set 8th bit false
 	 else response =1;  //set 8th bit true
 
-	 if(!rc_set_info.spray) response=(response<<1)+1;
+	 if(!rc_set_info.spray_grade) response=(response<<1)+1;
 	 else response =response<<1;
 
      if(rc_set_info.vtol==LAND) response =(response<<2)+2;
@@ -300,14 +526,14 @@ uint8_t rc_set_response_pack(void)
 	 response =response<<2;
 	 
 	 return response;
-}
+}*/
 
 void rc_set_info_reset(void)
 {
 	//if(autopilot_in_flight)  rc_set_info.vtol=CRUISE;
 	//else rc_set_info.vtol=LOCKED;
-	rc_set_info.home=0;
-	rc_set_info.spray=0;
+	rc_set_info.home = FALSE;
+	//rc_set_info.spray_grade=0;
 #ifdef OPS_OPTION
 	ops_stop_spraying();//TODOM
 #endif
@@ -315,25 +541,40 @@ void rc_set_info_reset(void)
 
 void rc_set_info_init(void)
 {
-    rc_set_info.mode_state=nav_gcs_mode;
-	rc_set_info.vtol=LOCKED;
-	rc_set_info.home=0;
-	rc_set_info.spray=0;
+    //rc_set_info.mode_state= nav_rc_mode; //or nav_gcs_mode,use in rc_cmd mode change
+	rc_set_info.vtol = LOCKED;
+	rc_set_info.home = FALSE;
+	rc_set_info.spray_grade= 0;
 #ifdef OPS_OPTION
 	 ops_stop_spraying();//TODOM
 #endif
-	rc_set_info.m_power=0;
+	//rc_set_info.m_power = 0;
+    rc_set_info.locked = TRUE;
+}
+
+void rc_motion_info_init(void)
+{
+	rc_motion_info.speed_fb=0.0;
+	rc_motion_info.speed_rl=0.0;
+	rc_motion_info.rotation_rate=0.0;
+	rc_motion_info.orientation_fb=ORIENT_NONE;
+	rc_motion_info.orientation_flag=0;
 }
 
 void rc_lost_check(void)
 {
-	rc_count++;
+	if(!rc_lost)
+	{
+		rc_count++;
+	}
 	if (rc_count>RC_MAX_COUNT)
 	{
-	       //xbee_con_info.rc_con_available==FALSE     //not change the rc con	
-	       rc_lost=TRUE;
-	       //in take_off,it will flight to cruise;once entered cruise,do land
-	       //after landed, locked auto.
+	       rc_lost = TRUE;
+		   rc_count = 0;
+		   XbeeSetRcConFalse();   //close rc communication,wait for restart connect
+	       /*in take_off,it will flight to cruise;once entered cruise,do land
+	       after landed, locked auto.*/
+	       #if 0
 	       if(autopilot_in_flight && rc_set_info.vtol==CRUISE)   
 	       {
 		       rc_set_info.vtol=LAND;    //land process in this exeption case
@@ -344,8 +585,12 @@ void rc_lost_check(void)
 		       rc_set_info.vtol=LOCKED;
 		       rc_set_cmd_pasre(0x10);  //flight_mode set auto		   	
 	       }
-	       //do not convert to nav_gcs_mode!!!
-	       //rc_set_cmd_pasre(0x10);  //flight_mode set auto
-	       //rc_set_info.mode_state=nav_gcs_mode;
+	       #endif
 	}
+}
+
+void rc_set_connect(void)
+{
+	rc_count = 0;  //reset rc_count,use for check rc_lost
+	rc_lost = FALSE;
 }

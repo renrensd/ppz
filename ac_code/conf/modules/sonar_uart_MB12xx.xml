@@ -17,8 +17,8 @@
   </makefile>
   
   <makefile target="ap">
-    <define name="USE_UART6"/>
-    <define name="UART6_BAUD" value="B9600" />
+    <define name="USE_UART1"/>
+    <define name="UART1_BAUD" value="B9600" />
     <define name="USE_SONAR" value="true" />
     <define name="SENSOR_SYNC_SEND_SONAR" value="true" /> 
   </makefile>

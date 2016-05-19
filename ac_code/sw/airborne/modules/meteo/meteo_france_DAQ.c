@@ -68,7 +68,6 @@ void init_mf_daq(void)
 void mf_daq_send_state(void)
 {
   // Send aircraft state to DAQ board
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_MF_DAQ_STATE(extra_pprz_tp, EXTRA_DOWNLINK_DEVICE,
                              &autopilot_flight_time,
                              &stateGetBodyRates_f()->p,
@@ -94,14 +93,12 @@ void mf_daq_send_report(void)
 {
   // Send report over normal telemetry
   if (mf_daq.nb > 0) {
-  	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 9, mf_daq.values);
   }
   // Test if log is started
   if (pprzLogFile != -1) {
     if (log_started == FALSE) {
       // Log MD5SUM once
-      xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_ALIVE(pprzlog_tp, chibios_sdlog, 16, MD5SUM);
       log_started = TRUE;
     }
@@ -109,7 +106,6 @@ void mf_daq_send_report(void)
     uint8_t foo = 0;
     int16_t climb = -gps.ned_vel.z;
     int16_t course = (DegOfRad(gps.course) / ((int32_t)1e6));
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_GPS(pprzlog_tp, chibios_sdlog, &gps.fix,
                       &gps.utm_pos.east, &gps.utm_pos.north,
                       &course, &gps.hmsl, &gps.gspeed, &climb,
@@ -119,14 +115,14 @@ void mf_daq_send_report(void)
 
 void parse_mf_daq_msg(void)
 {
-  mf_daq.nb = DL_PAYLOAD_FLOAT_values_length(dl_buffer);
+  mf_daq.nb = dl_buffer[2];
   if (mf_daq.nb > 0) {
     if (mf_daq.nb > MF_DAQ_SIZE) { mf_daq.nb = MF_DAQ_SIZE; }
     // Store data struct directly from dl_buffer
-    memcpy(mf_daq.values, DL_PAYLOAD_FLOAT_values(dl_buffer), mf_daq.nb * sizeof(float));
+    float *buf = (float*)(dl_buffer+3);
+    memcpy(mf_daq.values, buf, mf_daq.nb * sizeof(float));
     // Log on SD card
     if (log_started) {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_PAYLOAD_FLOAT(pprzlog_tp, chibios_sdlog, mf_daq.nb, mf_daq.values);
       DOWNLINK_SEND_MF_DAQ_STATE(pprzlog_tp, chibios_sdlog,
                                  &autopilot_flight_time,

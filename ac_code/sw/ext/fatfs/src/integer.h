@@ -24,13 +24,13 @@ typedef unsigned char	BYTE;
 /* These types must be 16-bit integer */
 typedef short			SHORT;
 typedef unsigned short	USHORT;
-typedef unsigned short	WORD __attribute__((__may_alias__));
+typedef unsigned short	WORD;
 typedef unsigned short	WCHAR;
 
 /* These types must be 32-bit integer */
 typedef long			LONG;
 typedef unsigned long	ULONG;
-typedef unsigned long	DWORD __attribute__((__may_alias__));;
+typedef unsigned long	DWORD;
 
 #endif
 

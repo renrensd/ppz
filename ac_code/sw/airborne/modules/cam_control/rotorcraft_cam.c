@@ -88,12 +88,14 @@ int16_t rotorcraft_cam_pan;
 #define ROTORCRAFT_CAM_PAN_MIN 0
 #define ROTORCRAFT_CAM_PAN_MAX INT32_ANGLE_2_PI
 
+#if PERIODIC_TELEMETRY
 static void send_cam(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_CAM(trans, dev, AC_ID,
                                &rotorcraft_cam_tilt, &rotorcraft_cam_pan);
 }
+#endif
 
 void rotorcraft_cam_set_mode(uint8_t mode)
 {
@@ -121,8 +123,9 @@ void rotorcraft_cam_init(void)
 #endif
   rotorcraft_cam_tilt = 0;
   rotorcraft_cam_pan = 0;
-
+#if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, "ROTORCRAFT_CAM", send_cam);
+#endif
 }
 
 void rotorcraft_cam_periodic(void)

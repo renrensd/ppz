@@ -42,7 +42,7 @@
 
 
 #ifndef BMP_I2C_DEV
-#define BMP_I2C_DEV i2c1
+#define BMP_I2C_DEV i2c0
 #endif
 
 #define BARO_BMP_R 0.5
@@ -54,7 +54,7 @@ struct Bmp085 baro_bmp;
 bool_t baro_bmp_enabled;
 float baro_bmp_r;
 float baro_bmp_sigma2;
-float baro_bmp_alt;
+int32_t baro_bmp_alt;
 
 void baro_bmp_init(void)
 {
@@ -96,16 +96,14 @@ void baro_bmp_event(void)
     baro_bmp.data_available = FALSE;
 
 #ifdef SENSOR_SYNC_SEND
-    RunOnceEvery(10, { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-       DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice, &baro_bmp.up,
+    DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice, &baro_bmp.up,
                              &baro_bmp.ut, &baro_bmp.pressure,
-                             &baro_bmp.temperature);});
+                             &baro_bmp.temperature);
 #else
-    RunOnceEvery(10, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-       DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice,
+    RunOnceEvery(10, DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice,
                  &baro_bmp.up, &baro_bmp.ut,
                  &baro_bmp.pressure,
-                 &baro_bmp.temperature);} );
+                 &baro_bmp.temperature));
 #endif
   }
 }

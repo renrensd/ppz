@@ -100,6 +100,7 @@ void baro_event(void)
     AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
     baro_bmp.data_available = FALSE;
 
+#if PERIODIC_TELEMETRY
 #ifdef SENSOR_SYNC_SEND
     RunOnceEvery(10, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
        DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice, &baro_bmp.up,
@@ -112,6 +113,7 @@ void baro_event(void)
                  &baro_bmp.up, &baro_bmp.ut,
                  &baro_bmp.pressure,
                  &baro_bmp.temperature);} );
+#endif
 #endif
   }
 }

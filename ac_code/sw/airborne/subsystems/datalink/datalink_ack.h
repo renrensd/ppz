@@ -43,30 +43,26 @@ enum engine_type
 	Hybrid     =3
 };
 
-enum set_command
+enum Set_Command
 {
-	delete_all_mission =1,
-	request_ac_info    =2,
+	GCS_CMD = 1,
+	REQUEST_AC_INFO = 2,
+	DELETE_ALL = 3
 };
 
-struct mission_info
+/* task_ack_type: add = 0, update = 1, delete = 2, get = 3; */
+enum Task_Ack_Type
 {
-	uint8_t mission_id;
-    uint8_t mission_type;
-    uint8_t mission_ack_code;
-    uint8_t mission_status;
-    int8_t  nb_wp;
-    int8_t  nb_backup_land;
-    uint8_t duration;
-    uint8_t wp_type;
-    uint8_t wp_len;
-    int32_t *waypoints;
+	TASK_ADD = 0,
+	TASK_UPDATE = 1,
+	TASK_DELETE =2,
+	TASK_GET =3
 };
 
 //extern uint8_t rc_set_cmd_pasre(uint8_t cmd);
 extern void send_heart_beat_A2R_msg(void);
-extern void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t lenght);
+extern void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length);
 extern void send_aircraft_info_state(void);
-extern uint8_t DlSetCommand(uint8_t id, int8_t *pt_value ,uint8_t lenght);
+extern uint8_t DlSetCommand(uint8_t id, int8_t *pt_value ,uint8_t length);
 
 #endif /* DATALINK_H */

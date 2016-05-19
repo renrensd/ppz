@@ -30,9 +30,11 @@ void mission_init(void)
   mission.add_idx=0;
   mission.element_time = 0.;
   for(uint8_t i=0;i<MISSION_ELEMENT_NB;i++)  //element_exit set false
-  {  mission.elements[i].element_exist=FALSE;}  
+  {  
+  	mission.elements[i].element_exist=FALSE;
+  }  
   space_id=0;                //space relative lenght
-  memset(wp_space,0,sizeof(wp_space)); //clear space
+  memset(wp_space, 0, MS_SP_NB*sizeof(union ms_wp)); //clear space
 }
 
 bool_t mission_clear_all(void)
@@ -67,6 +69,7 @@ uint8_t get_mission_executable()   //check before take_off in nav_gcs_mode
 // Report mission info function
 void mission_status_report(void)
 {
+   #if PERIODIC_TELEMETRY
    static uint8_t index=1;    //use in periodic send report
    if(mission.elements[index].element_exist)
    {
@@ -96,6 +99,7 @@ void mission_status_report(void)
    }
 
    else index=1;   
+   #endif
 }
 
 
@@ -111,12 +115,14 @@ void send_current_mission(void)
 		                                &path_idx,
 		                                &mission_id,
 		                                &mission_status );
+	#if PERIODIC_TELEMETRY
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);    //to ubuntu
 	DOWNLINK_SEND_MISSION_INFO(DefaultChannel, DefaultDevice, 
 		                               &mission_id,
 		                               &path_idx,
 		                               &mission_status,
-		                               &mission.element_time );		                               
+		                               &mission.element_time );		
+	#endif
 }
 
 

@@ -130,7 +130,6 @@ ssize_t full_read(int fd, uint8_t *buf, size_t count)
 
 static void send_navdata(struct transport_tx *trans, struct link_device *dev)
 {
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ARDRONE_NAVDATA(trans, dev, AC_ID,
                                 &navdata.measure.taille,
                                 &navdata.measure.nu_trame,
@@ -237,7 +236,7 @@ bool_t navdata_init()
   }
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "ARDRONE_NAVDATA", send_navdata);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ARDRONE_NAVDATA, send_navdata);
 #endif
 
   // Set to initialized

@@ -66,9 +66,11 @@ void config_mkk_v2_periodic_read_status(void)
 void config_mkk_v2_periodic_telemetry(void)
 {
   static uint8_t send_nr = 0;
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_MKK(DefaultChannel, DefaultDevice, &send_nr, &actuators_mkk_v2.data[send_nr].MaxPWM,
                     &actuators_mkk_v2.data[send_nr].Current, &actuators_mkk_v2.data[send_nr].Temperature);
+  #endif
 
   send_nr++;
   if (send_nr >= ACTUATORS_MKK_V2_NB) {

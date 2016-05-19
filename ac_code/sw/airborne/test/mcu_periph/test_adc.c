@@ -90,7 +90,6 @@ int main(void)
 static inline void main_periodic_task(void)
 {
   RunOnceEvery(100, {DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);});
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   RunOnceEvery(100, {uint32_t sec = sys_time.nb_sec; DOWNLINK_SEND_TIME(DefaultChannel, DefaultDevice, &sec);});
   LED_PERIODIC();
 
@@ -101,7 +100,6 @@ static inline void main_periodic_task(void)
   }
 
   uint8_t id = 42;
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_ADC(DefaultChannel, DefaultDevice, &id, NB_ADC, values);
 }
 

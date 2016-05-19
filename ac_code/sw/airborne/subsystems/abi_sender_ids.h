@@ -226,8 +226,12 @@
 #define IMU_MPU60X0_ID 16
 #endif
 
+#ifndef PX4FLOW_VELOCITY_ID
+#define PX4FLOW_VELOCITY_ID 17
+#endif
+
 #ifndef IMU_ADISENS_ID
-#define IMU_ADISENS_ID 17
+#define IMU_ADISENS_ID 18
 #endif
 
 /*

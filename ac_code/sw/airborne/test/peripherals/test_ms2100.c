@@ -61,7 +61,6 @@ static inline void main_periodic_task(void)
 {
   RunOnceEvery(10, {
     uint16_t foo = sys_time.nb_sec;
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_TAKEOFF(DefaultChannel, DefaultDevice, &foo);
     LED_TOGGLE(2);
     LED_PERIODIC();
@@ -81,7 +80,6 @@ static inline void main_event_task(void)
       int32_t mag_x = ms2100.data.vect.x;
       int32_t mag_y = ms2100.data.vect.y;
       int32_t mag_z = ms2100.data.vect.z;
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice,
       &mag_x, &mag_y, &mag_z);
     });

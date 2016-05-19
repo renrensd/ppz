@@ -44,6 +44,7 @@ ms_wp wp_space[MS_SP_NB];  //storage space
 uint8_t space_id;
 uint16_t flag_mission_idx;
 
+/*
 void mission_init(void)
 {
   //mission.insert_idx = 0;  //mission insert sequence
@@ -52,7 +53,7 @@ void mission_init(void)
   space_id=0;
   flag_mission_idx=0;
   memset(space.wp_i,0,sizeof(space)); //cleat space
-}
+}*/
 
 
 // Weak implementation of mission_element_convert (leave element unchanged)
@@ -95,8 +96,10 @@ void mission_status_report(void)
   }
 
   // send status
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_MISSION_STATUS(DefaultChannel, DefaultDevice, &remaining_time, j, task_list);
+  #endif
 }
 
 

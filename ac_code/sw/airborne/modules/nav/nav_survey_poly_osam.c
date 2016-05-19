@@ -35,7 +35,10 @@
 #include "state.h"
 #include "autopilot.h"
 #include "firmwares/rotorcraft/nav_flight.h"  //get ac_config_info
-//#include "subsystems/ops/ops_msg_if.h"   
+
+#ifdef OPS_OPTION
+ #include "subsystems/ops/ops_msg_if.h"   
+#endif
 
 #ifdef DIGITAL_CAM
 #include "modules/digital_cam/dc.h"
@@ -122,7 +125,7 @@ uint16_t PolySurveySweepNum;    //count the number of sweep lines
 uint16_t PolySurveySweepBackNum;
 float EntryRadius;
 
-bool_t nav_survey_poly_osam_setup_towards(uint8_t FirstWP, uint8_t Size, float Sweep, int SecondWP)
+bool_t nav_survey_poly_osam_setup_towards(uint8_t FirstWP, uint8_t Size, float Sweep_local, int SecondWP)
 {
   float dx = waypoints[SecondWP].enu_f.x - waypoints[FirstWP].enu_f.x;
   float dy = waypoints[SecondWP].enu_f.y - waypoints[FirstWP].enu_f.y;
@@ -134,8 +137,8 @@ bool_t nav_survey_poly_osam_setup_towards(uint8_t FirstWP, uint8_t Size, float S
   
   //if values passed, use it.
   if (Size == 0) {Size = Poly_Size;}
-  if (Sweep == 0) {Sweep = Poly_Sweep;}
-  return nav_survey_poly_osam_setup(FirstWP, Size, Sweep, DegOfRad(ang));
+  if (Sweep_local == 0) {Sweep_local = Poly_Sweep;}
+  return nav_survey_poly_osam_setup(FirstWP, Size, Sweep_local, DegOfRad(ang));
 }
 
 bool_t nav_survey_poly_osam_setup(uint8_t EntryWP, uint8_t Size, float sw, float Orientation)
@@ -393,16 +396,19 @@ bool_t nav_survey_poly_osam_run(void)
 	  {
 		  struct EnuCoor_f entry_wp_f;// toward_wp_f;
 		  struct EnuCoor_i entry_wp_i;
+		  struct Point2D entry_xy;
 		  entry_wp_f.x=SurveyFromWP.x;
 		  entry_wp_f.y=SurveyFromWP.y;
 		  entry_wp_f.z=1.0;//ac_config_info.spray_height;
+		  entry_xy.x = SurveyFromWP.x;
+		  entry_xy.y = SurveyFromWP.y;
 		  //toward_wp_f.x=SurveyToWP.x;
 		  //toward_wp_f.y=SurveyToWP.y;
 		  //toward_wp_f.z=ac_config_info.spray_height;
 		  
 		  //Rotate and Translate Line points into real world
-	      RotateAndTranslateToWorld(&entry_wp_f, 0, SmallestCorner.x, SmallestCorner.y);
-	      RotateAndTranslateToWorld(&entry_wp_f, SurveyTheta, 0, 0);
+	      RotateAndTranslateToWorld(&entry_xy, 0, SmallestCorner.x, SmallestCorner.y);
+	      RotateAndTranslateToWorld(&entry_xy, SurveyTheta, 0, 0);
 		  //RotateAndTranslateToWorld(&toward_wp_f, 0, SmallestCorner.x, SmallestCorner.y);
 	      //RotateAndTranslateToWorld(&toward_wp_f, SurveyTheta, 0, 0);
 		  ENU_BFP_OF_REAL(entry_wp_i, entry_wp_f);
@@ -417,13 +423,13 @@ bool_t nav_survey_poly_osam_run(void)
 	  	          if( (SurveyToWP.x-SurveyFromWP.x)<0 )
 		          heading_e=heading_e+M_PI;
 			 nav_set_heading_rad(heading_e); 				 
-			 if( nav_check_heading() && (*stateGetHorizontalSpeedNorm_f())<0.5)
+			 if( nav_check_heading() && (stateGetHorizontalSpeedNorm_f())<0.5)
 			 {
 			      CSurveyStatus = Sweep;  //goto next step
-	                         nav_init_stage();
-						#ifdef OPS_OPTION
-		                ops_start_spraying();  //open spray  
-		                #endif
+                  nav_init_stage();
+				 #ifdef OPS_OPTION
+                  ops_start_spraying();  //open spray  
+                 #endif
 			 }			
 	         }
 	  }
@@ -599,7 +605,27 @@ bool_t nav_survey_poly_osam_run(void)
 	  ENU_BFP_OF_REAL(CP_i1, CP_f1);
       //follow the circle
       nav_circle(&CP_i1, POS_BFP_OF_REAL(SurveyRadius));
-
+/*
+	  float heading_s=M_PI_2-SurveyTheta;  
+	  if( (SurveyToWP.x - SurveyFromWP.x) < 0 )
+	  {
+	  	heading_s=heading_s+M_PI;
+	  }
+	  int32_t heading_i =ANGLE_BFP_OF_REAL(heading_s);
+	  int32_t heading_des =nav_heading;
+	  
+	  INT32_COURSE_NORMALIZE(heading_i);
+	  INT32_COURSE_NORMALIZE(heading_des);
+	  if( abs(heading_i-heading_des)<ANGLE_BFP_OF_REAL(0.06) && NavCircleCount()>0) 
+	  {
+	  	 nav_set_heading_rad(heading_s); 
+        CSurveyStatus = Sweep;
+        nav_init_stage();
+		#ifdef OPS_OPTION
+        ops_start_spraying();  //open spray
+       #endif
+	  }
+*/
       if (NavQdrCloseTo(SurveyCircleQdr) && NavCircleCount() > 0) {
 	  	//set heading
 	  	float heading_s=M_PI_2-SurveyTheta;  
@@ -610,7 +636,7 @@ bool_t nav_survey_poly_osam_run(void)
         nav_init_stage();
 		#ifdef OPS_OPTION
         ops_start_spraying();  //open spray
-        #endif
+       #endif
         //LINE_START_FUNCTION;
         //el->element.mission_survey.survey_idx++;
       }
@@ -627,18 +653,22 @@ bool_t nav_survey_poly_osam_run(void)
 /********************************/
 /***function for mission,var el**/
 /********************************/
+#ifdef USE_MISSION
 uint8_t survey_run_ms(struct _mission_element *el)
 {   
-	uint8_t state;   //0:running,1:success,2:fail
+	uint8_t state_sur;   //0:running,1:success,2:fail
 	static bool_t flag_set_up=FALSE;
 	if(!flag_set_up) 
 	{  nav_survey_poly_osam_setup_towards_ms(el);
 	   flag_set_up=TRUE;
-	   return state=0;
+	   return state_sur=0;
 	}
-	state=nav_survey_poly_osam_run_ms(el);
-	if(state)   flag_set_up=FALSE;//reset flag
-	return state;
+	state_sur = nav_survey_poly_osam_run_ms(el);
+	if(state_sur)  
+	{
+		flag_set_up=FALSE;//reset flag
+	}
+	return state_sur;
 }
 
 bool_t nav_survey_poly_osam_setup_towards_ms(struct _mission_element *el)
@@ -875,7 +905,7 @@ bool_t nav_survey_poly_osam_setup_ms(struct _mission_element *el, uint8_t Size, 
 
 uint8_t nav_survey_poly_osam_run_ms(struct _mission_element *el)
 {
-  uint8_t state;   //0:running,1:success,2:fail
+  uint8_t state_poly;   //0:running,1:success,2:fail
   struct Point2D C;
   struct Point2D ToP;
   struct Point2D FromP;
@@ -923,16 +953,19 @@ uint8_t nav_survey_poly_osam_run_ms(struct _mission_element *el)
 	  {
 		  struct EnuCoor_f entry_wp_f;// toward_wp_f;
 		  struct EnuCoor_i entry_wp_i;
+		  struct Point2D entry_xy;
 		  entry_wp_f.x=SurveyFromWP.x;
 		  entry_wp_f.y=SurveyFromWP.y;
 		  entry_wp_f.z=ac_config_info.spray_height;
+		  entry_xy.x = SurveyFromWP.x;
+		  entry_xy.y = SurveyFromWP.y;
 		  //toward_wp_f.x=SurveyToWP.x;
 		  //toward_wp_f.y=SurveyToWP.y;
 		  //toward_wp_f.z=ac_config_info.spray_height;
 		  
 		  //Rotate and Translate Line points into real world
-	      RotateAndTranslateToWorld(&entry_wp_f, 0, SmallestCorner.x, SmallestCorner.y);
-	      RotateAndTranslateToWorld(&entry_wp_f, SurveyTheta, 0, 0);
+	      RotateAndTranslateToWorld(&entry_xy, 0, SmallestCorner.x, SmallestCorner.y);
+	      RotateAndTranslateToWorld(&entry_xy, SurveyTheta, 0, 0);
 		  //RotateAndTranslateToWorld(&toward_wp_f, 0, SmallestCorner.x, SmallestCorner.y);
 	      //RotateAndTranslateToWorld(&toward_wp_f, SurveyTheta, 0, 0);
 		  ENU_BFP_OF_REAL(entry_wp_i, entry_wp_f);
@@ -947,7 +980,7 @@ uint8_t nav_survey_poly_osam_run_ms(struct _mission_element *el)
 		          heading_e=heading_e+M_PI;
 			  	  nav_set_heading_rad(heading_e); 				 
 
-		  	  if( nav_check_heading() && (*stateGetHorizontalSpeedNorm_f())<0.5 )
+		  	  if( nav_check_heading() && (stateGetHorizontalSpeedNorm_f())<0.5 )
 		  	  {
 			  	  CSurveyStatus = Sweep;  //goto next step
                                        nav_init_stage();
@@ -1003,7 +1036,7 @@ uint8_t nav_survey_poly_osam_run_ms(struct _mission_element *el)
 		   #ifdef OPS_OPTION
 		   ops_stop_spraying();  //stop spray  
            #endif
-		   return state=1;
+		   return state_poly=1;
         } 
 
 		 else  // Normal sweep
@@ -1148,12 +1181,13 @@ uint8_t nav_survey_poly_osam_run_ms(struct _mission_element *el)
       }
       break;
     case Init:
-      return state=2;
+      return state_poly=2;
     default:
-      return state=2;
+      return state_poly=2;
   }
-  return state=0;  //runing
+  return state_poly=0;  //runing
 }
+#endif
 
 
 /*

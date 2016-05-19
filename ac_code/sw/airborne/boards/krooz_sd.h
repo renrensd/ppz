@@ -4,7 +4,7 @@
 #define BOARD_KROOZ
 
 /* KroozSD has a 25MHz external clock and 168MHz internal. */
-#define EXT_CLK 25000000
+#define EXT_CLK 24000000
 #define AHB_CLK 168000000
 
 /*
@@ -140,6 +140,13 @@
 #define I2C3_GPIO_PORT_SDA GPIOC
 #define I2C3_GPIO_SCL GPIO8
 #define I2C3_GPIO_SDA GPIO9
+
+/*mb1242 i2c */
+#define I2C_SONAR_GPIO_SDA_PORT GPIOD
+#define I2C_SONAR_GPIO_SCL_PORT GPIOD
+#define I2C_SONAR_GPIO_SDA GPIO0
+#define I2C_SONAR_GPIO_SCL GPIO1
+
 
 /* Onboard ADCs */
 #define USE_AD_TIM5 1
@@ -350,7 +357,6 @@
 #define PWM_TIM4_CHAN_MASK (PWM_SERVO_4_OC_BIT|PWM_SERVO_5_OC_BIT|PWM_SERVO_6_OC_BIT|PWM_SERVO_7_OC_BIT)
 
 /* PPM */
-
 #define USE_PPM_TIM2 1
 
 #define PPM_CHANNEL         TIM_IC1
@@ -380,9 +386,16 @@
 #endif //ADXRS290_SENS
 
 
+/* bat manager option */
+#define BAT_MANAGER_OPTION
+
 /* ops system option*/
 #define OPS_OPTION
-#define OPS_PERIODIC_FREQUENCY 200
+#define OPS_PERIODIC_FREQUENCY 100
+
+/*monitoring system option*/
+#define MONITORING_OPTION
+#define MONITORING_FREQUENCY 2
 
 /* bat manager option */
 #define BAT_MANAGER_OPTION
@@ -392,5 +405,8 @@
 #define I2C_BM_GPIO_SDA GPIO1
 
 #define HMC5983_OPTION
+
+/* actuator power control */
+#define DEBUG_GPIO 	GPIOE,GPIO2 //0-enable,1-disable.
 
 #endif /* CONFIG_KROOZ_SD_H */

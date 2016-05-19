@@ -28,6 +28,16 @@
 #ifndef XBEE_H
 #define XBEE_H
 
+#define GCS_V1_OPTION  //defined, we can use gcs/rc/ubuntu_gcs
+
+
+#ifdef GCS_V1_OPTION   
+#include "modules/system/timer_if.h"
+#include "modules/system/timer_class.h"
+#include "modules/system/timer_def.h"
+//#include "modules/system/types.h"
+#endif
+
 #include "subsystems/datalink/datalink.h"
 #include "generated/airframe.h"
 #include "subsystems/datalink/transport.h"
@@ -47,17 +57,19 @@
 
 #define XBEE_START 0x7E
 
-#define GCS_V1_OPTION  //defined, we can use gcs/rc/ubuntu_gcs
-
 #ifdef GCS_V1_OPTION   
-extern tid_t xbee_bc_tid; //id for xbee_msg_aircraft_ready_broadcast() timer.
-extern tid_t xbee_heart_beat_tid;
+#include "firmwares/rotorcraft/autopilot.h"
+#include "subsystems/settings.h"
+
+//extern tid_t xbee_bc_tid; //id for xbee_msg_aircraft_ready_broadcast() timer.
+//extern tid_t xbee_heart_beat_tid;
 
 #define A2G_SERIAL_CODE 	    {0x09,0x24,0x52,0x73,0x5D,0x45,0x68,0x21,0x29,0x70}
 #define A2R_SERIAL_CODE 	    {0x09,0x74,0x12,0x83,0x9D,0x15,0x08,0x41,0x21,0x65}
 #define GCS_SERIAL_CODE 		{0x09,0x35,0x40,0x72,0x55,0x76,0x64,0x2A,0x2C,0x6E}
-#define RC_SERIAL_CODE 			{0x09,0x58,0x4E,0x7B,0x4A,0x5B,0x6D,0x62,0x3B,0x57}
-#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xf3,0x3b,0x44}
+#define RC_SERIAL_CODE 		    {0x09,0x58,0x4E,0x7B,0x4A,0x5B,0x6D,0x62,0x3B,0x57}
+#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xfb,0xa0,0x80}
+//#define PPZCENTER_ADDR         {0x00,0x13,0xA2,0x00,0x40,0xf3,0x3b,0x3f}
 #define XBEE_ADDR_OFFSET 1
 #define XBEE_ADDR_LEN 8
 #define XBEE_SERIAL_CODE_OFFSET 2
@@ -146,12 +158,21 @@ static inline void parse_xbee(struct xbee_transport *t, uint8_t c)
       t->status++;
       t->payload_idx = 0;
       t->cs_rx = 0;
+	  if(t->trans_rx.payload_len > (TRANSPORT_PAYLOAD_LEN -10) )
+	  {
+		goto error;	 
+	  }
       break;
     case XBEE_GOT_LENGTH_LSB:
       t->trans_rx.payload[t->payload_idx] = c;
       t->cs_rx += c;
       t->payload_idx++;
-      if (t->payload_idx == t->trans_rx.payload_len) {
+	  if(t->payload_idx > (TRANSPORT_PAYLOAD_LEN -10) )
+	  {
+		goto error;	 
+	  }
+	  
+      if (t->payload_idx >= t->trans_rx.payload_len) {
         t->status++;
       }
       break;
@@ -168,8 +189,13 @@ static inline void parse_xbee(struct xbee_transport *t, uint8_t c)
   return;
 error:
   t->trans_rx.error++;
+  t->payload_idx = 0;
+  t->cs_rx = 0;
+  t->status = XBEE_UNINIT;
 restart:
   t->status = XBEE_UNINIT;
+  t->payload_idx = 0;
+  t->cs_rx = 0;
   return;
 }
 
@@ -205,6 +231,7 @@ static inline void xbee_parse_payload(struct xbee_transport *t)
 		  	if(dl_buffer[i+XBEE_SERIAL_CODE_OFFSET] != gcskey[i])
 		  	{
 				gcs_equal = FALSE;
+				break;
 			}
 		  }
 		  if(gcs_equal == TRUE)
@@ -216,33 +243,51 @@ static inline void xbee_parse_payload(struct xbee_transport *t)
 		       xbee_con_info.gcs_addr[0][i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
 		    }
 
-			sys_time_cancel_timer(xbee_bc_tid);  //cancel broadcast message
+			//sys_time_cancel_timer(xbee_bc_tid);  //cancel broadcast message
+			tm_kill_timer(TIMER_XBEE_HEARTBEAT_MSG);
 		  }
 		}
 
 		//rc broadcast message,check rc serial code.
-		if(xbee_con_info.rc_con_available == FALSE)
+		if ( xbee_con_info.rc_con_available == FALSE )
 		{ 
 		  rc_equal = TRUE;
 		  for(i=0; i<XBEE_SERIAL_CODE_LEN; i++)
 		  {
 		  	if(dl_buffer[i+XBEE_SERIAL_CODE_OFFSET] != rckey[i])
 		  	{
-				rc_equal = FALSE;				
+				rc_equal = FALSE;		
+				break;
 			}
 		  }
 		  
 		  if(rc_equal == TRUE)
 		  {
-			xbee_con_info.rc_con_available = TRUE;
-			xbee_con_info.rc_num++;
+			//xbee_con_info.rc_con_available = TRUE;
+			//xbee_con_info.rc_num++;
 			for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
 			{
-		       xbee_con_info.rc_addr[0][i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
+		       if( xbee_con_info.rc_addr[0][i-XBEE_ADDR_OFFSET] != t->trans_rx.payload[i] )
+		       {   
+			   	    rc_equal = FALSE;  //indecate addr is different
+			   		if( autopilot_check_rc_bind() )
+			   		{  //AC attitude >30deg,record address
+						for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
+						{
+							xbee_con_info.rc_addr[0][i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
+						}
+						settings_StoreSettings(1);  //save addr to flash
+						xbee_con_info.rc_con_available = TRUE;
+			   		}
+					//else  give up	
+					break;  //jump out the loop of check address
+		       }
 		    }
-			//just for test rc broad cast
-		    //sys_time_cancel_timer(xbee_bc_tid);  
-
+			if(rc_equal == TRUE)
+			{  //old RC connect
+				xbee_con_info.rc_con_available = TRUE;   
+			}
+			
 		  }
 		}
 
@@ -288,5 +333,7 @@ static inline void xbee_check_and_parse(struct link_device *dev, struct xbee_tra
     }
   }
 }
+
+#define XbeeSetRcConFalse()  { xbee_con_info.rc_con_available = FALSE; }
 
 #endif /* XBEE_H */

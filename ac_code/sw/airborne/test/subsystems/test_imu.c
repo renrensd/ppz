@@ -97,7 +97,6 @@ static inline void main_periodic_task(void)
 {
   RunOnceEvery(100, {
     led_toggle();
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);
   });
 
@@ -115,7 +114,6 @@ static inline void main_periodic_task(void)
       uint16_t i2c1_unexpected_event_cnt  = i2c1.errors->unexpected_event_cnt;
       uint32_t i2c1_last_unexpected_event = i2c1.errors->last_unexpected_event;
       uint8_t _bus1 = 1;
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_I2C_ERRORS(DefaultChannel, DefaultDevice,
                                &i2c1_wd_reset_cnt,
                                &i2c1_queue_full_cnt,
@@ -145,7 +143,6 @@ static inline void main_periodic_task(void)
       uint16_t i2c2_unexpected_event_cnt  = i2c2.errors->unexpected_event_cnt;
       uint32_t i2c2_last_unexpected_event = i2c2.errors->last_unexpected_event;
       uint8_t _bus2 = 2;
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_I2C_ERRORS(DefaultChannel, DefaultDevice,
                                &i2c2_wd_reset_cnt,
                                &i2c2_queue_full_cnt,
@@ -183,13 +180,11 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
   cnt++;
   if (cnt > 15) { cnt = 0; }
   if (cnt == 0) {
-  	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_IMU_ACCEL_RAW(DefaultChannel, DefaultDevice,
                                 &imu.accel_unscaled.x,
                                 &imu.accel_unscaled.y,
                                 &imu.accel_unscaled.z);
   } else if (cnt == 7) {
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_IMU_ACCEL_SCALED(DefaultChannel, DefaultDevice,
                                    &accel->x,
                                    &accel->y,
@@ -209,13 +204,11 @@ static void gyro_cb(uint8_t sender_id __attribute__((unused)),
   if (cnt > 15) { cnt = 0; }
 
   if (cnt == 0) {
-  	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_IMU_GYRO_RAW(DefaultChannel, DefaultDevice,
                                &imu.gyro_unscaled.p,
                                &imu.gyro_unscaled.q,
                                &imu.gyro_unscaled.r);
   } else if (cnt == 7) {
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_IMU_GYRO_SCALED(DefaultChannel, DefaultDevice,
                                   &gyro->p,
                                   &gyro->q,
@@ -233,13 +226,11 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
   if (cnt > 10) { cnt = 0; }
 
   if (cnt == 0) {
-  	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_IMU_MAG_SCALED(DefaultChannel, DefaultDevice,
                                  &mag->x,
                                  &mag->y,
                                  &mag->z);
   } else if (cnt == 5) {
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice,
                               &imu.mag_unscaled.x,
                               &imu.mag_unscaled.y,

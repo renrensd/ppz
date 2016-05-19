@@ -22,6 +22,11 @@
 #include "../../modules/system/types.h"
 /**** Definition of constants ****/
 
+#define PARAM_FLOW_SPEED  1
+#define PARAM_FLOW_DENSITY  2
+#define PARAM_DROP_CAPCITY  3
+#define PARAM_SPRAY_ATOM  4
+#define PARAM_SPRAY_CHANNEL  5
 
 /**** Definition of types ****/ 
 
@@ -57,8 +62,10 @@ extern struct OPS_CONFIG_PARAM ops_param;
 extern void ops_task(void);
 extern void ops_init(void);
 extern void ops_heart_beat_handler(uint8_t *param);
-extern void ops_update_aircraft_vel(uint8_t *param);
+extern void ops_update_aircraft_vel(void);
 extern void ops_heart_beat_lose_handler(void);
+extern void ops_update_config_param(uint16_t param, uint8_t param_type);
+extern void rc_update_ops_config_param(uint8_t grade);
 
 #endif /*_OPS_APP_IF_H_*/
 /****************************** END OF FILE ***************************/

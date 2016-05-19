@@ -54,12 +54,12 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 
 /** process noise covariance Q */
 #ifndef VFF_EXTENDED_ACCEL_NOISE
-#define VFF_EXTENDED_ACCEL_NOISE 0.5
+#define VFF_EXTENDED_ACCEL_NOISE  0.5
 #endif
 
 #define Qbiasbias 1e-7
 #define Qoffoff 1e-4
-#define R_BARO 2.
+#define R_BARO 3.
 #define R_ALT 0.1
 #define R_OFFSET 1.
 
@@ -98,7 +98,7 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
   }
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "VFF_EXTENDED", send_vffe);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
 #endif
 }
 

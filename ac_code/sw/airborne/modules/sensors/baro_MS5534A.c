@@ -216,7 +216,6 @@ static void calibration(void)
   ut1 = (c5 << 3) + 20224;
 
 #ifndef BARO_NO_DOWNLINK
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_BARO_WORDS(DefaultChannel, DefaultDevice, &words[0], &words[1], &words[2], &words[3]);
 #endif
 }
@@ -271,7 +270,6 @@ void baro_MS5534A_event(void)
       baro_MS5534A_available = FALSE;
       baro_MS5534A_z = ground_alt + ((float)baro_MS5534A_ground_pressure - baro_MS5534A_pressure) * 0.084;
 #if SENSO_SYNC_SEND
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_BARO_MS5534A(DefaultChannel, DefaultDevice, &baro_MS5534A_pressure, &baro_MS5534A_temp, &baro_MS5534A_z);
 #endif
       float pressure = (float)baro_MS5534A_pressure;

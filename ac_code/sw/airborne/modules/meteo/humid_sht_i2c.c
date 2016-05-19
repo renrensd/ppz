@@ -102,8 +102,7 @@ void humid_sht_periodic_i2c(void)
       sht_status = SHT2_TRIG_TEMP;
       i2c_transmit(&SHT_I2C_DEV, &sht_trans, SHT_SLAVE_ADDR, 1);
       /* send serial number every 30 seconds */
-      RunOnceEvery((4 * 30), ( xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-         DOWNLINK_SEND_SHT_I2C_SERIAL(DefaultChannel, DefaultDevice, &sht_serial1, &sht_serial2)) );
+      RunOnceEvery((4 * 30), DOWNLINK_SEND_SHT_I2C_SERIAL(DefaultChannel, DefaultDevice, &sht_serial1, &sht_serial2));
       break;
   }
 }
@@ -170,7 +169,6 @@ void humid_sht_event_i2c(void)
         sht_trans.status = I2CTransDone;
 
         if (humid_sht_crc(sht_trans.buf) == 0) {
-			xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
           DOWNLINK_SEND_SHT_I2C_STATUS(DefaultChannel, DefaultDevice, &humidsht_i2c, &tempsht_i2c, &fhumidsht_i2c, &ftempsht_i2c);
         }
         break;
@@ -201,7 +199,6 @@ void humid_sht_event_i2c(void)
         sht_serial[6] = sht_trans.buf[4];
         sht_serial1 = sht_serial[7] << 24 | sht_serial[6] << 16 | sht_serial[5] << 8 | sht_serial[4];
         sht_serial2 = sht_serial[3] << 24 | sht_serial[2] << 16 | sht_serial[1] << 8 | sht_serial[0];
-		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
         DOWNLINK_SEND_SHT_I2C_SERIAL(DefaultChannel, DefaultDevice, &sht_serial1, &sht_serial2);
         sht_status = SHT2_IDLE;
         sht_trans.status = I2CTransDone;

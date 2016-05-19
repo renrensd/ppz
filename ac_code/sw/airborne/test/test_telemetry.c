@@ -62,7 +62,6 @@ static inline void main_init(void)
 static inline void main_periodic(void)
 {
   RunOnceEvery(50, {
-  	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);
 #ifdef UART_TX_LED
       LED_TOGGLE(UART_TX_LED);

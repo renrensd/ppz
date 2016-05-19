@@ -87,7 +87,6 @@ void enose_periodic(void)
       enose_status = ENOSE_IDLE;
     }
   }
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_ENOSE_STATUS(DefaultChannel, DefaultDevice, &enose_val[0], &enose_val[1], &enose_val[2], &enose_PID_val,
                              3, enose_heat);
 }

@@ -70,6 +70,7 @@
       <board name="krooz_sd"/>
       <board name="cc3d"/>
       <board name="elle*"/>
+      <board name="naze32*"/>
     </boards>
   </mode>
   <mode name="BlackMagic Probe (SWD)">
@@ -82,6 +83,8 @@
       <board name="px4fmu_.*"/>
       <board name="cc3d"/>
       <board name="elle*"/>
+      <board name="naze32*"/>
+      <board name="cjmcu*"/>
     </boards>
   </mode>
   <mode name="BlackMagic Probe (JTAG)">

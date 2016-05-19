@@ -206,6 +206,7 @@ void ahrs_float_invariant_propagate(struct Int32Rates* gyro, float dt)
   struct FloatEulers eulers;
   float foo = 0.f;
   FLOAT_EULERS_OF_QUAT(eulers, ahrs_float_inv.state.quat);
+ #if PERIODIC_TELEMETRY
   RunOnceEvery(3, 
      {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       pprz_msg_send_INV_FILTER(&(DefaultChannel).trans_tx, &(DefaultDevice).device,
@@ -228,6 +229,7 @@ void ahrs_float_invariant_propagate(struct Int32Rates* gyro, float dt)
         &foo,
         &foo);
       });
+ #endif
 #endif
 
 }

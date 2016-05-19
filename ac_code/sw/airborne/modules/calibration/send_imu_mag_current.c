@@ -33,11 +33,13 @@
 
 void send_imu_mag_current(void)
 {
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_IMU_MAG_CURRENT_CALIBRATION(DefaultChannel, DefaultDevice,
       &imu.mag_unscaled.x,
       &imu.mag_unscaled.y,
       &imu.mag_unscaled.z,
       &electrical.current);
+  #endif
 }
 

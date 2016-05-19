@@ -68,7 +68,8 @@ void ops_msg_start_spraying(void)
    	arg[0] = OPS_PRIO_GENERAL;
 	arg[1] = OPS_SPRAYING_START;
 
-   	ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+   	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 }
 
 /*******************************************************************************
@@ -83,7 +84,8 @@ void ops_msg_stop_spraying(void)
    	arg[0] = OPS_PRIO_GENERAL;
 	arg[1] = OPS_SPRAYING_STOP;
 
-   	ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+   	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+   	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 }
 
 /*******************************************************************************
@@ -106,7 +108,8 @@ void ops_msg_config_param(void)
 	arg[8] = ops_param.atom & 0xff;
 	arg[9] = ops_param.spray_chal;
 
-   	ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0a, &arg[0]);
+   	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0a, &arg[0]);
+   	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0a, &arg[0]);
 }
 
 /*---Private----------------------------------------------------------*/
@@ -153,7 +156,9 @@ void ops_uart_msg_handle(U8 const *frame)
 		case OPS_UART_DEV_MANAGE_SERVEICE:
 			ops_msg_device_manage_handler(&ops_uart_frame);
 			break;
-
+		case OPS_AIRCRAFT_SERVICE:
+            ops_msg_device_manage_handler(&ops_uart_frame);
+			break;
 		default:
 			break;
 	}

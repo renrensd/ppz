@@ -35,11 +35,11 @@ static const int32_t gh_max_accel = BFP_OF_REAL(GUIDANCE_H_REF_MAX_ACCEL, GH_ACC
 
 /** default second order model natural frequency */
 #ifndef GUIDANCE_H_REF_OMEGA
-#define GUIDANCE_H_REF_OMEGA 0.23//RadOfDeg(67.)   //0.36
+#define GUIDANCE_H_REF_OMEGA RadOfDeg(67.)   //0.36
 #endif
 /** default second order model damping */
 #ifndef GUIDANCE_H_REF_ZETA
-#define GUIDANCE_H_REF_ZETA  0.23  //0.25
+#define GUIDANCE_H_REF_ZETA  0.85
 #endif
 
 #define GH_ZETA_OMEGA_FRAC 10
@@ -98,7 +98,7 @@ float gh_set_omega(float omega)
 float gh_set_zeta(float zeta)
 {
   gh_ref.zeta = zeta;
-  Bound(gh_ref.zeta, 0.2f, 1.2f);//0.7f, 1.2f);
+  Bound(gh_ref.zeta, 0.2f, 1.2f);
   gh_ref.zeta_omega = BFP_OF_REAL((gh_ref.zeta * gh_ref.omega), GH_ZETA_OMEGA_FRAC);
   return gh_ref.zeta;
 }
@@ -137,8 +137,8 @@ void gh_update_ref_from_pos_sp(struct Int32Vect2 pos_sp)
   // sum accel
   VECT2_SUM(gh_ref.accel, speed, pos);
 
-  /* Compute max ref accel/speed along route(NED cor) before saturation */
-  gh_compute_ref_max(&pos_err); 
+  /* Compute max ref accel/speed along route before saturation */
+  gh_compute_ref_max(&pos_err);
 
   gh_saturate_ref_accel();
   gh_saturate_ref_speed();
@@ -153,6 +153,7 @@ void gh_update_ref_from_speed_sp(struct Int32Vect2 speed_sp)
 
   // compute speed error
   struct Int32Vect2 speed_err;
+ 
   INT32_VECT2_RSHIFT(speed_err, speed_sp, (INT32_SPEED_FRAC - GH_SPEED_REF_FRAC));
   VECT2_DIFF(speed_err, gh_ref.speed, speed_err);
   // convert to accel resolution
@@ -160,8 +161,24 @@ void gh_update_ref_from_speed_sp(struct Int32Vect2 speed_sp)
   // compute accel from speed_sp
   VECT2_SMUL(gh_ref.accel, speed_err, -gh_ref.inv_tau);
   INT32_VECT2_RSHIFT(gh_ref.accel, gh_ref.accel, GH_REF_INV_TAU_FRAC);
+  /*
+  speed_err.x = speed_sp.x >>(INT32_SPEED_FRAC - GH_SPEED_REF_FRAC);
+  speed_err.y = speed_sp.y >>(INT32_SPEED_FRAC - GH_SPEED_REF_FRAC);
 
-  /* using maxspeed Compute max ref accel/speed along route before saturation */
+  speed_err.x = gh_ref.speed.x - speed_err.x;
+  speed_err.y = gh_ref.speed.y - speed_err.y;
+
+  speed_err.x = speed_err.x >>(GH_SPEED_REF_FRAC - GH_ACCEL_REF_FRAC);
+  speed_err.y = speed_err.y >>(GH_SPEED_REF_FRAC - GH_ACCEL_REF_FRAC);
+
+  gh_ref.accel.x = -speed_err.x * gh_ref.inv_tau;
+  gh_ref.accel.y = -speed_err.y * gh_ref.inv_tau;  
+
+  gh_ref.accel.x = gh_ref.accel.x >> GH_REF_INV_TAU_FRAC;
+  gh_ref.accel.y = gh_ref.accel.y >> GH_REF_INV_TAU_FRAC;
+  */
+  
+  /* Compute max ref accel/speed along route before saturation */
   gh_compute_ref_max_speed(&speed_sp);
   gh_compute_ref_max_accel(&speed_err);
 
@@ -245,9 +262,9 @@ static void gh_saturate_ref_accel(void)
 static void gh_saturate_ref_speed(void)
 {
   if (gh_ref.speed.x <= -gh_ref.max_vel.x) {
-    gh_ref.speed.x = -gh_ref.max_vel.x;
-    if (gh_ref.accel.x <= 0) {
-      gh_ref.accel.x = 0;
+    gh_ref.speed.x = -gh_ref.max_vel.x;   //limit max speed
+    if (gh_ref.accel.x <= 0) {  
+      gh_ref.accel.x = 0;   //if accel is active,clear accel
     }
   } else if (gh_ref.speed.x >= gh_ref.max_vel.x) {
     gh_ref.speed.x = gh_ref.max_vel.x;

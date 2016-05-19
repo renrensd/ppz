@@ -7,19 +7,23 @@
 #include "mcu_periph/sys_time.h"
 #include "subsystems/datalink/downlink.h"
 #include "state.h"
+#include "subsystems/ops/ops_app_if.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "subsystems/rc_nav/rc_nav_xbee.h"
+#include "subsystems/mission/task_manage.h"
+#include "subsystems/mission/task_process.h"
 #include "uplink_ac.h"
 #include "subsystems/datalink/xbee.h"
-#include "subsystems/mission/mission_manage.h"
+#include "subsystems/monitoring/monitoring.h"
+
 //#include "subsystems/datalink/downlink.h"
 //#include "uplink_ac.h"
 
 //#define DOWNLINK_GCS_FREQUENCY 2
-#define HEART_BEART_A2G_FREQUENCY 2
+#define HEART_BEART_A2G_FREQUENCY 1
 #define RC_INFO_PC_FREQUENCY 0.5
-#define NAV_FLIGHT_FREQUENCY 0.5
-#define MISSION_REPORT__FREQUENCY 0.5
+#define NAV_FLIGHT_FREQUENCY 1
+//#define MISSION_REPORT__FREQUENCY 0.5
 #define RC_CHECK_FREQUENCY  2
 
 void downlink_gcs_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
@@ -39,18 +43,11 @@ void downlink_pc_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
 	RunOnceEvery( TELEMETRY_FREQUENCY/NAV_FLIGHT_FREQUENCY, 
 	              { //if(xbee_con_info.gcs_con_available==FALSE) return;
 				    send_nav_flight();                              } );
+
     RunOnceEvery( TELEMETRY_FREQUENCY/NAV_FLIGHT_FREQUENCY, 
 	              { if(xbee_con_info.gcs_con_available==FALSE) return;
-				    mission_status_report();                        } );
+				    send_task_info_pc();                        } );
 					
-}
-
-void downlink_rc_periodic( )    //2Hz
-{      
-	if(xbee_con_info.rc_con_available==TRUE)
-	{
-		RunOnceEvery( TELEMETRY_FREQUENCY/RC_CHECK_FREQUENCY, rc_lost_check() );
-	}
 }
 
 void send_heart_beat_A2G_msg(void)  
@@ -74,22 +71,26 @@ void send_heart_beat_A2G_msg(void)
    */
  /*static uint8_t n=0;  //only for debug
    n=(n+1)%10;*/
-   uint16_t system_time=sys_time.nb_sec;
-   uint8_t  link_gcs_quality=100;  //the information reserve
-   uint8_t  link_rc_quality=100;   //the information reserve
-   uint8_t  link_rssi=100;         //the information reserve
-   uint32_t devices_status=0;      //reserve
-   uint32_t flight_status=get_flight_status();
-   float    heading=(stateGetNedToBodyEulers_f()->psi) * 57.3;
-   int16_t speed=(int16_t)( (*stateGetHorizontalSpeedNorm_f())*100 );
-   int32_t pos_x=(int32_t)( (stateGetPositionNed_f()->x )*1000 );
-   int32_t pos_y=(int32_t)( (stateGetPositionNed_f()->y )*1000 );
-   int32_t pos_z=(int32_t)( (stateGetPositionEnu_f()->z )*1000 );
-   int32_t pos_lon=(int32_t)( (stateGetPositionLla_f()->lon)*572957795 );  //stateGetPositionLla_f()->lon  572957795  1289617
-   int32_t pos_lat=(int32_t)( (stateGetPositionLla_f()->lat)*572957795 );   //stateGetPositionLla_f()->lat
-   int8_t  battery_remain=85;
-   int8_t  pesticides_remain=90;
-   int16_t error_code=0;
+   uint16_t system_time = sys_time.nb_sec;
+   uint8_t  link_gcs_quality = 100;  //the information reserve
+   uint8_t  link_rc_quality = 100;   //the information reserve
+   uint8_t  link_rssi = 100;         //the information reserve
+   uint8_t  ac_ready = (uint8_t)ground_check_pass;
+   uint32_t devices_status = 0;      //reserve
+   uint32_t fl_status = get_flight_status();
+   
+   float   heading = (stateGetNedToBodyEulers_f()->psi) * 57.2957795;
+   int16_t speed = (int16_t)( stateGetHorizontalSpeedNorm_f()*100 );
+   int32_t pos_x = (int32_t)( (stateGetPositionNed_f()->x )*1000 );
+   int32_t pos_y = (int32_t)( (stateGetPositionNed_f()->y )*1000 );
+   int32_t pos_z = (int32_t)( (stateGetPositionEnu_f()->z )*1000 );
+   int32_t pos_lon = (int32_t)( (double)stateGetPositionLla_f()->lon * 100000000.0);  //stateGetPositionLla_f()->lon  572957795  1289617
+   int32_t pos_lat = (int32_t)( (double)stateGetPositionLla_f()->lat * 100000000.0);   //stateGetPositionLla_f()->lat
+
+   int8_t  battery_remain = (int8_t)bat_info.percent;
+   int8_t  pesticides_remain = (int8_t)ops_info.res_cap;
+   uint8_t spray_state = ops_info.spray_state;
+   int16_t error_code = 0;
 
    xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);	 //ack processing need handle later
    DOWNLINK_SEND_HEART_BEAT_AC_GCS_STATE(DefaultChannel, DefaultDevice, 
@@ -97,8 +98,9 @@ void send_heart_beat_A2G_msg(void)
    	                                     &link_gcs_quality, 
    	                                     &link_rc_quality, 
    	                                     &link_rssi, 
+   	                                     &ac_ready,
    	                                     &devices_status, 
-   	                                     &flight_status, 
+   	                                     &fl_status, 
    	                                     &heading,
    	                                     &speed, 
    	                                     &pos_x, 
@@ -108,32 +110,37 @@ void send_heart_beat_A2G_msg(void)
    	                                     &pos_lat, 
    	                                     &battery_remain, 
    	                                     &pesticides_remain,
+   	                                     &spray_state,
    	                                     &error_code);
    
 }
 
 void send_rc_info_A2P_msg(void)
 {
-	//if(flight_mode!=nav_rc_mode) return;
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);	 //ack processing need handle later
+	#if PERIODIC_TELEMETRY
+	 xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);	 //ack processing need handle later
     DOWNLINK_SEND_RC_INFO(DefaultChannel, DefaultDevice, 
 	                      &rc_set_info.vtol,
 	                      &rc_set_info.home,
-	                      &rc_set_info.spray,
+	                      &rc_set_info.spray_grade,
 	                      &rc_motion_cmd,
 	                      &rc_set_cmd,
-	                      &last_response,
+	                      &rc_motion_info.rotation_rate,
 	                      &rc_lost,
-	                      &fb_speed,
-	                      &rl_speed);	
+	                      &rc_motion_info.speed_fb,
+	                      &rc_motion_info.speed_rl);	
+	#endif
 }
 
-void send_nav_flight()
+void send_nav_flight(void)
 {
+	#if PERIODIC_TELEMETRY
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);	 //ack processing need handle later
 	DOWNLINK_SEND_NAV_FLIGHT(DefaultChannel, DefaultDevice,
 		                     &flight_state,
 		                     &flight_mode,
-		                     &mission_state );
+		                     &task_state );
+	#endif
 }
 
 #if 0

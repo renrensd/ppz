@@ -77,7 +77,7 @@ static inline void main_init(void)
 
 static inline void main_periodic_task(void)
 {
-  RunOnceEvery(100, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);});
+  RunOnceEvery(100, DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM));
 
   if (sys_time.nb_sec > 1) {
     lis302dl_spi_periodic(&lis302);
@@ -100,8 +100,7 @@ static inline void main_event_task(void)
     VECT3_COPY(accel, lis302.data.vect);
     lis302.data_available = FALSE;
 
-    RunOnceEvery(10, { 
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+    RunOnceEvery(10, {
       DOWNLINK_SEND_IMU_ACCEL_RAW(DefaultChannel, DefaultDevice,
       &accel.x, &accel.y, &accel.z);
 #if USE_LED_6

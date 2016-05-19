@@ -40,6 +40,9 @@
 #endif
 #endif
 
+#include "calibration.h"
+
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
@@ -92,6 +95,9 @@ static void send_gyro(struct transport_tx *trans, struct link_device *dev)
 static void send_mag_raw(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+  #ifdef CALIBRATION_OPTION
+  cali_magraw_to_txt(imu.mag_unscaled.x, imu.mag_unscaled.y, imu.mag_unscaled.z);
+  #endif
   pprz_msg_send_IMU_MAG_RAW(trans, dev, AC_ID,
                             &imu.mag_unscaled.x, &imu.mag_unscaled.y, &imu.mag_unscaled.z);
 }
@@ -143,15 +149,15 @@ void imu_init(void)
   orientationSetEulers_f(&imu.body_to_imu, &body_to_imu_eulers);
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "IMU_ACCEL_RAW", send_accel_raw);
-  register_periodic_telemetry(DefaultPeriodic, "IMU_ACCEL_SCALED", send_accel_scaled);
-  register_periodic_telemetry(DefaultPeriodic, "IMU_ACCEL", send_accel);
-  register_periodic_telemetry(DefaultPeriodic, "IMU_GYRO_RAW", send_gyro_raw);
-  register_periodic_telemetry(DefaultPeriodic, "IMU_GYRO_SCALED", send_gyro_scaled);
-  register_periodic_telemetry(DefaultPeriodic, "IMU_GYRO", send_gyro);
-  register_periodic_telemetry(DefaultPeriodic, "IMU_MAG_RAW", send_mag_raw);
-  register_periodic_telemetry(DefaultPeriodic, "IMU_MAG_SCALED", send_mag_scaled);
-  register_periodic_telemetry(DefaultPeriodic, "IMU_MAG", send_mag);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_ACCEL_RAW, send_accel_raw);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_ACCEL_SCALED, send_accel_scaled);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_ACCEL, send_accel);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_GYRO_RAW, send_gyro_raw);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_GYRO_SCALED, send_gyro_scaled);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_GYRO, send_gyro);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_MAG_RAW, send_mag_raw);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_MAG_SCALED, send_mag_scaled);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IMU_MAG, send_mag);
 #endif // DOWNLINK
 
   imu_impl_init();

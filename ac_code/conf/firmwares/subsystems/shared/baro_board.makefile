@@ -161,7 +161,7 @@ else ifeq ($(BOARD), hbmini)
 # krooz baro
 else ifeq ($(BOARD), krooz)
   BARO_BOARD_CFLAGS += -DBARO_BOARD=BARO_MS5611_I2C
-  BARO_BOARD_CFLAGS += -DUSE_I2C3
+#  BARO_BOARD_CFLAGS += -DUSE_I2C1
   BARO_BOARD_CFLAGS += -DBB_MS5611_I2C_DEV=i2c3
   BARO_BOARD_SRCS += peripherals/ms5611.c
   BARO_BOARD_SRCS += peripherals/ms5611_i2c.c
@@ -189,6 +189,15 @@ else ifeq ($(BOARD), umarim)
     BARO_BOARD_SRCS += peripherals/ads1114.c
     BARO_BOARD_SRCS += boards/umarim/baro_board.c
   endif
+
+# Naze32
+else ifeq ($(BOARD), naze32)
+    BARO_BOARD_CFLAGS += -DBARO_BOARD=BARO_MS5611_I2C
+    BARO_BOARD_CFLAGS += -DUSE_I2C2
+    BARO_BOARD_CFLAGS += -DBB_MS5611_I2C_DEV=i2c2
+    BARO_BOARD_SRCS += peripherals/ms5611.c
+    BARO_BOARD_SRCS += peripherals/ms5611_i2c.c
+    BARO_BOARD_SRCS += boards/baro_board_ms5611_i2c.c
 
 endif # check board
 

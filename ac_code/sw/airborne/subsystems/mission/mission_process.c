@@ -14,6 +14,21 @@
 
 #define ERROR_LAND_DISTANCE 3
 
+// navigation time step
+const float dt_navigation = 1.0 / ((float)NAV_FREQ);
+
+//last_mission_wp, last target wp from mission elements, not used actively and kept for future implementations
+struct EnuCoor_i last_mission_wp = { 0., 0., 0. };
+
+
+static inline bool_t mission_nav_wp(struct EnuCoor_i *first_wp);
+static inline bool_t mission_nav_circle(struct _mission_element *el);
+static inline bool_t mission_nav_path(struct _mission_element *el);
+static inline bool_t mission_nav_survey(struct _mission_element *el);
+static inline bool_t mission_nav_hover(void);
+static inline bool_t mission_nav_home(struct _mission_element *el);
+
+
 
 /// Utility function: converts lla (float) to local point (float)
 bool_t mission_point_of_lla(struct EnuCoor_f *point, struct LlaCoor_f *lla)
@@ -30,11 +45,7 @@ bool_t mission_point_of_lla(struct EnuCoor_f *point, struct LlaCoor_f *lla)
   return TRUE;
 }
 
-// navigation time step
-const float dt_navigation = 1.0 / ((float)NAV_FREQ);
 
-//last_mission_wp, last target wp from mission elements, not used actively and kept for future implementations
-struct EnuCoor_i last_mission_wp = { 0., 0., 0. };
 
 /** Navigation function to a single waypoint
 */
@@ -202,7 +213,8 @@ static inline bool_t mission_nav_survey(struct _mission_element *el)
 */
 static inline bool_t mission_nav_home(struct _mission_element *el)
 {
-    bool_t  home_state=mission_nav_path(el);
+    bool_t home_state;
+	home_state = mission_nav_path(el);
 	if(!home_state)
 	{
 	 /*
@@ -224,7 +236,7 @@ static inline bool_t mission_nav_home(struct _mission_element *el)
 	}
 }
 
-static inline bool_t mission_nav_hover()
+static inline bool_t mission_nav_hover(void)
 {
    horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
    struct EnuCoor_i pos_current;

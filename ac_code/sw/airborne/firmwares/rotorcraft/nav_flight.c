@@ -12,51 +12,72 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/rc_nav/rc_nav_xbee.h"
 
+#include "subsystems/monitoring/monitoring.h" 
 #include "subsystems/gps.h"
 #ifndef USE_MISSION
 #include "generated/flight_plan.h"
 #endif
-uint8_t  flight_mode;       //nav_gcs_mode/nav_rc_mode,requested autopilot_mode=NAV
-uint32_t flight_status=0;    
-bool_t  auto_convert=FALSE;    //flag,use mission running interrupt
-bool_t  nav_toward_wp_flag=FALSE;   //flag,use to clear old info in toward_one_wp flight
-enum Flight_State flight_state;
-uint8_t mission_state;         //only for debug,is mission_run return value
+
+#include "firmwares/rotorcraft/pvtolc.h"
+
+/*use for rc drift timer update*/
+#include "modules/system/timer_if.h"
+#include "modules/system/timer_class.h"
+#include "modules/system/timer_def.h"
+
+
+uint8_t  flight_mode;       //nav_gcs_mode/nav_rc_mode,requested autopilot_mode==NAV
+
+uint32_t flight_status = 0; 
+uint32_t device_status = 0;
+
+bool_t  auto_ms_interrupt = FALSE;    //flag,use mission running interrupt
+bool_t  nav_toward_wp_flag = FALSE;   //flag,use to clear old info in toward_one_wp flight
 struct EnuCoor_i wp_home_tk,wp_ms_break,wp_start;   //record home/mission break/toward flight start waypoint
+float distance2_to_home;
+
+enum Flight_State flight_state;
+static uint8_t flight_step = 0;
+Gcs_State task_state;
+
 struct config_info ac_config_info;  //aircraft config infomation,have initial default value,change by gcs setting config
 
-static int8_t gps_check_before_flight();
-static void  ac_config_set_default();
+static void ept_ms_run(void);
+static void nav_mode_enter(void);
+static int8_t gps_check_before_flight(void);
+static void  ac_config_set_default(void);
 
-/*****************************
- *****flight nav function****
- *****************************/
+
+
 void nav_flight_init(void)
-{  
-  flight_mode=nav_gcs_mode;  //default in nav_gcs_mode
-  auto_convert=FALSE;
-  nav_toward_wp_flag=FALSE;
-  mission_init();            //mission initial
-  ac_config_set_default();
-  rc_set_info_init();        //rc info initial
+{ 
+	flight_mode=nav_gcs_mode;  //default in nav_kill_mode
+	auto_ms_interrupt=FALSE;
+	nav_toward_wp_flag=FALSE;
+	task_init();            //mission initial
+	rc_nav_init();             //rc info initial
+	ac_config_set_default();
 }
 
+/***********************************************************************
+* FUNCTION    : flight_demo
+* DESCRIPTION : only use in demo flight,navigation flight include fixed 
+*               flight plan and key RC(request not set micro USE_MISSION)
+* INPUTS      : void
+* RETURN      : unuseful
+***********************************************************************/
 #ifndef USE_MISSION
-//only use in demo flight,which is using fixed flight plan
 uint8_t flight_demo(void)
 {   
+	//rc_drift timer update
+	tm_stimulate(TIMER_TASK_RC);
+	
 	//request enter nav_mode
-	if ( autopilot_mode!=AP_MODE_NAV) 
-	{
-		//reset after in other mode
-		  flight_mode=nav_gcs_mode;  //default in nav_gcs_mode,how to use nav_kill_mode?
-		  auto_convert=FALSE;
-		  nav_toward_wp_flag=FALSE;
-		  //mission_init();
-		  rc_set_info_init();
-		  pvtol_all_reset(TRUE);  //reset all motion step
-		  return TRUE;
-	}
+    if ( autopilot_mode!=AP_MODE_NAV) 
+    {
+		nav_mode_enter();
+		return TRUE;
+    }
 	//when enter,3Dfix requested
 	if( gps_check_before_flight() ) return TRUE;
 
@@ -65,7 +86,7 @@ uint8_t flight_demo(void)
 	    static bool_t auto_start_flag=FALSE;
 		if(!auto_start_flag)    //it limit one flight finished have to restart
 		{
-			if( get_mission_executable() && nav_block==2 )   //check mission exist and flight is ready
+			if( 0 )// get_mission_executable() && nav_block==2 )   //check mission exist and flight is ready
 			{
 				nav_block=3;  //set nav_block=start engine,begin auto flight
 				auto_start_flag=TRUE;
@@ -73,6 +94,7 @@ uint8_t flight_demo(void)
 			}
 		}
 		auto_nav_fp();   //run fixed flight plan
+		return TRUE;
 	}
 	
 	else if(flight_mode==nav_rc_mode)
@@ -80,8 +102,11 @@ uint8_t flight_demo(void)
 		if(rc_set_info.vtol==TAKE_OFF)   
 		{   
 			if( take_off_motion(FALSE) )   return TRUE;    //running take off motion
-			record_current_waypoint(wp_home_tk);  //record take off waypoint as wp_home_tk,but convert from flightplan will be except
-            RC_HOVER();   //set hover for rc motion cmd
+			
+			record_current_waypoint(&wp_home_tk);  //record take off waypoint as wp_home_tk,but convert from flightplan will be except
+
+			rc_mode_enter();	
+			
 			rc_set_info.vtol=CRUISE;  //finish take off(will stay in h=1.2m), turn to cruise
 			return FALSE;
 		}
@@ -89,12 +114,18 @@ uint8_t flight_demo(void)
 		{
 			if(rc_set_info.home)   //check if start back home cmd
 			{
-				if( !(rc_set_info.home) )  {  RC_HOVER();   return FALSE;  }   //stop home(interrupt), turn to hover
+				if( !(rc_set_info.home) )   //stop home(interrupt), turn to hover
+				{  
+					rc_mode_enter();
+					RC_HOVER();   
+					return FALSE;  
+				}  
 				else  
 				{
 					if(nav_toward_wp_flag)    //reset toward flight once
-	                {
+	              {
 			  	        nav_toward_waypoint(&wp_home_tk,TRUE);   //flight to home waypoint
+			  	        RC_HOVER();  
 				        nav_toward_wp_flag=FALSE;
 	         		}
 					if(nav_toward_waypoint(&wp_home_tk,FALSE)==0)   //if arrived at home, do landing
@@ -111,6 +142,7 @@ uint8_t flight_demo(void)
 		{
 			if( land_motion(FALSE) ) return TRUE;   //doing landing motion
 			rc_set_info.vtol=LOCKED;   //finish land, motors keep locked
+			rc_set_info.locked =TRUE;  //lock take off cmd
 			return FALSE;
 		}
 		else if(rc_set_info.vtol==LOCKED) 
@@ -126,193 +158,278 @@ uint8_t flight_demo(void)
 }
 #endif
 
-/***************************************/
-/****dynamic mission flight function****/
-/***************************************/
-/* !request autopilot mode =NAV;
-   !in flight,gcs_mode can change to rc_mode,but exchange will be dangerous
-   !can't change autopilot mode into NAV from other mode in light,otherwise damage
-*/
-bool_t nav_flight()
+/***********************************************************************
+* FUNCTION    : nav_flight
+* DESCRIPTION : key RC and android gcs supported,fix flight plan is shielded
+* INPUTS      : void
+* RETURN      : unuseful
+***********************************************************************/
+/*  request autopilot mode =NAV;
+ *  in flight,gcs_mode can change to rc_mode,but exchange will be dangerous
+ *  can't change autopilot mode into NAV from other mode in light,otherwise damage
+ */
+void nav_flight(void)
 { 
-  static uint8_t step=0;
-  if ( autopilot_mode!=AP_MODE_NAV) 
+  if ( autopilot_mode != AP_MODE_NAV) 
   {
-	//reset flight status ,in other mode
-	flight_mode=nav_gcs_mode;  //default in nav_gcs_mode,how to use nav_kill_mode?
-	auto_convert=FALSE;
-	nav_toward_wp_flag=FALSE;
-	//mission_init();
-	rc_set_info_init();
-	pvtol_all_reset(TRUE);  //reset all motion step
-	step=0;  //restart
-	return TRUE;
+  	  nav_mode_enter();
+	  return;  /*stop run*/
   }
 
-  //when enter,gps 3Dfix requested
-  if( gps_check_before_flight() ) return TRUE;
+  /*when enter,gps 3Dfix requested*/  
+  if( gps_check_before_flight() ) 
+  {
+  	  return;  /*stop run*/
+  }
+
+  /*caculate distance to takeoff waypoint*/
+  RunOnceEvery( NAV_FREQ,
+      { if(flight_state==cruising)  distance2_to_home =get_dist2_to_point(&wp_home_tk); } );
+
+  /*RC timer run*/
+  tm_stimulate(TIMER_TASK_RC);
   
-  //uint8_t mission_state;
-  switch(step) {
-  	case 0:  //flight prepare  (lock motors -->wait GPS fixed and set ground reference)
-  	  flight_state=preparing;
-	  
-      if( flight_prepare(FALSE) )  return TRUE;  //process flight_prepare,no ltp_pos setting,only use flight plan local wp as ltp_pos
-      step++;
-	  break;
-	  
-	case 1:  //wait take_off cmd
-	  flight_state=ready;
-	  
-	  //wait take_off ready and cmd
-	  if(flight_mode==nav_gcs_mode && !autopilot_in_flight)
-	  {
-	  	   lock_motion(FALSE);   //lock, keep safty   	   
-	  	   
-           if( get_mission_executable() )    //check mission if exist
-		   {  
-		   	  flight_mode_enter(nav_gcs_mode);   //make sure get sp before take off,meas less
-		      step++;  	  
-           }
-	  }
-	  else if(flight_mode==nav_rc_mode && !autopilot_in_flight)
-	  {    
-	  	   if(rc_set_info.vtol==LAND)  rc_set_info.vtol=LOCKED;  //clear land,indicate land finished
-	  	   else if(rc_set_info.vtol==TAKE_OFF) 
-		   {  
-		   	  flight_mode_enter(nav_rc_mode); 	//make sure get setpoint pos before take off,meas less
-			  step++;
-	  	   }
-		   else   //if(rc_set_info.vtol==LOCKED/CRUISE)
-		   {  
-		   	  rc_set_info.vtol=LOCKED;     //set into locked
-		   	  if( lock_motion(FALSE) ) return TRUE;   //continual lock
-			  return FALSE;
-		   }
-	  }	  
-	  break;
-	  
-	case 2:  //taking_off   in nav_rc_mode,it will refuse other motion cmd
-	  flight_state=taking_off;
-	  
-	  if( take_off_motion(FALSE) ) return TRUE;  //process take off motion
-	  record_current_waypoint(wp_home_tk);  //record take off waypoint as wp_home_tk
-
-	  step++;  //take_off motion finished, next
-	  break;
-	  
-	case 3:  //normal flight
-	  flight_state=cruising;
-     
-	  //nav_rc_mode, in crusing,allow change to land or home
-	  if(flight_mode==nav_rc_mode && autopilot_in_flight)  
-	  {
-           if(rc_set_info.vtol==TAKE_OFF)  
-		   {
-		   	  rc_set_info.vtol=CRUISE;		//clear take off,indicate take_off finished 
-		   	  RC_HOVER();   //set hover for rc motion cmd
-           }
-		   else if(rc_set_info.vtol==LAND)
-		   {
-		   	   step=5;   break;  //goto landing			   
-		   }
-		   else if(rc_set_info.home)
-		   {
-		   	   step=4;   break;  //goto home			   
-		   }
-		   //else: execution rc_cmd
-		   return TRUE;  //process rc flight
-	  }
-	  else if(flight_mode==nav_gcs_mode && autopilot_in_flight)
-	  {
-	  	  if(FALSE)   //auto_convert)   //do not doing now
-	  	  {
-		  	 if(nav_toward_wp_flag)    //reset toward flight once
-	         {
-	  	        nav_toward_waypoint(&wp_ms_break,TRUE);   //flight toward mission break wp,continual mission_running
-		        nav_toward_wp_flag=FALSE;
-	         }
-		  	 if(nav_toward_waypoint(&wp_ms_break,FALSE)==0)   auto_convert=FALSE;  
-			 else  return TRUE;
-	  	  }
-		  
-		  else   //normal mission running
-		  {
-		  	 mission_state=mission_run();           //processs mission flight
-	  	     if(mission_state==0)  return TRUE;		//mission is running  
-
-			 //finished success,goto landing
-	         else if(mission_state==1)              
-			 {    
-			 	step=5;  //go to landing motion
-				break;   
-			 }
-
-			 //fail doned
-		     else    
-		     {
-		   	   //report mission_state error,should goto step 4.now we only let it land
-			 	step=5;  //go to landing motion
-				break;   
-		     }
-		  }
-	  }
-      break;
-
-	case 4:  //direct home back,rc_mode is finished,but gcs mode is incomleted
-	  flight_state=home;
-
-	  if(flight_mode==nav_rc_mode && !rc_set_info.home)  //stop home, return to cruise,start from hover status
-	  {
-	  	  step=3;  //return to cruise
-		  rc_motion_cmd_execution(0x00);  //set hover	
-		  nav_toward_wp_flag=TRUE;
-	  }
-	  if(nav_toward_wp_flag)    //reset toward flight once
-	  {
-	  	  nav_toward_waypoint(&wp_home_tk,TRUE); 
-		  nav_toward_wp_flag=FALSE;
-	  }
-	  if(nav_toward_waypoint(&wp_home_tk,FALSE)==0)    //arrived home, can do land motion
-	  step++; 
-	  break;
-
-	case 5: //landing
-	  flight_state=landing;
-	  
-	  if( land_motion(FALSE) ) return TRUE;   //doing landing
-	  mission_init();
-	  //if(!mission_clear_all()) return TRUE;   //finished mission,reset mission_manager.so it could accept continual mission
-	  step=1;  //if land motion finished,turn to ready state
-      break;
-	  
-	default: return FALSE;  //finish flight
-  } 
-  return TRUE;
+  /*run except mission from monitoring*/
+  //ept_ms_run();
   
+  /*main nav run with flight step*/
+  switch(flight_step)
+  {
+  	   case 0:  /*flight prepare  (lock motors -->wait GPS fixed and set ground reference)*/
+  	   		flight_state = preparing;
+			if( !flight_prepare(FALSE) )  
+			{
+				flight_step++;  /*once prepare finish, jump to next step:ready*/
+			}
+			
+			break;
+			
+		case 1:  /*wait take_off cmd*/
+			flight_state = ready;
+
+			/*gcs mode*/
+			if( flight_mode==nav_gcs_mode && !autopilot_in_flight )
+			{
+				lock_motion(FALSE);   /*lock motor, keep safe*/ 
+				
+				if( auto_task_ready_check() )   /*get gcs start cmd*/
+				{
+					flight_mode_enter(nav_gcs_mode);   //make sure get sp before take off,meas less
+					flight_step++;  /*once get gcs start cmd, jump to next step: take off*/
+				}
+			}
+
+			/*rc mode*/
+			else if( flight_mode==nav_rc_mode && !autopilot_in_flight )
+			{  
+				if(rc_set_info.vtol == LAND)
+				{
+					rc_set_info.vtol = LOCKED;  /*finish land, reset to locked*/
+					rc_set_info.locked = TRUE;  /*lock, refuse other rc cmd until unlock cmd*/
+				}
+		  	   else if(rc_set_info.vtol==TAKE_OFF) 
+			   {
+			   		flight_mode_enter(nav_rc_mode); 	/*get rc take off cmd*/
+					flight_step++;
+		  	   }
+			   else   /*rc_set_info.vtol==LOCKED/CRUISE*/
+			   {
+			   		rc_set_info.vtol = LOCKED;     /*keep locked for safe*/
+			   		lock_motion(FALSE);
+			   }
+			}
+			
+			break;
+
+		case 2:  /*take off motion*/
+			flight_state = taking_off;
+
+			if( !take_off_motion(FALSE) )  //process take off motion
+			{
+				record_current_waypoint(&wp_home_tk);  /*record take off waypoint as wp_home_tk*/
+				flight_step++;          /*take_off motion finished, next cruise step*/
+			}
+			break;
+
+		case 3:   /*cruise, normal flight*/
+			flight_state = cruising;
+
+			/*gcs mode*/
+			if(flight_mode==nav_gcs_mode && autopilot_in_flight)
+			{
+				if(0)   //task interrupt ,do not doing now
+				{
+					/*
+					if(nav_toward_wp_flag)    //reset toward flight once
+					{
+						nav_toward_waypoint(&wp_ms_break,TRUE);   //flight toward mission break wp,continual mission_running
+						nav_toward_wp_flag=FALSE;
+					}
+					if(nav_toward_waypoint(&wp_ms_break,FALSE)==0)   auto_ms_interrupt = FALSE;  
+					else  break;
+					*/
+				}
+
+				else   /*run gcs task*/
+				{
+					task_state = gcs_task_run();
+					
+					if( GCS_RUN_LANDING==task_state ) /*task finished success,goto landing*/
+					{
+						flight_step = 5;  //goto landing motion
+					}
+					//else task state need add !!!
+				}
+			}
+
+			/*rc mode*/
+			else if(flight_mode==nav_rc_mode && autopilot_in_flight)  
+			{
+				if(rc_set_info.vtol==TAKE_OFF)  /*take_off finished, convert to cruise*/
+				{
+					rc_set_info.vtol = CRUISE;		 
+					rc_mode_enter(); 
+				}
+				else if(rc_set_info.vtol==LAND)
+				{
+					RC_HOVER();
+					flight_step = 5;          //goto landing
+				}
+				else if(rc_set_info.home)
+				{
+					RC_HOVER();
+					flight_step = 4;          //goto home
+				}
+				//else: execution rc_cmd
+			}
+			
+			break;
+
+		case 4:  /*back home, only for rc mode*/
+			flight_state = home;
+
+			if(flight_mode == nav_rc_mode)
+			{
+				/*stop home,convert to cruise(hover)*/
+				if(!rc_set_info.home)  /*stop home motion, return to cruise*/
+				{
+					flight_step = 3;  //return to cruise(mode enter)
+					rc_mode_enter();
+					nav_toward_wp_flag = TRUE;
+				}
+
+				/*run back home */
+				if(nav_toward_wp_flag)    //reset toward flight once
+				{
+					nav_toward_waypoint(&wp_home_tk,TRUE); 
+					nav_toward_wp_flag = FALSE;
+				}
+				else if(0 == nav_toward_waypoint(&wp_home_tk,FALSE))    
+				{
+					rc_set_info.vtol = LAND;
+					rc_set_info.home = FALSE;
+					flight_step++;            /*arrived home, jump to next step: land motion*/
+				}
+			}
+			else if(flight_mode == nav_gcs_mode)
+			{
+				flight_step = 3;  /*gcs mode not use home motion here,jump to cruise*/
+			}
+
+			break;
+
+		case 5: /*land motion(need set hover before land)*/
+			flight_state = landing;
+
+			if( !land_motion(FALSE) )   //doing landing
+			{
+				if(nav_gcs_mode == flight_mode)
+				{
+					task_init();  /*reset task*/
+				}
+				flight_step = 1;  /*land motion finished,jump to ready state*/
+			}
+			break;
+
+		default: 
+			break;  /*error step*/
+	}
 }
+
+static void nav_mode_enter(void)
+{
+	//reset flight status ,in other mode
+	flight_mode = nav_gcs_mode;  //default in nav_rc_mode,how to use nav_kill_mode?
+	auto_ms_interrupt = FALSE;
+	nav_toward_wp_flag = FALSE;
+	rc_set_info_init();
+	pvtol_all_reset(TRUE);  //reset all motion step
+	flight_step = 0;  //restart
+}
+
+static void ept_ms_run(void)
+{
+	static uint8_t last_cmd =CM_NONE;
+	if(flight_state==landing)
+	{
+		cur_cmd =CM_LAND;
+		last_cmd =cur_cmd;
+		return;
+	}	
+	if(last_cmd==cur_cmd) 
+	{ //same cmd,void do again 
+		return;    
+	} 
+	
+	if(flight_mode==nav_rc_mode)
+	{
+		if(flight_state>taking_off && (cur_cmd+2) >=flight_state )  
+		{
+			flight_step =cur_cmd+2;    //change nav_flight step,so it will do cur_cmd
+			if(cur_cmd==CM_HOVER)
+			{
+				RC_HOVER();     //do hover
+			}
+			if(cur_cmd==CM_HOME)
+			{
+				rc_set_info.home=TRUE;
+			}
+			last_cmd =cur_cmd;   //update last_cmd
+		}
+		if(cur_cmd==CM_NONE)
+		{
+			if( last_cmd==CM_HOME && flight_state==home)   //make sure motion(hover/home/land) is trige by cur_cmd,and stop it
+			{
+				flight_step =3; //back to cruise
+				rc_set_info.home=FALSE;
+				RC_HOVER();     //do hover,wait rc_cmd
+			}
+			last_cmd =cur_cmd;   //update last_cmd
+		}
+	}	
+}
+
 
 /*flight mode change transition*/
 void flight_mode_enter(uint8_t new_mode)
 {
-	if(flight_mode==new_mode) return;
+	if(flight_mode == new_mode) return;
 	flight_mode=new_mode;
 	
-	if(flight_mode==nav_rc_mode)
+	if(flight_mode == nav_rc_mode)
 	{   
 		rc_set_info_reset();        //clear rc_set_info
 		guidance_h_nav_rc_enter();  //guidance_enter run
 		if(autopilot_in_flight)     //if in_flight,hover
 		{
-			record_current_waypoint(wp_ms_break);  //record mission break waypoint,use recover mission run
+			record_current_waypoint(&wp_ms_break);  //record mission break waypoint,use recover mission run
 			rc_set_info.vtol=CRUISE;
-            //RC_HOVER();  
-
-			rc_motion_cmd_execution(0x00);
+			RC_HOVER();  
 		}
 		else
 		{
-			rc_set_info.vtol=LOCKED;
+			rc_set_info.vtol = LOCKED;
+			rc_set_info.locked = TRUE;
 		}
 		nav_toward_wp_flag=TRUE;
 		//else prepare_flight; 		
@@ -320,7 +437,7 @@ void flight_mode_enter(uint8_t new_mode)
 	
 	else if(flight_mode==nav_gcs_mode)
 	{
-	    //auto_convert=TRUE;   //not consist of
+	    //auto_ms_interrupt=TRUE;   //not consist of
 	   #ifndef USE_MISSION
 	   /*
 	    if(autopilot_in_flight) flight_mode=nav_rc_mode;  //refuse to enter auto if in flight( already refues in rc_set_mode
@@ -333,6 +450,26 @@ void flight_mode_enter(uint8_t new_mode)
 	//else { nav_kill_mode}
 	
 }
+
+
+void rc_mode_enter(void)
+{
+	rc_set_info_reset();        //clear rc_set_info
+	guidance_h_nav_rc_enter();  //guidance_enter run
+	
+	if(autopilot_in_flight)     //if in_flight,hover
+	{
+		rc_set_info.vtol=CRUISE;
+		RC_HOVER();  
+	}
+	else
+	{
+		rc_set_info.vtol = LOCKED;
+		rc_set_info.locked = TRUE;
+	}
+	nav_toward_wp_flag = TRUE;	
+}
+
 
 uint32_t get_flight_status(void)
 {                
@@ -374,11 +511,13 @@ uint32_t get_flight_status(void)
 
   //if mainpower_on
   flight_status |=0x00000100;
+
+  return flight_status;
 	
 }
 
 //return FALSE meas check pass
-static int8_t gps_check_before_flight()
+static int8_t gps_check_before_flight(void)
 {
 	static bool_t gps_fix_flag=FALSE;
 	static uint16_t gps_fix_count=0;
@@ -404,10 +543,10 @@ static int8_t gps_check_before_flight()
 //called in initial
 static void  ac_config_set_default(void)
 {
-	ac_config_info.concentration=20;
-	ac_config_info.max_flight_height=2.0;
-	ac_config_info.max_flight_speed=6.0;
-	ac_config_info.spray_height=1.3;
-	ac_config_info.spray_wide=3.0;
-	ac_config_info.spray_speed=3.0;
+	ac_config_info.concentration = 20;
+	ac_config_info.max_flight_height = 1.5;
+	ac_config_info.max_flight_speed = 6.0;
+	ac_config_info.spray_height = 1.2;
+	ac_config_info.spray_wide = 3.0;
+	ac_config_info.spray_speed = 3.0;
 }

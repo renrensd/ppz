@@ -139,7 +139,6 @@ static Butterworth2LowPass ms45xx_filter;
 
 static void ms45xx_downlink(struct transport_tx *trans, struct link_device *dev)
 {
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_AIRSPEED_MS45XX(trans, dev, AC_ID,
                                 &ms45xx.diff_pressure,
                                 &ms45xx.temperature, &ms45xx.airspeed);
@@ -161,7 +160,7 @@ void ms45xx_i2c_init(void)
                               MS45XX_I2C_PERIODIC_PERIOD, 0);
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "AIRSPEED_MS45XX", ms45xx_downlink);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AIRSPEED_MS45XX, ms45xx_downlink);
 #endif
 }
 
@@ -211,7 +210,7 @@ void ms45xx_i2c_event(void)
       // Compute airspeed
       ms45xx.airspeed = sqrtf(Max(ms45xx.diff_pressure * ms45xx.airspeed_scale, 0));
 #if USE_AIRSPEED_MS45XX
-      stateSetAirspeed_f(&ms45xx.airspeed);
+      stateSetAirspeed_f(ms45xx.airspeed);
 #endif
       if (ms45xx.sync_send) {
         ms45xx_downlink(&(DefaultChannel).trans_tx, &(DefaultDevice).device);

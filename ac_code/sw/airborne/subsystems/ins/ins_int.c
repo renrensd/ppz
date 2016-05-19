@@ -31,8 +31,11 @@
 #include "subsystems/abi.h"
 
 #include "subsystems/imu.h"
-//#include "subsystems/ahrs/ahrs_float_cmpl.h"    //add for get ahrs aligher
+
 #include "subsystems/gps.h"
+#ifdef USE_GPS_NMEA
+ #include "subsystems/gps/gps_nmea.h"
+#endif
 
 #if USE_FLOW
 #include "modules/optical_flow/px4_flow_i2c.h"
@@ -89,19 +92,35 @@ static void sonar_cb(uint8_t sender_id, float distance);
 #ifndef INS_SONAR_MIN_RANGE
 #define INS_SONAR_MIN_RANGE 0.18
 #endif
-#define VFF_R_SONAR_0 0.1
+#ifndef INS_SONAR_MAX_RANGE
+#define INS_SONAR_MAX_RANGE 2.0
+#endif
+#define VFF_R_SONAR_0 0.10
 #ifndef VFF_R_SONAR_OF_M
-#define VFF_R_SONAR_OF_M 0.1//old is 0.2
+#define VFF_R_SONAR_OF_M 0.2
+#endif
+#ifndef INS_SONAR_DETA_RANGE
+#define INS_SONAR_DETA_RANGE 0.5
+#endif
+
+#if USE_BARO_BOARD
+#define BARO_OFFSET 0.3   //baro upper agl 0.3m
+#endif
+
+#endif // USE_SONAR
+#ifdef USE_GPS_NMEA
+ #ifndef INS_VFF_R_GPS
+ #define INS_VFF_R_GPS 2.0
+ #endif
+ #define INS_USE_GPS_ALT TRUE
+ #define INS_SONAR_UPDATE_ON_AGL FALSE
+#else
+ #define INS_USE_GPS_ALT FALSE
 #endif
 
 #ifndef INS_SONAR_UPDATE_ON_AGL
-#define INS_SONAR_UPDATE_ON_AGL FALSE
+ #define INS_SONAR_UPDATE_ON_AGL TRUE
 PRINT_CONFIG_MSG("INS_SONAR_UPDATE_ON_AGL defaulting to FALSE")
-#endif
-#endif // USE_SONAR
-
-#ifndef INS_VFF_R_GPS
-#define INS_VFF_R_GPS 2.0
 #endif
 
 /** maximum number of propagation steps without any updates in between */
@@ -110,7 +129,7 @@ PRINT_CONFIG_MSG("INS_SONAR_UPDATE_ON_AGL defaulting to FALSE")
 #endif
 
 #ifndef USE_INS_NAV_INIT
-#define USE_INS_NAV_INIT TRUE
+#define USE_INS_NAV_INIT FALSE
 PRINT_CONFIG_MSG("USE_INS_NAV_INIT defaulting to TRUE")
 #endif
 
@@ -121,7 +140,7 @@ PRINT_CONFIG_MSG("USE_INS_NAV_INIT defaulting to TRUE")
 /** default barometer to use in INS */
 #ifndef INS_BARO_ID
 #if USE_BARO_BOARD
-#define INS_BARO_ID    BARO_BOARD_SENDER_ID   //BARO_BMP_SENDER_ID   //TODOM: is not BARO_BOARD_SENDER_ID,without temp compensated
+#define INS_BARO_ID BARO_BOARD_SENDER_ID
 #else
 #define INS_BARO_ID ABI_BROADCAST
 #endif
@@ -138,13 +157,33 @@ static void baro_cb(uint8_t sender_id, float pressure);
 #endif
 static abi_event accel_ev;
 static abi_event gps_ev;
+
+struct InsInt ins_int;
+
 #if USE_FLOW
 static abi_event flow_ev;  //add for flow
 static void flow_cb(uint8_t sender_id, struct Px4_flow_Data *flow_data);
 static void flow_to_state(struct HfilterFloat *flow_hff);
+#else
+void ins_int_update_flow(struct Px4_flow_Data *flow_data __attribute__((unused)));
+#endif
+/** ABI binding for VELOCITY_ESTIMATE.
+ * Usually this is coming from opticflow.
+ */
+#ifndef INS_INT_VEL_ID
+#define INS_INT_VEL_ID ABI_BROADCAST
+#endif
+static abi_event vel_est_ev;
+static void vel_est_cb(uint8_t sender_id, uint32_t stamp, float x, float y, float z, float noise);
+
+static void ins_init_origin_from_flightplan(void);
+static void ins_ned_to_state(void);
+static void ins_update_from_vff(void);
+#if USE_HFF
+static void ins_update_from_hff(void);
 #endif
 
-struct InsInt ins_int;
+
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -177,13 +216,6 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
-static void ins_init_origin_from_flightplan(void);
-static void ins_ned_to_state(void);
-static void ins_update_from_vff(void);
-#if USE_HFF
-static void ins_update_from_hff(void);
-#endif
-
 
 void ins_int_init(void)
 {
@@ -202,10 +234,11 @@ void ins_int_init(void)
 #if USE_BARO_BOARD
   AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
   ins_int.baro_initialized = FALSE;
+  ins_int.baro_valid =FALSE;
 #endif
 
 #if USE_SONAR
-  ins_int.update_on_agl = INS_SONAR_UPDATE_ON_AGL;
+  ins_int.update_on_agl = FALSE;  //INS_SONAR_UPDATE_ON_AGL; default FALSE, it will change in mornitoring
   // Bind to AGL message
   AbiBindMsgAGL(INS_SONAR_ID, &sonar_ev, sonar_cb);
 #endif
@@ -224,28 +257,16 @@ void ins_int_init(void)
   INT32_VECT3_ZERO(ins_int.ltp_accel);
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "INS", send_ins);
-  register_periodic_telemetry(DefaultPeriodic, "INS_Z", send_ins_z);
-  register_periodic_telemetry(DefaultPeriodic, "INS_REF", send_ins_ref);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
 #endif
 }
 
 void ins_reset_local_origin(void)
 {
 #if USE_GPS  //called by flightplan init,set gps's postion as local ins (ltp_def is base point of ins)
-  #if 0
-    gps.ecef_pos.x=-239003472;
-    gps.ecef_pos.y=-538745928;
-	gps.ecef_pos.z=-242981776;
-	gps.lla_pos.alt=12250;
-	gps.hmsl=15004;
-    ltp_def_from_ecef_i(&ins_int.ltp_def, &gps.ecef_pos);
-    ins_int.ltp_def.lla.alt = gps.lla_pos.alt;
-    ins_int.ltp_def.hmsl = gps.hmsl;
-    ins_int.ltp_initialized = TRUE;
-    stateSetLocalOrigin_i(&ins_int.ltp_def);
-  #else
-  if (gps.fix == GPS_FIX_3D) {
+  if (GpsFixValid()) {
     ltp_def_from_ecef_i(&ins_int.ltp_def, &gps.ecef_pos);
     ins_int.ltp_def.lla.alt = gps.lla_pos.alt;
     ins_int.ltp_def.hmsl = gps.hmsl;
@@ -255,7 +276,6 @@ void ins_reset_local_origin(void)
   else {
     ins_int.ltp_initialized = FALSE;
   }
-  #endif
 #else
   ins_int.ltp_initialized = FALSE;
 #endif
@@ -281,9 +301,12 @@ void ins_reset_altitude_ref(void)
   ins_int.vf_reset = TRUE;
 }
 
+//TODOM: start delay time to avoid without accel only caculate G 
 void ins_int_propagate(struct Int32Vect3 *accel, float dt)
-{ static int32_t i=6000;    //TODOM: start delay time to avoid without accel only caculate G 
-  if(i==0){
+{ 
+  /*not propagate until system time > 6s*/
+  if( get_sys_time_msec()< 6000 )  return;  
+  
   /* untilt accels */
   struct Int32Vect3 accel_meas_body;
   struct Int32RMat *body_to_imu_rmat = orientationGetRMat_i(&imu.body_to_imu);
@@ -298,9 +321,9 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
    * This should only be relevant in the startup phase when the baro is not yet initialized
    * and there is no gps fix yet...
    */
-  if (ins_int.propagation_cnt < INS_MAX_PROPAGATION_STEPS)  {   
-  	    vff_propagate(z_accel_meas_float, dt);   
-  	    ins_update_from_vff();
+  if (ins_int.propagation_cnt < INS_MAX_PROPAGATION_STEPS) {
+    vff_propagate(z_accel_meas_float, dt);
+    ins_update_from_vff();
   } else {
     // feed accel from the sensors
     // subtract -9.81m/s2 (acceleration measured due to gravity,
@@ -308,7 +331,7 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
     ins_int.ltp_accel.z = accel_meas_ltp.z + ACCEL_BFP_OF_REAL(9.81);
   }
 
-#if  USE_HFF
+#if USE_HFF
   /* propagate horizontal filter */
   b2_hff_propagate();
   /* convert and copy result to ins_int */
@@ -321,25 +344,24 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
   ins_ned_to_state();
 
   /* increment the propagation counter, while making sure it doesn't overflow */
-  if (ins_int.propagation_cnt < 100*INS_MAX_PROPAGATION_STEPS) {
+  if (ins_int.propagation_cnt < 100 * INS_MAX_PROPAGATION_STEPS) {
     ins_int.propagation_cnt++;
   }
- }
- else i--;
+  
 }
 
 #if USE_BARO_BOARD   //change default using bar
 static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
 {
-  static uint8_t baro_modify_conter=0;
-  static float last_agl_dist=0.0;
+  static uint8_t baro_modify_counter=0;
+  //static float last_agl_dist=0.0;
   static float pressure_origin;
   float pressure_caculate;
-  if (!ins_int.baro_initialized && pressure > 1e-7) {
+  if (!ins_int.baro_initialized && pressure > 1e-7 && ins_int.baro_valid) {
     // wait for a first positive value
     ins_int.qfe = pressure;
 	pressure_origin=pressure;    //record origin pressure
-    ins_int.baro_initialized = TRUE;
+    ins_int.baro_initialized =TRUE;
   }
 
   if (ins_int.baro_initialized)
@@ -349,31 +371,48 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
       ins_int.vf_reset = FALSE;
       ins_int.qfe = pressure;
 	  pressure_origin=pressure;    //record origin pressure
-      vff_realign(0.);  //init state
+      vff_realign(-BARO_OFFSET);    //init state
       ins_update_from_vff();
       ins_ned_to_state();
     }
-   else {
-   	  /*use sonar dist modify ins_int.qfe*/
-	  /*by whp*/	   
-   	  if( (last_agl_dist!=agl_dist_value_filtered) && (agl_dist_value_filtered <2.2) )
+    else if(ins_int.baro_valid)
+	{
+   	  /*use sonar dist modify ins_int.qfe, by whp*/	   
+   	  if( ins_int.update_on_agl && agl_dist_value_filtered <2.0 )
+	  //( (last_agl_dist!=agl_dist_value_filtered) && (agl_dist_value_filtered <2.2) )
 	  { 
-	  	baro_modify_conter++;
-		if(baro_modify_conter==100)
+	  	baro_modify_counter++;
+		if(baro_modify_counter==100)
 		{   
-			pressure_caculate = pprz_isa_pressure_of_height(agl_dist_value_filtered, ins_int.qfe);
+			pressure_caculate = pprz_isa_pressure_of_height(agl_dist_value_filtered-BARO_OFFSET, ins_int.qfe);
 			ins_int.qfe -=(pressure_caculate - pressure);
 			//if( ins_int.qfe>(pressure_origin+0.2) )  ins_int.qfe=pressure_origin+0.2;
 			//else if( ins_int.qfe<(pressure_origin-0.1) )  ins_int.qfe=pressure_origin-0.1;
-			Bound( (ins_int.qfe), (pressure_origin-10.0), (pressure_origin+20.0) );   //limit in about -1 to 2m
-			baro_modify_conter=0;
+			Bound( (ins_int.qfe), (pressure_origin-10.0), (pressure_origin+20.0) );   //about limit in about -1 to 2m
+			baro_modify_counter=0;
 		}
 	  }
-	  last_agl_dist=agl_dist_value_filtered;
+	  else
+	  {
+	  	baro_modify_counter=0;   //make sure sonar information is stable
+	  }
+	  //last_agl_dist=agl_dist_value_filtered;
 	  
-      ins_int.baro_z = -pprz_isa_height_of_pressure(pressure, ins_int.qfe);  //ISA conditions
+      ins_int.baro_z = -pprz_isa_height_of_pressure(pressure, ins_int.qfe)-BARO_OFFSET;  //ISA conditions
+      
       //baro_z below 1.0m or sonar dist below 2.0m,only use sonar. --by whp
-      if( (ins_int.baro_z> -1.0)||(agl_dist_value_filtered< 2.0)  )   return;      
+      if( ins_int.update_on_agl )   //sonar useful
+      {
+	  	  if( ins_int.baro_z> -1.0 || agl_dist_value_filtered< 2.0 )   return; 
+      }
+
+	  return;
+
+
+
+
+	  
+	  //else must use baro_z to update ins
 #if USE_VFF_EXTENDED
       vff_update_baro(ins_int.baro_z);
 #else
@@ -394,25 +433,63 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure) {
 #endif
 
 
+/**********************************************/
+/*************here is gps cb function**********/
+/**********************************************/
 #if USE_GPS
+static bool_t gps_pos_inspect(struct NedCoor_i data)
+{
+	static struct NedCoor_i last_pos;
+	if(  abs(last_pos.x-data.x) > 1000 || abs(last_pos.y-data.y) > 1000)
+	{
+		VECT3_COPY(last_pos, data);
+		return FALSE;
+	}
+	else
+	{
+		VECT3_COPY(last_pos, data);
+		return TRUE;
+	}
+}
+
+static bool_t gps_speed_inspect(struct NedCoor_i data)
+{
+	if( abs(data.x) > 2000 || abs(data.y) >2000 )
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
 void ins_int_update_gps(struct GpsState *gps_s)
 {
-  if (gps_s->fix != GPS_FIX_3D ) {
+  if (gps_s->fix < GPS_FIX_3D) {
     return;
   }
   
 #if USE_FLOW
-  if ( guidance_h_mode==GUIDANCE_H_MODE_HOVER || guidance_h_mode==GUIDANCE_H_MODE_ATTITUDE) {   //using flow in hover mode,GPS data giving up
+  if ( guidance_h.mode==GUIDANCE_H_MODE_HOVER || guidance_h.mode==GUIDANCE_H_MODE_ATTITUDE) {   //using flow in hover mode,GPS data giving up
     return;
   }
 #endif
 
-  if (!ins_int.ltp_initialized) {
+  if (!ins_int.ltp_initialized
+    #ifdef USE_GPS_NMEA
+	 && gps_nmea.gps_qual==52
+	#endif
+	) {
     ins_reset_local_origin();
   }
 
   struct NedCoor_i gps_pos_cm_ned;
   ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_int.ltp_def, &gps_s->ecef_pos);
+  gps_pos_cm_ned.z=gps_pos_cm_ned.z - 32;
+  
+  /*add pos diff inspect, request pos diff <10m*/
+  if( !gps_pos_inspect(gps_pos_cm_ned) ) 
+  {
+  	return;  
+  }
 
   /* calculate body frame position taking BODY_TO_GPS translation (in cm) into account */
 #ifdef INS_BODY_TO_GPS_X
@@ -434,9 +511,25 @@ void ins_int_update_gps(struct GpsState *gps_s)
   /// @todo maybe use gps_s->ned_vel directly??
   struct NedCoor_i gps_speed_cm_s_ned;
   ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_int.ltp_def, &gps_s->ecef_vel);
+  /* add gps speed inspect,request speed <20m/s*/
+  if( !gps_speed_inspect(gps_speed_cm_s_ned) ) 
+  {
+  	return;
+  }
 
 #if INS_USE_GPS_ALT
-  vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS);
+  if(gps_nmea.gps_qual==52)
+  {
+    vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
+  }
+  else if(gps_nmea.gps_qual==53)
+  {
+    vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS);
+  }
+ #if PERIODIC_TELEMETRY
+  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,&gps_pos_cm_ned.z,&gps_nmea.gps_qual);
+ #endif
 #endif
 
 #if USE_HFF
@@ -476,6 +569,8 @@ void ins_int_update_gps(struct GpsState *gps_s)
 void ins_int_update_gps(struct GpsState *gps_s __attribute__((unused))) {}
 #endif /* USE_GPS */
 
+
+
 #if USE_FLOW
 /**** predic convert flow coords pos to NED *****/
 static void flow_to_state(struct HfilterFloat *flow_hff)   
@@ -501,9 +596,11 @@ static void flow_to_state(struct HfilterFloat *flow_hff)
 #else
 		   //stateSetPositionNed_f(&pos_flow);
 		   //stateSetSpeedNed_f(&speed_flow);  
+   #if PERIODIC_TELEMETRY
    RunOnceEvery(10, (xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
        DOWNLINK_SEND_FLOW_NED(DefaultChannel, DefaultDevice, 
          &pos_flow.x, &pos_flow.y, &speed_flow.x, &speed_flow.y) ));
+   #endif
 #endif
 }
 
@@ -552,30 +649,41 @@ void ins_int_update_flow(struct Px4_flow_Data *flow_data __attribute__((unused))
 static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
   static float last_offset = 0.;
+  static float last_distance =0.0;
 
+  /*pulse filter*/
+ #if 0
+  float deta_distance = distance-last_distance;
+  if( fabs(deta_distance) >INS_SONAR_DETA_RANGE )
+  {
+  	  distance = last_distance + 0.1*deta_distance;
+  }
+  last_distance = distance;
+ #endif
+  
   /* update filter assuming a flat ground */
-  if (distance < INS_SONAR_MAX_RANGE && distance > INS_SONAR_MIN_RANGE && ins_int.update_on_agl  
+  if (   distance < INS_SONAR_MAX_RANGE 
+  	  && distance > INS_SONAR_MIN_RANGE
 #ifdef INS_SONAR_THROTTLE_THRESHOLD
       && stabilization_cmd[COMMAND_THRUST] < INS_SONAR_THROTTLE_THRESHOLD
 #endif
 #ifdef INS_SONAR_BARO_THRESHOLD
-      &&(ins_int.baro_z > -INS_SONAR_BARO_THRESHOLD) // z down 
-#endif   
-#if USE_BARO_BOARD
-      &&ins_int.baro_initialized
-      &&(ins_int.baro_z > -6)    //use sonar meas,request baro_z below 6m  --by whp
+      && ins_int.baro_z > -INS_SONAR_BARO_THRESHOLD /* z down */
 #endif
+      && ins_int.update_on_agl
+	  #if 0 //USE_BARO_BOARD
+      && ins_int.baro_initialized
+      && ins_int.baro_z >-5    //use sonar meas,request baro_z below 5m  --by whp
+	  #endif
      ) 
-  {
+   {
     vff_update_z_conf(-(distance), VFF_R_SONAR_0 + VFF_R_SONAR_OF_M * fabsf(distance));
     last_offset = vff.offset;
-    //sonar_distance=distance;
-    //sonar_distance_i=(sonar_distance_i*3.0+sonar_distance*2.0)/5.0;	
   } 
   else 
   {
     /* update offset with last value to avoid divergence */
-    vff_update_offset(last_offset);  
+    vff_update_offset(last_offset);
   }
 
   /* reset the counter to indicate we just had a measurement update */
@@ -606,9 +714,6 @@ static void ins_init_origin_from_flightplan(void)
 /** copy position and speed to state interface */
 static void ins_ned_to_state(void)
 {
-#if 0   //USE_SONER
-  ins_int.ltp_pos.z=-POS_BFP_OF_REAL(  sonar_distance_i  );
-#endif
   stateSetPositionNed_i(&ins_int.ltp_pos);
   stateSetSpeedNed_i(&ins_int.ltp_speed);
   stateSetAccelNed_i(&ins_int.ltp_accel);
@@ -663,11 +768,41 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   ins_int_update_gps(gps_s);
 }
 
+static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
+                       uint32_t stamp __attribute__((unused)),
+                       float x, float y, float z,
+                       float noise __attribute__((unused)))
+{
+
+  struct FloatVect3 vel_body = {x, y, z};
+
+  /* rotate velocity estimate to nav/ltp frame */
+  struct FloatQuat q_b2n = *stateGetNedToBodyQuat_f();
+  QUAT_INVERT(q_b2n, q_b2n);
+  struct FloatVect3 vel_ned;
+  float_quat_vmult(&vel_ned, &q_b2n, &vel_body);
+
+#if USE_HFF
+  struct FloatVect2 vel = {vel_ned.x, vel_ned.y};
+  struct FloatVect2 Rvel = {noise, noise};
+
+  b2_hff_update_vel(vel,  Rvel);
+  ins_update_from_hff();
+#else
+  ins_int.ltp_speed.x = SPEED_BFP_OF_REAL(vel_ned.x);
+  ins_int.ltp_speed.y = SPEED_BFP_OF_REAL(vel_ned.y);
+#endif
+
+  ins_ned_to_state();
+
+  /* reset the counter to indicate we just had a measurement update */
+  ins_int.propagation_cnt = 0;
+}
+
 #if USE_FLOW
 static void flow_cb(uint8_t sender_id __attribute__((unused)), struct Px4_flow_Data *flow_data)
 {
   ins_int_update_flow(flow_data);
-  //RunOnceEvery(25, DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &flow_data->flow_comp_m_x, &flow_data->ground_distance) );
 }
 #endif
 
@@ -680,6 +815,7 @@ void ins_int_register(void)
    */
   AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
   #if USE_FLOW
   AbiBindMsgFLOW(ABI_BROADCAST, &flow_ev, flow_cb);
   #endif

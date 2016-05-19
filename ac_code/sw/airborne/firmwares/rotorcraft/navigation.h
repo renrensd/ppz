@@ -35,7 +35,11 @@
 #include "subsystems/navigation/waypoints.h"
 #include "subsystems/navigation/common_flight_plan.h"
 
-#define NAV_FREQ 32//16
+#define NAV_FREQ 32	//TODOM: 16
+
+#define FLIGHT_LIMIT_HEIGHT 2560  //default 10m height
+#define BARO_LIMIT_HEIGHT  563    //2.2m 2**8
+#define ERROR_LIMIT_HEIGHT  256   //1m
 
 extern struct EnuCoor_i navigation_target;
 extern struct EnuCoor_i navigation_carrot;
@@ -57,6 +61,7 @@ extern int32_t nav_circle_radius, nav_circle_qdr, nav_circle_radians;
 extern int32_t nav_roll, nav_pitch;     ///< with #INT32_ANGLE_FRAC
 extern int32_t nav_heading; ///< with #INT32_ANGLE_FRAC
 extern float nav_radius;
+extern float nav_climb_vspeed, nav_descend_vspeed;
 
 extern int32_t nav_leg_progress;
 extern uint32_t nav_leg_length;
@@ -66,6 +71,7 @@ extern bool_t nav_survey_active;
 extern uint8_t vertical_mode;
 extern uint32_t nav_throttle;  ///< direct throttle from 0:MAX_PPRZ, used in VERTICAL_MODE_MANUAL
 extern int32_t nav_climb, nav_altitude, nav_flight_altitude;
+extern int32_t flight_limit_height;
 extern float flight_altitude;
 #define VERTICAL_MODE_MANUAL      0
 #define VERTICAL_MODE_CLIMB       1
@@ -77,7 +83,7 @@ extern float failsafe_mode_dist2; ///< maximum squared distance to home wp befor
 
 extern float dist2_to_wp;       ///< squared distance to next waypoint
 
-extern float nav_circle_radians_no_rewind; /* Cumulated */
+extern float nav_circle_radians_no_rewind; /* Cumulated, add by whp */
 
 extern float get_dist2_to_waypoint(uint8_t wp_id);
 extern float get_dist2_to_point(struct EnuCoor_i *p);
@@ -89,6 +95,10 @@ unit_t nav_reset_alt(void) __attribute__((unused));
 void nav_periodic_task(void);
 bool_t nav_detect_ground(void);
 bool_t nav_is_in_flight(void);
+extern uint8_t CARROT_DIST_MUL;
+
+extern bool_t exception_flag[10];
+extern void set_exception_flag(uint8_t flag_num);
 
 extern bool_t nav_set_heading_rad(float rad);
 extern bool_t nav_set_heading_deg(float deg);
@@ -97,10 +107,9 @@ extern bool_t nav_set_heading_towards_waypoint(uint8_t wp);
 extern bool_t nav_set_heading_current(void);
 extern bool_t nav_set_heading_along(struct EnuCoor_i *wp_from,struct EnuCoor_i *wp_to);
 extern bool_t nav_check_heading(void);
-extern void record_current_waypoint(struct EnuCoor_i wp);
-extern void nav_move_waypoint(uint8_t wp_id, struct EnuCoor_i * new_pos);
-extern void nav_move_waypoint_lla(uint8_t wp_id, struct LlaCoor_i* new_lla_pos);
-extern void navigation_update_wp_from_speed(uint8_t wp, struct Int16Vect3 speed_sp, int16_t heading_rate_sp);
+extern void record_current_waypoint(struct EnuCoor_i *wp);
+extern bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_heading);
+
 extern void auto_nav_fp(void);
 
 
@@ -112,11 +121,13 @@ extern void auto_nav_fp(void);
 #define NavKillThrottle() ({ if (autopilot_mode == AP_MODE_NAV) { autopilot_set_motors_on(FALSE); } FALSE; })
 #define NavResurrect() ({ if (autopilot_mode == AP_MODE_NAV) { autopilot_set_motors_on(TRUE); } FALSE; })
 
+
 #define NavSetGroundReferenceHere() ({ nav_reset_reference(); FALSE; })
 #define NavSetAltitudeReferenceHere() ({ nav_reset_alt(); FALSE; })
 
 #define NavSetWaypointHere(_wp) ({ waypoint_set_here_2d(_wp); FALSE; })
 #define NavCopyWaypoint(_wp1, _wp2) ({ waypoint_copy(_wp1, _wp2); FALSE; })
+#define NavCopyWaypointPositionOnly(_wp1, _wp2) ({ waypoint_position_copy(_wp1, _wp2); FALSE; })
 
 /** Normalize a degree angle between 0 and 359 */
 #define NormCourse(x) { \
@@ -153,13 +164,15 @@ extern void nav_circle(struct EnuCoor_i *wp_center, int32_t radius);
 #define NavCircleCount() ((float)abs(nav_circle_radians) / INT32_ANGLE_2_PI)
 #define NavCircleQdr() ({ int32_t qdr = INT32_DEG_OF_RAD(INT32_ANGLE_PI_2 - nav_circle_qdr) >> INT32_ANGLE_FRAC; NormCourse(qdr); qdr; })
 
-/** True if x (in degrees) is close to the current QDR (less than +/-10 degrees)*/
+/** True if x (in degrees) is close to the current QDR (less than 10 degrees)*/ 
+//#define NavQdrCloseTo(x) {} //TODOM:
+//#define NavCourseCloseTo(x) {}
 #define CloseDegAngles(_c1, _c2) ({ float _diff = _c1 - _c2; NormCourse(_diff); 350 < _diff || _diff < 10; })
 #define NavQdrCloseTo(x) CloseDegAngles(x, NavCircleQdr())
 #define NavCourseCloseTo(x) CloseDegAngles(x, DegOfRad(*stateGetHorizontalSpeedDir_f()))
 
 /*********** Navigation along a line *************************************/
-extern void nav_route(struct EnuCoor_i *wp_start, struct EnuCoor_i *wp_end);
+extern void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end);
 #define NavSegment(_start, _end) { \
     horizontal_mode = HORIZONTAL_MODE_ROUTE; \
     nav_route(&waypoints[_start].enu_i, &waypoints[_end].enu_i); \
@@ -239,5 +252,8 @@ bool_t nav_check_wp_time(struct EnuCoor_i *wp, uint16_t stay_time);
 #define GetPosZ_u() (stateGetPositionEnu_f()->z)
 #define GetAltRef() (state.ned_origin_f.hmsl)
 
+extern void nav_move_waypoint(uint8_t wp_id, struct EnuCoor_i * new_pos);
+extern void nav_move_waypoint_lla(uint8_t wp_id, struct LlaCoor_i* new_lla_pos);
+extern void navigation_update_wp_from_speed(uint8_t wp, struct Int16Vect3 speed_sp, int16_t heading_rate_sp);
 
 #endif /* NAVIGATION_H */

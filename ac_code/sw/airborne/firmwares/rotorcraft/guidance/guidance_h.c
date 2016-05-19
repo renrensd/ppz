@@ -27,6 +27,8 @@
 #include "generated/airframe.h"
 #include "firmwares/rotorcraft/autopilot.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "firmwares/rotorcraft/guidance/guidance_flip.h"
+#include "firmwares/rotorcraft/guidance/guidance_indi.h"
 #include "firmwares/rotorcraft/guidance/guidance_module.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
@@ -74,45 +76,67 @@ PRINT_CONFIG_VAR(GUIDANCE_H_USE_SPEED_REF)
 #define GUIDANCE_H_APPROX_FORCE_BY_THRUST TRUE
 #endif
 
-
-uint8_t guidance_h_mode;
-bool_t guidance_h_use_ref;
-bool_t guidance_h_approx_force_by_thrust;
-
-struct Int32Vect2 guidance_h_pos_sp;
-struct Int32Vect2 guidance_h_pos_ref;
-struct Int32Vect2 guidance_h_speed_ref;
-struct Int32Vect2 guidance_h_accel_ref;
-#if GUIDANCE_H_USE_SPEED_REF
-struct Int32Vect2 guidance_h_speed_sp;
+#ifndef GUIDANCE_INDI
+#define GUIDANCE_INDI FALSE
 #endif
+
+struct HorizontalGuidance guidance_h;
+
+int32_t transition_percentage;
+int32_t transition_theta_offset;
+
+//uint8_t guidance_h_mode;
+//bool_t guidance_h_use_ref;
+//bool_t guidance_h_approx_force_by_thrust;
+
+//struct Int32Vect2 guidance_h_pos_sp;
+//struct Int32Vect2 guidance_h_pos_ref;
+//struct Int32Vect2 guidance_h_speed_ref;
+//struct Int32Vect2 guidance_h_accel_ref;
+//#if GUIDANCE_H_USE_SPEED_REF
+//struct Int32Vect2 guidance_h_speed_sp;
+//#endif
+
+/*
+ * internal variables
+ */
 struct Int32Vect2 guidance_h_pos_err;
 struct Int32Vect2 guidance_h_speed_err;
 struct Int32Vect2 guidance_h_trim_att_integrator;
 
+/** horizontal guidance command.
+ * In north/east with #INT32_ANGLE_FRAC
+ * @todo convert to real force command
+ */
 struct Int32Vect2  guidance_h_cmd_earth;
-struct Int32Eulers guidance_h_rc_sp;
-int32_t guidance_h_heading_sp;
+//struct Int32Eulers guidance_h_rc_sp;
+//int32_t guidance_h_heading_sp;
 int32_t rc_turn_rate;    //using in HORIZONTAL_MODE_RC,cmd of psi rate
 
-int32_t guidance_h_pgain;
-int32_t guidance_h_dgain;
-int32_t guidance_h_igain;
-int32_t guidance_h_again;
-int32_t guidance_h_vgain;
+//int32_t guidance_h_pgain;
+//int32_t guidance_h_dgain;
+//int32_t guidance_h_igain;
+//int32_t guidance_h_again;
+//int32_t guidance_h_vgain;
 
-int32_t transition_percentage;
-int32_t transition_theta_offset;
-//add
- int sum_in_x=0;
- int sum_in_y=0;
+//add in bouble control loop
+int32_t sum_in_x=0;
+int32_t sum_in_y=0;
 //add
 static void guidance_h_update_reference(void);
+#if !GUIDANCE_INDI
 static void guidance_h_traj_run(bool_t in_flight);
+#endif
 static void guidance_h_hover_enter(void);
 static void guidance_h_nav_enter(void);
 static inline void transition_run(void);
 static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool_t in_flight);
+
+float fsg_h(float x,float d);
+int32_t fhan_control(float pos,float vel,  float repul, float h1);
+float fhan_h(float signal,float x1,float x2);
+void Tracking_differntiator_hx(float signal, float x1,float x2);
+void Tracking_differntiator_hy(float signal, float y1,float y2);
 
 /*
 ******************************************************
@@ -120,6 +144,8 @@ static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool_t in_flig
 \/ \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/
 */
 #define Sign(_x) ((_x) > 0 ? 1 : (-1))
+
+/*
 int inner_PID_x(int error,int sumerror, int d_error, int kp, int ki, int kd){
 	int manipulate;
 	manipulate = (error*kp) + (d_error*kd) + (sumerror*ki);
@@ -131,92 +157,99 @@ int inner_PID_y(int error, int sumerror, int d_error, int kp, int ki, int kd){
 	manipulate = (error*kp) + (d_error*kd) + (sumerror*ki);
 	return manipulate;
 }
+*/
 
 
-
-int c_x=1000000;
-int c_y=1000000;
-void test_signal(void){
-	static int time=0;
+int32_t c_x=1000000;
+int32_t c_y=1000000;
+/*
+void test_signal(void)
+{
+	static uint16_t time=0;
 	time++;
-	if(time>5000){
+	if(time>5000)
+	{
 		time = 0;
 		c_x = -1000000*Sign(c_x);
 		c_y = -1000000*Sign(c_y);
 	}
 }
-
-/*
-
-^ ^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-****************************************************
 */
+
+
 /*here is define the variables that do the differentiation of my control signal in inner loop*/
 //*****************************************************//
-float xh1=0;
-float xh2 = 0;
-float yh1=0;
-float yh2 = 0;
+float xh1 = 0.0;
+float xh2 = 0.0;
+float yh1 = 0.0;
+float yh2 = 0.0;
 const float hh = 0.002*512*1024;
-const float hh0 = 0.01*512*1024;
-const float rh = 100;
+const float hh0 = 0.2*512*1024;
+const float rh = 300.0;
 //*****************************************************//
 //                define done here                                                    //
 
 /*here is define the functions that do the differentiation of my control signal in inner loop*/
 //*****************************************************//
-float  fsg_h(float x,float d){
+float fsg_h(float x,float d)
+{
 	float f;
-	f = (Sign(x+d)-Sign(x-d))/2;
+	f = ( Sign(x+d)-Sign(x-d) )/2;
 	return f;
 }
 
-int fhan_control(float pos,float vel,  float repul, float h1){
+int32_t fhan_control(float pos,float vel,  float repul, float h1)
+{
 	float d,a0,y,a1,a2,sy,a,sa,fout;
-	d = repul*h1*h1;
-	a0 = h1*vel;
-	y = pos+a0;
-	a1 = sqrt((float)(d*(d+8*abs(y))));
-	a2 = a0+Sign(y)*(a1-d)/2;
-	sy = (Sign(y+d)-Sign(y-d))/2;
-	a = (a0+y-a2)*sy+a2;
-	sa = (Sign(a+d)-Sign(a-d))/2;
-	fout = -repul*(a/d - Sign(a))*sa - repul*Sign(a);
-	return (int)fout;
-
+	d = repul * h1 * h1;
+	a0 = h1 * vel;
+	y = pos + a0;
+	a1 = sqrt( (float)(d * (d + 8*fabs(y))) );
+	a2 = a0 + Sign(y)*(a1-d)/2;
+	sy = (Sign(y+d) - Sign(y-d))/2;
+	a = (a0+y-a2)*sy + a2;
+	sa = (Sign(a+d) - Sign(a-d))/2;
+	fout = -repul * (a/d - Sign(a)) * sa - repul*Sign(a);
+	
+	return (int32_t)fout;
 }
 
 
-float   fhan_h(float signal,float x1,float x2){
+float fhan_h(float signal,float x1,float x2)
+{
 	float d,a0,y,a1,a2,a,out;
-	d = rh*hh0*hh0;
-	a0 = hh0*x2;
-	y = (x1-signal)+a0;
-	a1 = sqrt(d*(d+8*abs(y)));
-	a2 = a0+Sign(y)*(a1-d)/2;
-	a = (a0+y)*fsg_h(y,d)+a2*(1-fsg_h(y,d));
-	out = -rh*(a/d)*fsg_h(a,d)-rh*Sign(a)*(1-fsg_h(a,d));
+	d = rh * hh0*hh0;
+	a0 = hh0 * x2;
+	y = (x1-signal) + a0;
+	a1 = sqrt( d*(d + 8*fabs(y)) );
+	a2 = a0 + Sign(y)*(a1-d)/2;
+	a = (a0+y)*fsg_h(y,d) + a2*(1-fsg_h(y,d));
+	out = -rh*(a/d)*fsg_h(a,d) - rh*Sign(a)*(1-fsg_h(a,d));
+	
 	return out;
 }
 
-void Tracking_differntiator_hx(float signal, float x1,float x2){
+void Tracking_differntiator_hx(float signal, float x1,float x2)
+{
 	float fh;
 	fh = fhan_h(signal,x1,x2);
 	
-	xh2 = xh2+hh*fh;
-	xh1 = xh1+hh*xh2;
+	xh2 = xh2 + hh*fh;
+	xh1 = xh1 + hh*xh2;
 }
 
-void Tracking_differntiator_hy(float signal, float x1,float x2){
+void Tracking_differntiator_hy(float signal, float y1,float y2)
+{
 	float fh;
-	fh = fhan_h(signal,x1,x2);
+	fh = fhan_h(signal,y1,y2);
 	
-	yh2 = yh2+hh*fh;
-	yh1 = yh1+hh*yh2;
+	yh2 = yh2 + hh*fh;
+	yh1 = yh1 + hh*yh2;
 }
 
 //*****************************************************//
 //                define done here                                                    //
+
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -226,10 +259,11 @@ static void send_gh(struct transport_tx *trans, struct link_device *dev)
   struct NedCoor_i *pos = stateGetPositionNed_i();
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_GUIDANCE_H_INT(trans, dev, AC_ID,
-                               &guidance_h_pos_sp.x, &guidance_h_pos_sp.y,
-                               &guidance_h_pos_ref.x, &guidance_h_pos_ref.y,
+                               &guidance_h.sp.pos.x, &guidance_h.sp.pos.y,
+                               &guidance_h.ref.pos.x, &guidance_h.ref.pos.y,
                                &(pos->x), &(pos->y));
 }
+
 
 static void send_hover_loop(struct transport_tx *trans, struct link_device *dev)
 {
@@ -238,8 +272,8 @@ static void send_hover_loop(struct transport_tx *trans, struct link_device *dev)
   struct NedCoor_i *accel = stateGetAccelNed_i();
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_HOVER_LOOP(trans, dev, AC_ID,
-                           &guidance_h_pos_sp.x,
-                           &guidance_h_pos_sp.y,
+                           &guidance_h.sp.pos.x,
+                           &guidance_h.sp.pos.y,
                            &(pos->x), &(pos->y),
                            &(speed->x), &(speed->y),
                            &(accel->x), &(accel->y),
@@ -247,26 +281,37 @@ static void send_hover_loop(struct transport_tx *trans, struct link_device *dev)
                            &guidance_h_pos_err.y,
                            &guidance_h_speed_err.x,
                            &guidance_h_speed_err.y,
-                           &guidance_h_trim_att_integrator.x,
-                           &guidance_h_trim_att_integrator.y,
+                           //&guidance_h_trim_att_integrator.x,
+                           //&guidance_h_trim_att_integrator.y,
+                           &sum_in_x,
+                           &sum_in_y,
                            &guidance_h_cmd_earth.x,
                            &guidance_h_cmd_earth.y,
-                           &guidance_h_heading_sp);
+                           &guidance_h.sp.heading);
 }
 
 static void send_href(struct transport_tx *trans, struct link_device *dev)
 {
-int tempx1 = (int)xh1;
-int tempx2=(int)c_x;
-int tempx3=(int)xh2;
+	int32_t temp_c_x = c_x;
+	int32_t temp_xh1 = (int32_t)xh1;
+	float temp_xh2 = xh2;
+	int32_t temp_c_y = c_y;
+	int32_t temp_yh1 = (int32_t)yh1;
+	float temp_yh2 = yh2;
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_GUIDANCE_H_REF_INT(trans, dev, AC_ID,
-                                   &guidance_h_pos_sp.x, &guidance_h_pos_ref.x,
-                                   &tempx1,   &tempx2,
-                                   &tempx3,
-                                   &guidance_h_pos_sp.y, &guidance_h_pos_ref.y,
-                                   &yh1, &c_y,
-                                   &yh2);
+                                   &guidance_h.sp.pos.x, &guidance_h.ref.pos.x,
+                                   &guidance_h.sp.speed.x, &guidance_h.ref.speed.x,
+                                   &guidance_h.ref.accel.x,
+                                   &guidance_h.sp.pos.y, &guidance_h.ref.pos.y,
+                                   &guidance_h.sp.speed.y, &guidance_h.ref.speed.y,
+                                   &guidance_h.ref.accel.y,
+                                   &temp_c_x,
+                                   &temp_c_y,
+                                   &temp_xh1,
+                                   &temp_yh1,
+                                   &temp_xh2,
+                                   &temp_yh2);
 }
 
 static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
@@ -290,39 +335,50 @@ static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
 void guidance_h_init(void)
 {
 
-  guidance_h_mode = GUIDANCE_H_MODE_KILL;
-  guidance_h_use_ref = GUIDANCE_H_USE_REF;
-  guidance_h_approx_force_by_thrust = GUIDANCE_H_APPROX_FORCE_BY_THRUST;
+  guidance_h.mode = GUIDANCE_H_MODE_KILL;
+  guidance_h.use_ref = GUIDANCE_H_USE_REF;
+  guidance_h.approx_force_by_thrust = GUIDANCE_H_APPROX_FORCE_BY_THRUST;
 
-  INT_VECT2_ZERO(guidance_h_pos_sp);
+  INT_VECT2_ZERO(guidance_h.sp.pos);
   INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  INT_EULERS_ZERO(guidance_h_rc_sp);
-  guidance_h_heading_sp = 0;
-  guidance_h_pgain = GUIDANCE_H_PGAIN;
-  guidance_h_igain = GUIDANCE_H_IGAIN;
-  guidance_h_dgain = GUIDANCE_H_DGAIN;
-  guidance_h_again = GUIDANCE_H_AGAIN;
-  guidance_h_vgain = GUIDANCE_H_VGAIN;
+  sum_in_x=0;
+  sum_in_y=0;
+  INT_EULERS_ZERO(guidance_h.rc_sp);
+  guidance_h.sp.heading = 0;
+  guidance_h.gains.p = GUIDANCE_H_PGAIN;
+  guidance_h.gains.i = GUIDANCE_H_IGAIN;
+  guidance_h.gains.d = GUIDANCE_H_DGAIN;
+  guidance_h.gains.a = GUIDANCE_H_AGAIN;
+  guidance_h.gains.v = GUIDANCE_H_VGAIN;
   transition_percentage = 0;
   transition_theta_offset = 0;
+  rc_turn_rate = 0;
 
   gh_ref_init();
 
+#if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
+  guidance_h_module_init();
+#endif
+
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "GUIDANCE_H_INT", send_gh);
-  register_periodic_telemetry(DefaultPeriodic, "HOVER_LOOP", send_hover_loop);
-  register_periodic_telemetry(DefaultPeriodic, "GUIDANCE_H_REF", send_href);
-  register_periodic_telemetry(DefaultPeriodic, "ROTORCRAFT_TUNE_HOVER", send_tune_hover);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_H_INT, send_gh);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HOVER_LOOP, send_hover_loop);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_H_REF_INT, send_href);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_TUNE_HOVER, send_tune_hover);
+#endif
+
+#if GUIDANCE_INDI
+  guidance_indi_enter();
 #endif
 }
 
 
 static inline void reset_guidance_reference_from_current_position(void)
 {
-  VECT2_COPY(guidance_h_pos_ref, *stateGetPositionNed_i());
-  VECT2_COPY(guidance_h_speed_ref, *stateGetSpeedNed_i());
-  INT_VECT2_ZERO(guidance_h_accel_ref);
-  gh_set_ref(guidance_h_pos_ref, guidance_h_speed_ref, guidance_h_accel_ref);
+  VECT2_COPY(guidance_h.ref.pos, *stateGetPositionNed_i());
+  VECT2_COPY(guidance_h.ref.speed, *stateGetSpeedNed_i());
+  INT_VECT2_ZERO(guidance_h.ref.accel);
+  gh_set_ref(guidance_h.ref.pos, guidance_h.ref.speed, guidance_h.ref.accel);
 
   INT_VECT2_ZERO(guidance_h_trim_att_integrator);
   sum_in_x = 0;
@@ -331,7 +387,7 @@ static inline void reset_guidance_reference_from_current_position(void)
 
 void guidance_h_mode_changed(uint8_t new_mode)
 {
-  if (new_mode == guidance_h_mode) {
+  if (new_mode == guidance_h.mode) {
     return;
   }
 
@@ -355,20 +411,23 @@ void guidance_h_mode_changed(uint8_t new_mode)
     case GUIDANCE_H_MODE_ATTITUDE:
 #if NO_ATTITUDE_RESET_ON_MODE_CHANGE
       /* reset attitude stabilization if previous mode was not using it */
-      if (guidance_h_mode == GUIDANCE_H_MODE_KILL ||
-          guidance_h_mode == GUIDANCE_H_MODE_RATE ||
-          guidance_h_mode == GUIDANCE_H_MODE_RC_DIRECT)
+      if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
+          guidance_h.mode == GUIDANCE_H_MODE_RATE ||
+          guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
         stabilization_attitude_enter();
       break;
 
     case GUIDANCE_H_MODE_HOVER:
+#if GUIDANCE_INDI
+      guidance_indi_enter();
+#endif
       guidance_h_hover_enter();
 #if NO_ATTITUDE_RESET_ON_MODE_CHANGE
       /* reset attitude stabilization if previous mode was not using it */
-      if (guidance_h_mode == GUIDANCE_H_MODE_KILL ||
-          guidance_h_mode == GUIDANCE_H_MODE_RATE ||
-          guidance_h_mode == GUIDANCE_H_MODE_RC_DIRECT)
+      if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
+          guidance_h.mode == GUIDANCE_H_MODE_RATE ||
+          guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
         stabilization_attitude_enter();
       break;
@@ -383,18 +442,22 @@ void guidance_h_mode_changed(uint8_t new_mode)
       guidance_h_nav_enter();
 #if NO_ATTITUDE_RESET_ON_MODE_CHANGE
       /* reset attitude stabilization if previous mode was not using it */
-      if (guidance_h_mode == GUIDANCE_H_MODE_KILL ||
-          guidance_h_mode == GUIDANCE_H_MODE_RATE ||
-          guidance_h_mode == GUIDANCE_H_MODE_RC_DIRECT)
+      if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
+          guidance_h.mode == GUIDANCE_H_MODE_RATE ||
+          guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
         stabilization_attitude_enter();
+      break;
+
+    case GUIDANCE_H_MODE_FLIP:
+      guidance_flip_enter();
       break;
 
     default:
       break;
   }
 
-  guidance_h_mode = new_mode;
+  guidance_h.mode = new_mode;
 
 }
 
@@ -402,7 +465,7 @@ void guidance_h_mode_changed(uint8_t new_mode)
 void guidance_h_read_rc(bool_t  in_flight)
 {
 
-  switch (guidance_h_mode) {
+  switch (guidance_h.mode) {
 
     case GUIDANCE_H_MODE_RC_DIRECT:
       stabilization_none_read_rc();
@@ -425,9 +488,9 @@ void guidance_h_read_rc(bool_t  in_flight)
       stabilization_attitude_read_rc(in_flight, FALSE, FALSE);
       break;
     case GUIDANCE_H_MODE_HOVER:
-      stabilization_attitude_read_rc_setpoint_eulers(&guidance_h_rc_sp, in_flight, FALSE, FALSE);
+      stabilization_attitude_read_rc_setpoint_eulers(&guidance_h.rc_sp, in_flight, FALSE, FALSE);
 #if GUIDANCE_H_USE_SPEED_REF
-      read_rc_setpoint_speed_i(&guidance_h_speed_sp, in_flight);
+      read_rc_setpoint_speed_i(&guidance_h.sp.speed, in_flight);
 #endif
       break;
 
@@ -439,10 +502,13 @@ void guidance_h_read_rc(bool_t  in_flight)
 
     case GUIDANCE_H_MODE_NAV:
       if (radio_control.status == RC_OK) {
-        stabilization_attitude_read_rc_setpoint_eulers(&guidance_h_rc_sp, in_flight, FALSE, FALSE);
+        stabilization_attitude_read_rc_setpoint_eulers(&guidance_h.rc_sp, in_flight, FALSE, FALSE);
       } else {
-        INT_EULERS_ZERO(guidance_h_rc_sp);
+        INT_EULERS_ZERO(guidance_h.rc_sp);
       }
+      break;
+    case GUIDANCE_H_MODE_FLIP:
+      stabilization_attitude_read_rc(in_flight, FALSE, FALSE);
       break;
     default:
       break;
@@ -450,10 +516,9 @@ void guidance_h_read_rc(bool_t  in_flight)
 
 }
 
-
 void guidance_h_run(bool_t  in_flight)
 {
-  switch (guidance_h_mode) {
+  switch (guidance_h.mode) {
 
     case GUIDANCE_H_MODE_RC_DIRECT:
       stabilization_none_run(in_flight);
@@ -473,18 +538,26 @@ void guidance_h_run(bool_t  in_flight)
       break;
 
     case GUIDANCE_H_MODE_HOVER:
+      /* set psi command from RC */
+      guidance_h.sp.heading = guidance_h.rc_sp.psi;  
+      /* fall trough to GUIDED to update ref, run traj and set final attitude setpoint */
+
+    case GUIDANCE_H_MODE_GUIDED:
+      /* guidance_h.sp.pos and guidance_h.sp.heading need to be set from external source */
       if (!in_flight) {
         guidance_h_hover_enter();
       }
 
       guidance_h_update_reference();
 
-      /* set psi command */
-      guidance_h_heading_sp = guidance_h_rc_sp.psi;
+#if GUIDANCE_INDI
+      guidance_indi_run(in_flight, guidance_h.sp.heading);
+#else
       /* compute x,y earth commands */
       guidance_h_traj_run(in_flight);
       /* set final attitude setpoint */
-      stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h_heading_sp);
+      stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
+#endif
       stabilization_attitude_run(in_flight);
       break;
 
@@ -493,47 +566,50 @@ void guidance_h_run(bool_t  in_flight)
         guidance_h_nav_enter();
       }
 
-      if (horizontal_mode == HORIZONTAL_MODE_ATTITUDE) {
+      if (horizontal_mode == HORIZONTAL_MODE_ATTITUDE) 
+	  {
         struct Int32Eulers sp_cmd_i;
         sp_cmd_i.phi = nav_roll;
         sp_cmd_i.theta = nav_pitch;
-        /** @todo: heading can't be set via attitude block yet.
-         * use current euler psi for now, should be real heading
-         */
-        sp_cmd_i.psi = stateGetNedToBodyEulers_i()->psi;
+        sp_cmd_i.psi = nav_heading;
         stabilization_attitude_set_rpy_setpoint_i(&sp_cmd_i);
       } 
 	  /* add HORIZONTAL_MODE_RC for RC control functions ,similar to hover mode */
-	  else if (horizontal_mode == HORIZONTAL_MODE_RC) {
+	  else if (horizontal_mode == HORIZONTAL_MODE_RC) 
+	  {
         guidance_h_update_reference();
 
         /* set psi command ,using rc_turn_rate from rc_turn_cmd*/
-        nav_heading +=(rc_turn_rate/PERIODIC_FREQUENCY); //add deta heading
-		guidance_h_heading_sp =nav_heading;
+        nav_heading += (rc_turn_rate/PERIODIC_FREQUENCY); //add deta heading
+		guidance_h.sp.heading = nav_heading;
 		
-        INT32_ANGLE_NORMALIZE(guidance_h_heading_sp);
+        INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
         /* compute x,y earth commands */
         guidance_h_traj_run(in_flight);
         /* set final attitude setpoint */
-        stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth,
-                                               guidance_h_heading_sp);
+		stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
       }
 	  /* in waypoint,route,circle mode*/
-	  else {
-        INT32_VECT2_NED_OF_ENU(guidance_h_pos_sp, navigation_carrot);
+	  else 
+	  {
+        INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
 
         guidance_h_update_reference();
 
         /* set psi command */
-        guidance_h_heading_sp = nav_heading;
-        INT32_ANGLE_NORMALIZE(guidance_h_heading_sp);
+        guidance_h.sp.heading = nav_heading;
+        INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
+#if GUIDANCE_INDI
+        guidance_indi_run(in_flight, guidance_h.sp.heading);
+#else
         /* compute x,y earth commands */
         guidance_h_traj_run(in_flight);
         /* set final attitude setpoint */
         stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth,
-                                               guidance_h_heading_sp);
+                                               guidance_h.sp.heading);
+#endif
       }
-	 #if 1 //use intergrater limit in take off,see above ground signal
+	 #if 1 //TODOM:use intergrater limit in take off,see above ground signal
 	  stabilization_attitude_run(above_ground);	  
 	 #else
       stabilization_attitude_run(in_flight);
@@ -546,11 +622,13 @@ void guidance_h_run(bool_t  in_flight)
       break;
 #endif
 
+    case GUIDANCE_H_MODE_FLIP:
+      guidance_flip_run();
+      break;
+
     default:
       break;
   }
-
-
 }
 
 
@@ -559,28 +637,29 @@ static void guidance_h_update_reference(void)
   /* compute reference even if usage temporarily disabled via guidance_h_use_ref */
 #if GUIDANCE_H_USE_REF
 #if GUIDANCE_H_USE_SPEED_REF
-  if (guidance_h_mode == GUIDANCE_H_MODE_HOVER || horizontal_mode == HORIZONTAL_MODE_RC) { //add HORIZONTAL_MODE_RC using speed_sp
-    gh_update_ref_from_speed_sp(guidance_h_speed_sp);   //guidance_h_speed_sp is from RC stick(roll/pitch) or RC_cmd
+  //add HORIZONTAL_MODE_RC using speed_sp,by whp
+  if (guidance_h.mode == GUIDANCE_H_MODE_HOVER || horizontal_mode == HORIZONTAL_MODE_RC) {
+    gh_update_ref_from_speed_sp(guidance_h.sp.speed);
   } else
 #endif
-    gh_update_ref_from_pos_sp(guidance_h_pos_sp);
+    gh_update_ref_from_pos_sp(guidance_h.sp.pos);
 #endif
 
   /* either use the reference or simply copy the pos setpoint */
-  if (guidance_h_use_ref) {
+  if (guidance_h.use_ref) {
     /* convert our reference to generic representation */
-    INT32_VECT2_RSHIFT(guidance_h_pos_ref,   gh_ref.pos, (GH_POS_REF_FRAC - INT32_POS_FRAC));
-    INT32_VECT2_LSHIFT(guidance_h_speed_ref, gh_ref.speed, (INT32_SPEED_FRAC - GH_SPEED_REF_FRAC));
-    INT32_VECT2_LSHIFT(guidance_h_accel_ref, gh_ref.accel, (INT32_ACCEL_FRAC - GH_ACCEL_REF_FRAC));
+    INT32_VECT2_RSHIFT(guidance_h.ref.pos,   gh_ref.pos, (GH_POS_REF_FRAC - INT32_POS_FRAC));
+    INT32_VECT2_LSHIFT(guidance_h.ref.speed, gh_ref.speed, (INT32_SPEED_FRAC - GH_SPEED_REF_FRAC));
+    INT32_VECT2_LSHIFT(guidance_h.ref.accel, gh_ref.accel, (INT32_ACCEL_FRAC - GH_ACCEL_REF_FRAC));
   } else {
-    VECT2_COPY(guidance_h_pos_ref, guidance_h_pos_sp);
-    INT_VECT2_ZERO(guidance_h_speed_ref);
-    INT_VECT2_ZERO(guidance_h_accel_ref);
+    VECT2_COPY(guidance_h.ref.pos, guidance_h.sp.pos);
+    INT_VECT2_ZERO(guidance_h.ref.speed);
+    INT_VECT2_ZERO(guidance_h.ref.accel);
   }
 
 #if GUIDANCE_H_USE_SPEED_REF
-  if (guidance_h_mode == GUIDANCE_H_MODE_HOVER || horizontal_mode == HORIZONTAL_MODE_RC) {
-    VECT2_COPY(guidance_h_pos_sp, guidance_h_pos_ref); // for carrot pos display only
+  if (guidance_h.mode == GUIDANCE_H_MODE_HOVER || horizontal_mode == HORIZONTAL_MODE_RC) {
+    VECT2_COPY(guidance_h.sp.pos, guidance_h.ref.pos); // for display only
   }
 #endif
 }
@@ -597,23 +676,24 @@ static void guidance_h_update_reference(void)
  * you get an angle of 5.6 degrees for 1m pos error */
 #define GH_GAIN_SCALE 2
 
-
-
-
+#if !GUIDANCE_INDI
 static void guidance_h_traj_run(bool_t in_flight)
 {
   /* maximum bank angle: default 20 deg, max 40 deg*/
-  static const int32_t traj_max_bank = Min(BFP_OF_REAL(GUIDANCE_H_MAX_BANK, INT32_ANGLE_FRAC),
-                                       BFP_OF_REAL(RadOfDeg(40), INT32_ANGLE_FRAC));
-  static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(45), INT32_ANGLE_FRAC);
-  static const int32_t total_limit_bank = BFP_OF_REAL(RadOfDeg(3), INT32_ANGLE_FRAC);
+  //static const int32_t traj_max_bank = Min(BFP_OF_REAL(GUIDANCE_H_MAX_BANK, INT32_ANGLE_FRAC),
+  //                                     BFP_OF_REAL(RadOfDeg(40), INT32_ANGLE_FRAC));
+  static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(30), INT32_ANGLE_FRAC);
+  static const int32_t total_limit_bank = BFP_OF_REAL(RadOfDeg(3), INT32_ANGLE_FRAC);	//add by whp.
+
+  static int32_t flag_of_int_inner_x = 1;
+  static int32_t flag_of_int_inner_y = 1;
   /* compute position error    */
-  VECT2_DIFF(guidance_h_pos_err, guidance_h_pos_ref, *stateGetPositionNed_i());
+  VECT2_DIFF(guidance_h_pos_err, guidance_h.ref.pos, *stateGetPositionNed_i());
   /* saturate it               */
   VECT2_STRIM(guidance_h_pos_err, -MAX_POS_ERR, MAX_POS_ERR);
 
   /* compute speed error    */
-  VECT2_DIFF(guidance_h_speed_err, guidance_h_speed_ref, *stateGetSpeedNed_i());
+  VECT2_DIFF(guidance_h_speed_err, guidance_h.ref.speed, *stateGetSpeedNed_i());
   /* saturate it               */
   VECT2_STRIM(guidance_h_speed_err, -MAX_SPEED_ERR, MAX_SPEED_ERR);
 
@@ -635,74 +715,51 @@ static void guidance_h_traj_run(bool_t in_flight)
     ((guidance_h_again * guidance_h_accel_ref.y) >> 8);   
 
 */
-/*
-******************************************************
--------------------new functions run here-----------
-\/ \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/
-*/
-  	//c_x ;
-  	//c_y ;
-  //	test_signal();
 
-static int last_error_x=0;
-static int last_error_y=0;
+/*-------------------new functions run below-----------*/
+
+  //static int32_t last_error_x=0;
+  //static int32_t last_error_y=0;
 
 /* outer PID here*/
 
 
-
-
-//c_x = 0 ;
-//c_y = 0;
-//test_signal();
-int error_x=(c_x-(stateGetSpeedNed_i()->x));
-int error_y=(c_y-(stateGetSpeedNed_i()->y));
-static int flag_of_int_inner_x=1;
-static int flag_of_int_inner_y=1;
+  int32_t error_x= c_x -(stateGetSpeedNed_i()->x) ;
+  int32_t error_y= c_y -(stateGetSpeedNed_i()->y) ;
 
 
 
-	sum_in_x += flag_of_int_inner_x*guidance_h_pos_err.x;
-	sum_in_y += flag_of_int_inner_y*guidance_h_pos_err.y;
+  sum_in_x += flag_of_int_inner_x * guidance_h_pos_err.x;
+  sum_in_y += flag_of_int_inner_y * guidance_h_pos_err.y;
 
-if(guidance_h_igain==0){
-sum_in_x=0;
-sum_in_y=0;
-}
+  if(guidance_h.gains.i==0)
+  {
+  	sum_in_x=0;
+	sum_in_y=0;
+  }
 
 
-c_x =   guidance_h_speed_ref.x + guidance_h_pos_err.x*12*guidance_h_again+(guidance_h_speed_err.x>>6)*guidance_h_vgain+(sum_in_x>>7)*guidance_h_igain;
-//c_x = guidance_h_speed_ref.x;
-c_y = guidance_h_speed_ref.y + guidance_h_pos_err.y*12*guidance_h_again+(guidance_h_speed_err.y>>6)*guidance_h_vgain+(sum_in_y>>7)*guidance_h_igain;
-//c_y=guidance_h_speed_ref.y;
+  c_x = guidance_h.ref.speed.x + guidance_h_pos_err.x*12*guidance_h.gains.a+(guidance_h_speed_err.x>>6)*guidance_h.gains.v+(sum_in_x>>7)*guidance_h.gains.i;
+
+  c_y = guidance_h.ref.speed.y + guidance_h_pos_err.y*12*guidance_h.gains.a+(guidance_h_speed_err.y>>6)*guidance_h.gains.v+(sum_in_y>>7)*guidance_h.gains.i;
+
 
 	Tracking_differntiator_hx((float)( c_x-(stateGetSpeedNed_i()->x)),xh1,xh2);
-	Tracking_differntiator_hy((float)( c_x-(stateGetSpeedNed_i()->y)),yh1,yh2);	
-
-	//Tracking_differntiator_hx((float)( (stateGetSpeedNed_i()->x)),xh1,xh2);
-	//Tracking_differntiator_hy((float)( (stateGetSpeedNed_i()->y)),yh1,yh2);	
+	Tracking_differntiator_hy((float)( c_y-(stateGetSpeedNed_i()->y)),yh1,yh2);	
 
 	
 /* inner PID here*/	
 	/*
 	guidance_h_cmd_earth.x = inner_PID_x(error_x>>16,sum_in_x>>28,((int)xh2)>>24, guidance_h_pgain,guidance_h_igain,guidance_h_dgain);
 	guidance_h_cmd_earth.y = inner_PID_y(error_y>>16,sum_in_y>>28,((int)yh2)>>24, guidance_h_pgain,guidance_h_igain,guidance_h_dgain);
-*/
-guidance_h_cmd_earth.x = -fhan_control( (float)error_x, xh2/256, 100*guidance_h_pgain, 0.2*guidance_h_dgain);
-guidance_h_cmd_earth.y = -fhan_control( (float)error_y,yh2/256,100*guidance_h_pgain,0.2*guidance_h_dgain);	
+    */
+  guidance_h_cmd_earth.x = -fhan_control( (float)error_x, xh2/256.0, 100.0*(float)(guidance_h.gains.p), 0.2*(float)(guidance_h.gains.d) );
+  guidance_h_cmd_earth.y = -fhan_control( (float)error_y, yh2/256.0, 100.0*(float)(guidance_h.gains.p), 0.2*(float)(guidance_h.gains.d) );	
 
-last_error_x=error_x;
-last_error_y=error_y;
+  //last_error_x=error_x;
+  //last_error_y=error_y;
 
-/*
-^ ^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-****************************************************
-*/
-
-
-
-
-
+/*-------------------new functions run end-----------*/
 
 
   /* trim max bank angle from PD */
@@ -726,12 +783,11 @@ last_error_y=error_y;
   } else {
     INT_VECT2_ZERO(guidance_h_trim_att_integrator);
   }
-  
 
 */
 
-  
-  if (guidance_h_approx_force_by_thrust && in_flight) {
+  /* compute a better approximation of force commands by taking thrust into account */
+  if (guidance_h.approx_force_by_thrust && in_flight) {
     static int32_t thrust_cmd_filt;
     int32_t vertical_thrust = (stabilization_cmd[COMMAND_THRUST] * guidance_v_thrust_coeff) >> INT32_TRIG_FRAC;
     thrust_cmd_filt = (thrust_cmd_filt * GUIDANCE_H_THRUST_CMD_FILTER + vertical_thrust) /
@@ -744,7 +800,9 @@ last_error_y=error_y;
   
   flag_of_int_inner_x = 1;
   flag_of_int_inner_y = 1;
-  if((agl_dist_value_filtered<0.4))
+
+ #ifndef NPS_SIMU   //sonar  don't work in simulator
+  if((agl_dist_value_filtered<DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>50)
   {    
   	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
 	if((abs(guidance_h_cmd_earth.x) >=  total_limit_bank)){
@@ -754,56 +812,54 @@ last_error_y=error_y;
 	if(((abs(guidance_h_cmd_earth.y)>=total_limit_bank))){
 			flag_of_int_inner_y = 0;
 	}
-
-
   }  //angle is3 limited
-
-  if((abs(stab_att_ref_rate.r) >=25*1024 ) ){
-	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
-
-	if((abs(guidance_h_cmd_earth.x) >=  total_limit_bank)){
+ #endif
+/*  no need limit cmd when r >0.3rad/s 
+  if((abs(att_ref_quat_i.rate.r) >=600) ){
+	//VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
+	if( abs(guidance_h_cmd_earth.x) >= total_limit_bank )
+	{
 			flag_of_int_inner_x = 0;
-
 	}
-	if(((abs(guidance_h_cmd_earth.y)>=total_limit_bank))){
+	if( abs(guidance_h_cmd_earth.y) >= total_limit_bank )
+	{
 			flag_of_int_inner_y = 0;
 	}
-	
-
   }
-  	
+*/  	
+
   VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 45` limited
-	if((abs(guidance_h_cmd_earth.x) >=  total_max_bank)){
+  if(abs(guidance_h_cmd_earth.x) >= (total_max_bank/2))
+  {
 			flag_of_int_inner_x = 0;
-
-	}
-	if(((abs(guidance_h_cmd_earth.y)>=total_max_bank))){
+  }
+  if(abs(guidance_h_cmd_earth.y) >= (total_max_bank/2))
+  {
 			flag_of_int_inner_y = 0;
-	}
+  }
+  
+ }
+#endif
 
-
-   
-}
 
 static void guidance_h_hover_enter(void)
 {
-
   /* set horizontal setpoint to current position */
-  VECT2_COPY(guidance_h_pos_sp, *stateGetPositionNed_i());
-  
-  reset_guidance_reference_from_current_position();  
-  
-  guidance_h_rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
-#if USE_FLOW  
+  VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
+
+  reset_guidance_reference_from_current_position();
+  guidance_h.sp.heading = stateGetNedToBodyEulers_i()->psi;
+  guidance_h.rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
+
+  #if USE_FLOW  
   flow_hff_init(0.0, 0.0, 0.0, 0.0);//zero to pos and vel,later flow filter update when hover running
-#endif 
+  #endif 
 }
 
 static void guidance_h_nav_enter(void)
 {
-
   /* horizontal position setpoint from navigation/flightplan */
-  INT32_VECT2_NED_OF_ENU(guidance_h_pos_sp, navigation_carrot);
+  INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
 
   reset_guidance_reference_from_current_position();
 
@@ -812,9 +868,8 @@ static void guidance_h_nav_enter(void)
 
 void guidance_h_nav_rc_enter(void)
 {
-
   /* set horizontal setpoint to current position */
-  VECT2_COPY(guidance_h_pos_sp, *stateGetPositionNed_i());
+  VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
 
   reset_guidance_reference_from_current_position();
 
@@ -863,4 +918,32 @@ static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool_t in_flig
     speed_sp->x = 0;
     speed_sp->y = 0;
   }
+}
+
+void guidance_h_set_igain(uint32_t igain)
+{
+  guidance_h.gains.i = igain;
+  INT_VECT2_ZERO(guidance_h_trim_att_integrator);
+  sum_in_x = 0;
+  sum_in_y = 0;
+}
+
+bool_t guidance_h_set_guided_pos(float x, float y)
+{
+  if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED) {
+    guidance_h.sp.pos.x = POS_BFP_OF_REAL(x);
+    guidance_h.sp.pos.y = POS_BFP_OF_REAL(y);
+    return TRUE;
+  }
+  return FALSE;
+}
+
+bool_t guidance_h_set_guided_heading(float heading)
+{
+  if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED) {
+    guidance_h.sp.heading = ANGLE_BFP_OF_REAL(heading);
+    INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
+    return TRUE;
+  }
+  return FALSE;
 }

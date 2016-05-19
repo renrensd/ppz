@@ -127,13 +127,11 @@ void baro_amsys_read_periodic(void)
   }
 
 #ifdef BARO_AMSYS_SYNC_SEND
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_AMSYS_BARO(DefaultChannel, DefaultDevice, &pBaroRaw, &baro_amsys_p, &baro_amsys_offset, &ref_alt_init,
                            &baro_amsys_abs_altitude, &baro_amsys_altitude, &baro_amsys_temp);
 #else
-  RunOnceEvery(10, { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC); 
-     DOWNLINK_SEND_AMSYS_BARO(DefaultChannel, DefaultDevice, &pBaroRaw, &baro_amsys_p, &baro_amsys_offset,
-               &ref_alt_init, &baro_amsys_abs_altitude, &baro_amsys_altitude, &baro_amsys_temp);} );
+  RunOnceEvery(10, DOWNLINK_SEND_AMSYS_BARO(DefaultChannel, DefaultDevice, &pBaroRaw, &baro_amsys_p, &baro_amsys_offset,
+               &ref_alt_init, &baro_amsys_abs_altitude, &baro_amsys_altitude, &baro_amsys_temp));
 #endif
 }
 

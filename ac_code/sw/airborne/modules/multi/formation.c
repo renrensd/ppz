@@ -84,8 +84,10 @@ int formation_init(void)
 int add_slot(uint8_t _id, float slot_e, float slot_n, float slot_a)
 {
   if (_id != AC_ID && the_acs_id[_id] == 0) { return FALSE; } // no info for this AC
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_FORMATION_SLOT_TM(DefaultChannel, DefaultDevice, &_id, &form_mode, &slot_e, &slot_n, &slot_a);
+  #endif
   formation[the_acs_id[_id]].status = IDLE;
   formation[the_acs_id[_id]].east = slot_e;
   formation[the_acs_id[_id]].north = slot_n;
@@ -101,8 +103,10 @@ int start_formation(void)
     if (formation[i].status == IDLE) { formation[i].status = ACTIVE; }
   }
   uint8_t active = ACTIVE;
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_FORMATION_STATUS_TM(DefaultChannel, DefaultDevice, &ac_id, &leader_id, &active);
+  #endif
   // store current cruise and alt
   old_cruise = v_ctl_auto_throttle_cruise_throttle;
   old_alt = nav_altitude;
@@ -117,8 +121,10 @@ int stop_formation(void)
     if (formation[i].status == ACTIVE) { formation[i].status = IDLE; }
   }
   uint8_t idle = IDLE;
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_FORMATION_STATUS_TM(DefaultChannel, DefaultDevice, &ac_id, &leader_id, &idle);
+  #endif
   // restore cruise and alt
   v_ctl_auto_throttle_cruise_throttle = old_cruise;
   old_cruise = V_CTL_AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE;
@@ -133,13 +139,13 @@ int formation_flight(void)
 
   static uint8_t _1Hz   = 0;
   uint8_t nb = 0, i;
-  float hspeed_dir = (*stateGetHorizontalSpeedDir_f());
+  float hspeed_dir = stateGetHorizontalSpeedDir_f();
   float ch = cosf(hspeed_dir);
   float sh = sinf(hspeed_dir);
   form_n = 0.;
   form_e = 0.;
   form_a = 0.;
-  form_speed = (*stateGetHorizontalSpeedNorm_f());
+  form_speed = stateGetHorizontalSpeedNorm_f();
   form_speed_n = form_speed * ch;
   form_speed_e = form_speed * sh;
 
@@ -154,15 +160,19 @@ int formation_flight(void)
   // broadcast info
   uint8_t ac_id = AC_ID;
   uint8_t status = formation[the_acs_id[AC_ID]].status;
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_FORMATION_STATUS_TM(DefaultChannel, DefaultDevice, &ac_id, &leader_id, &status);
+  #endif
   if (++_1Hz >= 4) {
     _1Hz = 0;
+	#if PERIODIC_TELEMETRY
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_FORMATION_SLOT_TM(DefaultChannel, DefaultDevice, &ac_id, &form_mode,
                                     &formation[the_acs_id[AC_ID]].east,
                                     &formation[the_acs_id[AC_ID]].north,
                                     &formation[the_acs_id[AC_ID]].alt);
+	#endif
   }
   if (formation[the_acs_id[AC_ID]].status != ACTIVE) { return FALSE; } // AC not ready
 
@@ -217,9 +227,9 @@ int formation_flight(void)
   form_n /= _nb;
   form_e /= _nb;
   form_a /= _nb;
-  form_speed = form_speed / (nb + 1) - (*stateGetHorizontalSpeedNorm_f());
-  //form_speed_e = form_speed_e / (nb+1) - (*stateGetHorizontalSpeedNorm_f()) * sh;
-  //form_speed_n = form_speed_n / (nb+1) - (*stateGetHorizontalSpeedNorm_f()) * ch;
+  form_speed = form_speed / (nb + 1) - stateGetHorizontalSpeedNorm_f();
+  //form_speed_e = form_speed_e / (nb+1) - stateGetHorizontalSpeedNorm_f() * sh;
+  //form_speed_n = form_speed_n / (nb+1) - stateGetHorizontalSpeedNorm_f() * ch;
 
   // set commands
   NavVerticalAutoThrottleMode(0.);

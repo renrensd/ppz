@@ -100,7 +100,6 @@ float calc_lm35(int16_t raw_temp)
 
 static void temp_adc_downlink(struct transport_tx *trans, struct link_device *dev)
 {
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_TEMP_ADC(trans, dev, AC_ID, &temp_c1, &temp_c2, &temp_c3);
 }
 
@@ -121,7 +120,7 @@ void temp_adc_init(void)
 #endif
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "TEMP_ADC", temp_adc_downlink);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TEMP_ADC, temp_adc_downlink);
 #endif
 }
 

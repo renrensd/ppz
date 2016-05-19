@@ -7,12 +7,12 @@
   <waypoints>
     <waypoint name="HOME" x="-13.7" y="-19.1"/>
     <waypoint name="CLIMB" x="-1.0" y="0.8"/>
-    <waypoint name="ENTER" x="-20.0" y="-4.0"/>
+    <waypoint name="ENTER" x="-6.0" y="-2.8"/>
     <waypoint name="OUT" x="-20.1" y="-5.9"/>
     <waypoint name="S1" x="-20.1" y="-1.8"/>
     <waypoint name="S2" x="-6.5" y="-1.0"/>
-    <waypoint name="S3" x="-6.4" y="-7.0"/>
-    <waypoint name="S4" x="-19.7" y="-7.5"/>
+    <waypoint name="S3" x="-6.0" y="-18.3"/>
+    <waypoint name="S4" x="-19.9" y="-15.0"/>
     <waypoint name="S5" x="13.6" y="-13.1"/>
   </waypoints>
   <sectors>

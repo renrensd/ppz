@@ -1,31 +1,23 @@
 <!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
 
-<flight_plan alt="17.2" ground_alt="16" lat0="22.540656" lon0="113.923446" max_dist_from_home="10000" name="Rotorcraft Basic (Enac)" security_height="1">
+<flight_plan alt="17.5" ground_alt="16" lat0="22.540656" lon0="113.923446" max_dist_from_home="10000" name="Rotorcraft Basic (Enac)" security_height="1">
   <header>
 #include "autopilot.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0.5" y="-0.3"/>
     <waypoint name="CLIMB" x="-4.4" y="0.7"/>
-    <waypoint name="STDBY" x="-3.4" y="-1.7"/>
+    <waypoint name="STDBY" x="-13.8" y="-9.9"/>
     <waypoint name="p1" x="11.5" y="2.0"/>
     <waypoint name="TD" x="-7.1" y="-0.8"/>
-    <waypoint name="S1" x="-10.5" y="-14.0"/>
-    <waypoint name="S2" x="-13.5" y="-0.3"/>
-    <waypoint name="S3" x="-4.6" y="12.5"/>
-    <waypoint name="S4" x="15.6" y="-1.1"/>
-    <waypoint name="S5" x="1.5" y="-11.5"/>
+    <waypoint name="S1" x="-13.8" y="-10.0"/>
+    <waypoint name="S2" x="5.9" y="-9.3"/>
+    <waypoint name="S3" x="5.8" y="-3.4"/>
+    <waypoint name="S4" x="-13.8" y="-3.8"/>
+    <waypoint name="S5" x="9.3" y="-5.7"/>
+    <waypoint name="S6" x="8.1" y="-3.7"/>
     <waypoint name="p2" x="30" y="-11.5"/>
   </waypoints>
-  <sectors>
-    <sector name="PolySector" type="dynamic">
-      <corner name="S1"/>
-      <corner name="S2"/>
-      <corner name="S3"/>
-      <corner name="S4"/>
-      <corner name="S5"/>
-    </sector>
-  </sectors>
   <blocks>
     <block name="Wait GPS">
       <call fun="NavKillThrottle()"/>
@@ -52,20 +44,21 @@
       <stay height="1.2" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="standby.png">
-      <call fun="nav_set_heading_towards_waypoint(WP_STDBY)"/>
-      <while cond="LessThan(NavBlockTime(), 5)"/>
-      <go hmode="route" wp="STDBY"/>
       <stay wp="STDBY"/>
     </block>
-    <block name="stay_p1" strip_button="stay p1" strip_icon="waypoint_one.png">
-      <call fun="nav_set_heading_towards_waypoint(WP_p1)"/>
-      <while cond="LessThan(NavBlockTime(), 8)"/>
-      <go hmode="route" wp="p1"/>
-      <stay wp="p1"/>
+    <block name="s1-s2" strip_button="s1-s2" strip_icon="waypoint_one.png">
+      <call fun="nav_set_heading_towards_waypoint(WP_S2)"/>
+      <go from="S1" hmode="route" wp="S2"/>
+      <call fun="nav_set_heading_towards_waypoint(WP_S5)"/>
+      <go from="S2" hmode="route" wp="S5"/>
+      <call fun="nav_set_heading_towards_waypoint(WP_S6)"/>
+      <go from="S5" hmode="route" wp="S6"/>
+      <call fun="nav_set_heading_towards_waypoint(WP_S3)"/>
+      <go from="S6" hmode="route" wp="S3"/>
     </block>
-    <block name="circle4" strip_button="circle_2.5m" strip_icon="circle-right.png">
-      <set value="2.5" var="nav_radius"/>
-      <circle radius="nav_radius" until="NavCircleCount() > 2.0" wp="TD"/>
+    <block name="s3-s4" strip_button="s3-s4" strip_icon="waypoint_one.png">
+      <call fun="nav_set_heading_towards_waypoint(WP_S4)"/>
+      <go from="S3" hmode="route" wp="S4"/>
       <deroute block="Standby"/>
     </block>
     <block name="circle3" strip_button="circle_-2m" strip_icon="circle-left.png">

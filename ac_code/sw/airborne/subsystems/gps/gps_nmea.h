@@ -32,19 +32,25 @@
 
 #include "mcu_periph/uart.h"
 
+#define USE_XYZA 1
+
 #define GPS_NB_CHANNELS 12
 
-#define NMEA_MAXLEN 255
+#define NMEA_MAXLEN 510
 
 struct GpsNmea {
   bool_t msg_available;
   bool_t pos_available;
+ #if USE_XYZA
+  bool_t pos_xyz_available;
+ #endif
   bool_t is_configured;       ///< flag set to TRUE if configuration is finished
   bool_t have_gsv;            ///< flag set to TRUE if GPGSV message received
   uint8_t gps_nb_ovrn;        ///< number if incomplete nmea-messages
   char msg_buf[NMEA_MAXLEN];  ///< buffer for storing one nmea-line
   int msg_len;
   uint8_t status;             ///< line parser status
+  uint8_t gps_qual;           ///< RTK FIX(0x04) OR RTK FLOAT(0x05) OR SINGLE(0x01)
 };
 
 extern struct GpsNmea gps_nmea;

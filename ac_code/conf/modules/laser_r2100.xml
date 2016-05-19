@@ -1,7 +1,12 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
 <module name="laser">
-
+  <doc>
+    <description>
+     Reads the laser sensor and outputs laser distance in [mm]
+    </description>
+  </doc>
+  
   <header>
     <file name="laser_r2100.h"/>
   </header>

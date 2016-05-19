@@ -52,7 +52,7 @@ void trigger_ext_periodic(void)
 
     sync_itow = gps_tow_from_sys_ticks(trigger_t0);
     cycle_time = msec_of_sys_time_ticks(delta_t0);
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
     DOWNLINK_SEND_WINDTURBINE_STATUS_(DefaultChannel, DefaultDevice,
                                       &ac_id,
                                       &turb_id,

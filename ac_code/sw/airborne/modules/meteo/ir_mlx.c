@@ -104,8 +104,7 @@ void ir_mlx_periodic(void)
       i2c_transceive(&MLX_I2C_DEV, &mlx_trans, MLX90614_ADDR, 1, 2);
       ir_mlx_status = IR_MLX_RD_CASE_TEMP;
       /* send serial number every 30 seconds */
-	  RunOnceEvery((8 * 30), { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	     DOWNLINK_SEND_MLX_SERIAL(DefaultChannel, DefaultDevice, &ir_mlx_id_01, &ir_mlx_id_23);});
+      RunOnceEvery((8 * 30), DOWNLINK_SEND_MLX_SERIAL(DefaultChannel, DefaultDevice, &ir_mlx_id_01, &ir_mlx_id_23));
     } else if (ir_mlx_status == IR_MLX_UNINIT) {
       /* start two byte ID 0 */
       mlx_trans.buf[0] = MLX90614_ID_0;
@@ -177,7 +176,6 @@ void ir_mlx_event(void)
         ir_mlx_id_23 |= mlx_trans.buf[1] << 24;
         ir_mlx_status = IR_MLX_IDLE;
         mlx_trans.status = I2CTransDone;
-		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
         DOWNLINK_SEND_MLX_SERIAL(DefaultChannel, DefaultDevice, &ir_mlx_id_01, &ir_mlx_id_23);
         break;
 
@@ -199,7 +197,7 @@ void ir_mlx_event(void)
         ir_mlx_itemp_obj |= mlx_trans.buf[0];
         ir_mlx_temp_obj = ir_mlx_itemp_obj * 0.02 - 273.15;
         mlx_trans.status = I2CTransDone;
-        xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
         DOWNLINK_SEND_MLX_STATUS(DefaultChannel, DefaultDevice,
                                  &ir_mlx_itemp_case,
                                  &ir_mlx_temp_case,

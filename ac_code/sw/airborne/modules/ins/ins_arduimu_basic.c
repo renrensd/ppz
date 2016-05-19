@@ -111,7 +111,7 @@ void ArduIMU_periodicGPS(void)
   // Test for high acceleration:
   //  - low speed
   //  - high thrust
-  float speed = *stateGetHorizontalSpeedNorm_f();
+  float speed = stateGetHorizontalSpeedNorm_f();
   if (speed < HIGH_ACCEL_LOW_SPEED && ap_state->commands[COMMAND_THROTTLE] > HIGH_ACCEL_HIGH_THRUST && !high_accel_done) {
     high_accel_flag = TRUE;
   } else {
@@ -194,7 +194,8 @@ void ArduIMU_event(void)
     ardu_ins_trans.status = I2CTransDone;
 
 #ifdef ARDUIMU_SYNC_SEND
-    
+  #if PERIODIC_TELEMETRY 
+    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     //RunOnceEvery(15, DOWNLINK_SEND_AHRS_EULER(DefaultChannel, DefaultDevice, &arduimu_eulers.phi, &arduimu_eulers.theta, &arduimu_eulers.psi));
     RunOnceEvery(15, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
         DOWNLINK_SEND_IMU_GYRO(DefaultChannel, DefaultDevice, &arduimu_rates.p, &arduimu_rates.q,
@@ -202,6 +203,7 @@ void ArduIMU_event(void)
     RunOnceEvery(15, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_IMU_ACCEL(DefaultChannel, DefaultDevice, &arduimu_accel.x, &arduimu_accel.y,
                  &arduimu_accel.z);} );
+  #endif
 #endif
   } else if (ardu_ins_trans.status == I2CTransFailed) {
     ardu_ins_trans.status = I2CTransDone;

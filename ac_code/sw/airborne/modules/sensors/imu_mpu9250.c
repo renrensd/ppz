@@ -54,6 +54,7 @@ void imu_mpu9250_event(void)
 
 void imu_mpu9250_report(void)
 {
+#if PERIODIC_TELEMETRY
   struct Int32Vect3 accel = {
     (int32_t)(mpu9250.data_accel.vect.x),
     (int32_t)(mpu9250.data_accel.vect.y),
@@ -77,5 +78,6 @@ void imu_mpu9250_report(void)
   };
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice, &mag.x, &mag.y, &mag.z);
+#endif
 }
 

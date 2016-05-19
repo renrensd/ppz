@@ -36,7 +36,7 @@
 #include "messages.h"
 #include "subsystems/datalink/downlink.h"
 
-#define SENSOR_SYNC_SEND 1
+#define SENSOR_SYNC_SEND 0
 
 #ifndef MS5611_I2C_DEV
 #define MS5611_I2C_DEV i2c1
@@ -74,9 +74,10 @@ void baro_ms5611_periodic_check(void)
 
   ms5611_i2c_periodic_check(&baro_ms5611);
 
-#if  0//SENSOR_SYNC_SEND
-  // send coeff every 30s
+#if 0//SENSOR_SYNC_SEND
+  #if PERIODIC_TELEMETRY
   RunOnceEvery((30 * BARO_MS5611_PERIODIC_CHECK_FREQ), baro_ms5611_send_coeff());
+  #endif
 #endif
 }
 
@@ -103,12 +104,14 @@ void baro_ms5611_event(void)
     baro_ms5611_alt = pprz_isa_altitude_of_pressure(pressure);
     baro_ms5611_alt_valid = TRUE;
 
-#if   0 //def SENSOR_SYNC_SEND
+#ifdef SENSOR_SYNC_SEND
+   #if PERIODIC_TELEMETRY
     fbaroms = baro_ms5611.data.pressure / 100.;
     xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_BARO_MS5611(DefaultChannel, DefaultDevice,
                               &baro_ms5611.data.d1, &baro_ms5611.data.d2,
                               &fbaroms, &temp);
+   #endif
 #endif
   }
 }

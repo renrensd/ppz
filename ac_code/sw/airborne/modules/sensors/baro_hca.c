@@ -105,11 +105,9 @@ void baro_hca_read_event(void)
   uint16_t foo = 0;
   float bar = 0;
 #ifdef SENSOR_SYNC_SEND
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_BARO_ETS(DefaultChannel, DefaultDevice, &pBaroRaw, &foo, &bar)
 #else
-  RunOnceEvery(10, { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-     DOWNLINK_SEND_BARO_ETS(DefaultChannel, DefaultDevice, &pBaroRaw, &foo, &bar);});
+  RunOnceEvery(10, DOWNLINK_SEND_BARO_ETS(DefaultChannel, DefaultDevice, &pBaroRaw, &foo, &bar));
 #endif
 
 }

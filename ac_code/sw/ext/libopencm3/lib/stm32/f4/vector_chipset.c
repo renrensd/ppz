@@ -24,4 +24,7 @@ static void pre_main(void)
 {
 	/* Enable access to Floating-Point coprocessor. */
 	SCB_CPACR |= SCB_CPACR_FULL * (SCB_CPACR_CP10 | SCB_CPACR_CP11);
+	//SCB_CCR |= SCB_CCR_DIV_0_TRP | SCB_CCR_UNALIGN_TRP;
+	//SCB_SHCSR |= SCB_SHCSR_USGFAULTENA|SCB_SHCSR_BUSFAULTENA|SCB_SHCSR_MEMFAULTENA;
 }
+

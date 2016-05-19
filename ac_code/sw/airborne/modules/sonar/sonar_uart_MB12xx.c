@@ -36,7 +36,7 @@
 //#include "arch/lpc21/efs/inc/plibc.h"
 #include "std.h"
 
-#define SonarLinkDev  (uart6.device)
+#define SonarLinkDev  (uart1.device)
 #define SonarLinkTransmit(c) SonarLinkDev.put_byte(SonarLinkDev.periph, c)
 #define SonarLinkChAvailable() SonarLinkDev.char_available(SonarLinkDev.periph)
 #define SonarLinkGetch() SonarLinkDev.get_byte(SonarLinkDev.periph)
@@ -105,21 +105,23 @@ void sonar_uart_read(void)
 		  						 + (Sonar_MB12.payload[2]-0x30);
 
 			Sonar_MB12.msg_received = FALSE;
-			
+			#if 0
 			if ( Sonar_MB12.distance_cm < 20 )
 				 return;
 			
 			if ( Sonar_MB12.distance_cm > 700 )
 				 return;
+			#endif
 				
 			Sonar_MB12.distance_m=(float)Sonar_MB12.distance_cm/100.0;
 		 	 
 		  	// Send ABI message
 		  	AbiSendMsgAGL(AGL_SONAR_ADC_ID, Sonar_MB12.distance_m);
-		  	//AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, Sonar_US100.distance_m);
 
-   	    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-              DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &Sonar_MB12.distance_cm, &agl_dist_value_filtered);
+			#if PERIODIC_TELEMETRY
+   	        xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+            DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &Sonar_MB12.distance_cm, &agl_dist_value_filtered);
+			#endif
 	    }
 	}
 }

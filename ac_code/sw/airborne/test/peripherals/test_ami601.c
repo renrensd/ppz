@@ -82,6 +82,5 @@ static inline void on_mag(void)
   LED_TOGGLE(4);
   ami601_status = AMI601_IDLE;
   struct Int32Vect3 bla = {ami601_values[0], ami601_values[1], ami601_values[2]};
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice, &bla.x, &bla.y, &bla.z);
 }

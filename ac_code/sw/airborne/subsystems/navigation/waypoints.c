@@ -124,12 +124,14 @@ void waypoint_set_enu(uint8_t wp_id, struct EnuCoor_f *enu)
 
 void waypoint_move_enu_i(uint8_t wp_id, struct EnuCoor_i *new_pos)
 {
+#if PERIODIC_TELEMETRY
   if (wp_id < nb_waypoint) {
     waypoint_set_enu_i(wp_id, new_pos);
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id, &(new_pos->x),
                                &(new_pos->y), &(new_pos->z));
   }
+#endif
 }
 
 /**
@@ -184,10 +186,11 @@ void waypoint_move_lla(uint8_t wp_id, struct LlaCoor_i *lla)
     return;
   }
   waypoint_set_lla(wp_id, lla);
+  #if PERIODIC_TELEMETRY
   if (waypoint_is_global(wp_id)) {
     /* lla->alt is above ellipsoid, WP_MOVED_LLA has hmsl alt */
     int32_t hmsl = lla->alt - state.ned_origin_i.lla.alt + state.ned_origin_i.hmsl;
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	 xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_WP_MOVED_LLA(DefaultChannel, DefaultDevice, &wp_id,
                                &lla->lat, &lla->lon, &hmsl);
   } else {
@@ -197,6 +200,7 @@ void waypoint_move_lla(uint8_t wp_id, struct LlaCoor_i *lla)
                                &waypoints[wp_id].enu_i.y,
                                &waypoints[wp_id].enu_i.z);
   }
+  #endif
 }
 
 /** set waypoint latitude/longitude without updating altitude */
@@ -299,5 +303,17 @@ void waypoint_copy(uint8_t wp_dest, uint8_t wp_src)
 {
   if (wp_dest < nb_waypoint && wp_src < nb_waypoint) {
     waypoints[wp_dest] = waypoints[wp_src];
+  }
+}
+
+void waypoint_position_copy(uint8_t wp_dest, uint8_t wp_src)
+{
+  if (wp_dest < nb_waypoint && wp_src < nb_waypoint) {
+    waypoints[wp_dest].enu_f.x = waypoints[wp_src].enu_f.x;
+    waypoints[wp_dest].enu_f.y = waypoints[wp_src].enu_f.y;
+    waypoints[wp_dest].enu_i.x = waypoints[wp_src].enu_i.x;
+    waypoints[wp_dest].enu_i.y = waypoints[wp_src].enu_i.y;
+    waypoints[wp_dest].lla.lat = waypoints[wp_src].lla.lat;
+    waypoints[wp_dest].lla.lon = waypoints[wp_src].lla.lon;
   }
 }

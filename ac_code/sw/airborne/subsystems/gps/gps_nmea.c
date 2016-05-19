@@ -59,13 +59,54 @@
 #define GOT_CHECKSUM  2
 #define GOT_END       3
 
+#if USE_XYZA
+ #define CRC32_POLYNOMIAL 0xEDB88320
+#endif
+
 struct GpsNmea gps_nmea;
 
 static void nmea_parse_GSA(void);
 static void nmea_parse_RMC(void);
 static void nmea_parse_GGA(void);
 static void nmea_parse_GSV(void);
+#if USE_XYZA
+uint32_t CRC32Value(int32_t i);
+uint32_t CalculateXYZACRC32(uint16_t ulCount,unsigned char *ucBuffer);
+static void nmea_parse_XYZ(void);
+#endif
 
+/*double my_strtod(const char* s, char** endptr);*/
+
+
+#if USE_XYZA
+uint32_t CRC32Value(int32_t i)
+{
+	uint8_t j;
+	uint32_t ulCRC;
+	ulCRC = (uint32_t)i;
+	for (j=8; j>0; j--)
+	{
+		if (ulCRC & 1)
+		ulCRC = (ulCRC >> 1)^CRC32_POLYNOMIAL;
+		else ulCRC >>= 1;
+	}
+	return ulCRC;
+}
+
+uint32_t CalculateXYZACRC32(uint16_t ulCount,unsigned char *ucBuffer)
+{
+	uint32_t ulTemp1;
+	uint32_t ulTemp2;
+	uint32_t ulCRC = 0;
+	while (ulCount-- != 0)
+	{
+		ulTemp1 = (ulCRC >> 8) & 0x00FFFFFFL;
+		ulTemp2 = CRC32Value( ( (int32_t)ulCRC^*ucBuffer++ )&0xff );
+		ulCRC = ulTemp1^ulTemp2;
+	}
+	return ulCRC;
+}
+#endif
 
 void gps_impl_init(void)
 {
@@ -73,6 +114,9 @@ void gps_impl_init(void)
   gps_nmea.is_configured = FALSE;
   gps_nmea.msg_available = FALSE;
   gps_nmea.pos_available = FALSE;
+ #if USE_XYZA
+  gps_nmea.pos_xyz_available = FALSE;
+ #endif
   gps_nmea.have_gsv = FALSE;
   gps_nmea.gps_nb_ovrn = 0;
   gps_nmea.msg_len = 0;
@@ -88,14 +132,23 @@ void gps_nmea_msg(void)
   gps.last_msg_ticks = sys_time.nb_sec_rem;
   gps.last_msg_time = sys_time.nb_sec;
   nmea_parse_msg();
-  if (gps_nmea.pos_available) {
-    if (gps.fix == GPS_FIX_3D) {
-      gps.last_3dfix_ticks = sys_time.nb_sec_rem;
-      gps.last_3dfix_time = sys_time.nb_sec;
-    }
-    AbiSendMsgGPS(GPS_NMEA_ID, now_ts, &gps);
+  if( gps_nmea.pos_available
+     #if USE_XYZA
+	  && gps_nmea.pos_xyz_available
+	 #endif
+                                    ) 
+  {
+	 	if (gps.fix == GPS_FIX_3D) 
+		{
+			gps.last_3dfix_ticks = sys_time.nb_sec_rem;
+			gps.last_3dfix_time = sys_time.nb_sec;
+		}
+		AbiSendMsgGPS(GPS_NMEA_ID, now_ts, &gps);
   }
   gps_nmea.msg_available = FALSE;
+ #if USE_XYZA
+  gps_nmea.pos_xyz_available = FALSE;  /*xyza msg finished,reset to false*/
+ #endif
 }
 
 void WEAK nmea_configure(void)
@@ -136,7 +189,15 @@ void nmea_parse_msg(void)
     gps_nmea.have_gsv = TRUE;
     NMEA_PRINT("GSV: \"%s\" \n\r", gps_nmea.msg_buf);
     nmea_parse_GSV();
-  } else {
+  } 
+  #if USE_XYZA  //add BESTXYZA data to get ecef information
+    else if (gps_nmea.msg_len > 5 && !strncmp(&gps_nmea.msg_buf[4] , "XYZA", 4)) {   
+    gps_nmea.msg_buf[gps_nmea.msg_len] = 0;
+    NMEA_PRINT("XYZ: \"%s\" \n\r", gps_nmea.msg_buf);
+    nmea_parse_XYZ();
+  } 
+  #endif
+    else {
     gps_nmea.msg_buf[gps_nmea.msg_len] = 0;
     NMEA_PRINT("Other/propriarty message: len=%i \n\r \"%s\" \n\r", gps_nmea.msg_len, gps_nmea.msg_buf);
     nmea_parse_prop_msg();
@@ -155,33 +216,67 @@ void nmea_parse_msg(void)
  */
 void nmea_parse_char(uint8_t c)
 {
-
+  static uint8_t header_type = 0; /*0:none, 1:nmea, 2:bestxyza*/
+  uint32_t crc_sum,cal;
   switch (gps_nmea.status) {
     case WAIT:
-      gps_nmea.msg_len = 0;
-      /* valid message needs to start with dollar sign */
-      if (c == '$') {
+      gps_nmea.msg_len = 0;    //reset buf length
+      
+      if (c == '$') /* nmea valid message needs to start with $ sign */
+	  { 
+        header_type = 1;
         gps_nmea.status = GOT_START;
       }
+	  else if(c == '#') /* xyza valid message needs to start with # sign */
+	  {
+	  	header_type = 2;
+        gps_nmea.status = GOT_START;
+	  }
       break;
 
     case GOT_START:
       switch (c) {
         case '\r':
         case '\n':
-          if (gps_nmea.msg_len == 0) {
-            //reject empty lines
-            gps_nmea.status = WAIT;
-            break;
+          if (gps_nmea.msg_len != 0)  /*do crc verify*/
+		  {
+		  	if(1==header_type)
+		  	{
+				char crc_char[2] = { gps_nmea.msg_buf[gps_nmea.msg_len-2], gps_nmea.msg_buf[gps_nmea.msg_len-1] };
+				crc_sum = (uint32_t)(strtoul(crc_char, NULL,16));
+				cal = (uint32_t)nmea_calc_crc(gps_nmea.msg_buf, gps_nmea.msg_len-3);				
+		  	}
+		   #if USE_XYZA
+			else if(2==header_type)
+			{
+				char crc_char[8] = { gps_nmea.msg_buf[gps_nmea.msg_len-8], 
+					                 gps_nmea.msg_buf[gps_nmea.msg_len-7],
+					                 gps_nmea.msg_buf[gps_nmea.msg_len-6],
+					                 gps_nmea.msg_buf[gps_nmea.msg_len-5],
+					                 gps_nmea.msg_buf[gps_nmea.msg_len-4],
+					                 gps_nmea.msg_buf[gps_nmea.msg_len-3],
+					                 gps_nmea.msg_buf[gps_nmea.msg_len-2],
+					                 gps_nmea.msg_buf[gps_nmea.msg_len-1]  };
+				crc_sum = (uint32_t)(strtoul(crc_char, NULL,16));
+				cal = CalculateXYZACRC32((unsigned long)(gps_nmea.msg_len-9), (unsigned char*)gps_nmea.msg_buf);
+			}
+		   #endif
+			
+			if(cal==crc_sum)
+			{
+				gps_nmea.status = GOT_END;
+                gps_nmea.msg_available = TRUE;
+				break;
+			}			
+
           }
-          else {
-            // TODO: check for CRC before setting msg as available
-            gps_nmea.status = GOT_END;
-            gps_nmea.msg_available = TRUE;
-          }
+
+		  //reject empty lines
+          gps_nmea.status = WAIT;
           break;
 
-        case '$':
+		case '$':
+		case '#':
           // got another dollar sign, msg incomplete: reset
           gps_nmea.msg_buf[gps_nmea.msg_len] = 0;
           NMEA_PRINT("nmea_parse_char: skipping incomplete msg: len=%i, \"%s\"\n\r",
@@ -224,13 +319,11 @@ void nmea_parse_char(uint8_t c)
  */
 uint8_t nmea_calc_crc(const char *buff, int buff_sz)
 {
-  uint8_t chsum = 0,
-          it;
+  uint8_t chsum = 0, it;
 
   for (it = 0; it < buff_sz; ++it) {
     chsum ^= buff[it];
   }
-
   return chsum;
 }
 
@@ -259,6 +352,10 @@ static void nmea_parse_GSA(void)
   if (gps.fix == 1) {
     gps.fix = 0;
   }
+  #if 0
+  gps.fix=GPS_FIX_3D;       
+  gps.pacc=300;
+  #endif
   NMEA_PRINT("p_GSA() - gps.fix=%i (3=3D)\n\r", gps.fix);
   nmea_read_until(&i);
 
@@ -283,18 +380,18 @@ static void nmea_parse_GSA(void)
   }
 
   // PDOP
-  float pdop = strtof(&gps_nmea.msg_buf[i], NULL);
+  float pdop = (float)strtod(&gps_nmea.msg_buf[i], NULL);
   gps.pdop = pdop * 100;
   NMEA_PRINT("p_GSA() - pdop=%f\n\r", pdop);
   nmea_read_until(&i);
 
   // HDOP
-  float hdop __attribute__((unused)) = strtof(&gps_nmea.msg_buf[i], NULL);
+  float hdop __attribute__((unused)) = (float)strtod(&gps_nmea.msg_buf[i], NULL);
   NMEA_PRINT("p_GSA() - hdop=%f\n\r", hdop);
   nmea_read_until(&i);
 
   // VDOP
-  float vdop __attribute__((unused)) = strtof(&gps_nmea.msg_buf[i], NULL);
+  float vdop __attribute__((unused)) = (float)strtod(&gps_nmea.msg_buf[i], NULL);
   NMEA_PRINT("p_GSA() - vdop=%f\n\r", vdop);
   nmea_read_until(&i);
 
@@ -411,9 +508,11 @@ static void nmea_parse_GGA(void)
   // check for good position fix
   if ((gps_nmea.msg_buf[i] != '0') && (gps_nmea.msg_buf[i] != ','))  {
     gps_nmea.pos_available = TRUE;
+	gps_nmea.gps_qual = (uint8_t)gps_nmea.msg_buf[i];
     NMEA_PRINT("p_GGA() - POS_AVAILABLE == TRUE\n\r");
   } else {
     gps_nmea.pos_available = FALSE;
+	gps_nmea.gps_qual = 0;
     NMEA_PRINT("p_GGA() - gps_pos_available == false\n\r");
   }
 
@@ -429,7 +528,7 @@ static void nmea_parse_GGA(void)
 
   // get altitude (in meters) above geoid (MSL)
   nmea_read_until(&i);
-  float hmsl = strtof(&gps_nmea.msg_buf[i], NULL);
+  float hmsl = (float)strtod(&gps_nmea.msg_buf[i], NULL);
   gps.hmsl = hmsl * 1000;
   NMEA_PRINT("p_GGA() - gps.hmsl=%i\n\r", gps.hmsl);
 
@@ -438,7 +537,7 @@ static void nmea_parse_GGA(void)
 
   // get geoid seperation
   nmea_read_until(&i);
-  float geoid = strtof(&gps_nmea.msg_buf[i], NULL);
+  float geoid = (float)strtod(&gps_nmea.msg_buf[i], NULL);
   NMEA_PRINT("p_GGA() - geoid alt=%f\n\r", geoid);
   // height above ellipsoid
   lla_f.alt = hmsl + geoid;
@@ -465,11 +564,13 @@ static void nmea_parse_GGA(void)
 #endif
 
   /* convert to ECEF */
+#if !USE_XYZA
   struct EcefCoor_f ecef_f;
   ecef_of_lla_f(&ecef_f, &lla_f);
   gps.ecef_pos.x = ecef_f.x * 100;
   gps.ecef_pos.y = ecef_f.y * 100;
   gps.ecef_pos.z = ecef_f.z * 100;
+#endif
 }
 
 /**
@@ -539,3 +640,194 @@ static void nmea_parse_GSV(void)
     }
   }
 }
+
+#if USE_XYZA
+/**
+ * Parse BESTXYZA messages.
+ * Get ecef coor pos/speed information
+ */
+static void nmea_parse_XYZ(void)
+{
+  //get ecef_pos
+  int i=1;
+  for(uint8_t n=0;n<10;n++)
+  {
+  	nmea_read_until(&i);
+  }
+  if( !strncmp(&gps_nmea.msg_buf[i] , "NONE", 4) )
+  {
+  	gps_nmea.pos_xyz_available = FALSE;
+	return;
+  }
+  gps_nmea.pos_xyz_available = TRUE;
+  nmea_read_until(&i);
+  
+  gps.ecef_pos.x= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+  nmea_read_until(&i);
+  gps.ecef_pos.y= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+  nmea_read_until(&i);
+  gps.ecef_pos.z= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+
+  //get ecef_speed
+  for(uint8_t m=0;m<6;m++)
+  {
+  	nmea_read_until(&i);
+  }
+  gps.ecef_vel.x= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+  nmea_read_until(&i);
+  gps.ecef_vel.y= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+  nmea_read_until(&i);
+  gps.ecef_vel.z= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+  
+}
+#endif
+
+/*
+double my_strtod(const char* s, char** endptr)
+
+{
+
+   register const char*  p     = s;
+
+    register long double  value = 0.L;
+
+    int                   sign  = 0;
+
+    long double           factor;
+
+    unsigned int          expo;
+
+  
+
+    while ( isspace(*p) )//\u8df3\u8fc7\u524d\u9762\u7684\u7a7a\u683c
+
+      p++;
+
+ 
+
+    if(*p == '-' || *p == '+')
+
+      sign = *p++;//\u628a\u7b26\u53f7\u8d4b\u7ed9\u5b57\u7b26sign\uff0c\u6307\u9488\u540e\u79fb\u3002
+
+  
+
+   //\u5904\u7406\u6570\u5b57\u5b57\u7b26
+
+ 
+
+    while ( (unsigned int)(*p - '0') < 10u )//\u8f6c\u6362\u6574\u6570\u90e8\u5206
+
+      value = value*10 + (*p++ - '0');
+
+   //\u5982\u679c\u662f\u6b63\u5e38\u7684\u8868\u793a\u65b9\u5f0f\uff08\u5982\uff1a1234.5678\uff09
+
+   if ( *p == '.' )
+
+   {
+
+        factor = 1.;
+
+        p++;
+
+        while ( (unsigned int)(*p - '0') < 10u )
+
+      {
+
+         factor *= 0.1;
+
+            value  += (*p++ - '0') * factor;
+
+        }
+
+    }
+
+   //\u5982\u679c\u662fIEEE754\u6807\u51c6\u7684\u683c\u5f0f\uff08\u5982\uff1a1.23456E+3\uff09
+
+    if ( (*p | 32) == 'e' )
+
+   {
+
+      expo   = 0;
+
+        factor = 10.L;
+
+        switch (*++p)
+
+      {
+
+        case '-':
+
+           factor = 0.1;
+
+        case '+':
+
+           p++;
+
+           break;
+
+        case '0':
+
+        case '1':
+
+        case '2':
+
+        case '3':
+
+        case '4':
+
+        case '5':
+
+        case '6':
+
+        case '7':
+
+        case '8':
+
+        case '9':
+
+           break;
+
+        default :
+
+           value = 0.L;
+
+           p     = s;
+
+           goto done;
+
+        }
+
+        while ( (unsigned int)(*p - '0') < 10u )
+
+            expo = 10 * expo + (*p++ - '0');
+
+        while ( 1 )
+
+      {
+
+        if ( expo & 1 )
+
+           value *= factor;
+
+            if ( (expo >>= 1) == 0 )
+
+                break;
+
+            factor *= factor;
+
+        }
+
+    }
+
+done:
+
+    if ( endptr != 0 )
+
+        *endptr = (char*)p;
+
+ 
+
+    return (sign == '-' ? -value : value);
+
+}
+*/

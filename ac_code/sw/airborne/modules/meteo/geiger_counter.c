@@ -68,7 +68,6 @@ void geiger_counter_event(void)
 
     if (volt_geiger & 0x8000) {
       volt_geiger &= 0x7FFF;
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_GEIGER_COUNTER(DefaultChannel, DefaultDevice,
                                    &count_geiger_1, &count_geiger_2, &volt_geiger);
     }

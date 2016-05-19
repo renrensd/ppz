@@ -41,7 +41,7 @@ extern struct Bmp085 baro_bmp;
 extern bool_t baro_bmp_enabled;
 extern float baro_bmp_r;
 extern float baro_bmp_sigma2;
-extern float baro_bmp_alt;
+extern int32_t baro_bmp_alt;
 
 void baro_bmp_init(void);
 void baro_bmp_periodic(void);

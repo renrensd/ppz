@@ -33,6 +33,7 @@
 /** Includes macros generated from ubx.xml */
 #include "ubx_protocol.h"
 
+
 /* parser status */
 #define UNINIT        0
 #define GOT_SYNC1     1
@@ -60,6 +61,8 @@ struct GpsUbx gps_ubx;
 #if USE_GPS_UBX_RXM_RAW
 struct GpsUbxRaw gps_ubx_raw;
 #endif
+
+static void gps_stable_monitor(void);
 
 void gps_impl_init(void)
 {
@@ -324,7 +327,6 @@ void gps_ubx_msg(void)
 {
   // current timestamp
   uint32_t now_ts = get_sys_time_usec();
-
   gps.last_msg_ticks = sys_time.nb_sec_rem;
   gps.last_msg_time = sys_time.nb_sec;
   gps_ubx_read_message();
@@ -333,12 +335,39 @@ void gps_ubx_msg(void)
       (gps_ubx.msg_id == UBX_NAV_VELNED_ID ||
        (gps_ubx.msg_id == UBX_NAV_SOL_ID &&
         gps_ubx.have_velned == 0))) {
+        #if 0      //only for gps fix test
+         gps.fix=GPS_FIX_3D;       
+         gps.pacc=300;
+        #endif
     if (gps.fix == GPS_FIX_3D) {
       gps.last_3dfix_ticks = sys_time.nb_sec_rem;
       gps.last_3dfix_time = sys_time.nb_sec;
     }
     AbiSendMsgGPS(GPS_UBX_ID, now_ts, &gps);
+
   }
   gps_ubx.msg_available = FALSE;
 }
+
+static void gps_stable_monitor(void)
+{
+  
+  static uint16_t gps_moni_counter,gps_unsta_counter;
+  gps_moni_counter++;
+  if(gps.pacc > 500)  //uper 5m
+  {
+  	 gps_unsta_counter++;
+  }
+  if(gps_moni_counter==600)  //about 1min
+  { 
+  	if(gps_unsta_counter >10)
+	{ gps.stable=FALSE; }
+	else
+	{ gps.stable=TRUE; }
+    //reset
+	gps_moni_counter=0;
+	gps_unsta_counter=0;  
+  }
+}
+
 

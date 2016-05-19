@@ -71,7 +71,6 @@ struct Bmp085 {
   int32_t up;                         ///< uncompensated pressure
   int32_t temperature;                ///< temperature in 0.1 deg Celcius
   int32_t pressure;                   ///< pressure in Pascal
-  float alt;
 };
 
 extern void bmp085_read_eeprom_calib(struct Bmp085 *bmp);

@@ -94,6 +94,29 @@ def main():
     if not options.ac_name:
         parser.error("Please specify the aircraft name.")
 
+    # get environment
+    paparazzi_home = os.environ['PAPARAZZI_HOME']
+    if not paparazzi_home:
+        paparazzi_home = os.getcwd()
+    if options.verbose:
+        print("Using "+paparazzi_home+" as Paparazzi home dir.")
+    ac_dir = os.path.join(paparazzi_home, "var", "aircrafts", options.ac_name)
+
+     # if sim type not explicitly specified: check which one is built
+    if options.simtype is None:
+        nps_sitl = os.path.join(ac_dir, "nps", "simsitl")
+        nps_sitl = nps_sitl if os.path.isfile(nps_sitl) else None
+        sim_sitl = os.path.join(ac_dir, "sim", "simsitl")
+        sim_sitl = sim_sitl if os.path.isfile(sim_sitl) else None
+        if nps_sitl and sim_sitl:
+            print("Error: Both sim and nps targets built for aircraft " + options.ac_name + ". Please specify sim type to use...")
+            sys.exit(1)
+        elif nps_sitl is None and sim_sitl is None:
+            print("Error: No simulator target (sim or nps) built for aircraft " + options.ac_name)
+            sys.exit(1)
+        else:
+            options.simtype = "nps" if nps_sitl is not None else "sim"
+
     simargs = []
 
     if options.simtype == "sim":
@@ -152,17 +175,16 @@ def main():
 
     # pass additional args through to the sim
     simargs += args
-
+    
     # get environment
     paparazzi_home = os.environ['PAPARAZZI_HOME']
     if not paparazzi_home:
         paparazzi_home = os.getcwd()
     if options.verbose:
         print("Using "+paparazzi_home+" as Paparazzi home dir.")
-
-    simsitl = os.path.join(paparazzi_home, "var", "aircrafts", options.ac_name, simdir, "simsitl")
+    simsitl = os.path.join(ac_dir, options.simtype, "simsitl")
     if not os.path.isfile(simsitl):
-        print("Error: " + simsitl + " is missing. Is target " + simdir + " built for aircraft " + options.ac_name + "?")
+        print("Error: " + simsitl + " is missing. Is target " + options.simtype + " built for aircraft " + options.ac_name + "?")
         sys.exit(1)
 
     if options.verbose:

@@ -33,6 +33,7 @@
 
 #include "mcu_periph/uart.h"
 
+
 #define GPS_NB_CHANNELS 16
 
 #define GPS_UBX_MAX_PAYLOAD 255
@@ -105,7 +106,7 @@ static inline void GpsEvent(void)
   while (dev->char_available(dev->periph)) {
     gps_ubx_parse(dev->get_byte(dev->periph));
     if (gps_ubx.msg_available) {
-      gps_ubx_msg();
+	  	gps_ubx_msg();
     }
   }
 }

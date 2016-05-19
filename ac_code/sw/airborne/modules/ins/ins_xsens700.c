@@ -386,7 +386,7 @@ void parse_ins_msg(void)
     xsens_gps_arm_x = XSENS_ReqLeverArmGpsAck_x(xsens_msg_buf);
     xsens_gps_arm_y = XSENS_ReqLeverArmGpsAck_y(xsens_msg_buf);
     xsens_gps_arm_z = XSENS_ReqLeverArmGpsAck_z(xsens_msg_buf);
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
     DOWNLINK_SEND_IMU_MAG_SETTINGS(DefaultChannel, DefaultDevice, &xsens_declination, &xsens_declination, &xsens_gps_arm_x,
                                    &xsens_gps_arm_y, &xsens_gps_arm_z);
   } else if (xsens_id == XSENS_Error_ID) {

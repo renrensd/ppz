@@ -69,7 +69,7 @@ void temod_event(void)
     tmd_temperature |= tmd_trans.buf[1];
 
     ftmd_temperature = (tmd_temperature / TEMOD_TYPE) - 32.;
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
     DOWNLINK_SEND_TMP_STATUS(DefaultChannel, DefaultDevice, &tmd_temperature, &ftmd_temperature);
     tmd_trans.status = I2CTransDone;
   }

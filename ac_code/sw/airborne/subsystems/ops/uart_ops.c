@@ -186,6 +186,7 @@ void uart_ops_send_polling(void)
     }
 }
 
+uint8_t uart_ops_poll_cnt = 0;
 /***********************************************************************
 *  Name         : uart_ops_polling
 *  Description : It's called by timer interrupt periodically as spi timer.  
@@ -195,119 +196,124 @@ void uart_ops_send_polling(void)
 void uart_ops_polling(void)
 {
     U8 lost_frame_counter = 0;
-    if(uart_ops_req_restart_crq())
-    {
-		if(uart_ops_is_tx_idle())
-		{
-			uart_ops_clr_restart_crq();
-	        uart_ops_start_send();
-		}
-    }
 
-    if(uart_ops_send_frame_interval_counter)
-    {
-        uart_ops_send_frame_interval_counter--;
-    }
+	uart_ops_poll_cnt++;
+	if(uart_ops_poll_cnt >= 2)
+	{
+		uart_ops_poll_cnt = 0;
+	    if(uart_ops_req_restart_crq())
+	    {
+			if(uart_ops_is_tx_idle())
+			{
+				uart_ops_clr_restart_crq();
+		        uart_ops_start_send();
+			}
+	    }
 
-    
-    if(uart_ops_ack_timer.timer_counter )
-    {
-        if(--uart_ops_ack_timer.timer_counter == 0)
-        {   //req clock time out
-            if(++uart_ops_ack_timer.timeout_counter > OPS_ACK_TIMEOUT_COUNTER_MAX) /**when >5, how to do ?**/
-            {
-                uart_ops_clr_ack_alarm();
-                uart_ops_tx_info.ack_wait_state = OPS_ACK_WAIT_NONE;
-                uart_ops_out_frame.bValid = FALSE;/**ignore the current frame,**/
-                uart_ops_lost_ack_counter++;
-                uart_ops_send_frame_handled_counter = uart_ops_tx_info.frame_id;//uart_ops_send_frame_handled_counter++;
-            }
-            else
-            {
-                uart_ops_tx_info.ack_wait_state = OPS_ACK_WAIT_TIMEOUT;
-            }
-        }
-    }
+	    if(uart_ops_send_frame_interval_counter)
+	    {
+	        uart_ops_send_frame_interval_counter--;
+	    }
 
-    if(uart_ops_req_send_timer.timer_counter)
-    {
-        if(--uart_ops_req_send_timer.timer_counter  == 0)
-        {   //req clock time out
-            if(++uart_ops_req_send_timer.timeout_counter > OPS_REQ_SEND_TIMEOUT_COUNTER_MAX) /**when >10, how to do ?**/
-            {
-                //uart_ops_clr_req_send_alarm();
-                uart_ops_end_send();/**stop comm**/
-                uart_ops_out_frame.bValid = FALSE;/**ignore the current frame,**/
-                uart_ops_send_frame_handled_counter = uart_ops_tx_info.frame_id;
-                uart_ops_req_tx_timeout_counter++;
-            }
-            else
-            {
-                uart_ops_set_req_send_alarm();
-                uart_ops_crq_retry();
-            }
-        }
-    }
+	    
+	    if(uart_ops_ack_timer.timer_counter )
+	    {
+	        if(--uart_ops_ack_timer.timer_counter == 0)
+	        {   //req clock time out
+	            if(++uart_ops_ack_timer.timeout_counter > OPS_ACK_TIMEOUT_COUNTER_MAX) /**when >5, how to do ?**/
+	            {
+	                uart_ops_clr_ack_alarm();
+	                uart_ops_tx_info.ack_wait_state = OPS_ACK_WAIT_NONE;
+	                uart_ops_out_frame.bValid = FALSE;/**ignore the current frame,**/
+	                uart_ops_lost_ack_counter++;
+	                uart_ops_send_frame_handled_counter = uart_ops_tx_info.frame_id;//uart_ops_send_frame_handled_counter++;
+	            }
+	            else
+	            {
+	                uart_ops_tx_info.ack_wait_state = OPS_ACK_WAIT_TIMEOUT;
+	            }
+	        }
+	    }
 
-    if(uart_ops_enter_tx_timer.timer_counter )
-    {
-        if(--uart_ops_enter_tx_timer.timer_counter  == 0)
-        {   
-            uart_ops_clr_enter_tx_alarm();
-            uart_ops_end_send();/**stop comm**/                
-            uart_ops_tx_info.status = OPS_ST_IDLE;
-            uart_ops_tx_info.ack_wait_state = OPS_ACK_WAIT_NONE;
-            uart_ops_out_frame.bValid = FALSE;/**ignore the current frame,**/
-        }
-    }
-    
-    if(uart_ops_tx_timer.timer_counter )
-    {
-        if(--uart_ops_tx_timer.timer_counter  == 0)
-        {
-            if((uart_ops_tx_info.req_send_ack)||(uart_ops_tx_info.req_send_frame))
-            {
-                //tx time out
-                if(++uart_ops_tx_timer.timeout_counter > OPS_TX_TIMEOUT_COUNTER_MAX)
-                {
-                    //uart_ops_clr_tx_alarm();
-                    uart_ops_end_send();/**stop comm**/                
-                    uart_ops_tx_info.status = OPS_ST_IDLE;
-                    uart_ops_out_frame.bValid = FALSE;/**ignore the current frame,**/
-                    uart_ops_send_frame_handled_counter = uart_ops_tx_info.frame_id;
-                    uart_ops_tx_timeout_counter++;
-                }
-                else
-                {
-                    uart_ops_crq_retry();
-                }
-            }
-            else
-            {
-                    //uart_ops_clr_tx_alarm();
-                    uart_ops_end_send();/**stop comm**/                
-                    uart_ops_tx_info.status = OPS_ST_IDLE;
-            }
-        }
-    }
+	    if(uart_ops_req_send_timer.timer_counter)
+	    {
+	        if(--uart_ops_req_send_timer.timer_counter  == 0)
+	        {   //req clock time out
+	            if(++uart_ops_req_send_timer.timeout_counter > OPS_REQ_SEND_TIMEOUT_COUNTER_MAX) /**when >10, how to do ?**/
+	            {
+	                //uart_ops_clr_req_send_alarm();
+	                uart_ops_end_send();/**stop comm**/
+	                uart_ops_out_frame.bValid = FALSE;/**ignore the current frame,**/
+	                uart_ops_send_frame_handled_counter = uart_ops_tx_info.frame_id;
+	                uart_ops_req_tx_timeout_counter++;
+	            }
+	            else
+	            {
+	                uart_ops_set_req_send_alarm();
+	                uart_ops_crq_retry();
+	            }
+	        }
+	    }
 
-    if(uart_ops_rx_timer.timer_counter )
-    {
-        if(--uart_ops_rx_timer.timer_counter  == 0)
-        {//rx time out
-            uart_ops_clr_rx_alarm();
-            uart_ops_rx_info.status = OPS_ST_IDLE;
-            uart_ops_rx_timeout_counter++;
-        }
-    }
-	
-    lost_frame_counter = uart_ops_lost_ack_counter+uart_ops_req_tx_timeout_counter+uart_ops_rx_timeout_counter+uart_ops_tx_timeout_counter;
-    if(lost_frame_counter > OPS_FRAME_LOST_COUNTER_MAX)
-    {
-        //reset system
-        //power_get_navi_reqeust_reset_msg();
-    }
+	    if(uart_ops_enter_tx_timer.timer_counter )
+	    {
+	        if(--uart_ops_enter_tx_timer.timer_counter  == 0)
+	        {   
+	            uart_ops_clr_enter_tx_alarm();
+	            uart_ops_end_send();/**stop comm**/                
+	            uart_ops_tx_info.status = OPS_ST_IDLE;
+	            uart_ops_tx_info.ack_wait_state = OPS_ACK_WAIT_NONE;
+	            uart_ops_out_frame.bValid = FALSE;/**ignore the current frame,**/
+	        }
+	    }
+	    
+	    if(uart_ops_tx_timer.timer_counter )
+	    {
+	        if(--uart_ops_tx_timer.timer_counter  == 0)
+	        {
+	            if((uart_ops_tx_info.req_send_ack)||(uart_ops_tx_info.req_send_frame))
+	            {
+	                //tx time out
+	                if(++uart_ops_tx_timer.timeout_counter > OPS_TX_TIMEOUT_COUNTER_MAX)
+	                {
+	                    //uart_ops_clr_tx_alarm();
+	                    uart_ops_end_send();/**stop comm**/                
+	                    uart_ops_tx_info.status = OPS_ST_IDLE;
+	                    uart_ops_out_frame.bValid = FALSE;/**ignore the current frame,**/
+	                    uart_ops_send_frame_handled_counter = uart_ops_tx_info.frame_id;
+	                    uart_ops_tx_timeout_counter++;
+	                }
+	                else
+	                {
+	                    uart_ops_crq_retry();
+	                }
+	            }
+	            else
+	            {
+	                    //uart_ops_clr_tx_alarm();
+	                    uart_ops_end_send();/**stop comm**/                
+	                    uart_ops_tx_info.status = OPS_ST_IDLE;
+	            }
+	        }
+	    }
 
+	    if(uart_ops_rx_timer.timer_counter )
+	    {
+	        if(--uart_ops_rx_timer.timer_counter  == 0)
+	        {//rx time out
+	            uart_ops_clr_rx_alarm();
+	            uart_ops_rx_info.status = OPS_ST_IDLE;
+	            uart_ops_rx_timeout_counter++;
+	        }
+	    }
+		
+	    lost_frame_counter = uart_ops_lost_ack_counter+uart_ops_req_tx_timeout_counter+uart_ops_rx_timeout_counter+uart_ops_tx_timeout_counter;
+	    if(lost_frame_counter > OPS_FRAME_LOST_COUNTER_MAX)
+	    {
+	        //reset system
+	        //power_get_navi_reqeust_reset_msg();
+	    }
+	}
 }
 
 
@@ -1094,7 +1100,7 @@ static void uart_ops_start_send(void)
         uart_ops_req_tx_timeout_counter = 0;
         uart_ops_clr_req_send_alarm();
         uart_ops_set_enter_tx_alarm();
-	opsTransmit(0x00);/*not use oxff,because when receive frame,ops start with 0xff*/
+		opsTransmit(0x00);/*not use oxff,because when receive frame,ops start with 0xff*/
     }
 }
 /***********************************************************************

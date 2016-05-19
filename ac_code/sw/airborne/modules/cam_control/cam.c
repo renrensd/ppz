@@ -100,6 +100,7 @@ void cam_target(void);
 void cam_waypoint_target(void);
 void cam_ac_target(void);
 
+#if PERIODIC_TELEMETRY
 static void send_cam(struct transport_tx *trans, struct link_device *dev)
 {
   int16_t x = cam_target_x;
@@ -118,14 +119,16 @@ static void send_cam_point(struct transport_tx *trans, struct link_device *dev)
                           &cam_point_distance_from_home, &cam_point_lat, &cam_point_lon);
 }
 #endif
+#endif
 
 void cam_init(void)
 {
   cam_mode = CAM_MODE0;
-
-  register_periodic_telemetry(DefaultPeriodic, "CAM", send_cam);
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CAM, send_cam);
 #ifdef SHOW_CAM_COORDINATES
-  register_periodic_telemetry(DefaultPeriodic, "CAM_POINT", send_cam_point);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CAM_POINT, send_cam_point);
+#endif
 #endif
 }
 
@@ -272,7 +275,7 @@ void cam_target(void)
   struct EnuCoor_f *pos = stateGetPositionEnu_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   vPoint(pos->x, pos->y, stateGetPositionUtm_f()->alt,
-         att->phi, att->theta, *stateGetHorizontalSpeedDir_f(),
+         att->phi, att->theta, stateGetHorizontalSpeedDir_f(),
          cam_target_x, cam_target_y, cam_target_alt,
          &cam_pan_c, &cam_tilt_c);
 #endif

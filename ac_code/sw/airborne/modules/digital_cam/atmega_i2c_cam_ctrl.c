@@ -93,9 +93,7 @@ void atmega_i2c_cam_ctrl_event(void)
   if (atmega_i2c_cam_ctrl_trans.status == I2CTransSuccess) {
     unsigned char cam_ret[1];
     cam_ret[0] = atmega_i2c_cam_ctrl_trans.buf[0];
-
-    RunOnceEvery(6, { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC); 
-		DOWNLINK_SEND_PAYLOAD(DefaultChannel, DefaultDevice, 1, cam_ret);});
+    RunOnceEvery(6, DOWNLINK_SEND_PAYLOAD(DefaultChannel, DefaultDevice, 1, cam_ret));
     atmega_i2c_cam_ctrl_trans.status = I2CTransDone;
   }
 }

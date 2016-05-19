@@ -159,7 +159,7 @@ void ArduIMU_periodicGPS(void)
     gps_daten_versendet_msg2 = TRUE;
     messageNr = 0;
   }
-  //xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
   //DOWNLINK_SEND_DEBUG_ZHAW(DefaultChannel, DefaultDevice, &gps_mode , &gps_numSV ,&gps_alt , &gps_hmsl , &gps.tow, &gps_speed_3d);
 }
 
@@ -185,7 +185,6 @@ void ArduIMU_periodic(void)
 
 
   //Nachricht zum GCS senden
-  //xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   // DOWNLINK_SEND_ArduIMU(DefaultChannel, DefaultDevice, &ArduIMU_data[0], &ArduIMU_data[1], &ArduIMU_data[2], &ArduIMU_data[3], &ArduIMU_data[4], &ArduIMU_data[5]);
 
   //    DOWNLINK_SEND_DEBUG_ZHAW(DefaultChannel, DefaultDevice, &airspeed_mode , &altitude_mode ,&amsys_baro, &amsys_baro, &amsys_airspeed_scaliert, &amsys_baro_scaliert);
@@ -216,6 +215,7 @@ void IMU_Daten_verarbeiten(void)
   att.psi = 0.;
   imu_daten_angefordert = FALSE;
   stateSetNedToBodyEulers_f(&att);
-  RunOnceEvery(15, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-                    DOWNLINK_SEND_AHRS_EULER(DefaultChannel, DefaultDevice, &att->phi, &att->theta, &att->psi);});
+  uint8_t arduimu_id = 102;
+
+  RunOnceEvery(15, DOWNLINK_SEND_AHRS_EULER(DefaultChannel, DefaultDevice, &att->phi, &att->theta, &att->psi, &arduimu_id));
 }

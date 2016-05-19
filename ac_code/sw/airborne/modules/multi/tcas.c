@@ -111,8 +111,8 @@ void tcas_periodic_task_1Hz(void)
   float tau_min = tcas_tau_ta;
   uint8_t ac_id_close = AC_ID;
   uint8_t i;
-  float vx = (*stateGetHorizontalSpeedNorm_f()) * sinf((*stateGetHorizontalSpeedDir_f()));
-  float vy = (*stateGetHorizontalSpeedNorm_f()) * cosf((*stateGetHorizontalSpeedDir_f()));
+  float vx = stateGetHorizontalSpeedNorm_f() * sinf(stateGetHorizontalSpeedDir_f();
+  float vy = stateGetHorizontalSpeedNorm_f() * cosf(stateGetHorizontalSpeedDir_f();
   for (i = 2; i < NB_ACS; i++) {
     if (the_acs[i].ac_id == 0) { continue; } // no AC data
     uint32_t dt = gps.tow - the_acs[i].itow;
@@ -140,8 +140,10 @@ void tcas_periodic_task_1Hz(void)
         if (tau >= TCAS_HUGE_TAU && !inside) {
           tcas_acs_status[i].status = TCAS_NO_ALARM; // conflict is now resolved
           tcas_acs_status[i].resolve = RA_NONE;
+		 #if PERIODIC_TELEMETRY
 		  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
           DOWNLINK_SEND_TCAS_RESOLVED(DefaultChannel, DefaultDevice, &(the_acs[i].ac_id));
+		 #endif
         }
         break;
       case TCAS_TA:
@@ -156,15 +158,19 @@ void tcas_periodic_task_1Hz(void)
           tcas_acs_status[i].status = TCAS_NO_ALARM;  // conflict is now resolved
         }
         tcas_acs_status[i].resolve = RA_NONE;
+		#if PERIODIC_TELEMETRY
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
         DOWNLINK_SEND_TCAS_RESOLVED(DefaultChannel, DefaultDevice, &(the_acs[i].ac_id));
+		#endif
         break;
       case TCAS_NO_ALARM:
         if (tau < tcas_tau_ta || inside) {
           tcas_acs_status[i].status = TCAS_TA; // NO_ALARM -> TA
           // Downlink warning
+         #if PERIODIC_TELEMETRY
           xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
           DOWNLINK_SEND_TCAS_TA(DefaultChannel, DefaultDevice, &(the_acs[i].ac_id));
+		  #endif
         }
         if (tau < tcas_tau_ra || inside) {
           tcas_acs_status[i].status = TCAS_RA; // NO_ALARM -> RA = big problem ?
@@ -209,11 +215,15 @@ void tcas_periodic_task_1Hz(void)
       }
     }
     // Downlink alert
+    #if PERIODIC_TELEMETRY
     xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_TCAS_RA(DefaultChannel, DefaultDevice, &tcas_ac_RA, &tcas_resolve);
+	#endif
   } else { tcas_ac_RA = AC_ID; } // no conflict
 #ifdef TCAS_DEBUG
+  #if PERIODIC_TELEMETRY
   if (tcas_status == TCAS_RA) { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);DOWNLINK_SEND_TCAS_DEBUG(DefaultChannel, DefaultDevice, &ac_id_close, &tau_min); }
+  #endif
 #endif
 }
 

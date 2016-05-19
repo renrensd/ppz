@@ -39,7 +39,7 @@ float agl_dist_value_filtered;
 #define AGL_DIST_SONAR_ID ABI_BROADCAST
 #endif
 #ifndef AGL_DIST_SONAR_MAX_RANGE
-#define AGL_DIST_SONAR_MAX_RANGE 5.0
+#define AGL_DIST_SONAR_MAX_RANGE 8.0
 #endif
 #ifndef AGL_DIST_SONAR_MIN_RANGE
 #define AGL_DIST_SONAR_MIN_RANGE 0.001

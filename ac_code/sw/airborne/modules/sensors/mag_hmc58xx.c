@@ -81,7 +81,9 @@ void mag_hmc58xx_module_event(void)
     AbiSendMsgIMU_MAG_INT32(MAG_HMC58XX_SENDER_ID, now_ts, &imu.mag);
 #endif
 #if MODULE_HMC58XX_SYNC_SEND
+  #if PERIODIC_TELEMETRY
     mag_hmc58xx_report();
+  #endif
 #endif
 #if MODULE_HMC58XX_UPDATE_AHRS ||  MODULE_HMC58XX_SYNC_SEND
     mag_hmc58xx.data_available = FALSE;

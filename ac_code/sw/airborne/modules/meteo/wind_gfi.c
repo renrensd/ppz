@@ -102,7 +102,7 @@ void wind_gfi_event(void)
 
       /* 2048 digits per 360 degrees */
       fpcf_direction = fmod((pcf_direction * (360. / 2048.)) + ZERO_OFFSET_DEGREES, 360.);
-      xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
       DOWNLINK_SEND_TMP_STATUS(DefaultChannel, DefaultDevice, &pcf_direction, &fpcf_direction);
     } else if (pcf_status == PCF_IDLE) {
       pcf_trans.status = I2CTransDone;

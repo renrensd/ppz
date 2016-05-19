@@ -39,15 +39,9 @@ enum MissionType {
   MissionCircle = 2,
   MissionSegment = 3,
   MissionPath = 4,
-  MissionSurvey = 5,   //include the path to work space
-  MissionHome = 6,     //have land motion
-  MissionReland = 7    //have land motion
-};
-
-enum mission_cmd {  
-  Append=0,         ///< new mission add at the last position
-  Replace=1         ///< replace mission 
-  //ClearAll=2        ///< clear all mission,send before a new srotie flight_plan add
+  MissionSurvey = 5,
+  MissionEight = 6,
+  MissionOval = 7
 };
 
 enum MissionInsertMode {
@@ -56,17 +50,6 @@ enum MissionInsertMode {
   ReplaceCurrent, ///< replace current element
   ReplaceAll      ///< remove all elements and add the new one
 };
-
-  //pointer,use save all flight plan WP
-union pt_wp {
-  struct EnuCoor_i *wp_i;
-  struct EnuCoor_f *wp_f;
-}; 
-
-union ms_wp {  //save enu coord data
-  struct EnuCoor_i wp_i;  
-  struct EnuCoor_f wp_f;
-}; 
 
 struct _mission_wp {
   union {
@@ -84,36 +67,38 @@ struct _mission_circle {
   float radius;
 };
 
-struct _mission_path {
-  pt_wp   path_p;
-  uint8_t path_idx;  //present flight line sequence
-  uint8_t nb;        //present wp_path number
+struct _mission_segment {
+  union {
+    struct EnuCoor_f from_f;
+    struct EnuCoor_i from_i;
+  } from;
+
+  union {
+    struct EnuCoor_f to_f;
+    struct EnuCoor_i to_i;
+  } to;
 };
 
-//add for survey mission
-//#define MISSION_SURVEY_NB 6
-struct _mission_survey {
-  pt_wp survey_p;
-  pt_wp path_p;
+#define MISSION_PATH_NB 5
+struct _mission_path {
+  union {
+    struct EnuCoor_f path_f[MISSION_PATH_NB];
+    struct EnuCoor_i path_i[MISSION_PATH_NB];
+  } path;
 
-  uint8_t survey_idx;  //present survey line sequence
-  uint8_t path_idx;    //present survey line sequence
-  uint8_t path_nb;
-  uint8_t survey_nb;
-  bool_t  survey_break;
+  uint8_t path_idx;
+  uint8_t nb;
 };
 
 struct _mission_element {
   enum MissionType type;
   union {
-//    struct _mission_wp mission_wp;
+    struct _mission_wp mission_wp;
     struct _mission_circle mission_circle;
-//    struct _mission_segment mission_segment;
+    struct _mission_segment mission_segment;
     struct _mission_path mission_path;
-	struct _mission_survey mission_survey;
   } element;
-  //uint8_t index;  //mission index
-  //mission_status: 0=ready, 1=running, 2=success_done, 3=fail_done, 4=pause, 5=stop
+
   float duration; ///< time to spend in the element (<= 0 to disable)
 };
 
@@ -121,13 +106,13 @@ struct _mission_element {
  *  can be redefined
  */
 #ifndef MISSION_ELEMENT_NB
-#define MISSION_ELEMENT_NB 50
+#define MISSION_ELEMENT_NB 20
 #endif
 
 struct _mission {
-  struct _mission_element elements[MISSION_ELEMENT_NB];  //normal idx begin from 1, 0 use for reland
-  float element_time;   ///< time in second spend in the current element,caculate in mission_run()
-  uint8_t insert_idx;   ///< last index
+  struct _mission_element elements[MISSION_ELEMENT_NB];
+  float element_time;   ///< time in second spend in the current element
+  uint8_t insert_idx;   ///< inserstion index
   uint8_t current_idx;  ///< current mission element index
 };
 
@@ -135,7 +120,7 @@ extern struct _mission mission;
 
 /** Init mission structure
 */
-extern void mission_init(void);
+//extern void mission_init(void);
 
 /** Insert a mission element according to the insertion mode
  * @param insert insertion mode
@@ -167,6 +152,7 @@ extern bool_t mission_point_of_lla(struct EnuCoor_f *point, struct LlaCoor_i *ll
  *
  * This function should be implemented into a dedicated file since
  * navigation functions are different for different firmwares
+ *
  * Currently, this function should be called from the flight plan
  *
  * @return return TRUE when the mission is running, FALSE when it is finished

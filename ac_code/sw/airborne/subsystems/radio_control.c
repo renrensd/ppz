@@ -56,8 +56,7 @@ void radio_control_periodic_task(void)
 
   if (radio_control.time_since_last_frame >= RC_REALLY_LOST_TIME) {
     radio_control.status = RC_REALLY_LOST;
-  } 
-  else {
+  } else {
     if (radio_control.time_since_last_frame >= RC_LOST_TIME) {
       radio_control.status = RC_LOST;
       radio_control.radio_ok_cpt = RC_OK_CPT;

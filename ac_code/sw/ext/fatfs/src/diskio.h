@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------
-/  Low level disk interface modlue include file
+/  Low level disk interface modlue include file   (C)ChaN, 2010
 /-----------------------------------------------------------------------*/
 
 #ifndef _DISKIO
@@ -34,6 +34,7 @@ DRESULT disk_read (BYTE, BYTE*, DWORD, BYTE);
 DRESULT disk_write (BYTE, const BYTE*, DWORD, BYTE);
 #endif
 DRESULT disk_ioctl (BYTE, BYTE, void*);
+DWORD get_fattime (void);
 
 
 

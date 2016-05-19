@@ -58,11 +58,15 @@ static inline void main_init(void)
 static inline void main_periodic_task(void)
 {
   LED_TOGGLE(1);
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+  #if PERIODIC_TELEMETRY
+  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_TAKEOFF(&motor_power);
+  #endif
   wt_baro_periodic();
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+  #if PERIODIC_TELEMETRY
+  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_DEBUG(3, buf_input);
+  #endif
 }
 
 static inline void main_event_task(void)
@@ -76,8 +80,10 @@ static inline void main_event_task(void)
     wt_baro_event();
     uint16_t temp = 0;
     float alt = 0.;
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+	#if PERIODIC_TELEMETRY
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_BARO_MS5534A(&wt_baro_pressure, &temp, &alt);
+	#endif
   }
 
 }
@@ -94,7 +100,7 @@ void dl_parse_msg(void)
   switch (msg_id) {
 
     case  DL_PING: {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_PONG();
       break;
     }
@@ -103,7 +109,7 @@ void dl_parse_msg(void)
       uint8_t i = DL_SETTING_index(dl_buffer);
       float var = DL_SETTING_value(dl_buffer);
       DlSetting(i, var);
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_DL_VALUE(&i, &var);
       break;
     }

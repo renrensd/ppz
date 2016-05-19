@@ -61,8 +61,7 @@
     <load name="gps_ubx_ucenter.xml"/>
     <load name="airspeed_ets.xml">
       <define name="AIRSPEED_ETS_SYNC_SEND"/>
-      <define name="AIRSPEED_ETS_I2C_DEV" value="i2c2"/>
-      <define name="USE_I2C2"/>
+      <configure name="AIRSPEED_ETS_I2C_DEV" value="i2c2"/>
     </load>
     <load name="adc_generic.xml">
       <configure name="ADC_CHANNEL_GENERIC1" value="ADC_1"/>
@@ -249,10 +248,10 @@
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
-    <define name="JSBSIM_MODEL" value="&quot;Malolo1&quot;"/>
+    <define name="JSBSIM_MODEL" value="Malolo1" type="string"/>
     <define name="COMMANDS_NB" value="4"/>
-    <define name="ACTUATOR_NAMES" value="{&quot;throttle-cmd-norm&quot;, &quot;aileron-cmd-norm&quot;, &quot;elevator-cmd-norm&quot;, &quot;rudder-cmd-norm&quot;}"/>
-    <define name="SENSORS_PARAMS" value="&quot;nps_sensors_params_default.h&quot;"/>
+    <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>
+    <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <define name="JS_AXIS_MODE" value="4"/>
     <define name="BYPASS_AHRS" value="TRUE"/>
     <define name="BYPASS_INS" value="TRUE"/>

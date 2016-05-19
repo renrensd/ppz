@@ -183,7 +183,7 @@ struct link_mcu_msg link_mcu_from_fbw_msg;
 #define RC_LOST        1
 #define RC_REALLY_LOST 2
 
-
+#if PERIODIC_TELEMETRY
 static void send_commands(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
@@ -212,6 +212,7 @@ static void send_fbw_status(struct transport_tx *trans, struct link_device *dev)
                            &(rc_status), &(fbw_state->ppm_cpt), &(fbw_status), &(fbw_state->vsupply), &(fbw_state->current));
 }
 #endif
+#endif
 
 void link_mcu_init(void)
 {
@@ -220,8 +221,8 @@ void link_mcu_init(void)
 #ifdef AP
 #if PERIODIC_TELEMETRY
   // If FBW has not telemetry, then AP can send some of the info
-  register_periodic_telemetry(DefaultPeriodic, "COMMANDS", send_commands);
-  register_periodic_telemetry(DefaultPeriodic, "FBW_STATUS", send_fbw_status);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_COMMANDS, send_commands);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FBW_STATUS, send_fbw_status);
 #endif
 #endif
 }

@@ -56,5 +56,6 @@ extern struct LASER_R2100_DATA laser_data;
 
 extern void laser_r2100_event(void);
 extern void laser_r2100_send_msg(void);
-
+extern struct LASER_R2100 laser_r2100;
+//struct LASER_R2100_DATA laser_data;
 #endif

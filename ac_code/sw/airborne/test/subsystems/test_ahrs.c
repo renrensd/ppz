@@ -98,7 +98,7 @@ static inline void main_event_task(void)
 }
 
 static inline void main_report(void)
-{ xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+{
   RunOnceEvery(512, DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM));
 
   periodic_telemetry_send_Main(DefaultPeriodic, &(DefaultChannel).trans_tx, &(DefaultDevice).device);
@@ -110,7 +110,6 @@ void dl_parse_msg(void)
   switch (msg_id) {
 
     case  DL_PING: {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_PONG(DefaultChannel, DefaultDevice);
     }
     break;
@@ -119,7 +118,6 @@ void dl_parse_msg(void)
         uint8_t i = DL_SETTING_index(dl_buffer);
         float val = DL_SETTING_value(dl_buffer);
         DlSetting(i, val);
-		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
         DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
       }
       break;
@@ -127,7 +125,6 @@ void dl_parse_msg(void)
       if (DL_GET_SETTING_ac_id(dl_buffer) != AC_ID) { break; }
       uint8_t i = DL_GET_SETTING_index(dl_buffer);
       float val = settings_get_value(i);
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
     }
     break;

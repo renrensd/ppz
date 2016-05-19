@@ -88,7 +88,7 @@ Checksum: 0A
     0xA2, \
     0x00, \
     0x40, \
-    0xF3, \
+    0xf3, \
     (GROUND_STATION_ADDR >> 8), \
     (GROUND_STATION_ADDR & 0xff), \
     0xff, \

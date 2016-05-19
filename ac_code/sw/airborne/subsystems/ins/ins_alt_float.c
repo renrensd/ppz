@@ -331,8 +331,10 @@ static void alt_kalman(float z_meas, float dt)
   }
 
 #ifdef DEBUG_ALT_KALMAN
+ #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_ALT_KALMAN(DefaultChannel, DefaultDevice, &(p[0][0]), &(p[0][1]), &(p[1][0]), &(p[1][1]));
+ #endif
 #endif
 }
 

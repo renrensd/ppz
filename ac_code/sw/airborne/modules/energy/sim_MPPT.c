@@ -43,6 +43,8 @@ void MPPT_init(void)
 void MPPT_periodic(void)
 {
   MPPT_data[MPPT_ITOTAL_INDEX] = MPPT_data[MPPT_IBAT_INDEX] + MPPT_data[MPPT_ICONV_INDEX];
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   RunOnceEvery(8, DOWNLINK_SEND_MPPT(DefaultChannel, DefaultDevice, NB_DATA, MPPT_data));
+  #endif
 }

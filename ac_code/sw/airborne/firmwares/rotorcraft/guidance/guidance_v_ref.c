@@ -134,7 +134,7 @@ void gv_update_ref_from_zd_sp(int32_t zd_sp, int32_t z_pos)
 
   /* limit z_ref to GUIDANCE_V_REF_MAX_Z_DIFF from current z pos */
   int64_t cur_z = ((int64_t)z_pos) << (GV_Z_REF_FRAC - INT32_POS_FRAC);
-  Bound(gv_z_ref, cur_z - GV_MAX_Z_DIFF, cur_z + GV_MAX_Z_DIFF); 
+  Bound(gv_z_ref, cur_z - GV_MAX_Z_DIFF, cur_z + GV_MAX_Z_DIFF);
 
   int32_t zd_err = gv_zd_ref - (zd_sp >> (INT32_SPEED_FRAC - GV_ZD_REF_FRAC));
   int32_t zd_err_zdd_res = zd_err >> (GV_ZD_REF_FRAC - GV_ZDD_REF_FRAC);

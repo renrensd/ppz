@@ -72,6 +72,7 @@ void baro_periodic(void)
     ms5611_spi_periodic(&bb_ms5611);
 
 #if DEBUG
+    #if PERIODIC_TELEMETRY
     if (bb_ms5611.initialized)
     {
 	  RunOnceEvery((50 * 30),  {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
@@ -85,6 +86,7 @@ void baro_periodic(void)
                    &bb_ms5611.data.c[6],
                    &bb_ms5611.data.c[7]);} );
     }
+	#endif
 #endif
   }
 }
@@ -106,11 +108,13 @@ void baro_event(void)
 #endif
 
 #if DEBUG
+    #if PERIODIC_TELEMETRY
       float fbaroms = bb_ms5611.data.pressure / 100.;
       xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_BARO_MS5611(DefaultChannel, DefaultDevice,
                                 &bb_ms5611.data.d1, &bb_ms5611.data.d2,
                                 &fbaroms, &temp);
+	#endif
 #endif
     }
   }

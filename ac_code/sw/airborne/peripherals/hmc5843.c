@@ -10,7 +10,7 @@ struct Hmc5843 hmc5843;
 void exti9_5_irq_handler(void);
 
 #ifndef HMC5843_I2C_DEV
-#define HMC5843_I2C_DEV i2c1
+#define HMC5843_I2C_DEV i2c2
 #endif
 
 void hmc5843_init(void)

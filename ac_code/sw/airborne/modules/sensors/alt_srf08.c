@@ -149,7 +149,6 @@ void srf08_event(void)
     } else if (srf08_got) {
       srf08_got = FALSE;
       srf08_copy();
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_RANGEFINDER(DefaultChannel, DefaultDevice, &srf08_range, &f, &f, &f, &f, &f, &i);
     }
   }

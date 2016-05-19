@@ -144,7 +144,7 @@ void imu_mpu9250_event(void)
 
   // Test if mag data are updated
   if (imu_mpu9250.mpu.akm.data_available) {
-    struct Int32Vect3 mag = {    //change the order
+    struct Int32Vect3 mag = {
       (int32_t)(imu_mpu9250.mpu.akm.data.value[IMU_MPU9250_CHAN_Y]),
       (int32_t)(imu_mpu9250.mpu.akm.data.value[IMU_MPU9250_CHAN_X]),
       -(int32_t)(imu_mpu9250.mpu.akm.data.value[IMU_MPU9250_CHAN_Z])

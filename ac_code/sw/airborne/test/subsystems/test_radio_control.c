@@ -61,7 +61,6 @@ static inline void main_periodic_task(void)
   RunOnceEvery(51, {
     /*LED_TOGGLE(2);*/
     uint32_t sec = sys_time.nb_sec;
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_TIME(DefaultChannel, DefaultDevice, &sec);
   });
 
@@ -69,7 +68,6 @@ static inline void main_periodic_task(void)
 
   int16_t foo = 0;
   RunOnceEvery(10, {
-  	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_ROTORCRAFT_RADIO_CONTROL(DefaultChannel, DefaultDevice,  \
     &radio_control.values[RADIO_ROLL], \
     &radio_control.values[RADIO_PITCH], \
@@ -81,12 +79,10 @@ static inline void main_periodic_task(void)
   });
 #ifdef RADIO_CONTROL_TYPE_PPM
   RunOnceEvery(10,
-  {  uint8_t blaa = 0; 
-     xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	 DOWNLINK_SEND_PPM(DefaultChannel, DefaultDevice, &blaa, 8, ppm_pulses);});
+  {uint8_t blaa = 0; DOWNLINK_SEND_PPM(DefaultChannel, DefaultDevice, &blaa, 8, ppm_pulses);});
 #endif
 
-     LED_PERIODIC();
+  LED_PERIODIC();
 }
 
 static inline void main_event_task(void)

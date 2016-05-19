@@ -17,16 +17,13 @@
   <message name="AIRCRAFT_BIND_STATE" id="101">
     <description> link="broadcast" 
                   message broadcase between xbee communication initial and binded
-                  write in xbee.c
     </description>
     <field name="serial_code"   type="uint8[10]"/>
   </message>
 
   <message name="AIRCRAFT_INFO_STATE" id="102">
-    <description> link="A2G",after bind, serial number,autopilot software 
+    <description> link="A2G",after binded,send serial number autopilot software and so on
                   engine_type : 1 = Electricity , 2 = Fuel, 3 = Hybrid
-                  request AP check the result
-                  send as ack in 2 state
     </description> 
     <field name="engine_type" type="uint8"/>
     <field name="max_voyage" type="uint16" unit="m"/>
@@ -36,14 +33,14 @@
     <field name="spray_height" type="uint16" unit="cm"/>
     <field name="max_flight_height"   type="uint16" unit="cm"/> 
     <field name="spray_concentration"   type="uint8" unit="ml/m2"/>
+    <field name="atomization_grade" type="uint8"/>               <!--add 0418-->
     <field name="max_flight_speed"   type="uint16" unit="cm/s"/>
     <field name="spray_flight_speed"   type="uint16" unit="cm/s"/>
     <field name="sn_and_sv"   type="char[30]"/>         
   </message>
 
   <message name="HEART_BEAT_AC_GCS_STATE" id="103">
-    <description>link="A2G" ,request GCS check time_out of receive failling
-                 var link_x include:GCS|RC|LC|reserve,every one use 4bits
+    <description>link="A2G" ,request GCS check time_out of HB message to determine AC is lost
                  devices_status and flight_status see document
                  flight_status:
                                  bit1: 0=on_ground;          1=in_flight
@@ -78,121 +75,152 @@
 				 	
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
-    <field name="link_gcs_quality" type="uint8" unit="percent"/>
-    <field name="link_rc_quality" type="uint8" unit="percent"/>
-    <field name="link_rssi" type="uint8" unit="percent"/>
-    <field name="devices_status" type="uint32"/>
-    <field name="flight_status" type="uint32"/>
+    <field name="link_gcs_quality" type="uint8" unit="percent"/>  <!--reserve-->
+    <field name="link_rc_quality" type="uint8" unit="percent"/>   <!--reserve-->
+    <field name="link_ac_quality" type="uint8" unit="percent"/>   <!--reserve-->
+    <field name="ac_ready"     type="uint8" values="unready|ready"/>
+    <field name="devices_status" type="uint32"/>                  <!--reserve-->
+    <field name="flight_status" type="uint32"/>                   <!--reserve-->
     <field name="heading" type="float" unit="deg"/>
     <field name="speed" type="int16" unit="cm/s"/>
     <field name="pos_x" type="int32" unit="e3,m"/>
     <field name="pos_y" type="int32" unit="e3,m"/>
     <field name="pos_z" type="int32" unit="e3,m"/>
-    <field name="pos_lng" type="int32" unit="e7,deg"/>
-    <field name="pos_lat" type="int32" unit="e7,deg"/>
+    <field name="pos_lng" type="int32" unit="e8,rad"/>    <!--edit 0418-->
+    <field name="pos_lat" type="int32" unit="e8,rad"/>    <!--edit 0418-->
     <field name="battery_remain"  type="int8"  unit="percent"/>
     <field name="pesticides_remain" type="int8" unit="percent"/>
+    <field name="spray_state" type="uint8"/>              <!--edit 0418:stop=0, open=1-->
     <field name="error_code" type="int16"/>
   </message>
 
-  <message name="CURRENT_MISSION_STATE" id="104">
+  <message name="CURRENT_TASK_STATE" id="104">
     <description>link="A2G"
-                 trigger,when enter or run over the mission.
+                 state: reached=1(arriving at wp_current_id); passed=2(aready pass wp_current_id,flight to next wp);
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
-    <field name="path_id" type="uint8"/>
-    <field name="mission_id" type="uint8"/>
-    <field name="mission_status" type="int8"/>
+    <field name="wp_current_id" type="uint8"/>
+    <field name="wp_action" type="uint8"/>
+    <field name="state" type="uint8"/>
   </message>
 
-  <message name="MISSION_ACK_STATE" id="105">
-    <description>link="A2G" use to ack the gcs mission messages
-                            mission_ack_type: add = 0, update = 1, delete = 2, get = 3
-                            0=success, others=error_code
+  <message name="TASK_ACK_STATE" id="105">
+    <description>link="A2G" use to ack the gcs task messages
+                 task_ack_type: add = 0, update = 1, delete = 2, get = 3;
+                 response  0=success, others=error_code
     </description>
-    <field name="mission_ack_code" type="uint8"/>
-    <field name="mission_ack_type" type="uint8"/>
-    <field name="mission_id" type="uint8"/>
+    <field name="task_code" type="uint8"/>
+    <field name="task_ack_type" type="uint8"/>
     <field name="response" type="int8"/>    
   </message>
 
-  <message name="MISSION_GET_ACK_STATE" id="106">
-    <description>link="A2G" use to ack the gcs mission messages
-                  wp_type: wgs84 = 1, relative = 0
+  <message name="GET_TASK_ACK_STATE" id="106">
+    <description>link="A2G" use to ack the gcs "GET_TASK" messages
+                 wp_type: coordinate   wgs84 = 1, relative_ENU = 2
     </description>
-    <field name="mission_id" type="uint8"/>
-    <field name="mission_type" type="uint8"/>  
-    <field name="mission_status" type="uint8"/>          
-    <field name="nb_wp" type="int8"/>
-    <field name="nb_backup_land" type="int8"/>
-    <field name="duration" type="uint8" unit="s"/>
-    <field name="wp_type" type="uint8" />
-    <field name="waypoints" type="int32[]"/> 
+    <field name="task_code" type="uint8"/>
+    <field name="wp_type"  type="uint8"/>
+    <field name="wp_start_id" type="uint8"/>
+    <field name="wp_end_id" type="uint8"/>    
+    <field name="wp_action" type="uint8[]"/>
+    <field name="waypoints_lon" type="int32[]" unit="e8,rad"/>  
+    <field name="waypoints_lat" type="int32[]" unit="e8,rad"/>  
   </message>
   
-  <message name="EXCEPTION_MISSION_STATE" id="107">
-    <description>link="A2G" exception_mission_type: 1=hover,2=home_emergency,3=land_reserve,4=land_force,5=run_out
-                 enmergency,trigger 
+  <message name="EXCEPTION_TASK_STATE" id="107">
+    <description>link="A2G" 
+                 exception_task_type:  hover=1, home=2, land_reserve=3, land_force=4, run_out=5
+                 (exception error_code is sended by heart_beat msg)
+                 emergency trigger 
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
-    <field name="exception_mission_type" type="uint8"/>
-    <field name="exception_mission_id" type="uint8"/>
+    <field name="exception_task_type" type="uint8"/>
   </message>
 
-  <message name="MANUAL_MISSION_STATE" id="108">
-    <description>link="A2G" descript manual action,manual_mission: 1=cruise,2=home(rc cmd),3=take_off,4=land,5=ground(locked)
+  <message name="MANUAL_TASK_STATE" id="108">
+    <description>link="A2G" 
+                    locked =1;             unlocker =2;
+		    take_off =3;           land=4
+		    hover =5;              hold =6
+		    forward =7;            backward =8;
+		    rightward =9;          leftward =10;
+		    climb =11;             decline =12;
+		    turn_right =13;        turn_left =14;
+		    home =15;              stop_home =16;
+		    set_manual =17;        set_auto =18;
+		    spray_add =19;         spray_descend =20;
+                 spray_grade: 0--5
                  if aircraft in manual_mode, it will trigger.
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
-    <field name="manual_mission_type" type="uint8"/>
-    <field name="manual_mission_id" type="uint8"/>
+    <field name="manual_task_type" type="uint8"/>
+    <field name="spray_grade" type="uint8"/>   
   </message>
 
   <message name="SET_COMMAND_ACK_STATE" id="109">
-    <description>link="A2G" use to ack the gcs SET_COMMAND messages 0=success, others=error_code
+    <description>link="A2G" use to ack the gcs SET_COMMAND messages 
+                 response  0=success, others=error_code
     </description>
     <field name="command_id" type="uint8"/>
     <field name="response"     type="int8"/>    
   </message>
 
-  <!-- =============== RC ack============= -->
-
   <message name="HEART_BEAT_AC_RC_STATE" id="110">
     <description>link="A2R" ,use ack RC heartbeat message
                  period=1s if battery/pesticides parameter=-1,meant get the information fail
                  last_response=response of message "RC_SET_CMD_ACK_STATE"
-                 use ack AC's heart_beat message
+                 use ack AC heart_beat message
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
-    <field name="last_response" type="uint8"/>
-    <field name="battery_remain"  type="int8"  unit="percent"/>
-    <field name="pesticides_remain" type="int8" unit="percent"/>
+    <field name="ac_state" type="uint8" values="ground|flight"/>
+    <field name="flight_mode"       type="uint8" values="kill|manual|auto"/>
+    <field name="battery_remain"  type="uint8"  unit="percent"/>
+    <field name="pesticides_remain" type="uint8" unit="percent"/>
+    <field name="pesticides_threshold"   type="uint8"/>
+    <field name="home_state"        type="uint8" values="stop_home|home"/>
+    <field name="lock_state"        type="uint8" values="unlocked|locked"/>
+    <field name="ac_ready"          type="uint8" values="unready|ready"/>
+    <field name="error_code"        type="uint8" />
+    <field name="alert_grade"       type="uint8" values="ok|low|medium|high"/>
+    <field name="spray_state"       type="uint8" values="stop|open" />
   </message>
 
-  <message name="RC_MOTION_CMD_ACK_STATE" id="111">
-    <description>link="A2R" 
-                 ack the message "RC_MOTION_CMD" with response
-                 0=success, others=error_code
+  <message name="LAND_TASK_ACK_STATE" id="111">
+    <description>link="A2G" use to ack the gcs task messages
+                 response  0=success, others=error_code
     </description>
-    <field name="reponse" type="uint8"/>
+    <field name="operation_type" type="uint8"/>
+    <field name="land_type" type="uint8"/>
+    <field name="response" type="int8"/>    
   </message>
 
-  <message name="RC_SET_CMD_ACK_STATE" id="112">
-    <description>link="A2R" 
-                 ack the message "RC_SET_CMD" with response                 
-         <!--response=0B(abcd efgh),8bits                         -->
-         <!--a: flight mode,    0 auto_mode,     1 manual_mode    -->
-         <!--b: spray control   0 stop_spray,    1 open spray     -->
-         <!--cd:VTOL            0 other,   1 takeoff, 2 land      -->
-         <!--e :home mode       0 home,    1 not_home             -->
-         <!--f: mainpower       0 turn off,1 turn on              -->
-         <!--h: current_cmd ack 0 fail,    1 success              -->
-         <!--g: reserve         0 default                         -->
+  <message name="EMERGENCY_RECORD_STATE" id="112">
+    <description>link="A2G" use to ack the gcs task messages
+                 emergency_type low_power=1, no_pesticides=2, convert_manual=3, fault=4, 
+                                gcs_home=5, gcs_reserve_land=6
+                 wp_type: coordinate   wgs84 = 1, relative_ENU = 2
+                 spray_status: spraying=1, stop_spraying=2
+                 send continual until gcs ack "EMERGENCY_RECORD_ACK_STATE" message
     </description>
-    <field name="reponse" type="uint8"/>
+    <field name="emergency_type" type="uint8"/>
+    <field name="wp_type"  type="uint8"/>
+    <field name="spray_status" type="uint8"/>
+    <field name="waypoints_lon" type="int32" unit="e8,rad"/>  
+    <field name="waypoints_lat" type="int32" unit="e8,rad"/>    
   </message>
 
-  <message name="DATA_TEST" id="200">
+  <message name="CALIBRATION_AC_RC_STATE" id="113">
+    <description>link="A2R" use ack RC calibration cmd message
+                 calibration_ack   get set cmd=0,  calibrate success=1, calibrate fail=2
+    </description>
+    <field name="calibration_ack" type="uint8"/>
+  </message>
+
+
+
+
+
+  <!--message name="DATA_TEST" id="200">
     <description>link="A2G"
     </description>
     <field name="u8" type="uint8"/>
@@ -202,10 +230,9 @@
     <field name="u32" type="uint32"/>
     <field name="s32" type="int32"/>
     <field name="f" type="float"/>
-    <field name="s3" type="int8[3]"/>
-    <field name="f3" type="float[3]"/>
-  </message>
-
+    <field name="s3" type="int8[]"/>
+    <field name="f3" type="float[]"/>
+  </message-->
  </msg_class>
 
 
@@ -222,66 +249,60 @@
   </message>  
 
   <message name="SET_COMMAND" id="2">
-    <description>link="G2A" id:1=delete all mission, value=null
-                               2=request "AIRCRAFT_INFO_STATE" message, value=null
-                 aircraft will ack with "SET_COMMAND_ACK_STATE" message
+    <description>link="G2A" id:1=gcs_cmd  value: start=1; pause=2; continual=3; back_home=4;  reserve_land=5
+                               2=request "AIRCRAFT_INFO_STATE" message, value=null  aircraft will ack with "SET_COMMAND_ACK_STATE" message
+                               3=delete all task(if AC in_flight,gived gcs_cmd=pause before delete)
     </description>
     <field name="command_id" type="uint8"/>
     <field name="command_value" type="int8[]"/>
   </message>
   
-  <message name="ADD_MISSION" id="3">
-    <description>link="G2A" mission_type  0:flight_path; 1:spray_normal; 2.spray_insert; 3:normal_home_land;
-	                  //high priority 4:hover; 5:emergency_home_land; 6:land_reserve; 7:land_force
-	                        mission_status: 0=ready, 1=running, 2=success_done, 3=fail_done, 4=pause, 5=stop
-	                        nb_backup_land(number of reserve land)
-                                wp_type: wgs84 = 1, releative = 0
-	                        in spray_insert mode,insert_wp is ahead of the spray area
-                 aircraft will ack with "MISSION_ACK_STATE" message
+  <message name="ADD_TASK" id="3">
+    <description>link="G2A" wp_action  flight_line=1; spray_line=2; spray_convert=3;  hovering=4; termination=5;
+                 wp_type: coordinate   wgs84 = 1, relative_ENU = 2
+                 aircraft will ack with "TASK_ACK_STATE" message using task_code
     </description>
-    <field name="mission_id" type="uint8"/>
-    <field name="mission_type" type="uint8"/>    
-    <field name="mission_ack_code" type="uint8"/>   
-    <field name="mission_status" type="uint8"/>     
-    <field name="nb_wp" type="int8"/>
-    <field name="nb_backup_land" type="int8"/>      
-    <field name="duration" type="uint8" unit="s"/>
-    <field name="wp_type" type="uint8" />
-    <field name="waypoints" type="int32[]"/>  
-    <!-- in spray_insert mode,insert_wp is ahead of the spray area -->
-    <!-- <field name="backuplandpoints" type="uint32[2]"/> -->
+    <field name="task_code" type="uint8"/>
+    <field name="wp_type"  type="uint8"/>
+    <field name="wp_start_id" type="uint8"/>
+    <field name="wp_end_id" type="uint8"/>    
+    <field name="wp_action" type="uint8[]"/>
+    <field name="waypoints_lon" type="int32[]" unit="e8,rad"/>  
+    <field name="waypoints_lat" type="int32[]" unit="e8,rad"/>  
   </message>
 
-  <message name="UPDATE_MISSION" id="4">
-    <description>link="G2A" if nb_wp and nb_backup_land =0, mean only update status/duration
-                 When the nb_wp = -1 and nb_backup_land = -1, we won't change the waypoints
-                 aircraft will ack with "MISSION_ACK_STATE" message
+  <message name="UPDATE_TASK" id="4">
+    <description>link="G2A" wp_action  flight_line=1; spray_line=2; spray_convert=3;  hovering=4; termination=5;
+                 //update_type: only_update_action=1, only_update_pos=2, update_both=3;
+                 wp_type: coordinate   wgs84 = 1, relative_ENU = 2
+                 aircraft will ack with "TASK_ACK_STATE" message using task_code
     </description>
-    <field name="mission_id" type="uint8"/>
-    <field name="mission_type" type="uint8"/>  
-    <field name="mission_ack_code" type="uint8"/>      
-    <field name="mission_status" type="uint8"/>  
-    <field name="nb_wp" type="int8"/>
-    <field name="nb_backup_land" type="int8"/>   
-    <field name="duration" type="uint8" unit="s"/>
-    <field name="wp_type" type="uint8" />
-    <field name="waypoints" type="int32[]"/>   
+    <field name="task_code" type="uint8"/>
+    <field name="update_type" type="uint8"/>
+    <field name="wp_type"  type="uint8"/>
+    <field name="wp_start_id" type="uint8"/>
+    <field name="wp_end_id" type="uint8"/>    
+    <field name="wp_action" type="uint8[]"/>
+    <field name="waypoints_lon" type="int32[]" unit="e8,rad"/>  
+    <field name="waypoints_lat" type="int32[]" unit="e8,rad"/>  
   </message>
 
-  <message name="DELETE_MISSION" id="5">
+  <message name="DELETE_TASK" id="5">
     <description>link="G2A"
-                 aircraft will ack with "MISSION_ACK_STATE" message
+                 aircraft will ack with "TASK_ACK_STATE" message using task_code
     </description>
-    <field name="mission_id" type="uint8"/>
-    <field name="mission_ack_code" type="uint8"/>
+    <field name="task_code" type="uint8"/>
+    <field name="wp_start_id" type="uint8"/>
+    <field name="wp_end_id" type="uint8"/>   
   </message>
 
-  <message name="GET_MISSION" id="6">
-    <description>link="G2A"
-                 aircraft will ack with "MISSION_GET_ACK_STATE" message
+  <message name="GET_TASK" id="6">
+    <description>link="G2A" 
+                 aircraft will ack with "GET_TASK_ACK_STATE" message using task_code
     </description>
-    <field name="mission_id" type="uint8"/>
-    <field name="wp_type" type="uint8" />
+    <field name="task_code" type="uint8"/>
+    <field name="wp_start_id" type="uint8"/>
+    <field name="wp_end_id" type="uint8"/>   
   </message>
 
   <message name="BIND_AIRCRAFT" id="7">
@@ -291,13 +312,36 @@
     <field name="serial_code" type="uint8[10]"/>
   </message>
 
+  <message name="LAND_TASK" id="8">
+    <description>link="G2A"
+                 operation_type: add=1, update=2(all update), delete=3(all delete)
+                 land_type: home=1, reserve_land=2     
+                 wp_type: coordinate   wgs84 = 1, relative_ENU = 2            
+                 aircraft will ack with "LAND_TASK_ACK_STATE" message
+                 note:home waypoint is requested and unique, reserve_land waypoints are optional(numbers:0--5)
+    </description>
+    <field name="operation_type" type="uint8"/>
+    <field name="land_type" type="uint8"/>
+    <field name="wp_type"  type="uint8"/>
+    <field name="waypoints_lon" type="int32[]" unit="e8,rad"/>  
+    <field name="waypoints_lat" type="int32[]" unit="e8,rad"/> 
+  </message>
+
 										  
 <!--GCS_state:-->
   <message name="HEART_BEAT_GCS_STATE" id="101">
     <description>link="G2A"
                  when gcs lost ac_heart_beat message,it will trigger
     </description>
-    <field name="cur_mission_id" type="uint8"/>
+    <field name="reserve" type="uint8"/>
+  </message> 
+
+  <message name="EMERGENCY_RECORD_ACK_STATE" id="102">
+    <description>link="G2A"
+                 when gcs success get "EMERGENCY_RECORD_STATE" msg ,ack AC with it
+                 response  0=success, others=error_code
+    </description>
+    <field name="response" type="int8"/>
   </message> 
 
  </msg_class>
@@ -317,19 +361,31 @@
          <!-- ef=01    : present orientation (up,  forward, right,clockwise)       -->
          <!-- ef=10    : present orientation (down,backward,left, counterclockwise)-->
          <!-- ef=00    : present orientation (stop status)                         -->
-         <!-- gh=xx    : present control speed grade(00/01/10/11)                  -->
+         <!-- gh=xx    : present control speed grade(00/01)                  -->
+         <!--forward  00100101 37-->  
+         <!--backward 00101001 0x41--> 
+         <!--right    01000101 0x69--> 
+         <!--left     01001001 0x73--> 
+         <!--up       00010101 0x21--> 
+         <!--down     00011001 0x25--> 
+         <!--stop     00010000 0x16--> 
+         <!--r_turn   10000101 0x133--> 
+         <!--l_turn   10001001 0x137--> 
+         <!--hover    00000000 0x00 --> 
     </description>
     <field name="motion_cmd"  type="uint8"/>
   </message>
   
   <message name="RC_SET_CMD" id="2">
     <description>link="R2A"
-         <!--8bits:abcd efgh                                            -->
-         <!--flight_mode:        set_auto  =0x10;    set_manual =0x01   -->
-         <!--spray control:      stop_spray=0x20;    open_spray =0x02   -->
-         <!--VTOL  control:      take_off  =0x30;    land       =0x03   -->
-         <!--home_mode:          home      =0x40;    stop_home  =0x04   -->
-         <!--mainpower control:  mainpower_on=0x50;  mainpower_off=0x05 -->
+         <!--reserve  flight_mode:        set_auto  =0x10;    set_manual =0x01   -->
+         <!--change   spray control:      add_spray=0x20;     reduce_spray =0x02 -->
+         <!--keep     VTOL  control:      (take_off  =0x30;)  land       =0x03   -->
+         <!--keep     home_mode:          home      =0x40;    stop_home  =0x04   -->
+         <!--reserve  mainpower control:  mainpower_on=0x50;  mainpower_off=0x05 -->
+         <!--add      lock control:       unlock=0x60;        lock=0x06          -->       
+         <!--mag      calibration:        calibrate =0x70;                       -->
+         
     </description>
     <field name="set_cmd"  type="uint8"/>
   </message>
@@ -347,8 +403,18 @@
     </description>
     <field name="signal" type="uint8"/>
   </message>
+
+  <message name="CALIBRATION_RESULT_RC_ACK_STATE" id="103">
+    <description>link="R2A"
+                 ack  success=1
+    </description>
+    <field name="ack" type="uint8"/>
+  </message>
   
  </msg_class>
+
+
+
 
 
 

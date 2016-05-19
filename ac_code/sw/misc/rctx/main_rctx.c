@@ -256,7 +256,6 @@ void periodic_task_rctx( void ) {
     if (0)
     // TODO: send (here) only in auto2
     {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_RC_3CH(
             &rctx_mode,
             &rc_values[RADIO_THROTTLE],

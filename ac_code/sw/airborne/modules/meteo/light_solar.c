@@ -67,7 +67,6 @@ void light_solar_periodic(void)
   /* 10k/10k voltage divider, 10 bits adc, 3.3V max */
 
   if (++light_cnt >= LIGHT_NB) {
-  	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_SOLAR_RADIATION(DefaultChannel, DefaultDevice,
                                   &up[0], &dn[0], &up[1], &dn[1], &up[2], &dn[2], &up[3], &dn[3],
                                   &up[4], &dn[4], &up[5], &dn[5], &up[6], &dn[6], &up[7], &dn[7],

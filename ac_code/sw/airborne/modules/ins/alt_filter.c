@@ -73,10 +73,12 @@ void alt_filter_periodic(void)
     kalmanCorrectionGPS(&alt_filter, ga);
     last_gps_alt = ga;
   }
+ #if PERIODIC_TELEMETRY
   RunOnceEvery(6, { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   	 DOWNLINK_SEND_VFF(DefaultChannel, DefaultDevice, &baro_ets_altitude,
                                     &(alt_filter.X[0]), &(alt_filter.X[1]), &(alt_filter.X[2]),
                                     &(alt_filter.P[0][0]), &(alt_filter.P[1][1]), &(alt_filter.P[2][2]));});
+ #endif
 
 }
 

@@ -54,7 +54,7 @@ static inline void main_init(void)
 
 static inline void main_periodic(void)
 {
-  RunOnceEvery(100, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice,  16, MD5SUM);});
+  RunOnceEvery(100, {DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice,  16, MD5SUM);});
 }
 
 static inline void main_event(void)
@@ -69,7 +69,6 @@ void dl_parse_msg(void)
   switch (msg_id) {
 
     case  DL_PING: {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_PONG(DefaultChannel, DefaultDevice);
     }
     break;

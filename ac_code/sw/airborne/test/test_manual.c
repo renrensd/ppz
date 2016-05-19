@@ -100,10 +100,10 @@ static inline void main_periodic(void)
   SetActuatorsFromCommands(commands, 0);
 
   LED_PERIODIC();
-  RunOnceEvery(512, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice,  16, MD5SUM);});
-  RunOnceEvery(100, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);DOWNLINK_SEND_RC(DefaultChannel, DefaultDevice, RADIO_CONTROL_NB_CHANNEL, radio_control.values);});
-  RunOnceEvery(101, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);DOWNLINK_SEND_COMMANDS(DefaultChannel, DefaultDevice, COMMANDS_NB, commands);});
-  RunOnceEvery(102, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);DOWNLINK_SEND_ACTUATORS(DefaultChannel, DefaultDevice, ACTUATORS_NB, actuators);});
+  RunOnceEvery(512, {DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice,  16, MD5SUM);});
+  RunOnceEvery(100, {DOWNLINK_SEND_RC(DefaultChannel, DefaultDevice, RADIO_CONTROL_NB_CHANNEL, radio_control.values);});
+  RunOnceEvery(101, {DOWNLINK_SEND_COMMANDS(DefaultChannel, DefaultDevice, COMMANDS_NB, commands);});
+  RunOnceEvery(102, {DOWNLINK_SEND_ACTUATORS(DefaultChannel, DefaultDevice, ACTUATORS_NB, actuators);});
 }
 
 static inline void main_event(void)
@@ -120,7 +120,6 @@ void dl_parse_msg(void)
   uint8_t msg_id = IdOfMsg(dl_buffer);
   switch (msg_id) {
     case  DL_PING: {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_PONG(DefaultChannel, DefaultDevice);
     }
     break;
@@ -130,7 +129,6 @@ void dl_parse_msg(void)
       uint8_t i = DL_SETTING_index(dl_buffer);
       float var = DL_SETTING_value(dl_buffer);
       DlSetting(i, var);
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &var);
     }
     break;
@@ -139,7 +137,6 @@ void dl_parse_msg(void)
       if (DL_GET_SETTING_ac_id(dl_buffer) != AC_ID) { break; }
       uint8_t i = DL_GET_SETTING_index(dl_buffer);
       float val = settings_get_value(i);
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
     }
     break;

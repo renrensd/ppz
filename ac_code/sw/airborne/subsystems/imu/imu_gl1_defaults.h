@@ -62,7 +62,6 @@
  *
  * what about the offset at 3.3V?
  */
-#if 0
 #if !defined IMU_ACCEL_X_SENS & !defined IMU_ACCEL_Y_SENS & !defined IMU_ACCEL_Z_SENS
 #define IMU_ACCEL_X_SENS 37.91
 #define IMU_ACCEL_X_SENS_NUM 3791
@@ -73,7 +72,6 @@
 #define IMU_ACCEL_Z_SENS 39.24
 #define IMU_ACCEL_Z_SENS_NUM 3924
 #define IMU_ACCEL_Z_SENS_DEN 100
-#endif
 #endif
 
 #endif /* IMU_GL1_DEFAULTS_H */

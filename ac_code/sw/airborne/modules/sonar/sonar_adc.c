@@ -79,9 +79,10 @@ void sonar_adc_read(void)
   AbiSendMsgAGL(AGL_SONAR_ADC_ID, sonar_adc.distance);
 
 #ifdef SENSOR_SYNC_SEND_SONAR
-  // Send Telemetry report
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &sonar_adc.meas, &sonar_adc.distance);
+  #endif
 #endif
 }
 

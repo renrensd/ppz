@@ -214,6 +214,7 @@ static const char *usb_strings[] = {
   serial_no,
 };
 
+
 /*
  *  Buffer to be used for control requests.
  *  (from libopencm3 examples)

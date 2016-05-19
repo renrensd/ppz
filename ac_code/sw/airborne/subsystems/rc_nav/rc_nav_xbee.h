@@ -8,6 +8,7 @@
 #define RC_NAV_XBEE_H
 
 #include "firmwares/rotorcraft/navigation.h"
+#include "firmwares/rotorcraft/guidance/guidance_h.h"
 
 //rc_vtol_cmd
 #define LOCKED 0
@@ -15,22 +16,25 @@
 #define LAND 2
 #define CRUISE 3
 
-enum motion_type
-{   
-	hover   =0,
-	virtical=1,    //0b:0001
-	fb_ward =2,    //0b:0010
-	rl_ward =4,    //0b:0100
-	rotation=8     //0b:1000
+struct rc_motion
+{
+	float speed_fb;
+	float speed_rl;
+	float rotation_rate;
+	float speed_v;
+	int8_t orientation_fb;
+	bool_t orientation_flag;
+	
 };
 
 struct rc_set
 {
 	uint8_t mode_state;
 	uint8_t vtol;
-	bool_t home;
-	bool_t spray;
-	bool_t m_power;	
+	bool_t  home;
+	uint8_t spray_grade;
+	bool_t  m_power;	
+	bool_t  locked;
 };
 
 enum manual_mission
@@ -45,103 +49,79 @@ enum manual_mission
 /*  RC equiment functions package
  */
 //virtical control functions
-#define RC_V_Rate 0.3
+#define RC_V_Rate 0.5
 #define RC_V_Max_Speed  1.5
+#define V_DEFAULT_GRADE 1
 
-#define RC_Climb(_keep_time)  { \
-    float climb = RC_V_Rate*_keep_time; \
+#define RC_Climb(_grade)  { \
+    float climb = RC_V_Rate*_grade; \
     if (climb > RC_V_Max_Speed) climb=RC_V_Max_Speed; \
     NavVerticalClimbMode(climb); \
   }
 	
-#define RC_Decline(_keep_time)  { \
-    float climb = -RC_V_Rate*_keep_time; \
+#define RC_Decline(_grade)  { \
+    float climb = -RC_V_Rate*_grade; \
     if (climb < -RC_V_Max_Speed) climb = -RC_V_Max_Speed; \
     NavVerticalClimbMode(climb); \
   }
 
 #define RC_Z_HOLD()  { \
+	nav_climb =0;  \
     float alt = GetPosZ_u(); \
     NavVerticalAltitudeMode(alt,0); \
   }
 
 //horizontal control functions
-#define RC_H_Rate 0.6
-#define RC_H_Max_Speed 3
-#define RC_Turn_Accel 0.5  //rad/s2,not deg/s2
-#define RC_Turn_Rate 1.5
+#define FB_Accel 0.6
+#define FB_Max_Speed 3
+#define RL_DRIFT_SPEED 0.3
+#define RL_SPEED 0.5
 
-#define RC_FORWARD(_keep_time)  ({ \
-   float speed_f=RC_H_Rate*_keep_time; \
-   if(speed_f>RC_H_Max_Speed) speed_f=RC_H_Max_Speed; \
+#define ROTATION_RATE 0.5       //unit =rad/s
+#define ROTATION_DRIFT_RATE 0.2
+
+#define RC_FB_SPEED(_grade)  ({ \
+   float speed_f=FB_Accel*_grade; \
+   BoundAbs(speed_f,FB_Max_Speed);  \
    speed_f; \
  })
 
-#define RC_BACKWARD(_keep_time)  ({ \
-   float speed_b=-RC_H_Rate*_keep_time; \
-   if(speed_b<-RC_H_Max_Speed) speed_b=-RC_H_Max_Speed; \
-   speed_b; \
- })
-
-#define RC_RIGHT(_keep_time)  ({ \
-   float speed_r=RC_H_Rate*_keep_time; \
-   if(speed_r>RC_H_Max_Speed) speed_r=RC_H_Max_Speed; \
-   speed_r; \
- })
-
-
-#define RC_LEFT(_keep_time)  ({ \
-   float speed_l=-RC_H_Rate*_keep_time; \
-   if(speed_l<-RC_H_Max_Speed) speed_l=-RC_H_Max_Speed; \
-   speed_l; \
- })
-
-#define RC_TURN_RIGHT(_keep_time)  ({ \
-   float rc_rotate_rate=RC_Turn_Accel * _keep_time; \
-   if (rc_rotate_rate > RC_Turn_Rate)  rc_rotate_rate=RC_Turn_Rate; \
-   rc_rotate_rate; \
- })
-
-
-#define RC_TURN_LEFT(_keep_time)  ({ \
-   float rc_rotate_rate=-RC_Turn_Accel * _keep_time; \
-   if (rc_rotate_rate < -RC_Turn_Rate)  rc_rotate_rate=-RC_Turn_Rate; \
-   rc_rotate_rate; \
- })
 
 //when turn into RC_MODE,change to RC_HOVER once,importance!!!
 //guidance_h_hover_enter();  add to RC_MODE enter,need modify
 //only adding MODE_RC could use sp_speed
 /*
-#define RC_HOVER()  do{ \
-   horizontal_mode = HORIZONTAL_MODE_RC; \
-   fb_speed=0.0; \
-   rl_speed=0.0; \
-   rc_turn_rate=0; \
-   RC_Z_HOLD(); \
- }while(0) 
+ need conside the use for more exact!!!
 */
 #define RC_HOVER()  do{ \
-   fb_speed=0.0; \
-   rl_speed=0.0; \
+   rc_motion_info.speed_fb=0.0; \
+   rc_motion_info.speed_rl=0.0; \
+   guidance_h.sp.speed.x =0.0;  \
+   guidance_h.sp.speed.y =0.0;  \
+   rc_motion_info.rotation_rate=0.0; \
    rc_turn_rate=0; \
+   horizontal_mode = HORIZONTAL_MODE_RC;  \
    RC_Z_HOLD(); \
-   guidance_h_nav_rc_enter(); \
  }while(0) 
+//guidance_h_nav_rc_enter();
 
 extern struct rc_set rc_set_info;
-extern uint8_t last_response; 
+extern struct rc_motion rc_motion_info;
 extern uint8_t rc_motion_cmd;
 extern uint8_t rc_set_cmd;
 extern uint8_t rc_count;
 extern bool_t  rc_lost;
-extern float fb_speed;  //globle var,use save rc_cmd speed
-extern float rl_speed;
+
 
 extern uint8_t rc_motion_cmd_execution(uint8_t cmd);
-extern uint8_t rc_set_response_pack(void);
+//extern uint8_t rc_set_response_pack(void);
 extern uint8_t rc_set_cmd_pasre(uint8_t cmd);
+extern void rc_setpoint_speed_parse(float speed_fb,float speed_rl);
 extern void rc_set_info_reset(void);
 extern void rc_lost_check(void);
+extern void rc_set_connect(void);
+extern void rc_set_info_init(void);
+extern void rc_motion_info_init(void);
+extern void rc_nav_init(void);
     
 #endif /* END OF RC_NAV_XBEE_H */

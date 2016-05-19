@@ -62,7 +62,6 @@ void qr_code_spi_link_periodic(void)
     uint16_t x, y;
     memcpy(&x, qr_code_spi_link_transaction.input_buf, 2);
     memcpy(&y, qr_code_spi_link_transaction.input_buf + 2, 2);
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_VISUALTARGET(DefaultChannel, DefaultDevice, &x, &y);
     spi_slave_register(&spi1, &qr_code_spi_link_transaction);
   }

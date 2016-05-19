@@ -56,7 +56,7 @@ IMU_DROTEK_2_SRCS   += peripherals/hmc58xx.c
 ifeq ($(ARCH), lpc21)
 DROTEK_2_I2C_DEV ?= i2c0
 else ifeq ($(ARCH), stm32)
-DROTEK_2_I2C_DEV ?= i2c1
+DROTEK_2_I2C_DEV ?= i2c2
 endif
 
 ifeq ($(TARGET), ap)

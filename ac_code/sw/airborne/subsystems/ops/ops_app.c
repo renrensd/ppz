@@ -28,6 +28,9 @@
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
 
+#include "state.h"
+#include "math.h"
+
 
 /*---Private include files--------------------------------------------*/
 #include "ops_app.h"   
@@ -52,21 +55,16 @@ void ops_task(void)
 	tm_stimulate(TIMER_TASK_OPS);
 
 #if 0
-	//ops_test++;
+	ops_test++;
 	if(ops_test == 1000)
 	{
-		ops_test = 0;
+		//ops_test = 0;
 		ops_msg_stop_spraying();
 	}
 	else if(ops_test == 2000)
 	{
 		ops_test = 0;
 		ops_msg_start_spraying();
-	}
-	else if(ops_test == 3000)
-	{
-		ops_test = 0;
-		ops_msg_config_param();
 	}
 #endif
 }
@@ -85,7 +83,7 @@ void ops_spray_msg_handler(void)
 		if(ops_info.spray_state == OPS_SPRAY_IS_OFF)
 		{
 			ops_msg_start_spraying();
-			tm_create_timer(TIMER_OPS_MSG_START_SPRAY, (500 MSECONDS), 10,0);
+			tm_create_timer(TIMER_OPS_MSG_START_SPRAY, (500 MSECONDS), 5,0);
 		}
 	}
 	else if(ops_info.spraying_flag == OPS_SET_SPRAYING_STOP)
@@ -94,7 +92,7 @@ void ops_spray_msg_handler(void)
 		if(ops_info.spray_state == OPS_SPRAY_IS_ON)
 		{
 			ops_msg_stop_spraying();
-			tm_create_timer(TIMER_OPS_MSG_STOP_SPRAY, (500 MSECONDS), 10,0);
+			tm_create_timer(TIMER_OPS_MSG_STOP_SPRAY, (500 MSECONDS), 5,0);
 		}
 	}
 }
@@ -156,6 +154,7 @@ void ops_init(void)
 void ops_heart_beat_handler(uint8_t *param)
 {
 	tm_kill_timer(TIMER_OPS_HB_POLL);
+	ops_update_aircraft_vel();    //get ac flight speed
 	ops_msg_heart_beat();
 	ops_info.res_cap = (*param << 8) | (*(param+1));
 	ops_info.work_state = *(param+2);
@@ -177,9 +176,15 @@ void ops_heart_beat_handler(uint8_t *param)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
-void ops_update_aircraft_vel(uint8_t *param)
+void ops_update_aircraft_vel(void)
 {
-	ops_info.vel = *param;
+	float speed;
+	speed =	fabs( stateGetHorizontalSpeedNorm_f() ) * 1000;
+	if( speed<300 )
+	{
+		speed = 0;  //set dead bound
+	}
+	ops_info.vel = (uint16_t)speed;
 }
 
 /***********************************************************************
@@ -193,6 +198,52 @@ void ops_heart_beat_lose_handler(void)
 	ops_info.con_flag = OPS_NOT_CONNECT;
 	ops_info.init_status = OPS_CONF_NOT_CONNECT;
 }
+
+/***********************************************************************
+* FUNCTION    : ops_update_config_param
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void ops_update_config_param(uint16_t param, uint8_t param_type)
+{
+	switch(param_type)
+	{
+		case  PARAM_FLOW_SPEED:
+			ops_param.flow_min = param;
+			break;
+		case  PARAM_FLOW_DENSITY:
+			ops_param.flow_m2 = param;
+			break;
+		case  PARAM_DROP_CAPCITY:
+			ops_param.drop_cm2 = param;
+			break;
+		case  PARAM_SPRAY_ATOM:
+			ops_param.atom = param;
+			break;
+		case  PARAM_SPRAY_CHANNEL:
+			ops_param.spray_chal = (uint8_t)(param&0xFF);
+			break;
+		default:
+			break;
+	}
+	
+	ops_msg_config_param();
+	tm_create_timer(TIMER_OPS_MSG_CONF_PARAM, (500 MSECONDS), 10,0);  //once get ack_msg,timer will be killed
+}
+
+/***********************************************************************
+* FUNCTION    : rc_update_ops_config_param
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void rc_update_ops_config_param(uint8_t grade)
+{
+	ops_update_config_param(OPS_DEFAULT_FLOW_M2 * grade, PARAM_FLOW_DENSITY);
+}
+
+
 
 /**************** END OF FILE *****************************************/
 

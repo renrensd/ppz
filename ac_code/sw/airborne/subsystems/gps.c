@@ -28,11 +28,11 @@
 
 #include "led.h"
 
-#ifdef GPS_RESET_GPIO
+#ifdef GPS_POWER_GPIO
 #include "mcu_periph/gpio.h"
 
-#ifndef GPS_RESET_GPIO_ON
-#define GPS_RESET_GPIO_ON gpio_set
+#ifndef GPS_POWER_GPIO_ON
+#define GPS_POWER_GPIO_ON gpio_set
 #endif
 #endif
 
@@ -77,7 +77,7 @@ static inline void send_svinfo_available(struct transport_tx *trans, struct link
   if (i >= gps.nb_channels) { i = 0; }
   // send SVINFO for all satellites while no GPS fix,
   // after 3D fix, send avialable sats if they were updated
-  if (gps.fix != GPS_FIX_3D) {
+  if (gps.fix < GPS_FIX_3D) {
     send_svinfo_id(trans, dev, i);
   } else if (gps.svinfos[i].cno != last_cnos[i]) {
     send_svinfo_id(trans, dev, i);
@@ -148,8 +148,9 @@ void gps_init(void)
   gps.last_3dfix_time = 0;
   gps.last_msg_ticks = 0;
   gps.last_msg_time = 0;
-#ifdef GPS_RESET_GPIO
-  gpio_setup_input(GPS_RESET_GPIO);	//gps reset off,enable gps.
+#ifdef GPS_POWER_GPIO
+  gpio_setup_output(GPS_POWER_GPIO);
+  GPS_POWER_GPIO_ON(GPS_POWER_GPIO);
 #endif
 #ifdef GPS_LED
   LED_OFF(GPS_LED);
@@ -159,18 +160,24 @@ void gps_init(void)
 #endif
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "GPS", send_gps);
-  register_periodic_telemetry(DefaultPeriodic, "GPS_INT", send_gps_int);
-  register_periodic_telemetry(DefaultPeriodic, "GPS_LLA", send_gps_lla);
-  register_periodic_telemetry(DefaultPeriodic, "GPS_SOL", send_gps_sol);
-  register_periodic_telemetry(DefaultPeriodic, "SVINFO", send_svinfo);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS, send_gps);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_INT, send_gps_int);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_LLA, send_gps_lla);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_SOL, send_gps_sol);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SVINFO, send_svinfo);
 #endif
 }
 
 void gps_periodic_check(void)
 {
   if (sys_time.nb_sec - gps.last_msg_time > GPS_TIMEOUT) {
-    gps.fix = GPS_FIX_NONE;//GPS_FIX_NONE;  //for debug 
+    gps.fix = GPS_FIX_NONE;
+  }
+  else if(gps.pacc <500) {  //5m
+  	gps.stable =TRUE;
+  }
+  else if(gps.pacc >600) { 
+    gps.stable =FALSE;
   }
 }
 
@@ -194,4 +201,11 @@ uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
   }
 
   return itow_now;
+}
+
+/**
+ * Default parser for GPS injected data
+ */
+void WEAK gps_inject_data(uint8_t packet_id __attribute__((unused)), uint8_t length __attribute__((unused)), uint8_t *data __attribute__((unused))){
+
 }

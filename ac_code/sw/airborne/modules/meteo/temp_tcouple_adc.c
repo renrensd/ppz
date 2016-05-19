@@ -77,7 +77,6 @@ void temp_tcouple_adc_periodic(void)
                    * 100. - 13.;
 
   if (++temp_cnt >= TCOUPLE_NB) {
-  	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_TEMP_TCOUPLE(DefaultChannel, DefaultDevice,
                                &fval[0], &fval[1], &fval[2], &fval[3],
                                &fref[0], &fref[1], &fref[2], &fref[3],

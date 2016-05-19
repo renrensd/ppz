@@ -41,9 +41,9 @@
 //#include <stdio.h>
 
 #ifndef AHRS_MAG_NOISE_X
-#define AHRS_MAG_NOISE_X 0.2
-#define AHRS_MAG_NOISE_Y 0.2
-#define AHRS_MAG_NOISE_Z 0.2
+#define AHRS_MAG_NOISE_X 0.4//0.2
+#define AHRS_MAG_NOISE_Y 0.4//0.2
+#define AHRS_MAG_NOISE_Z 0.4//0.2
 #endif
 
 static inline void propagate_ref(struct Int32Rates *gyro, float dt);
@@ -76,12 +76,12 @@ void ahrs_mlkf_init(void)
   FLOAT_RATES_ZERO(ahrs_mlkf.gyro_bias);
   const float P0_a = 1.;
   const float P0_b = 1e-4;
-  float P0[6][6] = {{ P0_a, 0.,   0.,   0.,   0.,   0.  },
-    { 0.,   P0_a, 0.,   0.,   0.,   0.  },
-    { 0.,   0.,   P0_a, 0.,   0.,   0.  },
-    { 0.,   0.,   0.,   P0_b, 0.,   0.  },
-    { 0.,   0.,   0.,   0.,   P0_b, 0.  },
-    { 0.,   0.,   0.,   0.,   0.,   P0_b}
+  float P0[6][6] = { { P0_a, 0.,   0.,   0.,   0.,   0.  },
+					    { 0.,   P0_a, 0.,   0.,   0.,   0.  },
+					    { 0.,   0.,   P0_a, 0.,   0.,   0.  },
+					    { 0.,   0.,   0.,   P0_b, 0.,   0.  },
+					    { 0.,   0.,   0.,   0.,   P0_b, 0.  },
+					    { 0.,   0.,   0.,   0.,   0.,   P0_b}
   };
   memcpy(ahrs_mlkf.P, P0, sizeof(P0));
 
@@ -135,7 +135,7 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
   ahrs_mlkf.lp_accel = alpha * ahrs_mlkf.lp_accel +
                        (1. - alpha) * (float_vect3_norm(&imu_g) - 9.81);
   const struct FloatVect3 earth_g = {0.,  0., -9.81 };
-  const float dn = 250 * fabs(ahrs_mlkf.lp_accel);  //old is 250 gain
+  const float dn = 250 * fabs(ahrs_mlkf.lp_accel);
   struct FloatVect3 g_noise = {1. + dn, 1. + dn, 1. + dn};
   update_state(&earth_g, &imu_g, &g_noise);
   reset_state();

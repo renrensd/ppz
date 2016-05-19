@@ -134,7 +134,6 @@ void airspeed_otf_parse(char c)
           otf_inp[otf_idx] = 0;
           checksum = strtol(otf_inp, NULL, 16);
           otf_idx = 0;
-		  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
           DOWNLINK_SEND_FLOW_AP_OTF(DefaultChannel, DefaultDevice, &counter, &course[0], &course[1], &course[2], &altitude,
                                     &checksum);
         }

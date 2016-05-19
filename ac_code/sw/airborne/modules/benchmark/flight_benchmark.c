@@ -59,7 +59,7 @@ void flight_benchmark_periodic(void)
 
   if (benchm_go) {
 #if USE_AIRSPEED && defined(BENCHMARK_AIRSPEED)
-    Err_airspeed = fabs(*stateGetAirspeed_f() - v_ctl_auto_airspeed_setpoint);
+    Err_airspeed = fabs(stateGetAirspeed_f() - v_ctl_auto_airspeed_setpoint);
     if (Err_airspeed > ToleranceAispeed) {
       Err_airspeed = Err_airspeed - ToleranceAispeed;
       SquareSumErr_airspeed += (Err_airspeed * Err_airspeed);
@@ -111,9 +111,11 @@ void flight_benchmark_periodic(void)
     }
 #endif
   }
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_FLIGHT_BENCHMARK(DefaultChannel, DefaultDevice, &SquareSumErr_airspeed, &SquareSumErr_altitude,
-                                 &SquareSumErr_position, &Err_airspeed, &Err_altitude, &Err_position)
+                                 &SquareSumErr_position, &Err_airspeed, &Err_altitude, &Err_position);
+  #endif
 
 }
 

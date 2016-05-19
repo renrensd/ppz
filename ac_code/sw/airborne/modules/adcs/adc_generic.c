@@ -1,4 +1,4 @@
- #include "adc_generic.h"
+#include "adc_generic.h"
 #include "mcu_periph/adc.h"
 #include "mcu_periph/uart.h"
 #include "messages.h"
@@ -42,11 +42,14 @@ void adc_generic_periodic(void)
 #ifdef ADC_CHANNEL_GENERIC1
   adc_generic_val1 = buf_generic1.sum / buf_generic1.av_nb_sample;
 #endif
+
 #ifdef ADC_CHANNEL_GENERIC2
   adc_generic_val2 = buf_generic2.sum / buf_generic2.av_nb_sample;
 #endif
 
+#if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_ADC_GENERIC(DefaultChannel, DefaultDevice, &adc_generic_val1, &adc_generic_val2);
+#endif
 }
 

@@ -919,7 +919,7 @@ I2C_SoftwareResetCmd(periph->reg_addr, DISABLE);
 
 /** default I2C1 clock speed */
 #ifndef I2C1_CLOCK_SPEED
-#define I2C1_CLOCK_SPEED 100000    //300000TODOM:for battery communication by ZFF
+#define I2C1_CLOCK_SPEED 100000    //400000TODOM:for battery communication by ZFF
 #endif
 PRINT_CONFIG_VAR(I2C1_CLOCK_SPEED)
 
@@ -996,7 +996,7 @@ void i2c1_er_isr(void)
 
 /** default I2C2 clock speed */
 #ifndef I2C2_CLOCK_SPEED
-#define I2C2_CLOCK_SPEED 300000
+#define I2C2_CLOCK_SPEED 400000
 #endif
 PRINT_CONFIG_VAR(I2C2_CLOCK_SPEED)
 
@@ -1069,7 +1069,7 @@ void i2c2_er_isr(void)
 
 /** default I2C3 clock speed */
 #ifndef I2C3_CLOCK_SPEED
-#define I2C3_CLOCK_SPEED 300000
+#define I2C3_CLOCK_SPEED 400000
 #endif
 PRINT_CONFIG_VAR(I2C3_CLOCK_SPEED)
 

@@ -75,7 +75,7 @@ void lm75_event(void)
     }
 
     flm75_temperature = ((int16_t) lm75_temperature) / 2.;
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
     DOWNLINK_SEND_TMP_STATUS(DefaultChannel, DefaultDevice, &lm75_temperature, &flm75_temperature);
     lm75_trans.status = I2CTransDone;
   }

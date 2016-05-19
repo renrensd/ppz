@@ -232,7 +232,6 @@ void pcap01_event(void)
         pcap01Value.R_ratio |= pcap01_trans.buf[2];
         humidity = pcap01Value.C_ratio * (-0.0023959245437) + 516.4124438673063;
         temperature = pcap01Value.R_ratio * 61.927 - 259.74;
-		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
         DOWNLINK_SEND_PCAP01_STATUS(DefaultChannel, DefaultDevice,
                                     &pcap01Value.C_ratio,
                                     &pcap01Value.R_ratio,

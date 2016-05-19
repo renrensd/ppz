@@ -1,23 +1,28 @@
-1.sync master code v5.7.
-2.mission application is added,but not test;
-3.hardware for v1,use for debug or other,without ops/bat_manage add(if want to use v2,please use "ppz_v2_12.10(pro)"
-4.add 12.10-14 debug in v2
-5.resolve flight_demo bug(12.15)
-6.rc and something other bug resolve(until 12.18)
-7.add avoid obstacle,guidance_h message content is changed;guidance_v use anti_wind_up
-8.add HMC5983(12.21);add "nav_set_heading_along" function in navigation.c,in mission set heading along path
-9.debug rc,avoid can't change mode and v/h setting cmd reset;
-10.add ops and change interface to adapt current aircraft(12.22);
-11.mission bug resolve;/ops interface bug leave;/mission can't back home;----12.28
+1.sync master code v5.8(git-version/master-v1-v5.8-sync-gcs);
+2.autopilot_rc_helper.c:resolve bug RADIO_RADIO_KILL_SWITCH in kill_switch_is_on();
+3.sync in2016.02.16,add double control loop and add nps simulation;  
+4.sync 02.17 control loop,leave bug back home fail--resolve!;----need sync
+5.not sync gps_nmea to adapt comnav; 
+6.add monitoring subsystems(un test,and gps is in testing)
+7.sync v5.7 all(ops/timer/double loop/bat/comnav/),untest.(2016.03.14)
+8.height_b_l update to use same pid;monitoring update to 03.22.
+9.bug update 0325,hardware v2.1;
+10.leave run out bug, update others until 0330.
+11.change compile opt to O3,AG heartbeat msg use timer not call_back;   v5.8-2.1_0406
+12.for final manual AC 0407:cut radio/pc communication, store RC addr to flash(fail), monitoring result to decate take_off,sonar filter for pulse;
+13.update to 0421,leave crash bug;
+14.for new dynamic mission: auto   
+    ##leave something need to add:
+     1.auto calibration compass and sdio interface;----added
+     2.obstacle avoid function;
+   state: communication finished,testing;
+          dynamic function finished,untest
+          hardware v1
 
-12.bug resolve:ops /mission back home and others,util 2016.1.04
-13.add guidance_v to bouble loop with setting PID, obs not added;
-   bug resolve: key home/rc_motion stop delay/height information and others
-   bug leave: V control above 2m is not stable; rc flight not follow heading
+15.guidance_h  int_sum limit 1/2
+16.update to 0512,hardware is not matching old obv platform.
+17.update from accer(mine) and np0515, matching np platform;
+18.resolve rc connect fail(flash mac) bug;
 
-14.V control use two type pid to ajust height information.
-   heading ref_rate change to 50,avoid unstable attitude.
-   add H double control loop,but attitude shaking leave.  
-   ----2016.01.26
-15.update bat_manager.c/h  ---ZFF
-16.double control loop(V/H) bug resolve,pid var not best. ----2016.02.15
+
+

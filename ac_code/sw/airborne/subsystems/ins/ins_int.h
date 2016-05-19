@@ -61,6 +61,7 @@ struct InsInt {
   float baro_z;  ///< z-position calculated from baro in meters (z-down)
   float qfe;
   bool_t baro_initialized;
+  bool_t baro_valid;
 
 #if USE_SONAR
   bool_t update_on_agl; ///< use sonar to update agl if available

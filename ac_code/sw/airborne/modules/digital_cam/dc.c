@@ -100,16 +100,16 @@ void dc_send_shot_position(void)
   int16_t theta = DegOfRad(stateGetNedToBodyEulers_f()->theta * 10.0f);
   int16_t psi = DegOfRad(stateGetNedToBodyEulers_f()->psi * 10.0f);
   // course in decideg
-  int16_t course = DegOfRad(*stateGetHorizontalSpeedDir_f()) * 10;
+  int16_t course = DegOfRad(stateGetHorizontalSpeedDir_f()) * 10;
   // ground speed in cm/s
-  uint16_t speed = (*stateGetHorizontalSpeedNorm_f()) * 10;
+  uint16_t speed = stateGetHorizontalSpeedNorm_f() * 10;
   int16_t photo_nr = -1;
 
   if (dc_photo_nr < DC_IMAGE_BUFFER) {
     dc_photo_nr++;
     photo_nr = dc_photo_nr;
   }
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
   DOWNLINK_SEND_DC_SHOT(DefaultChannel, DefaultDevice,
                         &photo_nr,
                         &stateGetPositionLla_i()->lat,
@@ -142,7 +142,6 @@ uint8_t dc_info(void)
   float course = DegOfRad(stateGetNedToBodyEulers_f()->psi);
   int16_t mode = dc_autoshoot;
   uint8_t shutter = dc_autoshoot_period * 10;
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_DC_INFO(DefaultChannel, DefaultDevice,
                         &mode,
                         &stateGetPositionLla_i()->lat,

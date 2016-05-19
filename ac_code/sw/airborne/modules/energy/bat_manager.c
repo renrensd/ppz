@@ -74,10 +74,10 @@ static void bq34z_write_reg(struct BQ34Z100 *bq34z, uint8_t reg,uint8_t data);
 *  Parameter   : 
 *  Returns     : 
 ***********************************************************************/
-void bm_init(void)
+void bm_init(void)////test vo   change
 {
-	bat_info.ov = 4300;
-	bat_info.uv = 3000;
+	bat_info.ov = 4300;//max
+	bat_info.uv = 3000;//min
 	//bq7692_init(&bat_info.bq7692, &(BM_I2C_DEV), BQ76920_ADDR);
 	//bq7693_init(&bat_info.bq7693, &(BM_I2C_DEV), BQ76930_ADDR);
 	bq7694_init(&bat_info.bq7694, &(BM_I2C_DEV), BQ76940_ADDR);

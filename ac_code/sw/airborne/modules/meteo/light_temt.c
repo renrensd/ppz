@@ -59,7 +59,7 @@ void light_temt_periodic(void)
 
   /* 3.6k/6.8k voltage divider, 10 bits adc */
   f_light_temt = (adc_light_temt / 1024.) * 100.;
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
   DOWNLINK_SEND_TEMT_STATUS(DefaultChannel, DefaultDevice, &adc_light_temt, &f_light_temt);
 }
 

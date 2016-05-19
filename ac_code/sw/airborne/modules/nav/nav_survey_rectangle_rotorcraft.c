@@ -34,7 +34,7 @@
 
 #ifdef RECTANGLE_SURVEY_USE_INTERLEAVE
 #define USE_INTERLEAVE TRUE
-#else 
+#else
 #define USE_INTERLEAVE FALSE
 #endif
 
@@ -81,6 +81,7 @@ float nav_survey_west, nav_survey_east, nav_survey_north, nav_survey_south;
 #define LINE_STOP_FUNCTION {}
 #endif
 
+#if PERIODIC_TELEMETRY
 static void send_survey(struct transport_tx *trans, struct link_device *dev)
 {
   if (nav_survey_active) {
@@ -89,11 +90,12 @@ static void send_survey(struct transport_tx *trans, struct link_device *dev)
                          &nav_survey_east, &nav_survey_north, &nav_survey_west, &nav_survey_south);
   }
 }
+#endif
 
 void nav_survey_rectangle_rotorcraft_init(void)
 {
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "SURVEY", send_survey);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SURVEY, send_survey);
 #endif
 }
 

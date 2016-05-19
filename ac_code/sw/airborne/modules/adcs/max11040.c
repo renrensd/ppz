@@ -64,6 +64,7 @@ void max11040_periodic(void)
       /* we assume that the buffer will be full always in this test mode anyway */
       max11040_values_f[i] = (max11040_values[max11040_buf_in][i] * 2.2) / 8388608.0;
     }
+	#if PERIODIC_TELEMETRY
     xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_TURB_PRESSURE_VOLTAGE(
       DefaultChannel, DefaultDevice,
@@ -83,6 +84,7 @@ void max11040_periodic(void)
       &max11040_values_f[13],
       &max11040_values_f[14],
       &max11040_values_f[15]);
+    #endif
     max11040_data = MAX11040_IDLE;
   }
 #endif

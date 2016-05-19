@@ -202,7 +202,7 @@ static int past_save_counter;
 #define SAVING -1
 #define SAVE_DONE -2
 
-#define HFF_LOST_LIMIT 1000
+#define HFF_LOST_LIMIT  10000  //1000,large progate time
 static uint16_t b2_hff_lost_limit;
 static uint16_t b2_hff_lost_counter;
 
@@ -305,10 +305,10 @@ void b2_hff_init(float init_x, float init_xdot, float init_y, float init_ydot)
   b2_hff_lost_limit = HFF_LOST_LIMIT;
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "HFF", send_hff);
-  register_periodic_telemetry(DefaultPeriodic, "HFF_DBG", send_hff_debug);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HFF, send_hff);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HFF_DBG, send_hff_debug);
 #ifdef GPS_LAG
-  register_periodic_telemetry(DefaultPeriodic, "HFF_GPS", send_hff_gps);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HFF_GPS, send_hff_gps);
 #endif
 #endif
 

@@ -40,13 +40,21 @@
 #endif
 #include "mcu_periph/uart.h"
 
+#ifndef MAVLINK_DEBUG
+#define MAVLINK_DEBUG(...) {}
+#endif
+
+#if MAVLINK_DEBUG == printf
+#include <stdio.h>
+#endif
+
 /*
  * MAVLink description before main MAVLink include
  */
 extern mavlink_system_t mavlink_system;
 
 #ifndef MAVLINK_DEV
-#define MAVLINK_DEV uart4
+#define MAVLINK_DEV uart1
 #endif
 
 /*
@@ -63,6 +71,7 @@ extern mavlink_system_t mavlink_system;
  */
 void mavlink_init(void);
 void mavlink_periodic(void);
+void mavlink_periodic_telemetry(void);
 void mavlink_event(void);
 
 /**

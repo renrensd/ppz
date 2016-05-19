@@ -173,7 +173,6 @@ void vn100_event_task(void)
     stateSetBodyRates_f(&ins_rates);
 #endif
     //uint8_t s = 4+VN100_REG_QMR_SIZE;
-    //xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     //DOWNLINK_SEND_DEBUG(DefaultChannel, DefaultDevice,s,spi_buffer_input);
     vn100_trans.status = SPITransDone;
   }
@@ -311,6 +310,7 @@ static inline void parse_ins_msg(void)
 
 extern void vn100_report_task(void)
 {
+  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_AHRS_LKF(DefaultChannel, DefaultDevice,
                          &ins_eulers.phi, &ins_eulers.theta, &ins_eulers.psi,
@@ -318,5 +318,6 @@ extern void vn100_report_task(void)
                          &ins_rates.p, &ins_rates.q, &ins_rates.r,
                          &ins_accel.x, &ins_accel.y, &ins_accel.z,
                          &ins_mag.x, &ins_mag.y, &ins_mag.z);
+  #endif
 }
 

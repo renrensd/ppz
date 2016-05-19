@@ -73,7 +73,7 @@ ifeq ($(ARCH), lpc21)
 imu_CFLAGS += -DUSE_I2C1
 imu_CFLAGS += -DI2C1_SCLL=150 -DI2C1_SCLH=150 -DI2C1_BUF_LEN=16
 else ifeq ($(ARCH), stm32)
-imu_CFLAGS += -DUSE_I2C1
+imu_CFLAGS += -DUSE_I2C2
 endif
 
 # Keep CFLAGS/Srcs for imu in separate expression so we can assign it to other targets

@@ -27,7 +27,9 @@
 
 #include "mcu.h"
 #include "std.h"
-
+#ifndef NPS_SIMU
+ #include <libopencm3/cm3/scb.h>
+#endif
 #ifdef PERIPHERALS_AUTO_INIT
 #include "mcu_periph/sys_time.h"
 #ifdef USE_LED
@@ -38,7 +40,7 @@
 #include "subsystems/radio_control.h"
 #endif
 #endif
-#if USE_UART0 || USE_UART1 || USE_UART2 || USE_UART3 || USE_UART4 || USE_UART5 || USE_UART6
+#if USE_UART0 || USE_UART1 || USE_UART2 || USE_UART3 || USE_UART4 || USE_UART5 || USE_UART6 || USE_UART7 || USE_UART8
 #define USING_UART 1
 #include "mcu_periph/uart.h"
 #endif
@@ -64,11 +66,34 @@
 #ifdef SYS_TIMER_OPTION
 #include "modules/system/timer_if.h"
 #endif
+
+#ifdef CALIBRATION_OPTION
+#include "calibration.h"
+#endif
+
 #endif /* PERIPHERALS_AUTO_INIT */
+
+#ifndef NPS_SIMU
+#include "mcu_periph/gpio.h"
+#include BOARD_CONFIG
+
+
+void usage_fault_handler(void);
+void bus_fault_handler(void);
+void mem_manage_handler(void);
+void nmi_handler(void);
+void hard_fault_handler(void);
+#endif
 
 void WEAK board_init(void)
 {
   // default board init function does nothing...
+  #ifndef NPS_SIMU
+	//gpio_setup_output(ACTUATOR_POWER_GPIO);
+  	//gpio_clear(ACTUATOR_POWER_GPIO);
+    //gpio_setup_output(DEBUG_GPIO);
+  	//gpio_clear(DEBUG_GPIO);
+  #endif
 }
 
 void mcu_init(void)
@@ -81,11 +106,13 @@ void mcu_init(void)
   board_init();
 
 #ifdef PERIPHERALS_AUTO_INIT
-  //#ifndef RTOS_IS_CHIBIOS
+  //#ifndef RTOS_IS_CHIBIOS	// TODOM:
   sys_time_init();
   //#endif //RTOS_IS_CHIBIOS
-#ifdef SYS_TIMER_OPTION
+#ifdef SYS_TIMER_OPTION 
+ #ifndef NPS_SIMU    //nps not use timer
   tm_reset_create();
+ #endif
 #endif
 #ifdef USE_LED
   led_init();
@@ -114,6 +141,12 @@ void mcu_init(void)
 #endif
 #if USE_UART6
   uart6_init();
+#endif
+#if USE_UART7
+  uart7_init();
+#endif
+#if USE_UART8
+  uart8_init();
 #endif
 #if USING_UART
   uart_arch_init();
@@ -183,6 +216,10 @@ void mcu_init(void)
   udp_arch_init();
 #endif
 
+#ifdef CALIBRATION_OPTION
+  cali_fatfs_init();
+#endif
+
 #else
   INFO("PERIPHERALS_AUTO_INIT not enabled! Peripherals (including sys_time) need explicit initialization.")
 #endif /* PERIPHERALS_AUTO_INIT */
@@ -201,3 +238,50 @@ void mcu_event(void)
   VCOM_event();
 #endif
 }
+
+
+#ifndef NPS_SIMU
+uint32_t scb_state_hfsr,scb_state_bfar,scb_state_mmfar,scb_state_cfsr;
+void usage_fault_handler(void)
+{
+	//gpio_set(ACTUATOR_POWER_GPIO);
+	scb_state_hfsr = SCB_HFSR;
+	scb_state_bfar = SCB_BFAR;
+	scb_state_cfsr = SCB_CFSR;
+	scb_state_mmfar =SCB_MMFAR;
+	scb_reset_system();
+	while(1);
+}
+
+void bus_fault_handler(void)
+{
+	//gpio_set(ACTUATOR_POWER_GPIO);
+	scb_reset_system();
+	while(1);
+}
+
+void mem_manage_handler(void)
+{
+	//gpio_set(ACTUATOR_POWER_GPIO);
+	scb_reset_system();
+	while(1);
+}
+
+void nmi_handler(void)
+{
+    //gpio_set(ACTUATOR_POWER_GPIO);
+    scb_reset_system();
+	while(1);
+}
+
+void hard_fault_handler(void)
+{
+	//gpio_set(ACTUATOR_POWER_GPIO);
+	scb_state_hfsr = SCB_HFSR;
+	scb_state_bfar = SCB_BFAR;
+	scb_state_cfsr = SCB_CFSR;
+	scb_state_mmfar =SCB_MMFAR;
+	scb_reset_system();
+	while(1);
+}
+#endif

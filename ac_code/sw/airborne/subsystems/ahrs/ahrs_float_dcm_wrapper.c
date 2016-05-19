@@ -37,6 +37,7 @@ PRINT_CONFIG_VAR(AHRS_DCM_OUTPUT_ENABLED)
 /** if TRUE with push the estimation results to the state interface */
 static bool_t ahrs_dcm_output_enabled;
 static uint32_t ahrs_dcm_last_stamp;
+static uint8_t ahrs_dcm_id = AHRS_COMP_ID_DCM;
 
 static void set_body_orientation_and_rates(void);
 
@@ -44,13 +45,8 @@ static void set_body_orientation_and_rates(void);
 #include "subsystems/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
 
-#ifndef AHRS_DCM_FILTER_ID
-#define AHRS_DCM_FILTER_ID 6
-#endif
-
 static void send_filter_status(struct transport_tx *trans, struct link_device *dev)
 {
-  uint8_t id = AHRS_DCM_FILTER_ID;
   uint8_t mde = 3;
   uint16_t val = 0;
   if (!ahrs_dcm.is_aligned) { mde = 2; }
@@ -195,6 +191,6 @@ void ahrs_dcm_register(void)
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "STATE_FILTER_STATUS", send_filter_status);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STATE_FILTER_STATUS, send_filter_status);
 #endif
 }

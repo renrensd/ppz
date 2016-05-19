@@ -130,9 +130,10 @@ static void *sonar_bebop_read(void *data __attribute__((unused)))
       AbiSendMsgAGL(AGL_SONAR_ADC_ID, sonar_bebop.distance);
 
 #ifdef SENSOR_SYNC_SEND_SONAR
-      // Send Telemetry report
+      #if PERIODIC_TELEMETRY
       xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &sonar_bebop.meas, &sonar_bebop.distance);
+	  #endif
 #endif
     }
   }

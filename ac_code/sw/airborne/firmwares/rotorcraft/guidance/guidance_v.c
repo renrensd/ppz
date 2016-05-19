@@ -19,14 +19,11 @@
  * Boston, MA 02111-1307, USA.
  */
 
-//Double PID control written by RSY
-
-
 /** @file firmwares/rotorcraft/guidance/guidance_v.c
  *  Vertical guidance for rotorcrafts.
  *
  */
-
+#include <math.h>
 #include "generated/airframe.h"
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
 #include "firmwares/rotorcraft/guidance/guidance_module.h"
@@ -38,6 +35,7 @@
 #include "state.h"
 
 #include "math/pprz_algebra_int.h"
+
 
 /* error if some gains are negative */
 #if (GUIDANCE_V_HOVER_KP < 0) ||                   \
@@ -100,7 +98,9 @@ PRINT_CONFIG_VAR(GUIDANCE_V_ADAPT_THROTTLE_ENABLED)
 #define GUIDANCE_V_MAX_SUM_ERR  1500000  //default is 2000000
 #endif
 
+#define USE_ANTI_WIND_UP TRUE
 int32_t wind_up_flag = 1; 
+
 uint8_t guidance_v_mode;
 int32_t guidance_v_ff_cmd;
 int32_t guidance_v_fb_cmd;
@@ -108,7 +108,8 @@ int32_t guidance_v_delta_t;
 
 float guidance_v_nominal_throttle;
 bool_t guidance_v_adapt_throttle_enabled;
-bool_t using_anti_wind_up=1;
+
+
 
 
 /** Direct throttle from radio control.
@@ -139,53 +140,8 @@ int32_t guidance_vi_ki;
 int32_t guidance_v_z_sum_err;
 int32_t guidance_v_zd_sum_err;
 int32_t guidance_v_thrust_coeff;
+
 int32_t c_z=0;
-
-
-/*here is define the variables that do the differentiation of my control signal in inner loop*/
-//*****************************************************//
-float x1=0;
-float x2 = 0;
-
-const float h = 0.002*512*1025;
-const float h0 = 0.05*512*1025;
-const float r = 100;
-//*****************************************************//
-//                define done here                                                    //
-
-/*here is define the functions that do the differentiation of my control signal in inner loop*/
-//*****************************************************//
-float  fsg(float x,float d){
-	float f;
-	f = (Sign(x+d)-Sign(x-d))/2;
-	return f;
-}
-
-
-float  inline fhan(float signal){
-	float d,a0,y,a1,a2,a,out;
-	d = r*h0*h0;
-	a0 = h0*x2;
-	y = (x1-signal)+a0;
-	a1 = sqrt(d*(d+8*abs(y)));
-	a2 = a0+Sign(y)*(a1-d)/2;
-	a = (a0+y)*fsg(y,d)+a2*(1-fsg(y,d));
-	out = -r*(a/d)*fsg(a,d)-r*Sign(a)*(1-fsg(a,d));
-	return out;
-}
-
-void Tracking_differntiator(float signal){
-	float fh;
-	fh = fhan(signal);
-	
-	x2 = x2+h*fh;
-	x1 = x1+h*x2;
-}
-//*****************************************************//
-//                define done here                                                    //
-
-
-
 
 #define GuidanceVSetRef(_pos, _speed, _accel) { \
     gv_set_ref(_pos, _speed, _accel);        \
@@ -196,7 +152,59 @@ void Tracking_differntiator(float signal){
 
 static int32_t get_vertical_thrust_coeff(void);
 static void run_hover_loop(bool_t in_flight);
-static void inside_pid_var_check(void);  //1
+static void inside_pid_var_check(void);  
+
+float fsg(float x,float d);
+float fhan(float signal);
+void Tracking_differntiator(float signal);
+
+/*here is define the variables that do the differentiation of my control signal in inner loop*/
+//*****************************************************//
+float x1 = 0;
+float x2 = 0;
+
+float vh = 0.002*512*1025;
+float vh0 = 0.5*512*1025;  //0.6
+const float r = 100;
+//*****************************************************//
+//                define done here                                                    //
+
+/*here is define the functions that do the differentiation of my control signal in inner loop*/
+//*****************************************************//
+float fsg(float x,float d)
+{
+	float f;
+	f = (Sign(x+d)-Sign(x-d))/2;
+	return f;
+}
+
+
+inline float fhan(float signal)
+{
+	float d,a0,y,a1,a2,a,out;
+	d = r*vh0*vh0;
+	a0 = vh0*x2;
+	y = (x1-signal) + a0;
+	a1 = sqrt( d*(d+8*fabs(y)) );
+	a2 = a0 + Sign(y)*(a1-d)/2;
+	a = (a0+y)*fsg(y,d) + a2*(1-fsg(y,d));
+	out = -r*(a/d)*fsg(a,d) -r*Sign(a)*(1-fsg(a,d));
+	return out;
+}
+
+void Tracking_differntiator(float signal)
+{
+	float fh;
+	fh = fhan(signal);
+	
+	x2 = x2 + vh*fh;
+	x1 = x1 + vh*x2;
+}
+//*****************************************************//
+//                define done here                                                    //
+
+
+
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -209,15 +217,18 @@ static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
                           &(stateGetPositionNed_i()->z),
                           &(stateGetSpeedNed_i()->z),
                           &(stateGetAccelNed_i()->z),
-                          &guidance_v_z_ref, &c_z,
+                          &guidance_v_z_ref, &guidance_v_z_ref,
                           &guidance_v_zdd_ref,
                           &gv_adapt_X,
                           &gv_adapt_P,
                           &gv_adapt_Xmeas,
                           &guidance_v_z_sum_err,
+                          &guidance_v_zd_sum_err,
                           &guidance_v_ff_cmd,
                           &guidance_v_fb_cmd,
-                          &guidance_v_delta_t);
+                          &guidance_v_delta_t,
+                          &c_z,
+                          &x2);
 }
 
 static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
@@ -241,6 +252,8 @@ void guidance_v_init(void)
   guidance_vi_kp = GUIDANCE_V_INSIDE_KP;
   guidance_vi_kd = GUIDANCE_V_INSIDE_KD;
   guidance_vi_ki = GUIDANCE_V_INSIDE_KI;
+  vh = GUIDANCE_V_TD_H;
+  vh0 = GUIDANCE_V_TD_H0;
   
 
   guidance_v_z_sum_err = 0;
@@ -250,9 +263,13 @@ void guidance_v_init(void)
 
   gv_adapt_init();
 
+#if GUIDANCE_V_MODE_MODULE_SETTING == GUIDANCE_V_MODE_MODULE
+  guidance_v_module_init();
+#endif
+
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "VERT_LOOP", send_vert_loop);
-  register_periodic_telemetry(DefaultPeriodic, "TUNE_VERT", send_tune_vert);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VERT_LOOP, send_vert_loop);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TUNE_VERT, send_tune_vert);
 #endif
 }
 
@@ -311,6 +328,7 @@ void guidance_v_mode_changed(uint8_t new_mode)
 
   switch (new_mode) {
     case GUIDANCE_V_MODE_HOVER:
+    case GUIDANCE_V_MODE_GUIDED:
       guidance_v_z_sp = stateGetPositionNed_i()->z; // set current altitude as setpoint
       guidance_v_z_sum_err = 0;
       GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0);
@@ -330,6 +348,8 @@ void guidance_v_mode_changed(uint8_t new_mode)
       break;
 #endif
 
+    case GUIDANCE_V_MODE_FLIP:
+      break;
 
     default:
       break;
@@ -366,8 +386,10 @@ void guidance_v_run(bool_t in_flight)
 
     case GUIDANCE_V_MODE_RC_DIRECT:
       guidance_v_z_sp = stateGetPositionNed_i()->z; // for display only
-      if(guidance_v_rc_delta_t>1400)      stabilization_cmd[COMMAND_THRUST]=(guidance_v_rc_delta_t-1400)/5*4+1400;
-      else stabilization_cmd[COMMAND_THRUST] = guidance_v_rc_delta_t;
+      if(guidance_v_rc_delta_t>1400)      
+	  	stabilization_cmd[COMMAND_THRUST]=(guidance_v_rc_delta_t-1400)/5*4+1400;
+      else 
+	  	stabilization_cmd[COMMAND_THRUST] = guidance_v_rc_delta_t;
       break;
 
     case GUIDANCE_V_MODE_RC_CLIMB:
@@ -390,10 +412,11 @@ void guidance_v_run(bool_t in_flight)
       break;
 
     case GUIDANCE_V_MODE_HOVER:
+    case GUIDANCE_V_MODE_GUIDED:
       guidance_v_zd_sp = 0;
       gv_update_ref_from_z_sp(guidance_v_z_sp);
       run_hover_loop(in_flight);
-#if 0//!NO_RC_THRUST_LIMIT   //throttle using to adjust height
+#if 0//!NO_RC_THRUST_LIMIT   //TODOM:throttle using to adjust height
       /* use rc limitation if available */
       if (radio_control.status == RC_OK) {
         stabilization_cmd[COMMAND_THRUST] = Min(guidance_v_rc_delta_t, guidance_v_delta_t);
@@ -412,21 +435,43 @@ void guidance_v_run(bool_t in_flight)
       if (vertical_mode == VERTICAL_MODE_ALT) {
         guidance_v_z_sp = -nav_flight_altitude;
         guidance_v_zd_sp = 0;
+		
+	   #ifdef USE_FLIGHT_HEIGHT_LIMIT
+	    if(nav_flight_altitude >flight_limit_height)
+		{  guidance_v_z_sp =-flight_limit_height; }
+	   #endif
+	   
         gv_update_ref_from_z_sp(guidance_v_z_sp);
         run_hover_loop(in_flight);
-      } else if (vertical_mode == VERTICAL_MODE_CLIMB) {
+      } 
+	  else if (vertical_mode == VERTICAL_MODE_CLIMB) 
+	  {
         guidance_v_z_sp = stateGetPositionNed_i()->z;
-        guidance_v_zd_sp = -nav_climb;
-        gv_update_ref_from_zd_sp(guidance_v_zd_sp, stateGetPositionNed_i()->z);
+		 guidance_v_zd_sp = -nav_climb;
+		
+	   #ifdef USE_FLIGHT_HEIGHT_LIMIT
+	    if( guidance_v_z_sp <-(flight_limit_height+50) )   //add 50,avoid in limit height dump
+		{  
+			/*change mode to alt,and set sp_pos=flight_limit_height. once climb cmd arrive,mode will become climb*/
+			vertical_mode = VERTICAL_MODE_ALT;
+			nav_altitude=flight_limit_height;   
+			guidance_v_z_sp = -flight_limit_height;
+			guidance_v_zd_sp = 0;
+		}
+	   #endif
+        
+        gv_update_ref_from_zd_sp(guidance_v_zd_sp, guidance_v_z_sp);
         run_hover_loop(in_flight);
-      } else if (vertical_mode == VERTICAL_MODE_MANUAL) {
+      } 
+	  else if (vertical_mode == VERTICAL_MODE_MANUAL) 
+	  {
         guidance_v_z_sp = stateGetPositionNed_i()->z;
         guidance_v_zd_sp = stateGetSpeedNed_i()->z;
         GuidanceVSetRef(guidance_v_z_sp, guidance_v_zd_sp, 0);
         guidance_v_z_sum_err = 0;
         guidance_v_delta_t = nav_throttle;
       }
-#if 0//!NO_RC_THRUST_LIMIT    //*in nav mod,no RC_thrust_limit   //TODOM:
+#if 0//!NO_RC_THRUST_LIMIT    //TODOM:in nav mod,no RC_thrust_limit
       /* use rc limitation if available */
       if (radio_control.status == RC_OK) {
         stabilization_cmd[COMMAND_THRUST] = Min(guidance_v_rc_delta_t, guidance_v_delta_t);
@@ -435,6 +480,10 @@ void guidance_v_run(bool_t in_flight)
         stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
       break;
     }
+
+    case GUIDANCE_V_MODE_FLIP:
+      break;
+
     default:
       break;
   }
@@ -443,7 +492,8 @@ void guidance_v_run(bool_t in_flight)
 /// get the cosine of the angle between thrust vector and gravity vector
 static int32_t get_vertical_thrust_coeff(void)
 {
-  static const int32_t max_bank_coef = BFP_OF_REAL(RadOfDeg(30.), INT32_TRIG_FRAC);
+  // cos(30°) = 0.8660254
+  static const int32_t max_bank_coef = BFP_OF_REAL(0.8660254f, INT32_TRIG_FRAC);
 
   struct Int32RMat *att = stateGetNedToBodyRMat_i();
   /* thrust vector:
@@ -475,9 +525,6 @@ static void run_hover_loop(bool_t in_flight)
 
   /* convert our reference to generic representation */
   int64_t tmp  = gv_z_ref >> (GV_Z_REF_FRAC - INT32_POS_FRAC);
-  
-
-  
   guidance_v_z_ref = (int32_t)tmp;
   guidance_v_zd_ref = gv_zd_ref << (INT32_SPEED_FRAC - GV_ZD_REF_FRAC);
   guidance_v_zdd_ref = gv_zdd_ref << (INT32_ACCEL_FRAC - GV_ZDD_REF_FRAC);
@@ -494,32 +541,31 @@ static void run_hover_loop(bool_t in_flight)
 /*here is the anti_windup block
 -----------------------------
 */	
-	#if 1
- 
-		if((abs(c_z)>=2*1024*512)||(abs(guidance_v_fb_cmd)>=2000)){
+	#if USE_ANTI_WIND_UP  //use sum wind up
+		if((abs(c_z)>=2*1024*512)||(abs(guidance_v_fb_cmd)>=2000))
+		{
 			wind_up_flag = 0;
 		}
-		else{
+		else
+		{
 			wind_up_flag = 1;
 		}
 
-		guidance_v_z_sum_err += wind_up_flag*err_z;
-		guidance_v_zd_sum_err+= wind_up_flag*err_vz;
+		guidance_v_z_sum_err  += wind_up_flag*err_z;
+		guidance_v_zd_sum_err += wind_up_flag*err_vz;
 	#else
 		guidance_v_z_sum_err += err_z;
 		Bound(guidance_v_z_sum_err, -GUIDANCE_V_MAX_SUM_ERR, GUIDANCE_V_MAX_SUM_ERR);
 		guidance_v_zd_sum_err+= err_vz;
 
-	#endif
-	
+	#endif	
 /*--------------------------------------
-here is the anti_windup block   ends*/	
-
-    
+here is the anti_windup block   ends*/	    
 	
   }
   else {
     guidance_v_z_sum_err = 0;
+	guidance_v_zd_sum_err =0;
   }
 
   /* our nominal command : (g + zdd)*m   */
@@ -540,25 +586,16 @@ here is the anti_windup block   ends*/
 
   /* bound the nominal command to 0.9*MAX_PPRZ */
   Bound(guidance_v_ff_cmd, 0, 8640);
+  
 /*output by outer loop */
- c_z = guidance_v_zd_ref+ ((guidance_v_kp* err_z)*20)+guidance_v_ki*(guidance_v_z_sum_err>>10)+((guidance_v_kd*err_zd)>>8);
-
-
-
-//bound outter loop
-//------------------
-if(abs(c_z)>=2*1024*512){
-	c_z = 2*1024*512*Sign(c_z);
-	
-}
-
-//--------------------------
-
-
+  c_z = guidance_v_zd_ref+ ((guidance_v_kp* err_z)*20)+guidance_v_ki*(guidance_v_z_sum_err>>10)+((guidance_v_kd*err_zd)>>8);
+  //bound outter loop
+  BoundAbs( c_z,2*1024*512 );
+  
   /*calculating the derivative of c_z*/
   Tracking_differntiator((float)err_vz);
 
-  inside_pid_var_check(); //1      //check inner pid loop var
+  //inside_pid_var_check(); //1      //check inner pid loop var
  
   guidance_v_fb_cmd = ((-err_vz*guidance_vi_kp)>>16) + (-guidance_vi_kd*(int32_t)x2>>24) + ((-guidance_v_zd_sum_err*guidance_vi_ki)>>24);
   Bound(guidance_v_fb_cmd, -2000, 2000);
@@ -579,8 +616,7 @@ static void inside_pid_var_check(void)  //1
 		guidance_vi_kp=25;
 		guidance_vi_kd=70;
 		guidance_vi_ki =180;
-	}
-		
+	}	
 	else if(stateGetPositionNed_f()->z >-2.5)
 	{
 		guidance_vi_kp=120;
@@ -588,3 +624,13 @@ static void inside_pid_var_check(void)  //1
 		guidance_vi_ki =132;
 	}	
 }
+
+bool_t guidance_v_set_guided_z(float z)
+{
+  if (guidance_v_mode == GUIDANCE_V_MODE_GUIDED) {
+    guidance_v_z_sp = POS_BFP_OF_REAL(z);
+    return TRUE;
+  }
+  return FALSE;
+}
+

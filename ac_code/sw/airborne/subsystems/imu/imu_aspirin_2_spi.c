@@ -30,13 +30,6 @@
 #include "mcu_periph/spi.h"
 #include "peripherals/hmc58xx_regs.h"
 
-#ifndef PERIODIC_FREQUENCY
-#define PERIODIC_FREQUENCY 60
-#endif
-
-#define ASPIRIN_2_SMPLRT_DIV 3
-#define ASPIRIN_2_LOWPASS_FILTER MPU60X0_DLPF_256HZ
-
 /* defaults suitable for Lisa */
 #ifndef ASPIRIN_2_SPI_SLAVE_IDX
 #define ASPIRIN_2_SPI_SLAVE_IDX SPI_SLAVE2

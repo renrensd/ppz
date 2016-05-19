@@ -181,12 +181,10 @@ void gsm_event(void)
   }
 
   if (gsm_line_received) {
-    if (gsm_buf_len > 0) { xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	   DOWNLINK_SEND_DEBUG_GSM_RECEIVE(DefaultChannel, DefaultDevice, gsm_buf_len, gsm_buf); }
+    if (gsm_buf_len > 0) { DOWNLINK_SEND_DEBUG_GSM_RECEIVE(DefaultChannel, DefaultDevice, gsm_buf_len, gsm_buf); }
     gsm_got_line();
     gsm_line_received = false;
   } else if (prompt_received) {
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_DEBUG_GSM_RECEIVE(DefaultChannel, DefaultDevice, 1, ">");
     gsm_got_prompt();
     prompt_received = false;
@@ -503,7 +501,7 @@ static void Send(const char string[])
     GSMTransmit(string[i++]);
   }
   GSMTransmit(GSM_CMD_LINE_TERMINATION);
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+
   DOWNLINK_SEND_DEBUG_GSM_SEND(DefaultChannel, DefaultDevice, i, string);
 }
 

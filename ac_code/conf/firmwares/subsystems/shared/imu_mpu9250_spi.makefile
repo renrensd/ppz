@@ -11,6 +11,8 @@ ifeq ($(TARGET), ap)
   IMU_MPU9250_CFLAGS  = -DUSE_IMU
 endif
 
+$(TARGET).CFLAGS += -I$(PAPARAZZI_SRC)/sw/ext/libstm32
+
 IMU_MPU9250_CFLAGS += -DIMU_TYPE_H=\"imu/imu_mpu9250_spi.h\"
 IMU_MPU9250_SRCS    = $(SRC_SUBSYSTEMS)/imu.c
 IMU_MPU9250_SRCS   += $(SRC_SUBSYSTEMS)/imu/imu_mpu9250_spi.c

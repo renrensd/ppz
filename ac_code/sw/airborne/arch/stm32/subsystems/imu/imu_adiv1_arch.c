@@ -58,9 +58,9 @@ void exti0_isr(void)
   imu_adiv1.adxrs290_xy_eoc = TRUE;
 }
 
-void exti9_5_isr(void)
+void exti1_isr(void)
 {
-  exti_reset_request(EXTI7);
+  exti_reset_request(EXTI1);
   imu_adiv1.adxrs290_z_eoc = TRUE;
 }
 

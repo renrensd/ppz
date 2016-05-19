@@ -33,7 +33,7 @@
 
 #include "peripherals/bmp085.h"
 
-#define SENSOR_SYNC_SEND 1
+#define SENSOR_SYNC_SEND 0
 
 extern struct Bmp085 baro_bmp;
 

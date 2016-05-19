@@ -182,7 +182,6 @@ static void send_superbit(struct transport_tx *trans, struct link_device *dev)
 {
   uint8_t status = superbitrf.status;
   uint8_t cyrf6936_status = superbitrf.cyrf6936.status;
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_SUPERBITRF(trans, dev, AC_ID,
                            &status,
                            &cyrf6936_status,
@@ -259,7 +258,7 @@ void superbitrf_init(void)
   cyrf6936_init(&superbitrf.cyrf6936, &(SUPERBITRF_SPI_DEV), 2, SUPERBITRF_RST_PORT, SUPERBITRF_RST_PIN);
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, "SUPERBITRF", send_superbit);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SUPERBITRF, send_superbit);
 #endif
 }
 

@@ -27,6 +27,16 @@
 
 #define DATALINK_C
 
+/* PERIODIC_C_MAIN is defined before generated/periodic_telemetry.h
+ * in order to implement telemetry_mode_Main_*
+ */
+#define PERIODIC_C_MAIN
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "generated/periodic_telemetry.h"
+#pragma GCC diagnostic pop
+
 #include "generated/airframe.h"
 #include "generated/settings.h"
 
@@ -70,7 +80,6 @@ static inline void main_periodic(void)
   ActuatorsPwmCommit();
 
   LED_PERIODIC();
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   RunOnceEvery(100, {DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice,  16, MD5SUM);});
 }
 
@@ -88,7 +97,6 @@ void dl_parse_msg(void)
   uint8_t msg_id = IdOfMsg(dl_buffer);
   switch (msg_id) {
     case  DL_PING: {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_PONG(DefaultChannel, DefaultDevice);
     }
     break;
@@ -110,7 +118,6 @@ void dl_parse_msg(void)
       uint8_t i = DL_SETTING_index(dl_buffer);
       float var = DL_SETTING_value(dl_buffer);
       DlSetting(i, var);
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &var);
     }
     break;
@@ -119,7 +126,6 @@ void dl_parse_msg(void)
       if (DL_GET_SETTING_ac_id(dl_buffer) != AC_ID) { break; }
       uint8_t i = DL_GET_SETTING_index(dl_buffer);
       float val = settings_get_value(i);
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
       DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
     }
     break;

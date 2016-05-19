@@ -32,7 +32,9 @@
 
 
 /**** Declaration of functions ****/
+
 static void ops_msg_init_var (void);
+extern void ops_msg_create(void);
 static void ops_uart_msg_frame_mk(U8 *frame,U8 cmd_type, U16 service, U8 nArgs,U8 const *pArg );
 static void ops_uart_msg_frame_decode(U8 const *frame, OPS_UART_FRAME  *ops_uart_frame);
 void ops_uart_msg_device_manage_handler(OPS_UART_FRAME *ops_msg);

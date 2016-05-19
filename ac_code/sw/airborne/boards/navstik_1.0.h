@@ -55,8 +55,8 @@
 /*
  * not actual LEDS, used as GPIOs
  */
-//#define GPS_POWER_GPIO GPIOA,GPIO4
-//#define IMU_POWER_GPIO GPIOC,GPIO15
+#define GPS_POWER_GPIO GPIOA,GPIO4
+#define IMU_POWER_GPIO GPIOC,GPIO15
 
 /* Default actuators driver */
 #define DEFAULT_ACTUATORS "subsystems/actuators/actuators_pwm.h"

@@ -166,6 +166,7 @@ extern int8_t mission_get(uint8_t mission_id, uint8_t wp_type);
 extern int8_t mission_delete(uint8_t mission_id);	
 extern uint8_t get_mission_executable(void);
 extern void send_current_mission(void);
+extern void mission_status_report(void);
 
 #endif // MISSION_COMMON_H
 

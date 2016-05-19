@@ -17,7 +17,6 @@ void micromag_periodic(void)
 
   if (micromag_status == MM_IDLE) {
     //    uint8_t * tab = &cnt;
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     //    DOWNLINK_SEND_DEBUG(1,tab);
     cnt = 0;
     MmSendReq();
@@ -37,7 +36,6 @@ void micromag_event(void)
   int32_t mz = micromag_values[2];
 
   if (micromag_status == MM_DATA_AVAILABLE) {
-  	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
     DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice,
                               &mx,
                               &my,
