@@ -40,9 +40,6 @@
 #endif
 #endif
 
-#include "calibration.h"
-
-
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
@@ -95,9 +92,6 @@ static void send_gyro(struct transport_tx *trans, struct link_device *dev)
 static void send_mag_raw(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  #ifdef CALIBRATION_OPTION
-  cali_magraw_to_txt(imu.mag_unscaled.x, imu.mag_unscaled.y, imu.mag_unscaled.z);
-  #endif
   pprz_msg_send_IMU_MAG_RAW(trans, dev, AC_ID,
                             &imu.mag_unscaled.x, &imu.mag_unscaled.y, &imu.mag_unscaled.z);
 }
@@ -265,12 +259,18 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 #elif USE_MAGNETOMETER
 void WEAK imu_scale_mag(struct Imu *_imu)
 {
+#ifndef CALIBRATION_OPTION
   _imu->mag.x = ((_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN *
                  IMU_MAG_X_SENS_NUM) / IMU_MAG_X_SENS_DEN;
   _imu->mag.y = ((_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN *
                  IMU_MAG_Y_SENS_NUM) / IMU_MAG_Y_SENS_DEN;
   _imu->mag.z = ((_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN *
                  IMU_MAG_Z_SENS_NUM) / IMU_MAG_Z_SENS_DEN;
+#else
+  _imu->mag.x = (_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN * _imu->mag_sens.x;
+  _imu->mag.y = (_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN * _imu->mag_sens.y;
+  _imu->mag.z = (_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN * _imu->mag_sens.z;
+#endif
 }
 #else
 void WEAK imu_scale_mag(struct Imu *_imu __attribute__((unused))) {}

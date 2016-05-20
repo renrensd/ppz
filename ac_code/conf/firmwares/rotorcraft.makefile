@@ -48,7 +48,7 @@ $(TARGET).CFLAGS += $(ROTORCRAFT_INC)
 $(TARGET).CFLAGS += -DBOARD_CONFIG=$(BOARD_CFG)
 $(TARGET).CFLAGS += -DPERIPHERALS_AUTO_INIT
 ifndef NPS_OPTION
-#$(TARGET).CFLAGS += -DCALIBRATION_OPTION
+# $(TARGET).CFLAGS += -DCALIBRATION_OPTION
 $(TARGET).CFLAGS += -DSYS_TIMER_OPTION
 endif
 $(TARGET).srcs   += mcu.c
@@ -89,8 +89,7 @@ ifndef NPS_OPTION
 #
 # add libstm32
 #
- PATH_LIBSTM32=$(PAPARAZZI_SRC)/sw/ext/libstm32
- include $(PATH_LIBSTM32)/libstm32.makefile
+include $(PAPARAZZI_SRC)/sw/ext/libstm32/libstm32.makefile
 
 #
 # OPS_SYSTEM

@@ -106,6 +106,10 @@
 
 #endif //GCS_V1_OPTION
 
+#ifdef CALIBRATION_OPTION
+#include "calibration.h"
+#endif	/* CALIBRATION_OPTION */
+
 #define DEBUG_XBEE_COMMU 0
 
 #define IdOfMsg(x) (x[1])
@@ -169,6 +173,13 @@ void dl_parse_msg(void)
 		  //DOWNLINK_SEND_RC_SET_CMD_ACK_STATE(DefaultChannel, DefaultDevice, &last_response);  //when connect,in sure rc get ack
 		  break;
 	    }
+		#ifdef CALIBRATION_OPTION
+		case PPRZ_MSG_ID_CALIBRATION_RESULT_RC_ACK_STATE:
+		{
+			cali_mag_state_init();
+			break;
+		}
+		#endif
 	    default:    break;
     }
   }

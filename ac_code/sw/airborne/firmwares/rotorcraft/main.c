@@ -94,10 +94,6 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include "subsystems/monitoring/monitoring.h"
 #endif
 
-#ifdef CALIBRATION_OPTION
-#include "calibration.h"
-#endif
-
 /* if PRINT_CONFIG is defined, print some config options */
 PRINT_CONFIG_VAR(PERIODIC_FREQUENCY)
 
@@ -172,9 +168,6 @@ int main(void)
   {
       handle_periodic_tasks();
       main_event();
-	  #ifdef CALIBRATION_OPTION
-	  cali_task();
-	  #endif
   }
 #endif
 

@@ -7,7 +7,12 @@
 #include <string.h>
 #include <math.h>
 #include "calibration.h"
-
+#include "subsystems/imu.h"
+#include "firmwares/rotorcraft/autopilot.h"
+#include "mcu_periph/sys_time.h"
+#ifdef CALIBRATION_OPTION
+#include "subsystems/datalink/downlink.h"
+#include "uplink_ac.h"
 
 static FIL fdata;
 static FIL fraw;
@@ -16,11 +21,12 @@ FRESULT res;
 DIR dirs;
 FILINFO finfo;
 
-static uint16_t mag_len = 0;
+struct CALI_INFO cali_info;
+
 static int length_after_filter = 0;
 static double p0[6]={0,0,0,0,0,0};
-static double x[9];
-static double theta[6];
+//static double x[9];
+//static double theta[6];
 static double err=0;
 static double err_last = 0;
 static double gradient[6];
@@ -30,7 +36,6 @@ static int byte = 0;
 
 
 static void cali_process(void);
-static int StringFind(const char *pSrc, const char *pDst);
 static void cali_magraw_txt_creat(void);
 static void cali_magraw_begin(void);
 static void cali_magraw_end(void);
@@ -45,7 +50,10 @@ static int *min_fun_file(FIL fd ,int length);
 static double *get_min_max_guess_file(int scale);
 static void scale_measurements_file( double *p);
 static void err_fun(void);
+#if 0
 static void read_log(void);
+static int StringFind(const char *pSrc, const char *pDst);
+#endif
 
 
 /***********************************************************************
@@ -142,7 +150,7 @@ static void read_log(void)
 	}
 	f_close(&fdata);
 	counter = i;
-    mag_len = counter ;          
+    cali_info.mag_txt_len = counter ;          
 	f_close(&fraw);
 	//printf("there are %d data for mag \n", i); 
 }
@@ -164,26 +172,18 @@ static void cali_magraw_end(void)
     f_close(&fraw);
 }
 
-static int magraw_txt_times = 0;
-static int magraw_txt_flag = 0;
-
 void cali_magraw_to_txt(int32_t x1, int32_t y1, int32_t z1)
 {
-#if 0
-	if (magraw_txt_flag == 1)
-		return;
-
-	if (magraw_txt_times >= 2000)
+	if(cali_info.mag_entry_flag == TRUE)
 	{
-		f_close(&fraw);
-		magraw_txt_flag = 1;
+		cali_info.mag_cnt++;
+		if(cali_info.mag_cnt >= CALI_MAG_RAW_CNT)
+		{
+			cali_info.mag_cnt = 0;
+			f_printf(&fraw,"%D %D %D\n",x1,y1,z1);
+			cali_info.mag_txt_len++;
+		}
 	}
-	    magraw_txt_times ++;
-
-#endif
-
-    f_printf(&fraw,"%D %D %D\n",x1,y1,z1);
-	mag_len++;
 }
 
 /***********************************************************************
@@ -353,7 +353,7 @@ static int noise_filter_file(int window_size,int noise_threshold)
     f_lseek(&fraw,0);
     for(j=0;j<10;j++)                       //Remove the first 10 sets of data
         f_gets(pBuf,sizeof(pBuf),&fraw );
-	for(i=window_size; i<(mag_len-window_size); i++)
+	for(i=window_size; i<(cali_info.mag_txt_len-window_size); i++)
 	{
         cut_vector_file(fraw,i-window_size, i+window_size,temp1);   //The original data read
 		std(temp1,window_size,noise1);
@@ -626,6 +626,9 @@ static void err_fun(void)
 static void cali_process(void)
 {
     int i=0;
+	uint32_t cali_init_time;
+	uint32_t cali_cur_time;
+	
 	struct option 
 	{
 		int sensor_ref;
@@ -647,9 +650,16 @@ static void cali_process(void)
     //printf("P0 is %f  %f  %f  %f  %f  %f\n",p0[0],p0[1],p0[2],p0[3],p0[4],p0[5]);
 
 	scale_measurements_file( p0);    //scale the measurement with parameters
-
+    cali_init_time = get_sys_time_msec();
 	while(1)
 	{ 
+		cali_cur_time = get_sys_time_msec();
+		if( cali_cur_time - cali_init_time > CALI_MAG_TIMEROUT )
+		{
+			cali_info.mag_state = CALI_MAG_STATE_FINISHED_FAIL;
+			DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
+			break;
+		}
 		err_last = err;
 		err_fun();                                 //calculate sum square error
         
@@ -676,7 +686,16 @@ static void cali_process(void)
 	p0[4] *= 2048;
 	p0[5] *= 2048;
 
-	mag_len = 0;
+	cali_info.mag_txt_len = 0;
+	imu.mag_neutral.x = p0[0];
+	imu.mag_neutral.y = p0[1];
+	imu.mag_neutral.z = p0[2];
+	imu.mag_sens.x = p0[3];
+	imu.mag_sens.y = p0[4];
+	imu.mag_sens.z = p0[5];
+	autopilot_mag_cali_store();
+	cali_info.mag_state = CALI_MAG_STATE_FINISHED_SUCCESS;
+	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
     //printf("MAG_X_NEUTRAL = %d \n",(int)p0[0]);
     //printf("MAG_Y_NEUTRAL = %d \n",(int)p0[1]);
     //printf("MAG_Z_NEUTRAL = %d \n",(int)p0[2]);
@@ -688,26 +707,60 @@ static void cali_process(void)
 
 void cali_fatfs_init(void)
 {     
-    //USART1_Init(115200);    
     SD_Init();
     res=f_mount(0, &fs);
+	cali_info.mag_entry_flag = FALSE;
+	cali_info.mag_txt_len = 0;
+	cali_info.mag_state = CALI_MAG_STATE_INIT;
 }
 
-static uint8_t cali_flag = 0;
-void cali_task(void)
+/***********************************************************************
+* FUNCTION    : cali_mag_begin
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void cali_mag_begin(void)
 {
-    if(cali_flag == 1)
+	if( (cali_info.mag_entry_flag == FALSE) && (cali_info.mag_state == CALI_MAG_STATE_INIT) )
 	{
-		cali_flag = 0;
 		cali_magraw_txt_creat();
 		cali_magraw_begin();
+		cali_info.mag_entry_flag = TRUE;
 	}
-	else if(cali_flag == 2)
+
+	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state); 
+}
+
+/***********************************************************************
+* FUNCTION    : cali_mag_end
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void cali_mag_end(void)
+{
+	cali_info.mag_state = CALI_MAG_STATE_WAIT_FINISHED;
+	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
+	if(cali_info.mag_entry_flag == TRUE)
 	{
-		cali_flag = 0;
+		cali_info.mag_entry_flag = FALSE;
 		cali_magraw_end();
 		cali_process();
 	}
 }
+
+/***********************************************************************
+* FUNCTION    : cali_mag_state_init
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void cali_mag_state_init(void)
+{
+	cali_info.mag_state = CALI_MAG_STATE_INIT;
+}
+
+#endif	/* CALIBRATION_OPTION */
 
 

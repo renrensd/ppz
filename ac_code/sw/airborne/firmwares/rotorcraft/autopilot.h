@@ -214,6 +214,8 @@ extern bool_t autopilot_guided_goto_body_relative(float dx, float dy, float dz, 
 
 extern bool_t autopilot_check_rc_bind(void);
 
-
+#ifdef CALIBRATION_OPTION
+extern void autopilot_mag_cali_store(void);
+#endif
 
 #endif /* AUTOPILOT_H */

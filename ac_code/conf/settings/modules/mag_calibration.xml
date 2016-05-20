@@ -1,0 +1,16 @@
+<!DOCTYPE settings SYSTEM "../settings.dtd">
+
+<settings target="ap|nps">
+  <dl_settings>
+
+    <dl_settings NAME="mag_sens">
+      <dl_setting MAX="32767" MIN="-32767" STEP="1" VAR="imu.mag_neutral.x" shortname="mag_x_neutral" module="subsystems/imu" param="IMU_MAG_X_NEUTRAL" type="int32" persistent="true"/>
+      <dl_setting MAX="32767" MIN="-32767" STEP="1" VAR="imu.mag_neutral.y" shortname="mag_y_neutral" module="subsystems/imu" param="IMU_MAG_Y_NEUTRAL" type="int32" persistent="true"/>
+      <dl_setting MAX="32767" MIN="-32767" STEP="1" VAR="imu.mag_neutral.z" shortname="mag_z_neutral" module="subsystems/imu" param="IMU_MAG_Z_NEUTRAL" type="int32" persistent="true"/>
+      <dl_setting MAX="10" MIN="-10" STEP="0.00000000001" VAR="imu.mag_sens.x" shortname="mag_x_sens" module="subsystems/imu" param="IMU_MAG_X_SENS" type="float" persistent="true"/>
+      <dl_setting MAX="10" MIN="-10" STEP="0.00000000001" VAR="imu.mag_sens.y" shortname="mag_y_sens" module="subsystems/imu" param="IMU_MAG_Y_SENS" type="float" persistent="true"/>
+      <dl_setting MAX="10" MIN="-10" STEP="0.00000000001" VAR="imu.mag_sens.z" shortname="mag_z_sens" module="subsystems/imu" param="IMU_MAG_Z_SENS" type="float" persistent="true"/>
+    </dl_settings>
+
+  </dl_settings>
+</settings>

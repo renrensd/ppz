@@ -11,7 +11,7 @@
     <file name="sonar_i2c_mb1242.h"/>
   </header>
   <init fun="sonar_init()"/>
-  <periodic fun="sonar_i2c_read()" freq="35"/> 
+  <periodic fun="sonar_i2c_read()" freq="30"/> 
                                                 
   <makefile target="ap|sim">
     <file name="sonar_i2c_mb1242.c"/>
