@@ -280,14 +280,17 @@ bool_t run_normal_task(void)
 				{
 					task_nav_hover(next_wp.wp_en);
 				}
-				if( !achieve_next_wp() )  
+				if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
 				{
-					//need handle the situation
-					task_wp_empty_handle();
-				}
-				else
-				{
-					wp_state = 1;  /*interrupt reaching next_wp msg to gcs*/
+					if( !achieve_next_wp() )  
+					{
+						//need handle the situation
+						task_wp_empty_handle();
+					}
+					else
+					{
+						wp_state = 1;  /*interrupt reaching next_wp msg to gcs*/
+					}
 				}
 			}
 			break;

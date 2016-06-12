@@ -135,8 +135,8 @@ static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool_t in_flig
 float fsg_h(float x,float d);
 int32_t fhan_control(float pos,float vel,  float repul, float h1);
 float fhan_h(float signal,float x1,float x2);
-void Tracking_differntiator_hx(float signal, float x1,float x2);
-void Tracking_differntiator_hy(float signal, float y1,float y2);
+void Tracking_differntiator_hx(float signal);
+void Tracking_differntiator_hy(float signal);
 
 /*
 ******************************************************
@@ -198,7 +198,7 @@ float fsg_h(float x,float d)
 	return f;
 }
 
-int32_t fhan_control(float pos,float vel,  float repul, float h1)
+int32_t fhan_control(float pos, float vel, float repul, float h1)
 {
 	float d,a0,y,a1,a2,sy,a,sa,fout;
 	d = repul * h1 * h1;
@@ -229,19 +229,19 @@ float fhan_h(float signal,float x1,float x2)
 	return out;
 }
 
-void Tracking_differntiator_hx(float signal, float x1,float x2)
+void Tracking_differntiator_hx(float signal)
 {
 	float fh;
-	fh = fhan_h(signal,x1,x2);
+	fh = fhan_h(signal,xh1,xh2);
 	
 	xh2 = xh2 + hh*fh;
 	xh1 = xh1 + hh*xh2;
 }
 
-void Tracking_differntiator_hy(float signal, float y1,float y2)
+void Tracking_differntiator_hy(float signal)
 {
 	float fh;
-	fh = fhan_h(signal,y1,y2);
+	fh = fhan_h(signal,yh1,yh2);
 	
 	yh2 = yh2 + hh*fh;
 	yh1 = yh1 + hh*yh2;
@@ -697,8 +697,8 @@ static void guidance_h_traj_run(bool_t in_flight)
   /* saturate it               */
   VECT2_STRIM(guidance_h_speed_err, -MAX_SPEED_ERR, MAX_SPEED_ERR);
 
-  /* run PID */  
-  /*
+#if 0
+  //old PID loop
   int32_t pd_x =
     ((guidance_h_pgain * guidance_h_pos_err.x) >> (INT32_POS_FRAC - GH_GAIN_SCALE)) +
     ((guidance_h_dgain * (guidance_h_speed_err.x >> 2)) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE - 2));
@@ -714,62 +714,14 @@ static void guidance_h_traj_run(bool_t in_flight)
     ((guidance_h_vgain * guidance_h_speed_ref.y) >> 17) + 
     ((guidance_h_again * guidance_h_accel_ref.y) >> 8);   
 
-*/
-
-/*-------------------new functions run below-----------*/
-
-  //static int32_t last_error_x=0;
-  //static int32_t last_error_y=0;
-
-/* outer PID here*/
-
-
-  int32_t error_x= c_x -(stateGetSpeedNed_i()->x) ;
-  int32_t error_y= c_y -(stateGetSpeedNed_i()->y) ;
-
-
-
-  sum_in_x += flag_of_int_inner_x * guidance_h_pos_err.x;
-  sum_in_y += flag_of_int_inner_y * guidance_h_pos_err.y;
-
-  if(guidance_h.gains.i==0)
-  {
-  	sum_in_x=0;
-	sum_in_y=0;
-  }
-
-
-  c_x = guidance_h.ref.speed.x + guidance_h_pos_err.x*12*guidance_h.gains.a+(guidance_h_speed_err.x>>6)*guidance_h.gains.v+(sum_in_x>>7)*guidance_h.gains.i;
-
-  c_y = guidance_h.ref.speed.y + guidance_h_pos_err.y*12*guidance_h.gains.a+(guidance_h_speed_err.y>>6)*guidance_h.gains.v+(sum_in_y>>7)*guidance_h.gains.i;
-
-
-	Tracking_differntiator_hx((float)( c_x-(stateGetSpeedNed_i()->x)),xh1,xh2);
-	Tracking_differntiator_hy((float)( c_y-(stateGetSpeedNed_i()->y)),yh1,yh2);	
-
-	
-/* inner PID here*/	
-	/*
-	guidance_h_cmd_earth.x = inner_PID_x(error_x>>16,sum_in_x>>28,((int)xh2)>>24, guidance_h_pgain,guidance_h_igain,guidance_h_dgain);
-	guidance_h_cmd_earth.y = inner_PID_y(error_y>>16,sum_in_y>>28,((int)yh2)>>24, guidance_h_pgain,guidance_h_igain,guidance_h_dgain);
-    */
-  guidance_h_cmd_earth.x = -fhan_control( (float)error_x, xh2/256.0, 100.0*(float)(guidance_h.gains.p), 0.2*(float)(guidance_h.gains.d) );
-  guidance_h_cmd_earth.y = -fhan_control( (float)error_y, yh2/256.0, 100.0*(float)(guidance_h.gains.p), 0.2*(float)(guidance_h.gains.d) );	
-
-  //last_error_x=error_x;
-  //last_error_y=error_y;
-
-/*-------------------new functions run end-----------*/
-
-
   /* trim max bank angle from PD */
-//  VECT2_STRIM(guidance_h_cmd_earth, -traj_max_bank, traj_max_bank);
+  //  VECT2_STRIM(guidance_h_cmd_earth, -traj_max_bank, traj_max_bank);
 
   /* Update pos & speed error integral, zero it if not in_flight.
    * Integrate twice as fast when not only POS but also SPEED are wrong,
    * but do not integrate POS errors when the SPEED is already catching up.
    */
-   /*
+
    
   if (in_flight) {
     
@@ -783,11 +735,78 @@ static void guidance_h_traj_run(bool_t in_flight)
   } else {
     INT_VECT2_ZERO(guidance_h_trim_att_integrator);
   }
+#endif
 
+/*-------------------new functions run below-----------*/
+
+/*outer PID here*/
+
+  sum_in_x += flag_of_int_inner_x * guidance_h.gains.i * guidance_h_pos_err.x;
+  sum_in_y += flag_of_int_inner_y * guidance_h.gains.i * guidance_h_pos_err.y;
+
+  if(!in_flight||guidance_h.gains.i==0)
+  {
+  	  sum_in_x = 0;
+	  sum_in_y = 0;
+  }
+
+/*
+  c_x = guidance_h.ref.speed.x 
+  	    + guidance_h_pos_err.x*12*guidance_h.gains.a
+  	    + (guidance_h_speed_err.x>>6)*guidance_h.gains.v
+  	    + (sum_in_x>>7)*guidance_h.gains.i;
+
+  c_y = guidance_h.ref.speed.y 
+  	    + guidance_h_pos_err.y*12*guidance_h.gains.a
+  	    + (guidance_h_speed_err.y>>6)*guidance_h.gains.v
+  	    + (sum_in_y>>7)*guidance_h.gains.i;
 */
+  int32_t px = (guidance_h_pos_err.x<<5)*guidance_h.gains.a;
+  int32_t dx = (guidance_h_speed_err.x>>6)*guidance_h.gains.v;
+  int32_t ix = sum_in_x>>11;
+  int32_t py = (guidance_h_pos_err.y<<5)*guidance_h.gains.a;
+  int32_t dy = (guidance_h_speed_err.y>>6)*guidance_h.gains.v;
+  int32_t iy = sum_in_y>>11;
+
+  c_x = guidance_h.ref.speed.x + px + dx + ix;
+  c_y = guidance_h.ref.speed.y + py + dy + iy;
+
+/*
+  c_x = guidance_h.ref.speed.x 
+  	    + (guidance_h_pos_err.x<<5)*guidance_h.gains.a
+  	    + (guidance_h_speed_err.x>>6)*guidance_h.gains.v
+  	    + (sum_in_x>>11);
+
+  c_y = guidance_h.ref.speed.y 
+  	    + (guidance_h_pos_err.y<<5)*guidance_h.gains.a
+  	    + (guidance_h_speed_err.y>>6)*guidance_h.gains.v
+  	    + (sum_in_y>>11);
+*/
+  int32_t error_x= c_x -(stateGetSpeedNed_i()->x) ;
+  int32_t error_y= c_y -(stateGetSpeedNed_i()->y) ;
+
+  Tracking_differntiator_hx( (float)(error_x) );
+  Tracking_differntiator_hy( (float)(error_y) );	
+
+	
+/*inner PID here*/	
+
+  guidance_h_cmd_earth.x = -fhan_control( (float)error_x, xh2/256.0, 100.0*(float)(guidance_h.gains.p), 0.2*(float)(guidance_h.gains.d) );
+  guidance_h_cmd_earth.y = -fhan_control( (float)error_y, yh2/256.0, 100.0*(float)(guidance_h.gains.p), 0.2*(float)(guidance_h.gains.d) );	
+
+
+/*-------------------new functions run end-----------*/
+	#if 0//PERIODIC_TELEMETRY
+    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+    DOWNLINK_SEND_H_PID(DefaultChannel, DefaultDevice, &px, &dx, &ix,
+		                                                &py, &dy, &iy,
+		                                                &xh1,&xh2,
+		                                                &yh1,&yh2);
+	#endif  
 
   /* compute a better approximation of force commands by taking thrust into account */
-  if (guidance_h.approx_force_by_thrust && in_flight) {
+  if (guidance_h.approx_force_by_thrust && in_flight)
+  {
     static int32_t thrust_cmd_filt;
     int32_t vertical_thrust = (stabilization_cmd[COMMAND_THRUST] * guidance_v_thrust_coeff) >> INT32_TRIG_FRAC;
     thrust_cmd_filt = (thrust_cmd_filt * GUIDANCE_H_THRUST_CMD_FILTER + vertical_thrust) /
@@ -800,45 +819,29 @@ static void guidance_h_traj_run(bool_t in_flight)
   
   flag_of_int_inner_x = 1;
   flag_of_int_inner_y = 1;
+  if(abs(guidance_h_cmd_earth.x) >= (total_max_bank))
+  {
+	flag_of_int_inner_x = 0;
+  }
+  if(abs(guidance_h_cmd_earth.y) >= (total_max_bank))
+  {
+	flag_of_int_inner_y = 0;
+  }	
 
  #ifndef NPS_SIMU   //sonar  don't work in simulator
-  if((agl_dist_value_filtered<DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>50)
+  if((agl_dist_value_filtered<DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30)
   {    
   	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
-	if((abs(guidance_h_cmd_earth.x) >=  total_limit_bank)){
-			flag_of_int_inner_x = 0;
-
-	}
-	if(((abs(guidance_h_cmd_earth.y)>=total_limit_bank))){
-			flag_of_int_inner_y = 0;
-	}
-  }  //angle is3 limited
+	flag_of_int_inner_x = 0;
+	flag_of_int_inner_y = 0;
+  }  //angle is 3deg limited
  #endif
-/*  no need limit cmd when r >0.3rad/s 
-  if((abs(att_ref_quat_i.rate.r) >=600) ){
-	//VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
-	if( abs(guidance_h_cmd_earth.x) >= total_limit_bank )
-	{
-			flag_of_int_inner_x = 0;
-	}
-	if( abs(guidance_h_cmd_earth.y) >= total_limit_bank )
-	{
-			flag_of_int_inner_y = 0;
-	}
-  }
-*/  	
 
-  VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 45` limited
-  if(abs(guidance_h_cmd_earth.x) >= (total_max_bank/2))
-  {
-			flag_of_int_inner_x = 0;
-  }
-  if(abs(guidance_h_cmd_earth.y) >= (total_max_bank/2))
-  {
-			flag_of_int_inner_y = 0;
-  }
+
+  VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 30` limited
+
   
- }
+}
 #endif
 
 

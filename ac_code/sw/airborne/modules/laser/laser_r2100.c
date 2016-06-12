@@ -34,7 +34,7 @@
 #include "subsystems/datalink/downlink.h"
 #include "std.h"
 
-#define laserDev  (uart2.device)
+#define laserDev  (uart1.device)
 #define laserTransmit(c) laserDev.put_byte(laserDev.periph, c)
 #define laserChAvailable() laserDev.char_available(laserDev.periph)
 #define laserGetch() laserDev.get_byte(laserDev.periph)

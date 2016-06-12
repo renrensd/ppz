@@ -28,7 +28,7 @@
 /* Private define ------------------------------------------------------------*/
 
 /* Private macro -------------------------------------------------------------*/
-#define BM_I2C_DEV i2c1
+#define BM_I2C_DEV i2c2
 #ifndef BQ769X_STARTUP_DELAY
 #define BQ769X_STARTUP_DELAY 1.0
 #endif

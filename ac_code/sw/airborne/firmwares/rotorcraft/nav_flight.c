@@ -51,9 +51,9 @@ static void  ac_config_set_default(void);
 
 void nav_flight_init(void)
 { 
-	flight_mode=nav_gcs_mode;  //default in nav_kill_mode
-	auto_ms_interrupt=FALSE;
-	nav_toward_wp_flag=FALSE;
+	flight_mode = nav_gcs_mode;  //default in nav_kill_mode
+	auto_ms_interrupt = FALSE;
+	nav_toward_wp_flag = FALSE;
 	task_init();            //mission initial
 	rc_nav_init();             //rc info initial
 	ac_config_set_default();
@@ -190,7 +190,7 @@ void nav_flight(void)
   tm_stimulate(TIMER_TASK_RC);
   
   /*run except mission from monitoring*/
-  //ept_ms_run();
+  ept_ms_run();
   
   /*main nav run with flight step*/
   switch(flight_step)

@@ -24,7 +24,7 @@
  * @file mcu.c
  * @brief Arch independent mcu ( Micro Controller Unit ) utilities.
  */
-
+#include <string.h>
 #include "mcu.h"
 #include "std.h"
 #ifndef NPS_SIMU
@@ -71,10 +71,18 @@
 #include "calibration.h"
 #endif
 
+#ifdef WDG_OPTION
+#include "wdg.h"
+#endif
+
+#ifdef FAULT_OPTION
+#include <libopencm3/stm32/rcc.h>
+#endif
+
 #endif /* PERIPHERALS_AUTO_INIT */
 
 #ifndef NPS_SIMU
-#include "mcu_periph/gpio.h"
+//#include "mcu_periph/gpio.h"
 #include BOARD_CONFIG
 
 
@@ -85,21 +93,33 @@ void nmi_handler(void);
 void hard_fault_handler(void);
 #endif
 
+#ifdef FAULT_OPTION
+struct MCU_FAULT_INFO mcu_fault_info __attribute__ ((section(".bkpram"), aligned(4)));
+#endif	/* FAULT_OPTION */
+
+#ifdef WDG_OPTION
+volatile uint16_t mcu_watchdog_flag __attribute__ ((section(".bkpram"), zero_init));
+#endif	/* WDG_OPTION */
+
+volatile uint8_t mcu_pw_is_first_on;
+
 void WEAK board_init(void)
 {
   // default board init function does nothing...
   #ifndef NPS_SIMU
-	//gpio_setup_output(ACTUATOR_POWER_GPIO);
-  	//gpio_clear(ACTUATOR_POWER_GPIO);
-    //gpio_setup_output(DEBUG_GPIO);
-  	//gpio_clear(DEBUG_GPIO);
+	gpio_setup_output(ECS_PWM_EN_GPIO);
+  	gpio_set(ECS_PWM_EN_GPIO);
+    //gpio_setup_input_pulldown(DEBUG_GPIO);
   #endif
 }
 
 void mcu_init(void)
 {
-
   mcu_arch_init();
+  #ifdef FAULT_OPTION
+  mcu_check_reset_source();
+  #endif
+  
   /* If we have a board specific init function, call it.
    * Otherwise it will simply call the empty weak function.
    */
@@ -217,7 +237,24 @@ void mcu_init(void)
 #endif
 
 #ifdef CALIBRATION_OPTION
-  cali_fatfs_init();
+  sd_fatfs_init();
+  #ifdef FAULT_OPTION
+  if(mcu_pw_is_first_on == FALSE)
+  {
+  	mcu_write_file_fault();
+	if( (mcu_get_reset_type() == MCU_RESET_BY_WWDG)
+	    ||(mcu_get_reset_type() == MCU_RESET_BY_SW)
+	  )
+	{
+		while(1);
+	}
+  }
+  #endif	/* FAULT_OPTION */
+#endif	/* CALIBRATION_OPTION */
+
+#ifdef WDG_OPTION
+	wdg_init();
+	mcu_fault_info.wdg_error_cnt = 0;
 #endif
 
 #else
@@ -226,10 +263,22 @@ void mcu_init(void)
 
 }
 
-
-
-void mcu_event(void)
+void mcu_usagefault_test(void)
 {
+	struct time
+	{
+		unsigned char hour;
+		unsigned char min;
+		unsigned char sec;
+	};
+
+	struct time *p = 0;
+	p->hour = 0;
+}
+
+uint8_t mcu_val;
+void mcu_event(void)
+{	
 #if USING_I2C
   i2c_event();
 #endif
@@ -237,51 +286,241 @@ void mcu_event(void)
 #if USE_USB_SERIAL
   VCOM_event();
 #endif
+#if 0
+	if(mcu_val == 100)
+	{
+		mcu_val = 0;
+		mcu_usagefault_test();
+	}
+	else if(mcu_val == 10)
+	{
+		mcu_val = 0;
+		while(1);
+	}
+#endif
 }
 
+#ifdef FAULT_OPTION
+void mcu_fault_info_handle(uint16_t msp_offset)
+{
+	//gpio_set(ECS_PWM_EN_GPIO);
+	uint32_t *vp = (mcu_fault_info.msp + msp_offset);
+	
+	for(uint8_t i=0; i<15; i++)
+	{
+		mcu_fault_info.msp_data[i] = *(vp+i);
+	}
+	
+	mcu_fault_info.hfsr= SCB_HFSR;
+	mcu_fault_info.bfar= SCB_BFAR;
+	mcu_fault_info.cfsr= SCB_CFSR;
+	mcu_fault_info.mmfar=SCB_MMFAR;
+
+	if(mcu_get_reset_type() != MCU_RESET_BY_WWDG)
+	{
+		mcu_set_reset_type(MCU_RESET_BY_SW);
+	}
+	scb_reset_system();
+	while(1);
+
+#if 0
+	  __asm volatile
+    (
+    " tst lr, #4                                                \n"
+    " ite eq                                                    \n"
+    " mrseq r0, msp                                             \n"
+    " mrsne r0, psp                                             \n"
+    " ldr r1, [r0, #24]                                         \n"
+    " ldr r2, handler2_address_const                            \n"
+    " bx r2                                                     \n"
+    " handler2_address_const: .word _prvGetRegistersFromStack    \n"
+    );
+	volatile uint32_t psr __attribute__((unused));
+	volatile uint32_t pc __attribute__((unused));
+	volatile uint32_t msp __attribute__((unused));
+	volatile uint32_t r0 __attribute__((unused));
+	volatile uint32_t r1 __attribute__((unused));
+	volatile uint32_t r2 __attribute__((unused));
+	volatile uint32_t r3 __attribute__((unused));
+	volatile uint32_t r12 __attribute__((unused));
+	volatile uint32_t lr __attribute__((unused));
+	 
+	__asm volatile ("MOV %0, pc" : "=r" (pc) );
+    __asm volatile ("MOV %0, r0" : "=r" (r0) );
+	__asm volatile ("MOV %0, r1" : "=r" (r1) );
+	__asm volatile ("MOV %0, r2" : "=r" (r2) );
+	__asm volatile ("MOV %0, r3" : "=r" (r3) );
+	__asm volatile ("MOV %0, r12" : "=r" (r12) );
+	__asm volatile ("MOV %0, lr" : "=r" (lr) );
+	__asm volatile ("MRS %0, psr" : "=r" (psr) );
+#endif	
+}
+
+/*****************************************************************************
+*  Name        : mcu_check_reset_source
+*  Description : check which source trigger the mcu start
+*  Parameter   : None
+*  Returns     : None
+*****************************************************************************/
+void mcu_check_reset_source(void)
+{
+    uint32_t rst_source;
+	
+	rst_source = RCC_CSR;
+	mcu_fault_info.reset_src = rst_source;
+	
+    if( ((rst_source & RCC_CSR_WWDGRSTF) == RCC_CSR_WWDGRSTF)
+		|| ((rst_source & RCC_CSR_SFTRSTF) == RCC_CSR_SFTRSTF)
+	  )
+    {
+		mcu_pw_is_first_on = FALSE;
+	}
+	else if( ((rst_source & RCC_CSR_PORRSTF) == RCC_CSR_PORRSTF)
+		     || ((rst_source & RCC_CSR_PINRSTF) == RCC_CSR_PINRSTF)
+		     || ((rst_source & RCC_CSR_LPWRRSTF) == RCC_CSR_LPWRRSTF)
+		   )
+    {
+		memset(&mcu_fault_info,0,sizeof(mcu_fault_info));
+		mcu_watchdog_flag = 0;
+		mcu_pw_is_first_on = TRUE;
+	}
+
+	RCC_CSR |= RCC_CSR_RMVF;
+	
+}
+
+/*****************************************************************************
+*  Name        : mcu_set_reset_type
+*  Description : 
+*  Parameter   : None
+*  Returns     : None
+*****************************************************************************/
+void mcu_set_reset_type(uint8_t type)
+{
+	mcu_fault_info.reset_type = type;
+}
+
+/*****************************************************************************
+*  Name        : mcu_get_reset_type
+*  Description : 
+*  Parameter   : None
+*  Returns     : None
+*****************************************************************************/
+uint8_t mcu_get_reset_type(void)
+{
+	return mcu_fault_info.reset_type;
+}
+#endif	/* FAULT_OPTION */
 
 #ifndef NPS_SIMU
-uint32_t scb_state_hfsr,scb_state_bfar,scb_state_mmfar,scb_state_cfsr;
 void usage_fault_handler(void)
 {
-	//gpio_set(ACTUATOR_POWER_GPIO);
-	scb_state_hfsr = SCB_HFSR;
-	scb_state_bfar = SCB_BFAR;
-	scb_state_cfsr = SCB_CFSR;
-	scb_state_mmfar =SCB_MMFAR;
-	scb_reset_system();
+	__asm volatile ("MRS %0, msp" : "=r" (mcu_fault_info.msp) );
+	mcu_fault_info_handle(0x08);
 	while(1);
 }
 
 void bus_fault_handler(void)
 {
-	//gpio_set(ACTUATOR_POWER_GPIO);
-	scb_reset_system();
+	//gpio_set(ECS_PWM_EN_GPIO);
+	__asm volatile ("MRS %0, msp" : "=r" (mcu_fault_info.msp) );
+	mcu_fault_info_handle(0x08);
 	while(1);
 }
 
 void mem_manage_handler(void)
 {
-	//gpio_set(ACTUATOR_POWER_GPIO);
-	scb_reset_system();
+	//gpio_set(ECS_PWM_EN_GPIO);
+	__asm volatile ("MRS %0, msp" : "=r" (mcu_fault_info.msp) );
+	mcu_fault_info_handle(0x08);
 	while(1);
 }
 
 void nmi_handler(void)
 {
-    //gpio_set(ACTUATOR_POWER_GPIO);
-    scb_reset_system();
+    //gpio_set(ECS_PWM_EN_GPIO);
+    __asm volatile ("MRS %0, msp" : "=r" (mcu_fault_info.msp) );
+    mcu_fault_info_handle(0x08);
 	while(1);
 }
 
 void hard_fault_handler(void)
 {
-	//gpio_set(ACTUATOR_POWER_GPIO);
-	scb_state_hfsr = SCB_HFSR;
-	scb_state_bfar = SCB_BFAR;
-	scb_state_cfsr = SCB_CFSR;
-	scb_state_mmfar =SCB_MMFAR;
-	scb_reset_system();
+	//gpio_set(ECS_PWM_EN_GPIO);
+	__asm volatile ("MRS %0, msp" : "=r" (mcu_fault_info.msp) );
+	mcu_fault_info_handle(0x08);
 	while(1);
 }
-#endif
+
+#ifdef WDG_OPTION
+/***********************************************************************
+* FUNCTION    : nvic_wwdg_isr
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void nvic_wwdg_isr(void)
+{
+	uint8_t wr;
+	uint8_t tr;
+
+	WWDG_ClearFlag();
+	mcu_fault_info.wdg_error_cnt++;
+	wr = WWDG->CFR & 0x7F;
+	tr = WWDG->CR & 0x7F;
+	if(tr < wr)
+	{
+		if(mcu_fault_info.wdg_error_cnt < 2)
+		{
+			wdg_feed();
+		}
+		else
+		{
+			mcu_fault_info.wdg_error_cnt = 0;
+			__asm volatile ("MRS %0, msp" : "=r" (mcu_fault_info.msp) );
+			mcu_set_reset_type(MCU_RESET_BY_WWDG);
+			mcu_fault_info_handle(0x08);
+		}
+	}	
+}
+
+/***********************************************************************
+* FUNCTION    : mcu_write_file_fault
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void mcu_write_file_fault(void)
+{
+    sd_write_file_fault("<--- mcu_fault_info_start --->", 0, 1);
+	sd_write_file_fault("mcu_reset_source", mcu_fault_info.reset_src, 0);
+	sd_write_file_fault("mcu_reset_type", mcu_fault_info.reset_type, 0);
+	sd_write_file_fault("mcu_watchdog_flag", mcu_watchdog_flag, 0);
+	sd_write_file_fault("mcu_fault_info.msp", mcu_fault_info.msp, 0);
+	sd_write_file_fault("mcu_fault_info.hfsr", mcu_fault_info.hfsr, 0);
+	sd_write_file_fault("mcu_fault_info.bfar", mcu_fault_info.bfar, 0);
+	sd_write_file_fault("mcu_fault_info.cfsr", mcu_fault_info.cfsr, 0);
+	sd_write_file_fault("mcu_fault_info.mmfar", mcu_fault_info.mmfar, 0);
+	
+	for(uint8_t i=0; i<15; i++)
+	{
+		sd_write_file_fault("mcu_fault_info.msp_data", mcu_fault_info.msp_data[i], 0);
+	}
+
+	sd_write_file_fault("<--- mcu_fault_info_end --->", 0, 2);
+}
+
+/*****************************************************************************
+*  Name        : mcu_set_task_wdg_flag
+*  Description : 
+*  Parameter   : WDG_TASK_IDS
+*  Returns     : None
+*****************************************************************************/
+void mcu_set_task_wdg_flag(uint16_t task_id)
+{
+	 mcu_watchdog_flag = 1 << task_id;
+}
+#endif /* WDG_OPTION */
+
+#endif /* NPS_SIMU */
+

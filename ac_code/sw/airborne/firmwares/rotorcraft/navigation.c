@@ -381,35 +381,46 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
 
 void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 {
-  uint8_t regulate_ratio =3;
+  static uint8_t last_regulate_ratio = 2;
+  uint8_t regulate_ratio = 2;
   struct Int32Vect2 wp_diff, pos_diff, wp_diff_prec ,wp_corre;
   struct EnuCoor_i pos_current;
+  
   VECT2_DIFF(wp_diff, *wp_end, *wp_star);                 //wp_diff is deta of route(x,y)
-  //set nav_head along the route
-  //nav_heading= INT32_ANGLE_PI_2 - int32_atan2(wp_diff.y, wp_diff.x);
-  pos_current=*stateGetPositionEnu_i();
+  pos_current = *stateGetPositionEnu_i();
   VECT2_DIFF(pos_diff, pos_current, *wp_star);            //pos_diff is deta from star(x,y)
   // go back to metric precision or values are too large
   VECT2_COPY(wp_diff_prec, wp_diff);                      //pos_diff_prec is deta of route(x,y)
-  INT32_VECT2_RSHIFT(wp_diff, wp_diff, INT32_POS_FRAC);   //wp_diff is real data
-  INT32_VECT2_RSHIFT(pos_diff, pos_diff, INT32_POS_FRAC); //pos_diff is real data
-  uint32_t leg_length2 = Max((wp_diff.x * wp_diff.x + wp_diff.y * wp_diff.y), 1);   //leg_length2 is route length square(real)
-  int32_t leg_progress2 = pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y;          //leg_progress2 is route_len * (shadow of cur_star len)
-  nav_leg_length = int32_sqrt(leg_length2);                                         //nav_leg_length is real length of route
-  nav_leg_progress = leg_progress2 / nav_leg_length;                                //nav_leg_progress is shadow length of flighted line
 
-#if 0  //use cornering calibrate
+  uint32_t leg_length2 = Max((wp_diff.x * wp_diff.x + wp_diff.y * wp_diff.y)>>16, 1);   //leg_length2 is route length square(real)
+  int32_t leg_progress2 = (pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y)>>16;        //leg_progress2 is route_len * (shadow of cur_star len)
+  nav_leg_length = int32_sqrt(leg_length2);                                             //nav_leg_length is real length of route
+  nav_leg_progress = leg_progress2 / nav_leg_length;                                    //nav_leg_progress is shadow length of flighted line
+ 
+#if 1  //use cornering calibrate
   /** caculate corrective wp to ajust progress lenght ,by WHP**/
   //get dot product point   
-  VECT2_SMUL(wp_corre, wp_diff_prec, (float)leg_progress2/leg_length2);
+  int16_t s = (int16_t)( ((double)(leg_progress2))/((double)(leg_length2))*1000 );
+  VECT2_SMUL(wp_corre, wp_diff_prec, s);
+  VECT2_SDIV(wp_corre, wp_corre, 1000);
   VECT2_SUM(wp_corre, wp_corre, *wp_star);
+  
   //caculate the corrective wp
   VECT2_DIFF(wp_corre, wp_corre, pos_current);
   uint32_t corner_len2_int = wp_corre.x*wp_corre.x+wp_corre.y*wp_corre.y;
   float corner_len2 = FLOAT_OF_BFP(corner_len2_int, 16);
+  
+  if(corner_len2 <0.16)  regulate_ratio = 2;
+  else if(corner_len2 <0.26)  regulate_ratio = 3;
+  else if(corner_len2 <0.82)  regulate_ratio = 5;
+  else if(corner_len2 <2.26)  regulate_ratio = 8;
+  else  regulate_ratio = 14;
+  
+  regulate_ratio = (last_regulate_ratio*3 + regulate_ratio*2)/5;
+  last_regulate_ratio = regulate_ratio;
 #endif  
 
-  int32_t progress = Max( (CARROT_DIST>>INT32_POS_FRAC)/3, 0 );     //TODOM: int32_t progress = Max((CARROT_DIST >> INT32_POS_FRAC), 0);
+  int32_t progress = Max( ( (CARROT_DIST/regulate_ratio) >>INT32_POS_FRAC), 0 );     //TODOM: int32_t progress = Max((CARROT_DIST >> INT32_POS_FRAC), 0);
   nav_leg_progress += progress;                 //carrot length   
   int32_t prog_2 = nav_leg_length;
   Bound(nav_leg_progress, 0, prog_2);
@@ -422,6 +433,11 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   horizontal_mode = HORIZONTAL_MODE_ROUTE;
 
   dist2_to_wp = get_dist2_to_point(wp_end);
+   			#if 0//PERIODIC_TELEMETRY
+			 uint16_t a = (uint16_t)progress;
+   	        xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+            DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &a, &corner_len2);
+			#endif
 }
 
 //return arrive at wp/true or false,after using approaching_time later

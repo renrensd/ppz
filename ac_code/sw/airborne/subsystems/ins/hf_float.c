@@ -75,6 +75,14 @@
 #define Qdotdot HFF_ACCEL_NOISE*DT_HFILTER
 
 //TODO: proper measurement noise
+#ifdef USE_GPS_NMEA
+ #define HFF_R_POS   1.0
+ #define HFF_R_POS_MIN   0.8
+ #define HFF_R_SPEED    0.4
+ #define HFF_R_SPEED_MIN   0.3
+ #define HFF_UPDATE_SPEED  TRUE
+#endif
+
 #ifndef HFF_R_POS
 #define HFF_R_POS   8.
 #endif

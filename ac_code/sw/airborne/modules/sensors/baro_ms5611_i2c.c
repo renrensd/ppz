@@ -36,7 +36,7 @@
 #include "messages.h"
 #include "subsystems/datalink/downlink.h"
 
-#define SENSOR_SYNC_SEND 0
+#define SENSOR_SYNC_SEND 1
 
 #ifndef MS5611_I2C_DEV
 #define MS5611_I2C_DEV i2c1

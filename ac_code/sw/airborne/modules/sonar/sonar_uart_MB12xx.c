@@ -36,7 +36,7 @@
 //#include "arch/lpc21/efs/inc/plibc.h"
 #include "std.h"
 
-#define SonarLinkDev  (uart1.device)
+#define SonarLinkDev  (uart3.device)
 #define SonarLinkTransmit(c) SonarLinkDev.put_byte(SonarLinkDev.periph, c)
 #define SonarLinkChAvailable() SonarLinkDev.char_available(SonarLinkDev.periph)
 #define SonarLinkGetch() SonarLinkDev.get_byte(SonarLinkDev.periph)

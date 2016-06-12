@@ -27,9 +27,14 @@
 MEMORY
 {
     /* Only 128K (SRAM1 and SRAM2) are accessible by all AHB masters. */
-    ram (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+    ram (rwx) : ORIGIN = 0x20000000, LENGTH = 112K
+    bkpram (rwx) : ORIGIN = 0x2001C000, LENGTH = 16K
+    
     /* Leaving 128k of space at the end of rom for persistent settings */
+    /* rom (rx) : ORIGIN = 0x08004000, LENGTH = 880K*/
     rom (rx) : ORIGIN = 0x08000000, LENGTH = 896K
+    ccmram : org = 0x10000000, len = 64k
+    bkpsram : org = 0x40024000, len = 4k
 }
 
 /* Include the common ld script. */

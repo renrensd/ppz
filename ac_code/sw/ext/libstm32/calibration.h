@@ -21,13 +21,13 @@ enum CALI_MAG_STATE_PARAM
 #define CALI_MAG_RAW_CNT 4
 
 
-extern void cali_fatfs_init(void);
+extern void sd_fatfs_init(void);
 extern void cali_magraw_to_txt(int32_t x1, int32_t y1, int32_t z1);
 extern void cali_task(void);
 extern void cali_mag_begin(void);
 extern void cali_mag_end(void);
 extern void cali_mag_state_init(void);
-
+extern void sd_write_file_fault(char *name, uint32_t data, uint8_t flag);
 #endif
 
 

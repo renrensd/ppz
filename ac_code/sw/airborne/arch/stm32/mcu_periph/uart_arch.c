@@ -155,14 +155,14 @@ static inline void usart_isr(struct uart_periph *p)
 		{
 	      p->tx_running = FALSE;   // clear running flag
 	      USART_CR1((uint32_t)p->reg_addr) &= ~USART_CR1_TXEIE; // Disable TX interrupt
-        }
-	 	#ifdef OPS_OPTION
+	    }
+		
+#ifdef OPS_OPTION
 		if(uart == USART6)
 		{
 			uart_ops_tx_proc();
 		}
-		#endif	/* OPS_OPTION */
-	    
+#endif	/* OPS_OPTION */
   }
 
   if (((USART_CR1((uint32_t)p->reg_addr) & USART_CR1_RXNEIE) != 0) &&
@@ -221,9 +221,9 @@ static inline void usart_enable_irq(uint8_t IRQn)
 #if USE_UART1
 
 /* by default enable UART Tx and Rx */
-//#ifndef USE_UART1_TX
-#define USE_UART1_TX FALSE //TODOM:
-//#endif
+#ifndef USE_UART1_TX
+#define USE_UART1_TX TRUE
+#endif
 #ifndef USE_UART1_RX
 #define USE_UART1_RX TRUE
 #endif
@@ -352,7 +352,7 @@ void usart2_isr(void) { usart_isr(&uart2); }
 
 /* by default enable UART Tx and Rx */
 #ifndef USE_UART3_TX
-#define USE_UART3_TX TRUE
+#define USE_UART3_TX FALSE
 #endif
 #ifndef USE_UART3_RX
 #define USE_UART3_RX TRUE
@@ -449,6 +449,8 @@ void uart4_init(void)
 #endif
 #if USE_UART4_RX
   gpio_setup_pin_af(UART4_GPIO_PORT_RX, UART4_GPIO_RX, UART4_GPIO_AF, FALSE);
+//  gpio_setup_input_pullup(UART4_GPIO_PORT_RX, UART4_GPIO_RX);
+
 #endif
 
   /* Enable USART interrupts in the interrupt controller */

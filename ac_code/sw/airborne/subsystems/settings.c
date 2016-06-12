@@ -28,8 +28,10 @@
 #include "subsystems/settings.h"
 #include "generated/settings.h"
 
+#ifndef NPS_SIMU
 #ifndef USE_PERSISTENT_SETTINGS
  #define USE_PERSISTENT_SETTINGS TRUE
+#endif
 #endif
 
 struct PersistentSettings pers_settings;

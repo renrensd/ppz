@@ -54,12 +54,12 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 
 /** process noise covariance Q */
 #ifndef VFF_EXTENDED_ACCEL_NOISE
-#define VFF_EXTENDED_ACCEL_NOISE  0.5
+#define VFF_EXTENDED_ACCEL_NOISE  10.0//0.5
 #endif
 
 #define Qbiasbias 1e-7
 #define Qoffoff 1e-4
-#define R_BARO 3.
+#define R_BARO 9.
 #define R_ALT 0.1
 #define R_OFFSET 1.
 

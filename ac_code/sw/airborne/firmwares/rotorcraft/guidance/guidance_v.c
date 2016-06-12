@@ -298,6 +298,7 @@ void guidance_v_read_rc(void)
  *radio_control.values[RADIO_THROTTLE] divide to three band for z_sp adjust
  *by WHP
  */
+ #if 0
   static uint8_t flag_throttle=0;
   uint8_t state_throttle=0;
   if(guidance_v_mode == GUIDANCE_V_MODE_HOVER)
@@ -317,6 +318,7 @@ void guidance_v_read_rc(void)
 		    default:           break;
 	    }			  
   }
+ #endif
 }
 
 void guidance_v_mode_changed(uint8_t new_mode)

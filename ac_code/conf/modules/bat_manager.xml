@@ -14,7 +14,7 @@
   <event fun="bat_event()" />
   <makefile target="ap">
     <file name="bat_manager.c"/>
-    <define name="USE_I2C1" value="true" />
+    <define name="USE_I2C2" value="true" />
   </makefile>
 </module>
 

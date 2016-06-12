@@ -31,6 +31,10 @@
 #include "state.h"
 #include "math.h"
 
+#ifdef WDG_OPTION
+#include "mcu.h"
+#endif	/* WDG_OPTION */
+
 
 /*---Private include files--------------------------------------------*/
 #include "ops_app.h"   
@@ -44,10 +48,12 @@
 struct OPS_INFO ops_info;
 struct OPS_CONFIG_PARAM ops_param;
 
-uint16_t ops_test;
 /*---Global-----------------------------------------------------------*/
 void ops_task(void)
 { 
+    #ifdef WDG_OPTION
+	mcu_set_task_wdg_flag(WDG_TASK_OPS);
+	#endif	/* WDG_OPTION */
 	ops_comm_read_polling();
 	ops_comm_send_polling();
 

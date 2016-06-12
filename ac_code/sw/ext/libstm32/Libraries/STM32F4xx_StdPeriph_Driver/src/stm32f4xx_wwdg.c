@@ -79,7 +79,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_wwdg.h"
 #include "stm32f4xx_rcc.h"
-
+#include "stm32f4xx_conf.h"
 /** @addtogroup STM32F4xx_StdPeriph_Driver
   * @{
   */

@@ -74,7 +74,7 @@ bool_t take_off_motion(bool_t reset)
 	    wp_ToL=*stateGetPositionEnu_i();  
 		NavGotoWaypoint_wp(wp_ToL);
 	    NavVerticalAutoThrottleMode(RadOfDeg(0.0));
-	    NavVerticalAltitudeMode(Height(3.200000), 0.);
+	    NavVerticalAltitudeMode(Height(1.200000), 0.);
 	    return TRUE; 
 	  }
 	  step_t++;
@@ -83,8 +83,8 @@ bool_t take_off_motion(bool_t reset)
 	  //stay takeoff waypoint,height
 	  NavGotoWaypoint_wp(wp_ToL);
 	  //NavVerticalClimbMode(0.5);
-	  NavVerticalAltitudeMode(Height(3.200000), 0.);
-	  if( (stateGetPositionEnu_f()->z  >3.0)&&(stateGetSpeedEnu_f()->z < 0.2))
+	  NavVerticalAltitudeMode(Height(1.200000), 0.);
+	  if( (stateGetPositionEnu_f()->z  >1.0)&&(stateGetSpeedEnu_f()->z < 0.2))
 	  {
 	  	//NavVerticalAltitudeMode(Height(1.200000), 0.);
 	  	step_t=0;   //reset

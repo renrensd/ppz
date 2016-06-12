@@ -308,8 +308,8 @@ sim: sim_static
 #
 
 # stuff to build and upload the lpc bootloader ...
-include Makefile.lpctools
-lpctools: lpc21iap
+# include Makefile.lpctools
+# lpctools: lpc21iap
 
 commands: paparazzi
 

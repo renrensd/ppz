@@ -16,6 +16,7 @@
 
 static FIL fdata;
 static FIL fraw;
+FIL ffil;
 FATFS fs;           
 FRESULT res;                 
 DIR dirs;
@@ -705,9 +706,9 @@ static void cali_process(void)
    
 }
 
-void cali_fatfs_init(void)
+void sd_fatfs_init(void)
 {     
-    SD_Init();
+    //SD_Init();
     res=f_mount(0, &fs);
 	cali_info.mag_entry_flag = FALSE;
 	cali_info.mag_txt_len = 0;
@@ -759,6 +760,29 @@ void cali_mag_end(void)
 void cali_mag_state_init(void)
 {
 	cali_info.mag_state = CALI_MAG_STATE_INIT;
+}
+
+void sd_write_file_fault(char *name, uint32_t data, uint8_t flag)
+{
+	if(flag == 1)
+	{
+		f_open(&ffil, "fault.txt", FA_CREATE_ALWAYS);
+		f_close(&ffil);
+		f_open(&ffil,"fault.txt",FA_WRITE);
+		f_printf(&ffil,"%s   \t",name);
+		f_printf(&ffil,"%x\n",data);
+	}
+	else if(flag == 0)
+	{
+		f_printf(&ffil,"%s   \t",name);
+		f_printf(&ffil,"%x\n",data);
+	}
+	else if(flag == 2)
+	{
+		f_printf(&ffil,"%s   \t",name);
+		f_printf(&ffil,"%x\n",data);
+		f_close(&ffil);
+	}
 }
 
 #endif	/* CALIBRATION_OPTION */

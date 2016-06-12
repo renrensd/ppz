@@ -111,7 +111,7 @@ void battery_flight_check(void)
 		bat_flight=2;
 		#endif
 	}
-
+   /*
 	if( electrical.current >FLIGHT_LIMIT_CURRENT )
 	{   //only alert
 	    flag_trigger=1;   //record error trigger
@@ -120,7 +120,7 @@ void battery_flight_check(void)
 		bat_flight=3;
 		#endif
 	}
-
+   */
     if(!flag_trigger)
     {
 		//recover
@@ -193,10 +193,10 @@ void ops_flight_check(void)
 	}
 	else
 	{   //normal.maybe recover
-		em[OPS_EMPTY].active=FALSE;
-		em[OPS_EMPTY].finished=FALSE;
-		em[OPS_LOST].active=FALSE;
-		em[OPS_LOST].finished=FALSE;
+		em[OPS_EMPTY].active = FALSE;
+		em[OPS_EMPTY].finished = FALSE;
+		em[OPS_LOST].active = FALSE;
+		em[OPS_LOST].finished = FALSE;
 	}
 }
 
@@ -255,39 +255,6 @@ static uint8_t ahrs_ground_check(void)
 	if( fabs(stateGetBodyRates_f()->r) >MAX_GROUND_RATE)  return 0;
 	
 	else return 1;
-/*
-  float phi=fabs(stateGetNedToBodyEulers_f()->phi);
-  if( phi <MAX_GROUND_ATT)  
-  {;}
-  else
-  {return 0;}
-  
-  float theta=fabs(stateGetNedToBodyEulers_f()->theta);
-  if( theta <MAX_GROUND_ATT)  
-  {;}
-  else
-  {return 0;}
-  
-  float p=fabs(stateGetBodyRates_f()->p);
-  if( p <MAX_GROUND_RATE)  
-  {;}
-  else
-  {return 0;}
-
-  float q=fabs(stateGetBodyRates_f()->q);
-  if( q <MAX_GROUND_RATE)  
-  {;}
-  else
-  {return 0;}
-
-  float r=fabs(stateGetBodyRates_f()->r);
-  if( r <MAX_GROUND_RATE)  
-  {;}
-  else
-  {return 0;}
-  
-  return 1;
-  */
 }
 
 static uint8_t ins_ground_check(void)
@@ -302,51 +269,6 @@ static uint8_t ins_ground_check(void)
 	if( fabs(stateGetPositionEnu_f()->z) >MAX_GROUND_INS_Z)  return 0;
 
 	else return 1;
-/*
-  float sx=fabs(stateGetSpeedEnu_f()->x);
-  if( sx <MAX_GROUND_INS_S)  
-  {;}
-  else
-  {return 0;}
-  
-  float sy=fabs(stateGetSpeedEnu_f()->y);
-  if( sy <MAX_GROUND_INS_S)  
-  {;}
-  else
-  {return 0;}
-  
-  float sz=fabs(stateGetSpeedEnu_f()->z);
-  if( sz <MAX_GROUND_INS_S)  
-  {;}
-  else
-  {return 0;}
-
-  float ax=fabs(stateGetAccelNed_f()->x);
-  if( ax <MAX_GROUND_INS_A)  
-  {;}
-  else
-  {return 0;}
-
-  float ay=fabs(stateGetAccelNed_f()->y);
-  if( ay <MAX_GROUND_INS_A)  
-  {;}
-  else
-  {return 0;}
-
-  float az=fabs(stateGetAccelNed_f()->z);
-  if( az <MAX_GROUND_INS_A)  
-  {;}
-  else
-  {return 0;}
-
-  float pz=fabs(stateGetPositionEnu_f()->z);
-  if( pz <MAX_GROUND_INS_Z)  
-  {;}
-  else
-  {return 0;}
-  
-  return 1;
-  */
 }
 
 

@@ -21,7 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_dbgmcu.h"
-
+#include "stm32f4xx_conf.h"
 /** @addtogroup STM32F4xx_StdPeriph_Driver
   * @{
   */

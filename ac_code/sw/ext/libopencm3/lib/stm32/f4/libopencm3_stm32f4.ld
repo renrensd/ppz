@@ -61,6 +61,20 @@ SECTIONS
 		__fini_array_end = .;
 	} >rom
 
+	.ccm :
+    {
+        . = ALIGN(4);
+        *(.ccmram)
+        . = ALIGN(4);
+    } > ccmram
+
+    .bkpram :
+    {
+        . = ALIGN(4);
+        *(.bkpsram)
+        . = ALIGN(4);
+    } > bkpram
+
 	/*
 	 * Another section used by C++ stuff, appears when using newlib with
 	 * 64bit (long long) printf support
