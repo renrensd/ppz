@@ -125,5 +125,9 @@ void sys_tick_handler(void)
 #ifdef OPS_OPTION
 	uart_ops_polling();
 #endif	/* OPS_OPTION */
+
+	#ifdef WDG_OPTION
+	wdg_systick_feed();
+	#endif
 }
 

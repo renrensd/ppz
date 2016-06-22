@@ -34,6 +34,10 @@
 #endif
 #endif
 
+#ifdef WDG_OPTION
+#include "wdg.h"
+#endif
+
 struct PersistentSettings pers_settings;
 
 /** flag for setting feedback.
@@ -63,12 +67,20 @@ void settings_init(void)
 int32_t settings_store(void)
 {
 #if USE_PERSISTENT_SETTINGS
-  if (settings_store_flag) {
+  if (settings_store_flag) 
+  {
+  	#ifdef WDG_OPTION
+	wdg_enable_systick_feed();
+	#endif
     /* from generated/settings.h */
     persistent_settings_store();
-    if (!persistent_write((void *)&pers_settings, sizeof(struct PersistentSettings))) {
+    if (!persistent_write((void *)&pers_settings, sizeof(struct PersistentSettings))) 
+	{
       /* persistent write was successful */
       settings_store_flag = TRUE;
+	  #ifdef WDG_OPTION
+	  wdg_disable_systick_feed();
+	  #endif
       return 0;
     }
   }
@@ -83,10 +95,18 @@ int32_t settings_store(void)
 int32_t settings_clear(void)
 {
 #if USE_PERSISTENT_SETTINGS
-  if (settings_clear_flag) {
-    if (!persistent_clear()) {
+  if (settings_clear_flag) 
+  {
+  	#ifdef WDG_OPTION
+	wdg_enable_systick_feed();
+	#endif
+    if (!persistent_clear()) 
+	{
       /* clearing all persistent settings was successful */
       settings_clear_flag = TRUE;
+	  #ifdef WDG_OPTION
+	  wdg_disable_systick_feed();
+	  #endif
       return 0;
     }
   }

@@ -109,6 +109,9 @@ void WEAK board_init(void)
   #ifndef NPS_SIMU
 	gpio_setup_output(ECS_PWM_EN_GPIO);
   	gpio_set(ECS_PWM_EN_GPIO);
+	gpio_setup_output(OPS_PWR_EN_GPIO);
+  	gpio_set(OPS_PWR_EN_GPIO);
+	
     //gpio_setup_input_pulldown(DEBUG_GPIO);
   #endif
 }
@@ -382,7 +385,9 @@ void mcu_check_reset_source(void)
 		   )
     {
 		memset(&mcu_fault_info,0,sizeof(mcu_fault_info));
+#ifdef WDG_OPTION
 		mcu_watchdog_flag = 0;
+#endif
 		mcu_pw_is_first_on = TRUE;
 	}
 
@@ -485,6 +490,19 @@ void nvic_wwdg_isr(void)
 	}	
 }
 
+/*****************************************************************************
+*  Name        : mcu_set_task_wdg_flag
+*  Description : 
+*  Parameter   : WDG_TASK_IDS
+*  Returns     : None
+*****************************************************************************/
+void mcu_set_task_wdg_flag(uint16_t task_id)
+{
+	 mcu_watchdog_flag = 1 << task_id;
+}
+#endif /* WDG_OPTION */
+
+#ifdef FAULT_OPTION
 /***********************************************************************
 * FUNCTION    : mcu_write_file_fault
 * DESCRIPTION : 
@@ -496,7 +514,9 @@ void mcu_write_file_fault(void)
     sd_write_file_fault("<--- mcu_fault_info_start --->", 0, 1);
 	sd_write_file_fault("mcu_reset_source", mcu_fault_info.reset_src, 0);
 	sd_write_file_fault("mcu_reset_type", mcu_fault_info.reset_type, 0);
+#ifdef WDG_OPTION
 	sd_write_file_fault("mcu_watchdog_flag", mcu_watchdog_flag, 0);
+#endif
 	sd_write_file_fault("mcu_fault_info.msp", mcu_fault_info.msp, 0);
 	sd_write_file_fault("mcu_fault_info.hfsr", mcu_fault_info.hfsr, 0);
 	sd_write_file_fault("mcu_fault_info.bfar", mcu_fault_info.bfar, 0);
@@ -510,18 +530,7 @@ void mcu_write_file_fault(void)
 
 	sd_write_file_fault("<--- mcu_fault_info_end --->", 0, 2);
 }
-
-/*****************************************************************************
-*  Name        : mcu_set_task_wdg_flag
-*  Description : 
-*  Parameter   : WDG_TASK_IDS
-*  Returns     : None
-*****************************************************************************/
-void mcu_set_task_wdg_flag(uint16_t task_id)
-{
-	 mcu_watchdog_flag = 1 << task_id;
-}
-#endif /* WDG_OPTION */
+#endif
 
 #endif /* NPS_SIMU */
 

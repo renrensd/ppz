@@ -60,8 +60,8 @@
     <!--load name="gps_ubx_ucenter.xml"/-->
     <!--load name="send_imu_mag_current.xml"/-->
     <load name="agl_dist.xml"/>
-    <!--load name="sonar_uart_MB12xx.xml"/-->
-    <load name="sonar_i2c_mb1242.xml"/>
+    <load name="sonar_uart_MB12xx.xml"/>
+    <!--load name="sonar_i2c_mb1242.xml"/-->
     <!--load name="sonar_uart_US100.xml"/-->
     <!--load name="nav_survey_poly_osam.xml"/-->
     <!--load name="laser_r2100.xml"/-->

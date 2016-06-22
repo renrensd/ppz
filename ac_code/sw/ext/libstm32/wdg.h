@@ -24,7 +24,7 @@
 
 /**** Definition of constants ****/
 #define WDG_FEED_TIME	14 //14*2 = 28ms.
-
+#define WDG_SYSTICK_FEED_TIME	28 //28*1 = 28ms.
 
 /**** Definition of types ****/ 
 
@@ -42,6 +42,10 @@ extern void wdg_init(void);
 extern void wdg_feed(void);
 extern void wdg_enable(void);
 extern void wdg_feed_handle(void);
+extern void wdg_systick_feed(void);
+extern void wdg_enable_systick_feed(void);
+extern void wdg_disable_systick_feed(void);
+
 
 
 #endif /*_WDG_H_*/

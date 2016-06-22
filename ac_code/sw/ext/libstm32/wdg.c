@@ -28,10 +28,13 @@
 #include <stm32f4xx.h>
 #include "stm32f4xx_conf.h"
 #include "wdg.h"
+#include "std.h"
 
 
 /*===VARIABLES========================================================*/
 volatile uint8_t wdg_time_cnt;
+uint8_t wdg_systick_feed_cnt = 0;
+uint8_t wdg_systick_feed_flag = 0;
 
 /*---Global-----------------------------------------------------------*/
 /***********************************************************************
@@ -74,6 +77,7 @@ void wdg_init(void)
   WWDG_ClearFlag();
   WWDG_EnableIT();  
   wdg_time_cnt = 0;
+  wdg_systick_feed_flag = 0;
 
   DBGMCU_APB1PeriphConfig(DBGMCU_WWDG_STOP,ENABLE);
 }
@@ -86,7 +90,7 @@ void wdg_init(void)
 ***********************************************************************/
 void wdg_feed(void)
 {
-    WWDG_SetCounter(127);
+	WWDG_SetCounter(127);
 }
 
 /***********************************************************************
@@ -109,12 +113,67 @@ void wdg_enable(void)
 ***********************************************************************/
 void wdg_feed_handle(void)
 {
-    wdg_time_cnt++;
-	if(wdg_time_cnt > WDG_FEED_TIME)	//28ms.
+	if(wdg_systick_feed_flag == FALSE)
+	{
+		wdg_time_cnt++;
+		if(wdg_time_cnt > WDG_FEED_TIME)	//28ms.
+		{
+			wdg_time_cnt = 0;
+			wdg_feed();
+		}
+	}
+	else
 	{
 		wdg_time_cnt = 0;
-		wdg_feed();
 	}
 }
+
+/***********************************************************************
+* FUNCTION    : wdg_systick_feed
+* DESCRIPTION : 1ms
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void wdg_systick_feed(void)
+{
+     if(wdg_systick_feed_flag == TRUE)
+     {
+		wdg_systick_feed_cnt++;
+		if(wdg_systick_feed_cnt > WDG_SYSTICK_FEED_TIME)	//28ms.
+		{
+			wdg_systick_feed_cnt = 0;
+			wdg_feed();
+		}
+	 }
+	 else
+	 {	
+		wdg_systick_feed_cnt = 0;
+	 }
+}
+
+/***********************************************************************
+* FUNCTION    : wdg_enable_systick_feed
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void wdg_enable_systick_feed(void)
+{
+     wdg_systick_feed_flag = TRUE;
+	 RCC_APB1PeriphClockCmd(RCC_APB1Periph_WWDG, DISABLE);
+}
+
+/***********************************************************************
+* FUNCTION    : wdg_disable_systick_feed
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void wdg_disable_systick_feed(void)
+{
+     wdg_systick_feed_flag = FALSE;
+	 RCC_APB1PeriphClockCmd(RCC_APB1Periph_WWDG, ENABLE);
+}
+
 /**************** END OF FILE *****************************************/
 
