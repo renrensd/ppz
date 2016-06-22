@@ -710,6 +710,8 @@ void sd_fatfs_init(void)
 {     
     //SD_Init();
     res=f_mount(0, &fs);
+	res = f_open(&ffil, "sd_init.txt", FA_CREATE_ALWAYS);
+	f_close(&ffil);
 	cali_info.mag_entry_flag = FALSE;
 	cali_info.mag_txt_len = 0;
 	cali_info.mag_state = CALI_MAG_STATE_INIT;
@@ -764,11 +766,15 @@ void cali_mag_state_init(void)
 
 void sd_write_file_fault(char *name, uint32_t data, uint8_t flag)
 {
+	uint32_t br;
 	if(flag == 1)
 	{
-		f_open(&ffil, "fault.txt", FA_CREATE_ALWAYS);
-		f_close(&ffil);
+		//f_open(&ffil, "fault.txt", FA_CREATE_ALWAYS);
+		//f_close(&ffil);
 		f_open(&ffil,"fault.txt",FA_WRITE);
+		br = ffil.fsize;
+		f_lseek(&ffil,br);
+		f_printf(&ffil,"%x\n",0);
 		f_printf(&ffil,"%s   \t",name);
 		f_printf(&ffil,"%x\n",data);
 	}

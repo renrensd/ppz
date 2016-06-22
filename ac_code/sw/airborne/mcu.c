@@ -255,6 +255,7 @@ void mcu_init(void)
 #ifdef WDG_OPTION
 	wdg_init();
 	mcu_fault_info.wdg_error_cnt = 0;
+	mcu_fault_info.reset_type = 0;
 #endif
 
 #else
