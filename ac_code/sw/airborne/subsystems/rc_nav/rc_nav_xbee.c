@@ -34,6 +34,11 @@
 #include "subsystems/monitoring/monitoring.h" 
 #include "subsystems/datalink/xbee.h"
 
+#ifdef CALIBRATION_OPTION
+#include "firmwares/rotorcraft/autopilot.h"
+#include "calibration.h"
+#endif	/* CALIBRATION_OPTION */
+
 //rc_set_cmd
 #define RC_SET_AUTO 0x10
 #define RC_SET_MANUAL 0x01
@@ -47,6 +52,10 @@
 #define RC_REDUCE_SPRAY 0x02
 #define RC_MAINPOWER_ON 0x50
 #define RC_MAINPOWER_OFF 0x05
+#ifdef CALIBRATION_OPTION
+#define RC_MAG_CALIBRATION_BEGIN 0x70
+#define RC_MAG_CALIBRATION_END 0x07
+#endif
 
 //orientation
 #define ORIENT_FOR  1
@@ -54,15 +63,15 @@
 #define ORIENT_NONE 0
 
 //rc_motion_cmd
-#define K_FORWARD    37
-#define K_BACKWARD   41
-#define K_RIGHT      69
-#define K_LEFT       73
-#define K_UP         21
-#define K_DOWN       25
-#define K_HOLD       16
-#define K_CW         133
-#define K_CCW        137
+#define K_FORWARD    0x25
+#define K_BACKWARD   0x29
+#define K_RIGHT      0x45
+#define K_LEFT       0x49
+#define K_UP         0x15
+#define K_DOWN       0x19
+#define K_HOLD       0x10
+#define K_CW         0x85
+#define K_CCW        0x89
 #define K_HOVER      0
 
 #define RC_MAX_COUNT  10   //lost_time_out =10/(2hz)=5s
@@ -475,6 +484,21 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 			   	   rc_set_info.locked = FALSE;
 		   	   }
 		   	   break;
+		   #ifdef CALIBRATION_OPTION
+		   case RC_MAG_CALIBRATION_BEGIN:
+		   	    if(kill_throttle)
+		   	    {
+					cali_mag_begin();
+		   	    }
+				break;
+		   case RC_MAG_CALIBRATION_END:
+		   	    if(kill_throttle)
+		   	    {
+					cali_mag_end();
+		   	    }
+				break;
+		   #endif /* CALIBRATION_OPTION */
+		   
 		   #if 0   
 		   /*reserve function*/ 
 		   case RC_MAINPOWER_ON:
@@ -591,6 +615,10 @@ void rc_lost_check(void)
 
 void rc_set_connect(void)
 {
-	rc_count = 0;  //reset rc_count,use for check rc_lost
-	rc_lost = FALSE;
+	rc_count=0;  //reset rc_count,use for check rc_lost
+	rc_lost=FALSE;
+	#ifdef GCS_V1_OPTION
+	xbee_con_info.rc_con_available = FALSE;
+	#endif	/* GCS_V1_OPTION */
+
 }

@@ -158,7 +158,7 @@ void sonar_i2c_wait_clk(void)
 {
     unsigned int i;
     i = 0;
-    while ((!SONAR_SCL_GET_VAL()) && (++i < 0xffff) );
+    while ((!SONAR_SCL_GET_VAL()) && (++i < 200) );
 }
 
 /***********************************************************************

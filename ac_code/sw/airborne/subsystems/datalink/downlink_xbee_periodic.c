@@ -21,7 +21,7 @@
 
 //#define DOWNLINK_GCS_FREQUENCY 2
 #define HEART_BEART_A2G_FREQUENCY 1
-#define RC_INFO_PC_FREQUENCY 0.5
+#define RC_INFO_PC_FREQUENCY 1
 #define NAV_FLIGHT_FREQUENCY 1
 //#define MISSION_REPORT__FREQUENCY 0.5
 #define RC_CHECK_FREQUENCY  2
@@ -38,7 +38,7 @@ void downlink_pc_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
 {   
 	//RunOnceEvery(TELEMETRY_FREQUENCY/DOWNLINK_GCS_FREQUENCY,downlink_msg_gcs());  
 	RunOnceEvery( TELEMETRY_FREQUENCY/RC_INFO_PC_FREQUENCY, 
-	              { if(xbee_con_info.rc_con_available==FALSE) return;
+	              { //if(xbee_con_info.rc_con_available==FALSE) return;
 				    send_rc_info_A2P_msg();                         } );
 	RunOnceEvery( TELEMETRY_FREQUENCY/NAV_FLIGHT_FREQUENCY, 
 	              { //if(xbee_con_info.gcs_con_available==FALSE) return;
@@ -52,25 +52,6 @@ void downlink_pc_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
 
 void send_heart_beat_A2G_msg(void)  
 {
-  /*<field name="sys_time" type="uint16" unit="s"/>
-    <field name="link_gcs_quality" type="uint8" unit="percent"/>
-    <field name="link_rc_quality" type="uint8" unit="percent"/>
-    <field name="link_rssi" type="uint8" unit="percent"/>
-    <field name="devices_status" type="uint32"/>
-    <field name="flight_status" type="uint32"/>
-    <field name="heading" type="float" unit="deg"/>
-    <field name="speed" type="uint16" unit="cm/s"/>
-    <field name="pos_x" type="uint32" unit="e3,m"/>
-    <field name="pos_y" type="uint32" unit="e3,m"/>
-    <field name="pos_z" type="uint32" unit="e3,m"/>
-    <field name="pos_lng" type="uint32" unit="e7,deg"/>
-    <field name="pos_lat" type="uint32" unit="e7,deg"/>
-    <field name="battery_remain"  type="int8"  unit="percent"/>
-    <field name="pesticides_remain" type="int8" unit="percent"/>
-    <field name="error_code" type="int16"/>
-   */
- /*static uint8_t n=0;  //only for debug
-   n=(n+1)%10;*/
    uint16_t system_time = sys_time.nb_sec;
    uint8_t  link_gcs_quality = 100;  //the information reserve
    uint8_t  link_rc_quality = 100;   //the information reserve
@@ -84,11 +65,10 @@ void send_heart_beat_A2G_msg(void)
    int32_t pos_x = (int32_t)( (stateGetPositionNed_f()->x )*1000 );
    int32_t pos_y = (int32_t)( (stateGetPositionNed_f()->y )*1000 );
    int32_t pos_z = (int32_t)( (stateGetPositionEnu_f()->z )*1000 );
-   int32_t pos_lon = (int32_t)( (double)stateGetPositionLla_f()->lon * 100000000.0);  //stateGetPositionLla_f()->lon  572957795  1289617
-   int32_t pos_lat = (int32_t)( (double)stateGetPositionLla_f()->lat * 100000000.0);   //stateGetPositionLla_f()->lat
-
-   int8_t  battery_remain = (int8_t)bat_info.percent;
-   int8_t  pesticides_remain = (int8_t)ops_info.res_cap;
+   int32_t pos_lon = (int32_t)( (int64_t)(stateGetPositionLla_i()->lon) * 174533/1000000 ); 
+   int32_t pos_lat = (int32_t)( (int64_t)(stateGetPositionLla_i()->lat) * 174533/1000000 ); 
+   int8_t  battery_remain = bat_info.percent;
+   int8_t  pesticides_remain = ops_info.res_cap;
    uint8_t spray_state = ops_info.spray_state;
    int16_t error_code = 0;
 

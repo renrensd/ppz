@@ -31,6 +31,10 @@
 #include "subsystems/rc_nav/rc_nav_xbee.h"
 #include "subsystems/ins/ins_int.h"
 
+#ifdef USE_GPS_NMEA
+ #include "subsystems/gps/gps_nmea.h"
+#endif
+
 /*===VARIABLES========================================================*/
 /*ground check step*/
 #define BATTERY_CHECK 0
@@ -132,12 +136,7 @@ void monitoring_periodic(void)
 			flight_monitoring();  //once ground_monitoring() finished,it will run.
 		}
 	}
-	ground_check_pass = TRUE;//dor debug
-
-
-
-
-
+	//ground_check_pass = TRUE;//dor debug
 	
   #if PERIODIC_TELEMETRY
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
@@ -170,10 +169,10 @@ void monitoring_periodic(void)
 
 static void monitoring_task(void)
 {
-	RunOnceEvery( MONITORING_FREQUENCY/2, imu_frequence_check() );     //need periodic =2hz
-	RunOnceEvery( MONITORING_FREQUENCY, height_frequence_check() );    //need periodic =1hz
+	RunOnceEvery( MONITORING_FREQUENCY/2,imu_frequence_check() );     //need periodic =2hz
+	RunOnceEvery( MONITORING_FREQUENCY,height_frequence_check() );    //need periodic =1hz
 	RunOnceEvery( MONITORING_FREQUENCY, except_mission_update());     //need periodic =1hz
-	RunOnceEvery( MONITORING_FREQUENCY/2, rc_lost_check() );           //need periodic =2hz
+	RunOnceEvery( MONITORING_FREQUENCY/2,rc_lost_check() );           //need periodic =2hz
 	except_mission_manage();	
 }
 
@@ -206,10 +205,12 @@ void ground_monitoring(void)
 				monitoring_fail_code =BATTERY_FAIL;
 			}
 			break;
+			
 		case BAORD_CHECK:
 			ground_check_step++;     //direct next step
 			time_record=get_sys_time_msec();
 			break;
+			
 		case IMU_CHECK:	
 			check_state=imu_ground_check();
 			
@@ -228,6 +229,7 @@ void ground_monitoring(void)
 				monitoring_fail_code=IMU_FAIL;
 			}
 			break;
+			
 		case HEIGHT_CHECK:
 			check_state=height_ground_check();
 			
@@ -246,17 +248,28 @@ void ground_monitoring(void)
 				monitoring_fail_code=HEIGHT_FAIL;
 			}
 			break;
+			
 		case GPS_CHECK:
-			if(GpsFixValid() && gps.stable )   //only for test
+			if(GpsFixValid() 
+			  #ifdef USE_GPS_NMEA
+			   &&gps_nmea.gps_qual == 52
+			  #else
+			   && gps.stable 
+			  #endif
+			                             ) 
 			{
 				ground_check_step++;  //next step
-				monitoring_fail_code=PASS;
+				monitoring_fail_code = PASS;
 			}
-			else  monitoring_fail_code=GPS_WAIT;
+			else  
+			{
+				monitoring_fail_code = GPS_WAIT;
+			}
 			break;
 		case CALIBRATION_CHECK:
 			ground_check_step++;  //next step
 			break;
+			
 		case AUTOPILOT_CHECK:
 			if( autopilot_ground_check() )
 			{
@@ -271,14 +284,13 @@ void ground_monitoring(void)
 		case OPS_CHECK:
 			ground_check_step++;  //next step
 			//sign finished
-
 			break;
 		case RC_CONNECT:			
 			if(!rc_lost) 
 			{
 				ground_check_step =0;        //reset step
-			    ground_check_status =TRUE;    //finished ground check,pass
-			    ground_check_pass = TRUE;
+				ground_check_status =TRUE;    //finished ground check,pass
+				ground_check_pass = TRUE;
 				//ground check pass,set NAV mode flag				
 			}
 			break;

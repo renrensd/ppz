@@ -1306,8 +1306,8 @@
     <field name="sp_yd"   type="int32" alt_unit="m/s"   alt_unit_coef="0.0000019"/>
     <field name="ref_yd"  type="int32" alt_unit="m/s"   alt_unit_coef="0.0000019"/>
     <field name="ref_ydd" type="int32" alt_unit="m/s2"  alt_unit_coef="0.0009766"/>
-    <field name="c_x"     type="int32"/>
-    <field name="c_y"     type="int32"/>
+    <field name="c_x"     type="int32" alt_unit_coef="0.0000019"/>
+    <field name="c_y"     type="int32" alt_unit_coef="0.0000019"/>
     <field name="xh1"     type="int32"/>
     <field name="yh1"     type="int32"/>
     <field name="xh2"     type="float"/>
@@ -2240,6 +2240,18 @@
       <field name="L"   type="int32"/>
   </message>
   <!-- 252 is free -->
+  <message name="H_PID" id="252">
+      <field name="Px"   type="int32"/>
+      <field name="Dx"  type="int32"/>
+      <field name="Ix"  type="int32"/>
+      <field name="Py"   type="int32"/>
+      <field name="Dy"  type="int32"/>
+      <field name="Iy"  type="int32"/>
+      <field name="xh1"  type="float"/>
+      <field name="xh2"   type="float"/>
+      <field name="yh1"   type="float"/>
+      <field name="yh2"   type="float"/>
+  </message>
 
   <message name="I2C_ERRORS" id="253">
     <field name="wd_reset_cnt"                type="uint16"/>

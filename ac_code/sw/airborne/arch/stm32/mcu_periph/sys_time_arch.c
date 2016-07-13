@@ -47,6 +47,10 @@
 #include "modules/system/timer_if.h"
 #endif
 
+#ifdef WDG_OPTION
+#include "wdg.h"
+#endif
+
 
 void sys_tick_handler(void);
 void tm_tick_polling(void);
@@ -121,4 +125,9 @@ void sys_tick_handler(void)
 #ifdef OPS_OPTION
 	uart_ops_polling();
 #endif	/* OPS_OPTION */
+
+	#ifdef WDG_OPTION
+	wdg_systick_feed();
+	#endif
 }
+

@@ -35,6 +35,54 @@
  * @defgroup mcu_periph MCU Peripherals
  * @{
  */
+#ifdef FAULT_OPTION
+struct MCU_FAULT_INFO
+{
+	uint32_t hfsr;
+	uint32_t bfar;
+	uint32_t mmfar;
+	uint32_t cfsr;
+	uint32_t msp;
+	uint32_t msp_data[20];
+	uint8_t wdg_error_cnt;
+	uint8_t reset_type;
+	uint32_t reset_src;
+};
+
+typedef enum
+{
+     MCU_RESET_BY_SW = 0x01,
+     MCU_RESET_BY_PWR = 0x02,
+     MCU_RESET_BY_PIN = 0x03,
+     MCU_RESET_BY_WWDG =0x04,
+}MCU_RESET_TYPE;
+
+void mcu_fault_info_handle(uint16_t msp_offset);
+void mcu_write_file_fault(void);
+void mcu_check_reset_source(void);
+void mcu_set_reset_type(uint8_t type);
+void mcu_usagefault_test(void);
+uint8_t mcu_get_reset_type(void);
+
+#endif	/* FAULT_OPTION */
+
+#ifdef WDG_OPTION
+typedef enum
+{  
+	WDG_TASK_MAIN,  
+	WDG_TASK_MODULES,
+	WDG_TASK_FAILSAFE,
+	WDG_TASK_TELEMETRY, 
+    WDG_TASK_BARO,  
+    WDG_TASK_OPS,   
+    WDG_TASK_MONITORING, 
+    WDG_EVENT_ALL, 
+}WDG_TASK_IDS;
+
+extern void mcu_set_task_wdg_flag(uint16_t task_id);
+
+#endif	/* WDG_OPTION */
+
 
 /**
  * Microcontroller peripherals initialization.

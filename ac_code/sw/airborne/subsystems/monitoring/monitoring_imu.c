@@ -130,7 +130,8 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 	{   
 		em[IMU_CRITICAL].active =FALSE;
 		em[IMU_CRITICAL].finished =FALSE;
-		set_except_misssion(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
+		//set_except_misssion(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
+		set_except_misssion(IMU_MAG_EMI,TRUE,FALSE, FALSE,0, FALSE,FALSE,2);
 		#if TEST_MSG
 		 fs_imu=2;
 		#endif

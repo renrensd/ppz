@@ -4,7 +4,7 @@
 #define BOARD_KROOZ
 
 /* KroozSD has a 25MHz external clock and 168MHz internal. */
-#define EXT_CLK 24000000
+#define EXT_CLK 25000000
 #define AHB_CLK 168000000
 
 /*
@@ -21,7 +21,7 @@
 #define LED_1_GPIO_OFF gpio_set
 #define LED_1_AFIO_REMAP ((void)0)
 
-/* green, shared with JTAG_TRST */
+/* green, on PD12 */
 #ifndef USE_LED_2
 #define USE_LED_2 1
 #endif
@@ -30,6 +30,16 @@
 #define LED_2_GPIO_ON gpio_clear
 #define LED_2_GPIO_OFF gpio_set
 #define LED_2_AFIO_REMAP ((void)0)
+
+/* red, on PC0 */
+#ifndef USE_LED_3
+#define USE_LED_3 1
+#endif
+#define LED_3_GPIO GPIOC
+#define LED_3_GPIO_PIN GPIO0
+#define LED_3_GPIO_ON gpio_clear
+#define LED_3_GPIO_OFF gpio_set
+#define LED_3_AFIO_REMAP ((void)0)
 
 /*
  * not actual LEDS, used as GPIOs
@@ -70,31 +80,35 @@
 
 
 /* UART */
-//sonar
+//Laser
 #define UART1_GPIO_AF GPIO_AF7
 #define UART1_GPIO_PORT_RX GPIOB
 #define UART1_GPIO_RX GPIO7
-//#define UART1_GPIO_PORT_TX GPIOB
-//#define UART1_GPIO_TX GPIO6
+#define UART1_GPIO_PORT_TX GPIOB
+#define UART1_GPIO_TX GPIO6
 
+//XBee 900HP
 #define UART2_GPIO_AF GPIO_AF7
 #define UART2_GPIO_PORT_RX GPIOD
 #define UART2_GPIO_RX GPIO6
 #define UART2_GPIO_PORT_TX GPIOD
 #define UART2_GPIO_TX GPIO5
 
+//Ultrasonic
 #define UART3_GPIO_AF GPIO_AF7
 #define UART3_GPIO_PORT_RX GPIOD
 #define UART3_GPIO_RX GPIO9
 #define UART3_GPIO_PORT_TX GPIOD
 #define UART3_GPIO_TX GPIO8
 
+//GPS
 #define UART4_GPIO_AF GPIO_AF8
 #define UART4_GPIO_PORT_RX GPIOA
 #define UART4_GPIO_RX GPIO1
 #define UART4_GPIO_PORT_TX GPIOA
 #define UART4_GPIO_TX GPIO0
 
+//sprinkling system
 #define UART6_GPIO_AF GPIO_AF8
 #define UART6_GPIO_PORT_RX GPIOC
 #define UART6_GPIO_RX GPIO7
@@ -116,37 +130,30 @@
 #define SPI2_GPIO_PORT_MOSI GPIOB
 #define SPI2_GPIO_MOSI GPIO15
 #define SPI2_GPIO_PORT_SCK GPIOB
-#define SPI2_GPIO_SCK GPIO10
+#define SPI2_GPIO_SCK GPIO13
 
-#define SPI_SELECT_SLAVE0_PORT GPIOC	//adiv1: gyro_xy_cs  SPI2 set toPC13; SPI1 set to PB7
-#define SPI_SELECT_SLAVE0_PIN GPIO13
-#define SPI_SELECT_SLAVE1_PORT GPIOD	//ms5611_cs //V1-PE1;V2-PD7
-#define SPI_SELECT_SLAVE1_PIN GPIO7
+#define SPI_SELECT_SLAVE0_PORT GPIOE	//ms5611_cs / mpu9250_cs 
+#define SPI_SELECT_SLAVE0_PIN GPIO7
+#define SPI_SELECT_SLAVE1_PORT GPIOE	//adxl345_cs
+#define SPI_SELECT_SLAVE1_PIN GPIO8
 #define SPI_SELECT_SLAVE2_PORT GPIOE	//gyro_z_cs
-#define SPI_SELECT_SLAVE2_PIN GPIO4
-#define SPI_SELECT_SLAVE3_PORT GPIOE	//adxl345_cs
-#define SPI_SELECT_SLAVE3_PIN GPIO5
+#define SPI_SELECT_SLAVE2_PIN GPIO10
+#define SPI_SELECT_SLAVE3_PORT GPIOE	//gyro_xy_cs
+#define SPI_SELECT_SLAVE3_PIN GPIO12
 
 /* I2C mapping */
 #define I2C1_GPIO_PORT GPIOB
 #define I2C1_GPIO_SCL GPIO8
 #define I2C1_GPIO_SDA GPIO9
 
-//#define I2C2_GPIO_PORT GPIOB
-//#define I2C2_GPIO_SCL GPIO10
-//#define I2C2_GPIO_SDA GPIO11
+#define I2C2_GPIO_PORT GPIOB
+#define I2C2_GPIO_SCL GPIO10
+#define I2C2_GPIO_SDA GPIO11
 
-#define I2C3_GPIO_PORT_SCL GPIOA
-#define I2C3_GPIO_PORT_SDA GPIOC
-#define I2C3_GPIO_SCL GPIO8
-#define I2C3_GPIO_SDA GPIO9
-
-/*mb1242 i2c */
-#define I2C_SONAR_GPIO_SDA_PORT GPIOD
-#define I2C_SONAR_GPIO_SCL_PORT GPIOD
-#define I2C_SONAR_GPIO_SDA GPIO0
-#define I2C_SONAR_GPIO_SCL GPIO1
-
+//#define I2C3_GPIO_PORT_SCL GPIOA
+//#define I2C3_GPIO_PORT_SDA GPIOC
+//#define I2C3_GPIO_SCL GPIO8
+//#define I2C3_GPIO_SDA GPIO9
 
 /* Onboard ADCs */
 #define USE_AD_TIM5 1
@@ -160,7 +167,7 @@
 #define ADC_CHANNEL_VSUPPLY ADC_1
 #endif
 
-#define ADC_CHANNEL_CAM1    ADC_2
+//#define ADC_CHANNEL_CAM1    ADC_2
 
 /* provide defines that can be used to access the ADC_x in the code or airframe file
  * these directly map to the index number of the 4 adc channels defined above
@@ -184,41 +191,6 @@
 #define ADC_2_GPIO_PIN GPIO4
 #endif
 
-#if USE_ADC_3
-#define AD1_3_CHANNEL 8
-#define ADC_3 AD1_3
-#define ADC_3_GPIO_PORT GPIOB
-#define ADC_3_GPIO_PIN GPIO0
-#endif
-
-#if USE_ADC_4
-#define AD1_4_CHANNEL 9
-#define ADC_4 AD1_4
-#define ADC_4_GPIO_PORT GPIOB
-#define ADC_4_GPIO_PIN GPIO1
-#endif
-
-#if USE_ADC_5
-#define AD1_4_CHANNEL 10
-#define ADC_4 AD1_4
-#define ADC_4_GPIO_PORT GPIOC
-#define ADC_4_GPIO_PIN GPIO0
-#endif
-
-#if USE_ADC_6
-#define AD1_4_CHANNEL 12
-#define ADC_4 AD1_4
-#define ADC_4_GPIO_PORT GPIOC
-#define ADC_4_GPIO_PIN GPIO2
-#endif
-
-#if USE_ADC_7
-#define AD1_4_CHANNEL 13
-#define ADC_4 AD1_4
-#define ADC_4_GPIO_PORT GPIOC
-#define ADC_4_GPIO_PIN GPIO3
-#endif
-
 
 /* by default activate onboard baro */
 #ifndef USE_BARO_BOARD
@@ -237,10 +209,8 @@
 #define USE_PWM3 1
 #define USE_PWM4 1
 #define USE_PWM5 1
-#define USE_PWM6 0
-#define USE_PWM7 0
 
-#define ACTUATORS_PWM_NB 8
+#define ACTUATORS_PWM_NB 6
 
 // PWM_SERVO_x is the index of the servo in the actuators_pwm_values array
 #if USE_PWM0
@@ -279,20 +249,6 @@
 #define PWM_SERVO_2_OC_BIT 0
 #endif
 
-#if 0
-#if USE_PWM2
-#define PWM_SERVO_2 2
-#define PWM_SERVO_2_TIMER TIM4
-#define PWM_SERVO_2_GPIO GPIOD
-#define PWM_SERVO_2_PIN GPIO14
-#define PWM_SERVO_2_AF GPIO_AF2
-#define PWM_SERVO_2_OC TIM_OC3
-#define PWM_SERVO_2_OC_BIT (1<<2)
-#else
-#define PWM_SERVO_2_OC_BIT 0
-#endif
-#endif
-
 #if USE_PWM3
 #define PWM_SERVO_3 3
 #define PWM_SERVO_3_TIMER TIM1
@@ -305,14 +261,15 @@
 #define PWM_SERVO_3_OC_BIT 0
 #endif
 
+
 #if USE_PWM4
 #define PWM_SERVO_4 4
 #define PWM_SERVO_4_TIMER TIM4
-#define PWM_SERVO_4_GPIO GPIOB
-#define PWM_SERVO_4_PIN GPIO6
+#define PWM_SERVO_4_GPIO GPIOD
+#define PWM_SERVO_4_PIN GPIO14
 #define PWM_SERVO_4_AF GPIO_AF2
-#define PWM_SERVO_4_OC TIM_OC1
-#define PWM_SERVO_4_OC_BIT (1<<0)
+#define PWM_SERVO_4_OC TIM_OC3
+#define PWM_SERVO_4_OC_BIT (1<<2)
 #else
 #define PWM_SERVO_4_OC_BIT 0
 #endif
@@ -329,32 +286,21 @@
 #define PWM_SERVO_5_OC_BIT 0
 #endif
 
-#if USE_PWM6
-#define PWM_SERVO_6 6
-#define PWM_SERVO_6_TIMER TIM4
-#define PWM_SERVO_6_GPIO GPIOD
-#define PWM_SERVO_6_PIN GPIO14
-#define PWM_SERVO_6_AF GPIO_AF2
-#define PWM_SERVO_6_OC TIM_OC3
-#define PWM_SERVO_6_OC_BIT (1<<2)
-#else
-#define PWM_SERVO_6_OC_BIT 0
-#endif
 
-#if USE_PWM7
-#define PWM_SERVO_7 7
-#define PWM_SERVO_7_TIMER TIM4
-#define PWM_SERVO_7_GPIO GPIOD
-#define PWM_SERVO_7_PIN GPIO15
-#define PWM_SERVO_7_AF GPIO_AF2
-#define PWM_SERVO_7_OC TIM_OC4
-#define PWM_SERVO_7_OC_BIT (1<<3)
+
+#if BEEP_PWM
+#define PWM_BEEP_TIMER TIM4
+#define PWM_BEEP_GPIO GPIOD
+#define PWM_BEEP_PIN GPIO15
+#define PWM_BEEP_AF GPIO_AF2
+#define PWM_BEEP_OC TIM_OC4
+#define PWM_BEEP_OC_BIT (1<<3)
 #else
-#define PWM_SERVO_7_OC_BIT 0
+#define PWM_BEEP_OC_BIT (1<<3)
 #endif
 
 #define PWM_TIM1_CHAN_MASK (PWM_SERVO_0_OC_BIT|PWM_SERVO_1_OC_BIT|PWM_SERVO_2_OC_BIT|PWM_SERVO_3_OC_BIT)
-#define PWM_TIM4_CHAN_MASK (PWM_SERVO_4_OC_BIT|PWM_SERVO_5_OC_BIT|PWM_SERVO_6_OC_BIT|PWM_SERVO_7_OC_BIT)
+#define PWM_TIM4_CHAN_MASK (PWM_SERVO_4_OC_BIT|PWM_SERVO_5_OC_BIT|PWM_BEEP_OC_BIT)
 
 /* PPM */
 #define USE_PPM_TIM2 1
@@ -373,40 +319,49 @@
  * Spektrum
  */
 /* The line that is pulled low at power up to initiate the bind process */
-#define SPEKTRUM_BIND_PIN GPIO8
-#define SPEKTRUM_BIND_PIN_PORT GPIOE
+#define SPEKTRUM_BIND_PIN GPIO3
+#define SPEKTRUM_BIND_PIN_PORT GPIOC
 
 #define ADXRS290_SENS
 #ifdef ADXRS290_SENS
 //adxrs290 xy int pin
 #define ADXRS_XY_EOC_PIN GPIO0
 #define ADXRS_XY_EOC_PIN_PORT GPIOE
-#define ADXRS_Z_EOC_PIN GPIO7
+#define ADXRS_Z_EOC_PIN GPIO1
 #define ADXRS_Z_EOC_PIN_PORT GPIOE
 #endif //ADXRS290_SENS
 
+
+/* GPS */
+#define GPS_RESET_GPIO GPIOE,GPIO3 //0-reset,1-normal.
+
+/* XBee */
+#define XBEE_RESET_GPIO GPIOD,GPIO7 //0-reset,1-normal.
+//PB3:XBEE_RSSI -> TIM2 CH2
+
+/* actuator power control */
+#define ECS_PWM_EN_GPIO 	GPIOE,GPIO4 //0-enable,1-disable.
 
 /* bat manager option */
 #define BAT_MANAGER_OPTION
 
 /* ops system option*/
 #define OPS_OPTION
-#define OPS_PERIODIC_FREQUENCY 100
+#define OPS_PERIODIC_FREQUENCY 200
+#define OPS_PWR_EN_GPIO 	GPIOC,GPIO13
 
 /*monitoring system option*/
 #define MONITORING_OPTION
 #define MONITORING_FREQUENCY 2
 
-/* bat manager option */
-#define BAT_MANAGER_OPTION
-#define I2C_BM_GPIO_SCL_PORT GPIOA
-#define I2C_BM_GPIO_SDA_PORT GPIOC
-#define I2C_BM_GPIO_SCL GPIO2
-#define I2C_BM_GPIO_SDA GPIO1
+/* sonar mb1242 i2c pin define */
+#define I2C_SONAR_GPIO_SDA_PORT GPIOD
+#define I2C_SONAR_GPIO_SCL_PORT GPIOD
+#define I2C_SONAR_GPIO_SDA GPIO8
+#define I2C_SONAR_GPIO_SCL GPIO9
 
 #define HMC5983_OPTION
+#define GCS_V1_OPTION  //defined, we can use gcs/rc/ubuntu_gcs
 
-/* actuator power control */
-#define DEBUG_GPIO 	GPIOE,GPIO2 //0-enable,1-disable.
 
 #endif /* CONFIG_KROOZ_SD_H */

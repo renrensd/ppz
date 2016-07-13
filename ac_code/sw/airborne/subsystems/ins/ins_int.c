@@ -107,20 +107,20 @@ static void sonar_cb(uint8_t sender_id, float distance);
 #define BARO_OFFSET 0.3   //baro upper agl 0.3m
 #endif
 
+#ifndef INS_SONAR_UPDATE_ON_AGL
+#define INS_SONAR_UPDATE_ON_AGL FALSE
+PRINT_CONFIG_MSG("INS_SONAR_UPDATE_ON_AGL defaulting to FALSE")
+#endif
+
 #endif // USE_SONAR
 #ifdef USE_GPS_NMEA
  #ifndef INS_VFF_R_GPS
  #define INS_VFF_R_GPS 2.0
  #endif
  #define INS_USE_GPS_ALT TRUE
- #define INS_SONAR_UPDATE_ON_AGL FALSE
+ #define USE_INS_NAV_INIT FALSE
 #else
  #define INS_USE_GPS_ALT FALSE
-#endif
-
-#ifndef INS_SONAR_UPDATE_ON_AGL
- #define INS_SONAR_UPDATE_ON_AGL TRUE
-PRINT_CONFIG_MSG("INS_SONAR_UPDATE_ON_AGL defaulting to FALSE")
 #endif
 
 /** maximum number of propagation steps without any updates in between */
@@ -129,7 +129,7 @@ PRINT_CONFIG_MSG("INS_SONAR_UPDATE_ON_AGL defaulting to FALSE")
 #endif
 
 #ifndef USE_INS_NAV_INIT
-#define USE_INS_NAV_INIT FALSE
+ #define USE_INS_NAV_INIT TRUE
 PRINT_CONFIG_MSG("USE_INS_NAV_INIT defaulting to TRUE")
 #endif
 
@@ -401,12 +401,12 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
       ins_int.baro_z = -pprz_isa_height_of_pressure(pressure, ins_int.qfe)-BARO_OFFSET;  //ISA conditions
       
       //baro_z below 1.0m or sonar dist below 2.0m,only use sonar. --by whp
-      if( ins_int.update_on_agl )   //sonar useful
+      if( 0)//ins_int.update_on_agl )   //sonar useful
       {
 	  	  if( ins_int.baro_z> -1.0 || agl_dist_value_filtered< 2.0 )   return; 
       }
 
-	  return;
+	  //return;
 
 
 
@@ -649,17 +649,18 @@ void ins_int_update_flow(struct Px4_flow_Data *flow_data __attribute__((unused))
 static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
   static float last_offset = 0.;
+  
+  /*pulse filter*/
+  /*
   static float last_distance =0.0;
 
-  /*pulse filter*/
- #if 0
   float deta_distance = distance-last_distance;
   if( fabs(deta_distance) >INS_SONAR_DETA_RANGE )
   {
   	  distance = last_distance + 0.1*deta_distance;
   }
   last_distance = distance;
- #endif
+  */
   
   /* update filter assuming a flat ground */
   if (   distance < INS_SONAR_MAX_RANGE 

@@ -30,6 +30,9 @@
 #include "mcu_periph/sys_time.h"
 #include "mcu_periph/spi.h"
 #include "peripherals/ak8963_regs.h"
+#ifdef CALIBRATION_OPTION
+#include "calibration.h"
+#endif
 
 /* SPI defaults set in subsystem makefile, can be configured from airframe file */
 PRINT_CONFIG_VAR(IMU_MPU9250_SPI_SLAVE_IDX)
@@ -116,7 +119,7 @@ PRINT_CONFIG_VAR(IMU_MPU9250_Z_SIGN)
 
 #ifdef HMC5983_OPTION
 #ifndef HMC5983_I2C_DEV
-#define HMC5983_I2C_DEV i2c3
+#define HMC5983_I2C_DEV i2c1
 #endif
 #define IMU_MPU9250_READ_MAG FALSE
 #endif	/* HMC5983_OPTION */
@@ -240,6 +243,9 @@ void imu_mpu9250_event(void)
 	    imu.mag_unscaled.z = (IMU_MPU9250_Z_SIGN) * imu_mpu9250.mag_hmc.data.vect.z;
 	    imu_mpu9250.mag_hmc.data_available = FALSE;
 	    imu_mpu9250.mag_valid = TRUE;
+		#ifdef CALIBRATION_OPTION
+		cali_magraw_to_txt(imu.mag_unscaled.x, imu.mag_unscaled.y, imu.mag_unscaled.z);
+		#endif	/* CALIBRATION_OPTION */
 	}
 
 	if (imu_mpu9250.mag_valid) 

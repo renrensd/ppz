@@ -36,6 +36,8 @@
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/flash.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/stm32/dbgmcu.h>
+
 
 #include "std.h"
 
@@ -91,7 +93,6 @@ void mcu_arch_init(void)
 #ifndef RTOS_IS_CHIBIOS
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_NOGROUP_SUB16);
 #endif
-
 }
 
 #if defined(STM32F1)

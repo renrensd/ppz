@@ -362,10 +362,10 @@
          <!-- ef=10    : present orientation (down,backward,left, counterclockwise)-->
          <!-- ef=00    : present orientation (stop status)                         -->
          <!-- gh=xx    : present control speed grade(00/01)                  -->
-         <!--forward  00100101 37-->  
-         <!--backward 00101001 0x41--> 
-         <!--right    01000101 0x69--> 
-         <!--left     01001001 0x73--> 
+         <!--forward  00100101 0x25-->  
+         <!--backward 00101001 0x29--> 
+         <!--right    01000101 0x45--> 
+         <!--left     01001001 0x49--> 
          <!--up       00010101 0x21--> 
          <!--down     00011001 0x25--> 
          <!--stop     00010000 0x16--> 
@@ -384,7 +384,7 @@
          <!--keep     home_mode:          home      =0x40;    stop_home  =0x04   -->
          <!--reserve  mainpower control:  mainpower_on=0x50;  mainpower_off=0x05 -->
          <!--add      lock control:       unlock=0x60;        lock=0x06          -->       
-         <!--mag      calibration:        calibrate =0x70;                       -->
+         <!--mag      calibration:        calibrate_begin =0x70; calibrate_end = 0x07                      -->
          
     </description>
     <field name="set_cmd"  type="uint8"/>
@@ -412,9 +412,6 @@
   </message>
   
  </msg_class>
-
-
-
 
 
 

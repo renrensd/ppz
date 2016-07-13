@@ -825,3 +825,14 @@ bool_t autopilot_check_rc_bind(void)
 		return FALSE;
 	}
 }
+
+#ifdef CALIBRATION_OPTION
+void autopilot_mag_cali_store(void)
+{
+    if(kill_throttle)
+	{
+		settings_store_flag = TRUE;
+		settings_store();
+    }
+}
+#endif

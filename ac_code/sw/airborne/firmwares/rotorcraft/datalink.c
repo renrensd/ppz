@@ -106,6 +106,10 @@
 
 #endif //GCS_V1_OPTION
 
+#ifdef CALIBRATION_OPTION
+#include "calibration.h"
+#endif	/* CALIBRATION_OPTION */
+
 #define DEBUG_XBEE_COMMU 0
 
 #define IdOfMsg(x) (x[1])
@@ -154,22 +158,40 @@ void dl_parse_msg(void)
 		
 	    case DL_RC_BIND_STATE: 
 		{ 
-		  //recheck rc serial_code
+		  /*check rc serial_code*/
+		  bool_t code_check = TRUE;
 		  uint8_t rc_serial_code[10]=RC_SERIAL_CODE;
 		  uint8_t *pt_serial_code=DL_RC_BIND_STATE_serial_code(dl_buffer);
+		  
 		  for(uint8_t i=0; i<10;i++)
 		  {    
-		  	 if( *(pt_serial_code+1)!=rc_serial_code[i] )  break; 
+		  	 if( *(pt_serial_code+i)!=rc_serial_code[i] )
+			 {
+			     code_check = FALSE;         
+				 break; 
+		  	 }
 		  }
+		  
 		  //ack with bind rc message,if send fail it will continual reveice rc_bind state message
-		  uint8_t ac_serial_code[10]=A2R_SERIAL_CODE;
-		  xbee_tx_header(XBEE_ACK,XBEE_ADDR_RC);		  
-		  DOWNLINK_SEND_BIND_RC(DefaultChannel, DefaultDevice, ac_serial_code);
-		  //last_response= 0; //rc_set_response_pack()+2;  //when bind success,update last_response of heart_beat
-		  //DOWNLINK_SEND_RC_SET_CMD_ACK_STATE(DefaultChannel, DefaultDevice, &last_response);  //when connect,in sure rc get ack
+		  if(code_check)
+		  {
+			  uint8_t ac_serial_code[10]=A2R_SERIAL_CODE;
+			  xbee_tx_header(XBEE_ACK,XBEE_ADDR_RC);		  
+			  DOWNLINK_SEND_BIND_RC(DefaultChannel, DefaultDevice, ac_serial_code);
+		  }
 		  break;
 	    }
-	    default:    break;
+		
+		#ifdef CALIBRATION_OPTION
+		case PPRZ_MSG_ID_CALIBRATION_RESULT_RC_ACK_STATE:
+		{
+			cali_mag_state_init();
+			break;
+		}
+		#endif
+		
+	    default:   
+			break;
     }
   }
   
@@ -348,14 +370,24 @@ void dl_parse_msg(void)
 		
 		case DL_BIND_AIRCRAFT: 
 		{ 
-		  //check gcs serial_code
+		  /*check gcs serial_code*/
+		  bool_t code_check = TRUE;
 		  const uint8_t gcs_serial_code[10] = GCS_SERIAL_CODE;
 		  uint8_t *pt_serial_code=DL_BIND_AIRCRAFT_serial_code(dl_buffer);
+		  
 		  for(uint8_t i=0; i<10;i++)
 		  {    
-		  	 if( *(pt_serial_code+1)!=gcs_serial_code[i] )  break; 
+		  	 if( *(pt_serial_code+i)!=gcs_serial_code[i] )  
+			 {
+			 	code_check = FALSE;
+			 	break; 
+		  	 }
 		  }
-		  send_aircraft_info_state();
+		  
+		  if(code_check)
+		  {
+		      send_aircraft_info_state();
+		  }
 		  break;
 	    }	
 		

@@ -36,6 +36,10 @@ void main(void);
 void blocking_handler(void);
 void null_handler(void);
 
+enum HardwareFaultType {HardwareFault_NONE, HardwareFault_BUS, HardwareFault_MEM, HardwareFault_USAGE};
+static enum HardwareFaultType hardwareFaultType = HardwareFault_NONE;
+void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress)  __attribute__((unused));
+
 __attribute__ ((section(".vectors")))
 vector_table_t vector_table = {
 	.initial_sp_value = &_stack,
@@ -95,6 +99,44 @@ void WEAK __attribute__ ((naked)) reset_handler(void)
 
 }
 
+#if 0
+/** \brief  Get Process Stack Pointer
+
+    This function returns the current value of the Process Stack Pointer (PSP).
+
+    \return               PSP Register value
+ */
+__attribute__( ( always_inline ) ) static inline uint32_t get_MSP(void)
+{
+  register uint32_t result;
+
+  __asm volatile ("MRS %0, msp\n" : "=r" (result) );
+  return(result);
+}
+#endif
+
+/**
+ * @brief   Unhandled exceptions handler.
+ * @details Any undefined exception vector points to this function by default.
+ *          This function simply stops the system into an infinite loop.
+ *
+ * @notapi
+ */
+void unhandled_exception(void)
+{
+  __asm volatile
+  (
+    " tst lr, #4                                                \n"
+    " ite eq                                                    \n"
+    " mrseq r0, msp                                             \n"
+    " mrsne r0, psp                                             \n"
+    " ldr r1, [r0, #24]                                         \n"
+    " ldr r2, handler2_address_const                            \n"
+    " bx r2                                                     \n"
+    " handler2_address_const: .word prvGetRegistersFromStack    \n"
+  );
+}
+
 void blocking_handler(void)
 {
 	while (1);
@@ -104,6 +146,49 @@ void null_handler(void)
 {
 	/* Do nothing. */
 }
+
+void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress)
+{
+  /* These are volatile to try and prevent the compiler/linker optimising them
+     away as the variables never actually get used.  If the debugger won't show the
+     values of the variables, make them global my moving their declaration outside
+     of this function. */
+
+  /*
+    When entering hard fault, the stm32 push the value of register on the stack, and loop forever.
+    You can easily retrieve address of faulty instruction in variable pc,
+    status in variable psr.
+
+    in gdb, after when hard-fault is triggered, you just have to type some commands :
+
+    ° print /x pc => retrieve instruction
+    ° info line *pc : see the source code of the line which has triggered exception
+    ° disassemble pc : see the assembly of the address which has triggered exception
+   */
+
+  volatile uint32_t r0 __attribute__((unused));
+  volatile uint32_t r1 __attribute__((unused));
+  volatile uint32_t r2 __attribute__((unused));
+  volatile uint32_t r3 __attribute__((unused));
+  volatile uint32_t r12 __attribute__((unused));
+  volatile uint32_t lr __attribute__((unused)); /* Link register. */
+  volatile uint32_t pc __attribute__((unused)); /* Program counter. */
+  volatile uint32_t psr __attribute__((unused));/* Program status register. */
+
+  r0 = pulFaultStackAddress[ 0 ];
+  r1 = pulFaultStackAddress[ 1 ];
+  r2 = pulFaultStackAddress[ 2 ];
+  r3 = pulFaultStackAddress[ 3 ];
+
+  r12 = pulFaultStackAddress[ 4 ];
+  lr = pulFaultStackAddress[ 5 ];
+  pc = pulFaultStackAddress[ 6 ];
+  psr = pulFaultStackAddress[ 7 ];
+
+  /* When the following line is hit, the variables contain the register values. */
+  while (1);
+}
+
 
 #pragma weak nmi_handler = null_handler
 #pragma weak hard_fault_handler = blocking_handler

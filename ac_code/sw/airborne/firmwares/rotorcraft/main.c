@@ -94,8 +94,8 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include "subsystems/monitoring/monitoring.h"
 #endif
 
-#ifdef CALIBRATION_OPTION
-#include "calibration.h"
+#ifdef WDG_OPTION
+#include "wdg.h"
 #endif
 
 /* if PRINT_CONFIG is defined, print some config options */
@@ -170,11 +170,8 @@ int main(void)
 #else
   while (1) 
   {
-      handle_periodic_tasks();
+	  handle_periodic_tasks();
       main_event();
-	  #ifdef CALIBRATION_OPTION
-	  cali_task();
-	  #endif
   }
 #endif
 
@@ -254,6 +251,9 @@ STATIC_INLINE void main_init(void)
     monitoring_init();
 #endif
 
+#ifdef WDG_OPTION
+  wdg_enable(); 
+#endif
   // register the timers for the periodic functions
   main_periodic_tid = sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
   modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
@@ -289,8 +289,12 @@ STATIC_INLINE void handle_periodic_tasks(void)
   if (sys_time_check_and_ack_timer(main_periodic_tid)) {
     main_periodic();
   }
-  if (sys_time_check_and_ack_timer(modules_tid)) {
-    modules_periodic_task();
+  if (sys_time_check_and_ack_timer(modules_tid)) 
+  {
+	#ifdef WDG_OPTION
+	mcu_set_task_wdg_flag(WDG_TASK_MODULES);
+	#endif	/* WDG_OPTION */
+	modules_periodic_task();
   }
   #ifndef WITHOUT_RADIO
   if (sys_time_check_and_ack_timer(radio_control_tid)) {
@@ -307,27 +311,40 @@ STATIC_INLINE void handle_periodic_tasks(void)
     telemetry_periodic();
   }
 #if USE_BARO_BOARD
-  if (sys_time_check_and_ack_timer(baro_tid)) {
-    baro_periodic();
+  if (sys_time_check_and_ack_timer(baro_tid)) 
+  {
+    #ifdef WDG_OPTION
+	mcu_set_task_wdg_flag(WDG_TASK_BARO);
+	#endif	/* WDG_OPTION */
+	baro_periodic();
   }
 #endif
 
 #ifdef OPS_OPTION
-  if (sys_time_check_and_ack_timer(ops_tid)) {
+  if (sys_time_check_and_ack_timer(ops_tid)) 
+  {
     ops_task();
   }
 #endif	/* OPS_OPTION */
 
 #ifdef MONITORING_OPTION
-  if (sys_time_check_and_ack_timer(monitor_tid)) {
-  	 monitoring_periodic();
+  if (sys_time_check_and_ack_timer(monitor_tid)) 
+  {
+	 #ifdef WDG_OPTION
+	 mcu_set_task_wdg_flag(WDG_TASK_MONITORING);
+	 #endif	/* WDG_OPTION */
+	 monitoring_periodic();
   }
 #endif
 }
 
 STATIC_INLINE void main_periodic(void)
 {
-	
+#ifdef WDG_OPTION
+	mcu_set_task_wdg_flag(WDG_TASK_MAIN);
+	wdg_feed_handle();
+#endif	/* WDG_OPTION */
+
 #if USE_IMU
   imu_periodic();
 #endif
@@ -362,6 +379,9 @@ STATIC_INLINE void telemetry_periodic(void)
 {
   static uint8_t boot = TRUE;
 
+	#ifdef WDG_OPTION
+	mcu_set_task_wdg_flag(WDG_TASK_TELEMETRY);
+	#endif	/* WDG_OPTION */
   /* initialisation phase during boot */
   if (boot) {
 #if DOWNLINK
@@ -390,6 +410,9 @@ STATIC_INLINE void telemetry_periodic(void)
 
 STATIC_INLINE void failsafe_check(void)
 {
+	#ifdef WDG_OPTION
+	mcu_set_task_wdg_flag(WDG_TASK_FAILSAFE);
+	#endif	/* WDG_OPTION */
 	autopilot_check_in_flight(autopilot_motors_on);
    #if USE_GPS
     gps_periodic_check();
@@ -436,6 +459,10 @@ STATIC_INLINE void failsafe_check(void)
 
 STATIC_INLINE void main_event(void)
 {
+	#ifdef WDG_OPTION
+	mcu_set_task_wdg_flag(WDG_EVENT_ALL);
+	#endif	/* WDG_OPTION */
+
   /* event functions for mcu peripherals: i2c, usb_serial.. */
   mcu_event();
 
