@@ -40,13 +40,23 @@ enum Gcs_Task_Cmd
 	GCS_CMD_PAUSE = 2,
 	GCS_CMD_CONTI = 3,
 	GCS_CMD_BHOME = 4,
-	GCS_CMD_RELAND = 5
+	GCS_CMD_RELAND = 5,
+	GCS_CMD_DLAND = 6,
+	GCS_CMD_LOCK = 7
 };
 
 enum Land_Type
 {
 	HOME_LAND = 1,
 	RESERVE_LAND = 2
+};
+
+//operation_type: add=1, update=2, delete=3
+enum Operation_Type_Land
+{
+	LAND_TASK_ADD = 1,
+	LAND_TASK_UPDATE,
+	LAND_TASK_DELETE
 };
 
 /* wp_action  flight_line=1; spray_line=2; spray_convert=3;  hovering=4; termination=5;*/
@@ -91,9 +101,10 @@ struct Task_Info
 struct Land_Info
 {
 	uint8_t operation_type;
-	uint8_t land_type;
 	uint8_t wp_type;
+	uint8_t land_type_length;
 	uint8_t waypoints_length;
+	uint8_t *land_type;
 	int32_t *waypoints_lon;
 	int32_t *waypoints_lat;	
 };

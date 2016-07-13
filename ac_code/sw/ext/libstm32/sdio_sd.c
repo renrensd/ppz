@@ -688,7 +688,7 @@ SDCardState SD_GetState(void)
  * @param  None
  * @retval Return if SD is detected or not
  */
-uint8_t SD_Detect(void)//¼ì²âSDÊÇ·ñ²åÈë
+uint8_t SD_Detect(void)
 {
   __IO uint8_t status = SD_PRESENT;
 

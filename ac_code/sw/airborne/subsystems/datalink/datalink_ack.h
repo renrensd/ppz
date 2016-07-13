@@ -29,12 +29,14 @@ enum set_cmd
 };
 */
 //set_config ID
+#define CONFIG_ALL             0
 #define SPRAY_HEIGHT           1    //unit=cm
-#define	SPRAY_WIDE             2    //unit=cm
-#define	SPRAY_CONCENTRATION    3    //unit=ml/m2
-#define	SPRAY_SPEED            4    //unit=cm/s
-#define	MAX_FLIGHT_SPEED       5    //unit=cm/s
+#define SPRAY_WIDE             2    //unit=cm
+#define SPRAY_CONCENTRATION    3    //unit=ml/m2
+#define SPRAY_SPEED            4    //unit=cm/s
+#define MAX_FLIGHT_SPEED       5    //unit=cm/s
 #define MAX_FLIGHT_HEIGHT      6    //unit=cm
+#define ATOMIZATION_GRADE      7    //atomization_grade
 
 enum engine_type
 {
@@ -63,6 +65,6 @@ enum Task_Ack_Type
 extern void send_heart_beat_A2R_msg(void);
 extern void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length);
 extern void send_aircraft_info_state(void);
-extern uint8_t DlSetCommand(uint8_t id, int8_t *pt_value ,uint8_t length);
+extern uint8_t DlSetCommand(uint8_t id, uint8_t pt_value);
 
 #endif /* DATALINK_H */

@@ -204,13 +204,13 @@ void imu_mpu9250_event(void)
   if (imu_mpu9250.mpu.data_available) {
     // set channel order
     struct Int32Vect3 accel = {
-      IMU_MPU9250_X_SIGN * (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_X]),
-      IMU_MPU9250_Y_SIGN * (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Y]),
+      IMU_MPU9250_X_SIGN * (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Y]),
+      -IMU_MPU9250_Y_SIGN * (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_X]),
       IMU_MPU9250_Z_SIGN * (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Z])
     };
     struct Int32Rates rates = {
-      IMU_MPU9250_X_SIGN * (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_X]),
-      IMU_MPU9250_Y_SIGN * (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Y]),
+      IMU_MPU9250_X_SIGN * (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Y]),
+      -IMU_MPU9250_Y_SIGN * (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_X]),
       IMU_MPU9250_Z_SIGN * (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Z])
     };
     // unscaled vector

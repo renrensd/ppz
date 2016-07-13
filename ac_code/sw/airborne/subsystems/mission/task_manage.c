@@ -41,7 +41,7 @@ struct Task_Wp_Enu next_wp;          //use for get next waypoint
 
 
 static int8_t parse_land_task_home(struct Land_Info dl_land_info);
-static int8_t parse_land_task_reserve(struct Land_Info dl_land_info);
+static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t offset);
 
 
 void task_manage_init(void)
@@ -75,6 +75,11 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			return response;
 		}
 	}
+	if(GCS_CMD_START!=gcs_cmd && !autopilot_in_flight)
+	{
+		response =3;  /*not in flight*/
+		return response;
+	}
 	
 	switch (gcs_cmd)
 	{	
@@ -85,6 +90,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 				 || GCS_CMD_START==gcs_task_cmd)
 			{
 				gcs_task_cmd = GCS_CMD_START;
+				gcs_cmd_interrupt = TRUE;
 			}
 			else
 			{
@@ -96,6 +102,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			if(GCS_CMD_CONTI != gcs_task_cmd)
 			{
 				gcs_task_cmd = GCS_CMD_PAUSE;
+				gcs_cmd_interrupt = TRUE;
 			}
 			else
 			{
@@ -107,6 +114,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			if(GCS_CMD_CONTI==gcs_task_cmd || GCS_CMD_PAUSE==gcs_task_cmd)
 			{
 				gcs_task_cmd = GCS_CMD_CONTI;
+				gcs_cmd_interrupt = TRUE;
 			}
 			else
 			{
@@ -116,6 +124,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			
 		case GCS_CMD_BHOME:
 			gcs_task_cmd = GCS_CMD_BHOME;
+			gcs_cmd_interrupt = TRUE;
 			break;
 			
 		case GCS_CMD_RELAND:
@@ -126,7 +135,13 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			else
 			{
 				gcs_task_cmd = GCS_CMD_RELAND;
+				gcs_cmd_interrupt = TRUE;
 			}
+			break;
+
+		case GCS_CMD_DLAND:
+			gcs_task_cmd = GCS_CMD_DLAND;
+			gcs_cmd_interrupt = TRUE;
 			break;
 
 		default:
@@ -332,22 +347,34 @@ int8_t parse_land_task(struct Land_Info dl_land_info)
 		return response;
 	}
 	
-	enum Land_Type m_land_type = (enum Land_Type)dl_land_info.land_type;
-	
-	if( HOME_LAND == m_land_type )
+	//enum Land_Type m_land_type = (enum Land_Type)dl_land_info.land_type;
+
+	uint8_t home_offset = 0;
+	/*first land type is home,parse home waypoint*/
+	if( *(dl_land_info.land_type)==HOME_LAND )
 	{
 		response = parse_land_task_home(dl_land_info);
+		if(response)
+		{
+			return response;
+		}
+		home_offset = 1;
+	}
+
+	/*parse reserve land*/
+	if( dl_land_info.land_type_length >= (1+home_offset) )
+	{
+		for(uint8_t i=0; i<(dl_land_info.land_type_length-home_offset); i++)
+		{
+			if(*(dl_land_info.land_type+i+home_offset) != RESERVE_LAND)  /*check all land_type */
+			{
+				response = 2;
+				return response;
+			}
+		}
+		response = parse_land_task_reserve(dl_land_info, home_offset);
 	}
 	
-	else if( RESERVE_LAND == m_land_type )
-	{
-		response = parse_land_task_reserve(dl_land_info);
-	}
-	
-	else
-	{
-		response = 2;  /*error land type*/
-	}
 	return response;
 }
 
@@ -355,10 +382,10 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 {
 	int8_t response = 0;
 	/*add/update home waypoint, add operation request wp_home_useful==FASLE, update is opposite*/
-	if( (1==dl_land_info.operation_type && !wp_home_useful)
-		 || (2==dl_land_info.operation_type && wp_home_useful))  
+	if( (LAND_TASK_ADD==dl_land_info.operation_type && !wp_home_useful)
+		 || (LAND_TASK_UPDATE==dl_land_info.operation_type && wp_home_useful))  
 	{
-		if( 1 == dl_land_info.waypoints_length )
+		if( 1 <= dl_land_info.waypoints_length )
 		{
 			struct EnuCoor_i enu_home;
 			struct LlaCoor_i lla_home;   /* rad, e8 */
@@ -376,7 +403,7 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 		}
 		else
 		{
-			response = 3;  /*home waypoint can't accept||waypoints is not only one*/
+			response = 3;  /*home waypoint can't accept||waypoints is empty*/
 		}
 	}
 
@@ -388,21 +415,22 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 	return response;
 }
 
-static int8_t parse_land_task_reserve(struct Land_Info dl_land_info)
+static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t offset)
 {
 	int8_t response = 0;
+	uint8_t reserve_wp_length = dl_land_info.waypoints_length - offset;
 	/*add waypoints*/
-	if( 1==dl_land_info.operation_type )
+	if( LAND_TASK_ADD==dl_land_info.operation_type )
 	{
-		if( dl_land_info.waypoints_length < (NB_RESERVE_LAND-nb_pending_reland) )
+		if( reserve_wp_length < (NB_RESERVE_LAND-nb_pending_reland) )
 		{
 			struct LlaCoor_i lla_re;   /* rad, e8 */
 			struct EnuCoor_i enu_re;
 			uint8_t last_nb_pending_reland = nb_pending_reland;
-			for(uint8_t i=0; i<dl_land_info.waypoints_length; i++ )
+			for(uint8_t i=0; i<reserve_wp_length; i++ )
 			{
-				lla_re.lon = *(dl_land_info.waypoints_lon+i);
-				lla_re.lat = *(dl_land_info.waypoints_lat+i);
+				lla_re.lon = *(dl_land_info.waypoints_lon+i+offset);
+				lla_re.lat = *(dl_land_info.waypoints_lat+i+offset);
 				if( task_lla_to_enu_convert(&enu_re, &lla_re) )
 		   		{
 					VECT2_COPY(wp_reserve_land[nb_pending_reland], enu_re);	
@@ -422,15 +450,15 @@ static int8_t parse_land_task_reserve(struct Land_Info dl_land_info)
 		}
 	}
 	/*update waypoints*/
-	else if( 2==dl_land_info.operation_type )
+	else if( LAND_TASK_UPDATE==dl_land_info.operation_type )
 	{
-		if(dl_land_info.waypoints_length == nb_pending_reland)
+		if(reserve_wp_length == nb_pending_reland)
 		{
 			struct LlaCoor_i lla_re;   /* rad, e8 */
-			for(uint8_t i=0; i<dl_land_info.waypoints_length; i++ )
+			for(uint8_t i=0; i<reserve_wp_length; i++ )
 			{
-				lla_re.lon = *(dl_land_info.waypoints_lon+i);
-				lla_re.lat = *(dl_land_info.waypoints_lat+i);
+				lla_re.lon = *(dl_land_info.waypoints_lon+i+offset);
+				lla_re.lat = *(dl_land_info.waypoints_lat+i+offset);
 				if( !task_lla_to_enu_convert(&temp_enu[i], &lla_re) )
 		   		{
 					response =4;
@@ -439,7 +467,7 @@ static int8_t parse_land_task_reserve(struct Land_Info dl_land_info)
 			}
 			if(!response)
 			{
-				for(uint8_t i=0; i<dl_land_info.waypoints_length; i++ )
+				for(uint8_t i=0; i<reserve_wp_length; i++ )
 				{
 					VECT2_COPY(wp_reserve_land[i], temp_enu[i]);
 				}
@@ -451,7 +479,7 @@ static int8_t parse_land_task_reserve(struct Land_Info dl_land_info)
 			response = 7;
 		}
 	}
-	else if( 3==dl_land_info.operation_type )
+	else if( LAND_TASK_DELETE==dl_land_info.operation_type )
 	{
 		nb_pending_reland = 0; /*reset number of reland waypoint*/
 	}

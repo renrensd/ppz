@@ -17,40 +17,41 @@
 * Version       Date    Name    Changes and comments
 * 
 *=====================================================================*/
-#ifndef _TASK_PROCESS_H_
-#define _TASK_PROCESS_H_
+#include "subsystems/mission/gcs_nav_xbee.h"
+#include "subsystems/datalink/xbee.h"
 
-#include "subsystems/mission/task_manage.h"
+#define GCS_MAX_COUNT  20   //lost_time_out =12/(2hz)=6s
 
-typedef enum Gcs_Run_State
+uint8_t gcs_count;  
+bool_t  gcs_lost;
+
+
+void gcs_lost_check(void)
 {
-	GCS_RUN_NONE = 0,
-	GCS_RUN_NORMAL,
-	GCS_RUN_PAUSE,
-	GCS_RUN_HOME,
-	GCS_RUN_RELAND,
-	GCS_RUN_LANDING,
-	GCS_RUN_ERROR
-} Gcs_State;
+	if(!gcs_lost)
+	{
+		gcs_count++;
+		if (gcs_count>GCS_MAX_COUNT)
+		{
+			gcs_lost = TRUE;
+			gcs_count = 0;
+			XbeeSetGcsConFalse();   //close gcs communication,wait for restart connect
+		}
+	}
+	else
+	{
+		if(xbee_con_info.gcs_con_available)
+		{
+			XbeeSetGcsConFalse(); 
+		}
+	}
+}
 
-typedef enum Task_Error_State
+void gcs_set_connect(void)
 {
-	TASK_NORMAL = 0,
-	TASK_PARSE_ERROR,
-	TASK_RUN_OVER,
-	TASK_INTERRUPT
-} Task_Error;
+	gcs_count = 0;    //reset gcs_count,use for check gcs_lost
+	gcs_lost = FALSE;
+}
 
 
-extern enum Gcs_Task_Cmd gcs_task_cmd;
-extern enum Gcs_Task_Cmd last_task_cmd;
-extern Task_Error task_error_state;
-extern bool_t from_wp_useful;
-
-extern void task_init(void);
-extern bool_t auto_task_ready_check(void);
-extern Gcs_State gcs_task_run(void);
-extern void send_task_info_pc(void); 
-
-#endif /*_TASK_MANAGE_H_*/
 /****************************** END OF FILE ***************************/

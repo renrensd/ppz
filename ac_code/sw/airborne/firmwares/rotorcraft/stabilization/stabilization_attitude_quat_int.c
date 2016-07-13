@@ -287,7 +287,11 @@ void stabilization_attitude_run(bool_t enable_integrator)
   stabilization_cmd[COMMAND_ROLL] = stabilization_att_fb_cmd[COMMAND_ROLL] + stabilization_att_ff_cmd[COMMAND_ROLL];
   stabilization_cmd[COMMAND_PITCH] = stabilization_att_fb_cmd[COMMAND_PITCH] + stabilization_att_ff_cmd[COMMAND_PITCH];
   stabilization_cmd[COMMAND_YAW] = stabilization_att_fb_cmd[COMMAND_YAW] + stabilization_att_ff_cmd[COMMAND_YAW];
-
+#if 0
+  stabilization_cmd[COMMAND_ROLL] = 0;
+  stabilization_cmd[COMMAND_PITCH] = 0;
+  stabilization_cmd[COMMAND_YAW] = 0;
+#endif
   /* bound the result */
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);

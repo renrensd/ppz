@@ -26,33 +26,39 @@
 
 #define TEST_MSG 1
 
-//below is error type
+//below is emergency type
 #define BAT_LOW 0
 #define BAT_CRITICAL 1
 #define BAT_OTHER 2
-#define IMU_MAG_EMI 3
-#define IMU_MOMENTARY 4
+#define IMU_MOMENTARY 3
+#define IMU_MAG_EMI 4
 #define IMU_CRITICAL  5
 #define HEIGHT_SONAR 6
 #define HEIGHT_BARO 7
 #define HEIGHT_BOTH 8
 #define BOARD_TEMP 9
 #define BOARD_OUT 10
-#define RC_KEY_SIGNAL 11
-#define RC_KEY_LOST 12
+#define GCS_COM_LOST 11
+#define RC_COM_LOST 12
 #define GPS_ACC  13
 #define GPS_LOST  14
 #define OPS_EMPTY  15
 #define OPS_LOST  16 
 #define LIFT_POWER  17
+#define TASK_NO 18
+#define TASK_PARSE 19
+#define TASK_BREAK 20
+#define MODE_CONVERT_A2M 21
 
-#define EPT_MS_NB 20
 
-/*use for cur_cmd*/
+#define EPT_MS_NB 22
+
+/*use for monitor_cmd*/
 #define CM_NONE 0
 #define CM_HOVER 1
 #define CM_HOME 2
-#define CM_LAND 3
+#define CM_LAND 3   //direct land in current position
+#define CM_LOCK 4   //lock motors in flight,not use now ,dangerous
 
 struct hover_ms
 {
@@ -64,8 +70,8 @@ struct hover_ms
 struct except_mission
 {
 	struct hover_ms hover;
-	bool_t active;     //TRUE:ms is open,alert is continual while finished; FALSE,ms is shut down
-	bool_t finished;
+	bool_t active;     //once active,alert continual until set false
+	bool_t finished;   //true meas em is break by user
 	bool_t home;
 	bool_t land;
 	//bool_t lock;
@@ -77,9 +83,12 @@ struct except_mission
 #define CHECK_INTERVAL(_x, _sta, _deta)  ((_x)>((_sta)-(_deta)) && (_x)<((_sta)+(_deta)))
 
 extern struct except_mission em[EPT_MS_NB];
+extern uint32_t em_code;
 extern bool_t rc_cmd_interrupt;
+extern bool_t gcs_cmd_interrupt;
+extern bool_t mode_convert_a2m;
 extern uint8_t rc_alert_grade;
-extern uint8_t cur_cmd;
+extern uint8_t monitor_cmd;
 extern bool_t ground_check_pass;
 
 #if TEST_MSG
@@ -104,11 +113,12 @@ extern uint8_t gps_flight;
 extern void monitoring_init(void);
 extern void monitoring_periodic(void);
 extern uint8_t data_fix_check(int32_t data, int32_t last_data, uint8_t *counter, uint8_t max_counter);
-extern void set_except_misssion(uint8_t em_nb,bool_t em_active,bool_t em_finished,bool_t em_hover,uint8_t em_keep_time,bool_t em_home,bool_t em_land,uint8_t em_alert_grade);
+extern void set_except_mission(uint8_t em_nb,bool_t em_active,bool_t em_finished,bool_t em_hover,uint8_t em_keep_time,bool_t em_home,bool_t em_land,uint8_t em_alert_grade);
 extern void ground_monitoring_init(void);
 extern void flight_monitoring_init(void);
 extern void ground_monitoring(void);
 extern void flight_monitoring(void);
+extern int8_t monitoring_reset_emer(void);
 
 #endif /*_MONITORING_H_*/
 

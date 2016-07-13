@@ -55,18 +55,30 @@
      <field name="checksum_errors" type="uint32" />
    </message>
 
+   <!--message name="ROUTE_LEN" id="5">
+     <field name="carrot_len" type="uint16" unit="s"></field>
+     <field name="len2" type="float" />
+   </message-->
+
    <message name="ATTITUDE" id="6">
      <field name="phi"   type="float" unit="rad" alt_unit="deg"/>
      <field name="psi"   type="float" unit="rad" alt_unit="deg"/>
      <field name="theta" type="float" unit="rad" alt_unit="deg"/>
    </message>
 
-   <message name="IR_SENSORS" id="7">
+   <!--message name="IR_SENSORS" id="7">
      <field name="ir1" type="int16"/>
      <field name="ir2" type="int16"/>
      <field name="longitudinal" type="int16"/>
      <field name="lateral" type="int16"/>
      <field name="vertical" type="int16"/>
+   </message-->
+   <message name="SPRAY_CONVERT_INFO" id="7">
+     <field name="C_E"   type="int32" alt_unit="m" alt_unit_coef="0.0039063"/>
+     <field name="C_N"   type="int32" alt_unit="m" alt_unit_coef="0.0039063"/>
+     <field name="radius" type="int32" alt_unit="m" alt_unit_coef="0.0039063"/>
+     <field name="heading_sp" type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
+     <field name="useful" type="int8" values="false|true"/>
    </message>
 
    <message name="GPS" id="8">
@@ -511,6 +523,9 @@
     <field name="flight_state" type="uint8" values="preparing|ready|taking_off|crusing|home|landing"/>
     <field name="flight_mode" type="uint8" values="KILL|RC|GCS"/>
     <field name="task_state" type="uint8" values="none|normal|pause|home|reland|landing|error"/>
+    <field name="task_error" type="uint8" values="normal|parse_error|run_over|interrupted"/>
+    <field name="rc_link" type="uint8" values="connected|lost"/>
+    <field name="gcs_link" type="uint8" values="connected|lost"/>
    </message>
 
   <message name="RC_INFO" id="63">
@@ -520,7 +535,6 @@
       <field name="motion_cmd" type="uint8" />     
       <field name="set_cmd" type="uint8" /> 
       <field name="rotation_rate" type="float" /> 
-      <field name="rc_lost" type="uint8" /> 
       <field name="fb_speed" type="float" /> 
       <field name="rl_speed" type="float" /> 
   </message>
@@ -2001,6 +2015,7 @@
     <field name="alert_grade" type="uint8" values="ok|low|middle|high"/>
     <field name="sonar_valid" type="uint8" values="fail|ok"/>
     <field name="baro_valid" type="uint8" values="fail|ok"/>
+    <field name="em_code" type="uint32"/>
   </message>
 
   <message name="VIDEO_SYNC" id="225">

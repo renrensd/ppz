@@ -45,7 +45,7 @@
 #endif
 #endif
 
-#define DEBUG TRUE
+#define DEBUG FALSE
 
 /** default i2c address
  * when CSB is set to GND addr is 0xEE

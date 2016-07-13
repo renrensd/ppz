@@ -57,7 +57,10 @@ void ops_task(void)
 	ops_comm_read_polling();
 	ops_comm_send_polling();
 
-	ops_spray_msg_handler();
+	if(ops_info.ops_debug == FALSE)
+	{
+		ops_spray_msg_handler();
+	}
 	tm_stimulate(TIMER_TASK_OPS);
 
 #if 0
@@ -250,6 +253,16 @@ void rc_update_ops_config_param(uint8_t grade)
 }
 
 
-
+uint8_t get_spray_switch_state(void)
+{
+	if(ops_info.spray_state == OPS_SPRAY_IS_ON)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
 /**************** END OF FILE *****************************************/
 

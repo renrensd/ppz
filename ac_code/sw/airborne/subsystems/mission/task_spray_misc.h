@@ -17,40 +17,37 @@
 * Version       Date    Name    Changes and comments
 * 
 *=====================================================================*/
-#ifndef _TASK_PROCESS_H_
-#define _TASK_PROCESS_H_
+#ifndef _TASK_SPARY_MISC_H_
+#define _TASK_SPARY_MISC_H_
 
 #include "subsystems/mission/task_manage.h"
 
-typedef enum Gcs_Run_State
+
+typedef struct Spray_Convert
 {
-	GCS_RUN_NONE = 0,
-	GCS_RUN_NORMAL,
-	GCS_RUN_PAUSE,
-	GCS_RUN_HOME,
-	GCS_RUN_RELAND,
-	GCS_RUN_LANDING,
-	GCS_RUN_ERROR
-} Gcs_State;
+	struct EnuCoor_i center;
+	int32_t radius;
+	int32_t heading_sp;
+	bool_t  useful;
+	
+} Spray_Convert_Info;
 
-typedef enum Task_Error_State
+typedef struct Spray_Continual
 {
-	TASK_NORMAL = 0,
-	TASK_PARSE_ERROR,
-	TASK_RUN_OVER,
-	TASK_INTERRUPT
-} Task_Error;
+	uint8_t flag_record;
+	uint8_t flag_ack;
+	uint8_t break_spray_work;
+	struct LlaCoor_i break_pos_lla;
+} Spray_Conti_Info;
+
+extern Spray_Convert_Info spray_convert_info;
+
+extern void task_spray_misc_init(void);
+extern bool_t spray_convert_caculate(void);
+extern bool_t spray_break_and_continual(void);
+extern void spray_bac_msg_stop(void);
+extern void spray_break_continual_msg(void);
 
 
-extern enum Gcs_Task_Cmd gcs_task_cmd;
-extern enum Gcs_Task_Cmd last_task_cmd;
-extern Task_Error task_error_state;
-extern bool_t from_wp_useful;
-
-extern void task_init(void);
-extern bool_t auto_task_ready_check(void);
-extern Gcs_State gcs_task_run(void);
-extern void send_task_info_pc(void); 
-
-#endif /*_TASK_MANAGE_H_*/
+#endif /*_TASK_SPARY_MISC_H_*/
 /****************************** END OF FILE ***************************/

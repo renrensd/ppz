@@ -59,7 +59,7 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 
 #define Qbiasbias 1e-7
 #define Qoffoff 1e-4
-#define R_BARO 9.
+#define R_BARO 10.0
 #define R_ALT 0.1
 #define R_OFFSET 1.
 

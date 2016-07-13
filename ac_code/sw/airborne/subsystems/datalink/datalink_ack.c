@@ -12,6 +12,7 @@
 #include "subsystems/mission/task_manage.h"
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/ops/ops_app_if.h"
+#include "subsystems/ops/ops_msg_if.h"
 #include "subsystems/monitoring/monitoring.h"
 
 /*
@@ -31,11 +32,20 @@
 void send_heart_beat_A2R_msg(void)
 {   
 	uint16_t system_time = sys_time.nb_sec;
-	uint8_t ac_state = (uint8_t)(autopilot_in_flight);
+	uint8_t ac_state = (uint8_t)autopilot_in_flight;
 	uint8_t battery_remain = 85;      //unit=percent, need update from battery module
 	uint8_t pesticides_remain = (uint8_t)(ops_info.res_cap&0xFF);   //unit=percent,need updata from spray working module
 	uint8_t ac_ready = (uint8_t)ground_check_pass;
-	uint8_t error_code =0;
+	uint8_t error_code = 0;
+	uint8_t spray_flag;
+	if(get_spray_switch_state())
+	{
+		spray_flag = 1;
+	}
+	else
+	{
+		spray_flag = 0;
+	}
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
 	DOWNLINK_SEND_HEART_BEAT_AC_RC_STATE(DefaultChannel, DefaultDevice,
 		                                 &system_time, 
@@ -49,7 +59,7 @@ void send_heart_beat_A2R_msg(void)
 		                                 &ac_ready,
 		                                 &error_code,
 		                                 &rc_alert_grade,
-		                                 &ops_info.spray_state);
+		                                 &spray_flag);
 }
 
 
@@ -57,24 +67,45 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 {   
 	switch(id)
 	{
+		case CONFIG_ALL:
+			if(length==12)
+			{
+				ac_config_info.spray_height = ((float)((uint16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8)))/100.0;
+				ac_config_info.spray_wide = ((float)((uint16_t)(*((uint8_t*)pt_value+2)|*((uint8_t*)pt_value+3)<<8)))/100.0;
+				ac_config_info.spray_concentration = (uint8_t)(*((uint8_t*)pt_value+4));
+				ac_config_info.spray_speed = ((float)((uint16_t)(*((uint8_t*)pt_value+5)|*((uint8_t*)pt_value+6)<<8)))/100.0;
+				ac_config_info.max_flight_speed = ((float)((uint16_t)(*((uint8_t*)pt_value+7)|*((uint8_t*)pt_value+8)<<8)))/100.0;
+				ac_config_info.max_flight_height = ((float)((uint16_t)(*((uint8_t*)pt_value+9)|*((uint8_t*)pt_value+10)<<8)))/100.0;
+				ac_config_info.atomization_grade = (uint8_t)(*((uint8_t*)pt_value+11));
+
+				ops_update_config_param(ac_config_info.spray_concentration, PARAM_FLOW_DENSITY);
+			}
+			break;
+			
 		case SPRAY_HEIGHT:
-			ac_config_info.spray_height=(float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
+			ac_config_info.spray_height = (float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
 			break;
 		case SPRAY_WIDE:
-			ac_config_info.spray_wide=(float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
+			ac_config_info.spray_wide = (float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
 			break;
 		case SPRAY_CONCENTRATION:
-			ac_config_info.concentration=(uint8_t)(*pt_value);
+			ac_config_info.spray_concentration = (uint8_t)(*((uint8_t*)pt_value));
+			
+			ops_update_config_param(ac_config_info.spray_concentration, PARAM_FLOW_DENSITY);
 			break;
 		case SPRAY_SPEED:
-			ac_config_info.spray_speed=(float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
+			ac_config_info.spray_speed = (float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
 		    break;
 		case MAX_FLIGHT_SPEED:
-			ac_config_info.max_flight_speed=(float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
+			ac_config_info.max_flight_speed = (float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
 			break;
 		case MAX_FLIGHT_HEIGHT:
-			ac_config_info.max_flight_height=(float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
+			ac_config_info.max_flight_height = (float)((int16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8))/100.0;
 			break;
+		case ATOMIZATION_GRADE:
+			ac_config_info.atomization_grade = (uint8_t)(*((uint8_t*)pt_value));
+			break;
+			
 		default: break;
 	}
 	#if PERIODIC_TELEMETRY
@@ -82,7 +113,7 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 	DOWNLINK_SEND_AC_CONFIG_INFO(DefaultChannel, DefaultDevice,
 		                         &ac_config_info.spray_height,
 		                         &ac_config_info.spray_wide,
-		                         &ac_config_info.concentration,
+		                         &ac_config_info.spray_concentration,
 		                         &ac_config_info.spray_speed,
 		                         &ac_config_info.max_flight_speed,
 		                         &ac_config_info.max_flight_height);
@@ -112,11 +143,11 @@ void send_aircraft_info_state(void)
 	uint16_t spray_wide = (uint16_t)(ac_config_info.spray_wide*100); 
 	uint16_t spray_height = (uint16_t)(ac_config_info.spray_height*100);
 	uint16_t max_flight_height= (uint16_t)(ac_config_info.max_flight_height*100);
-	uint8_t  spray_concentration = (uint8_t)(ac_config_info.concentration);
-	uint8_t  atomization_grade = 0;  //need add
+	uint8_t  spray_concentration = ac_config_info.spray_concentration;
+	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
-	char     sn_and_sv[30]="EF-A1-10";	 //fix info
+	char     sn_and_sv[30]="EFA112";	 //fix info
 	
 	xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_AIRCRAFT_INFO_STATE(DefaultChannel, DefaultDevice, 
@@ -134,14 +165,14 @@ void send_aircraft_info_state(void)
 		                              &sn_and_sv[0]);
 }
 
-uint8_t DlSetCommand(uint8_t id, int8_t *pt_value ,uint8_t length)
+uint8_t DlSetCommand(uint8_t id, uint8_t pt_value)
 {
 	uint8_t response = 0;
 	enum Set_Command command_gcs = (enum Set_Command)(id);
 	switch(command_gcs)
 	{
 		case GCS_CMD:
-			response = parse_gcs_cmd((uint8_t)(*pt_value));
+			response = parse_gcs_cmd(pt_value);
 			break;
 			
 		case REQUEST_AC_INFO:

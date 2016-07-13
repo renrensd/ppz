@@ -259,7 +259,7 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 #elif USE_MAGNETOMETER
 void WEAK imu_scale_mag(struct Imu *_imu)
 {
-#ifndef CALIBRATION_OPTION
+#if 1//ndef CALIBRATION_OPTION
   _imu->mag.x = ((_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN *
                  IMU_MAG_X_SENS_NUM) / IMU_MAG_X_SENS_DEN;
   _imu->mag.y = ((_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN *

@@ -26,14 +26,13 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "math.h"
-
-#include "subsystems/ops/ops_app_if.h"
 #ifdef OPS_OPTION
+#include "subsystems/ops/ops_app_if.h"
 #include "subsystems/ops/ops_msg_if.h"   
 #endif
 #include "subsystems/monitoring/monitoring.h" 
 #include "subsystems/datalink/xbee.h"
-
+#include "subsystems/mission/task_spray_misc.h"
 #ifdef CALIBRATION_OPTION
 #include "firmwares/rotorcraft/autopilot.h"
 #include "calibration.h"
@@ -74,7 +73,7 @@
 #define K_CCW        0x89
 #define K_HOVER      0
 
-#define RC_MAX_COUNT  10   //lost_time_out =10/(2hz)=5s
+#define RC_MAX_COUNT  6   //lost_time_out =10/(2hz)=5s
 
 struct rc_set rc_set_info;   //rc mode information
 struct rc_motion rc_motion_info;
@@ -349,22 +348,14 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 
 	  switch(rc_set_cmd)
 	  {    
-	       #if 1
-		   //in taking_off or landing motion,refuse mode change
+	    #if 1
 	  	   case RC_SET_AUTO:
 		   	   if( AP_MODE_NAV == autopilot_mode)
 		   	   {
-				  #ifdef USE_MISSION  /*current can not set auto from manual in flight*/
-			   	   if(flight_state==taking_off || flight_state==landing || autopilot_in_flight)  
-				   	{ 
-						break;
-					}
-				  #else
 				   if( autopilot_in_flight ) 
 				   	{
-						break;
+						break;  /*if aircraft in flight, refuse change mode from manual to auto*/
 					}		   	
-				  #endif
 				  
 				   rc_set_info.mode_state = nav_gcs_mode;
 				   flight_mode_enter(nav_gcs_mode);			   		
@@ -379,13 +370,18 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 				   	{ 
 						break;
 					}
+				   if(flight_mode==nav_gcs_mode && autopilot_in_flight)
+				   {
+				   		mode_convert_a2m = TRUE;
+						spray_break_and_continual();
+				   	}
 				  #endif		
 				  
 				   rc_set_info.mode_state = nav_rc_mode;
 				   flight_mode_enter(nav_rc_mode); 
 		   		}
 			   break;
-		   #endif
+	   #endif
 		   
 		   case  RC_ADD_SPRAY:
 		   	   if(flight_mode==nav_rc_mode) 
@@ -415,7 +411,7 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 					   {
 					   		ops_start_spraying();
 					   }
-				      #endif 
+				     #endif 
 			   	   }
 		   	   }
 		   	   break;			   
@@ -423,19 +419,10 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		   case  RC_LAND:
 		   	   if(flight_mode==nav_rc_mode && autopilot_in_flight) 
 			   {
-			   	    if( 
-					   #ifdef USE_MISSION
-						flight_state==cruising || flight_state==home
-					   #else 
-						rc_set_info.vtol==CRUISE
-					   #endif
-						                                              )
-					{
-						rc_set_info.vtol = LAND;
-						
-			            //use for monitoring process
-	                   rc_cmd_interrupt = TRUE;
-					}
+					rc_set_info.vtol = LAND;
+					
+		           //use for monitoring process
+                  rc_cmd_interrupt = TRUE;
 			   }		
 		   	   break;
 			   
@@ -527,30 +514,6 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 	  return TRUE;
  }
 
-/*communication with rc,ack response code
-uint8_t rc_set_response_pack(void)
-{ 
-	 uint8_t response=0;
-	 if(rc_set_info.mode_state==nav_gcs_mode) response =0; //set 8th bit false
-	 else response =1;  //set 8th bit true
-
-	 if(!rc_set_info.spray_grade) response=(response<<1)+1;
-	 else response =response<<1;
-
-     if(rc_set_info.vtol==LAND) response =(response<<2)+2;
-	 else if(rc_set_info.vtol==TAKE_OFF) response =(response<<2)+1;
-	 else response =response<<2;  //include locked and cruising 2 state
-
-	 if(rc_set_info.home) response =response<<1;
-	 else response=(response<<1)+1;
-
-	 if(rc_set_info.m_power) response=(response<<1)+1;
-	 else response =response<<1;
-
-	 response =response<<2;
-	 
-	 return response;
-}*/
 
 void rc_set_info_reset(void)
 {
@@ -595,21 +558,9 @@ void rc_lost_check(void)
 	{
 	       rc_lost = TRUE;
 		   rc_count = 0;
+		   #ifdef GCS_V1_OPTION
 		   XbeeSetRcConFalse();   //close rc communication,wait for restart connect
-	       /*in take_off,it will flight to cruise;once entered cruise,do land
-	       after landed, locked auto.*/
-	       #if 0
-	       if(autopilot_in_flight && rc_set_info.vtol==CRUISE)   
-	       {
-		       rc_set_info.vtol=LAND;    //land process in this exeption case
-		   }
-	      
-	       if(!autopilot_in_flight)
-	       {
-		       rc_set_info.vtol=LOCKED;
-		       rc_set_cmd_pasre(0x10);  //flight_mode set auto		   	
-	       }
-	       #endif
+		   #endif
 	}
 }
 
@@ -618,7 +569,7 @@ void rc_set_connect(void)
 	rc_count=0;  //reset rc_count,use for check rc_lost
 	rc_lost=FALSE;
 	#ifdef GCS_V1_OPTION
-	xbee_con_info.rc_con_available = FALSE;
+	//xbee_con_info.rc_con_available = TRUE;
 	#endif	/* GCS_V1_OPTION */
 
 }

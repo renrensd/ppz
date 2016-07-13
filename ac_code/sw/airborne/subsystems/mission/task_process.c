@@ -19,7 +19,7 @@
 *=====================================================================*/
 
 #include "subsystems/mission/task_process.h"
-#include "subsystems/mission/task_spray_convert.h"
+#include "subsystems/mission/task_spray_misc.h"
 
 #include "subsystems/ops/ops_msg_if.h"
 
@@ -30,8 +30,10 @@
 
 enum Gcs_Task_Cmd gcs_task_cmd;
 enum Gcs_Task_Cmd last_task_cmd;
+Task_Error task_error_state;
+
 bool_t from_wp_useful;
-static bool_t spray_switch_flag;     /*task running spray flag*/
+//static bool_t spray_switch_flag;     /*task running spray flag*/
 static bool_t spray_caculate_flag;
 
 /*interrupt scene var*/
@@ -64,24 +66,31 @@ void task_init(void)
 {
 	task_manage_init();
 	task_process_init();
-	spray_convert_init();
+	task_spray_misc_init();
 }
 
 void task_process_init(void)
 {
 	gcs_task_cmd = GCS_CMD_NONE;
 	last_task_cmd = GCS_CMD_NONE;
+	task_error_state = TASK_NORMAL;
 	from_wp_useful = FALSE;
-	spray_switch_flag = FALSE;
+//	spray_switch_flag = FALSE;
 	spray_caculate_flag = FALSE;
 	from_wp.wp_en.z = 0;  /*z not useful*/
 	next_wp.wp_en.z = 0;
 	
 }
 
+/***********************************************************************
+* FUNCTION    : achieve_next_wp
+* DESCRIPTION : get waypoint info to from/next wp
+* INPUTS      : none
+* RETURN      : TRUE or FALSE
+***********************************************************************/
 bool_t achieve_next_wp(void)
 {
-	if(nb_pending_wp < 1) //(!task_ready_check())
+	if(nb_pending_wp < 1) 
 	{
 		return FALSE;
 	}
@@ -106,7 +115,12 @@ bool_t achieve_next_wp(void)
 	return TRUE;
 }
 
-
+/***********************************************************************
+* FUNCTION    : get_start_line
+* DESCRIPTION : get waypoint info to from/next wp for first line
+* INPUTS      : none
+* RETURN      : TRUE or FALSE
+***********************************************************************/
 bool_t get_start_line(void)
 {
 	/*request nb_pending_wp at least 2*/
@@ -120,6 +134,12 @@ bool_t get_start_line(void)
 	return FALSE;
 }
 
+/***********************************************************************
+* FUNCTION    : auto_task_ready_check
+* DESCRIPTION : check task if ready
+* INPUTS      : none
+* RETURN      : TRUE or FALSE
+***********************************************************************/
 bool_t auto_task_ready_check(void)
 {
 	if( FALSE==wp_home_useful 
@@ -136,6 +156,12 @@ bool_t auto_task_ready_check(void)
 	return TRUE;
 }
 
+/***********************************************************************
+* FUNCTION    : gcs_task_run
+* DESCRIPTION : run gcs task
+* INPUTS      : none
+* RETURN      : Gcs_State, running state
+***********************************************************************/
 Gcs_State gcs_task_run(void)
 {
 	Gcs_State gcs_state = GCS_RUN_NORMAL;
@@ -151,8 +177,8 @@ Gcs_State gcs_task_run(void)
 				if( !get_start_line() )
 				{
 					//waypoints is less than 2,error generate
-					//normal take off will not interrupt
 					gcs_state = GCS_RUN_ERROR;
+					task_error_state = TASK_RUN_OVER;
 				}
 			}
 			if( run_normal_task() )
@@ -176,6 +202,7 @@ Gcs_State gcs_task_run(void)
 			gcs_state = GCS_RUN_HOME;
 			if( gcs_hover_enter() )
 			{
+				spray_break_and_continual();
 				VECT2_COPY(home_wp_enu, wp_home);
 			}
 			else
@@ -193,6 +220,7 @@ Gcs_State gcs_task_run(void)
 			gcs_state = GCS_RUN_RELAND;
 			if( gcs_hover_enter() )
 			{
+				spray_break_and_continual();
 				get_shortest_reland_wp();
 			}
 			else
@@ -206,8 +234,17 @@ Gcs_State gcs_task_run(void)
 			}
 			break;
 			
+		case GCS_CMD_DLAND:
+			gcs_state = GCS_RUN_LANDING;
+			if( gcs_hover_enter() )
+			{
+				spray_break_and_continual();
+			}
+			break;
+			
 		default:
 			gcs_state = GCS_RUN_ERROR;
+			task_error_state = TASK_PARSE_ERROR;
 			break;
 	}
 	
@@ -216,13 +253,18 @@ Gcs_State gcs_task_run(void)
 	return gcs_state;
 }
 
-
+/***********************************************************************
+* FUNCTION    : save_task_scene
+* DESCRIPTION : unnormal operation, save current pos
+* INPUTS      : none
+* RETURN      : current pos
+***********************************************************************/
 struct EnuCoor_i save_task_scene(void)
 {
 	current_wp_scene = *stateGetPositionEnu_i();
 
 	/*interrupt, need stop spray*/
-	spray_switch_flag = FALSE;  /*reset switch flag for next operation*/
+//	spray_switch_flag = FALSE;  /*reset switch flag for next operation*/
    #ifdef OPS_OPTION
 	ops_stop_spraying(); 
    #endif
@@ -230,16 +272,36 @@ struct EnuCoor_i save_task_scene(void)
 	return current_wp_scene;
 }
 
+/***********************************************************************
+* FUNCTION    : gcs_hover_enter
+* DESCRIPTION : hover motion prepare and set
+* INPUTS      : none
+* RETURN      : TRUE or FALSE
+***********************************************************************/
 bool_t gcs_hover_enter(void)
 {
+	static bool_t steady_flag = FALSE;
 	if( last_task_cmd != gcs_task_cmd)
 	{  
 		struct EnuCoor_i hover_wp;
 		hover_wp = save_task_scene();
 		task_nav_hover(hover_wp);
+		steady_flag = FALSE;
 		return TRUE;
 	}
-	return FALSE;
+	
+	if( !steady_flag )
+	{
+		if( NavGetHoverSteady() )
+		{
+			steady_flag = TRUE;
+		}
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }
 
 void get_shortest_reland_wp(void)
@@ -263,6 +325,12 @@ void get_shortest_reland_wp(void)
 	}
 }
 
+/***********************************************************************
+* FUNCTION    : run_normal_task
+* DESCRIPTION : execute task according to from_wp.action
+* INPUTS      : none
+* RETURN      : TRUE or FALSE
+***********************************************************************/
 bool_t run_normal_task(void)
 {
 	uint8_t wp_state = 2; /*default:run over from_wp state*/
@@ -284,7 +352,6 @@ bool_t run_normal_task(void)
 				{
 					if( !achieve_next_wp() )  
 					{
-						//need handle the situation
 						task_wp_empty_handle();
 					}
 					else
@@ -303,12 +370,12 @@ bool_t run_normal_task(void)
 				/*no more task_wp to run*/
 				if( !achieve_next_wp() )  
 				{
-					//need handle the situation
 					task_wp_empty_handle();
 				}
 				else
 				{
 					wp_state = 1;
+					spray_caculate_flag = FALSE;   /*reset spray caculate flag for two continual spray line*/
 				}
 			}
 			break;
@@ -326,7 +393,6 @@ bool_t run_normal_task(void)
 					/*no more task_wp to run*/
 					if( !achieve_next_wp() )  
 					{
-						//need handle the situation
 						task_wp_empty_handle();
 					}
 					else
@@ -338,14 +404,15 @@ bool_t run_normal_task(void)
 			}
 			else
 			{
-				//convert fail,need add exception
+				//convert fail
+				task_error_state = TASK_PARSE_ERROR;
 			}
 			break;
 		}
 			
 		case HOVERING:
 		{
-			//how to continual
+			//how to continual?
 			task_nav_hover(from_wp.wp_en);
 			break;
 		}
@@ -371,22 +438,28 @@ bool_t run_normal_task(void)
 	return FALSE;  /*task is running*/
 }
 
+/***********************************************************************
+* FUNCTION    : spray_work_run
+* DESCRIPTION : spray work control
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
 void spray_work_run(void)
 {
 	/*spray switch control*/
-	if( SPRAY_LINE==from_wp.action && FALSE==spray_switch_flag )
+	if( SPRAY_LINE==from_wp.action && !get_spray_switch_state())  //FALSE==spray_switch_flag )
 	{
 	   #ifdef OPS_OPTION
 		ops_start_spraying(); 
 	   #endif 	
-	   spray_switch_flag = TRUE;
+	   //spray_switch_flag = TRUE;
 	}
-	else if( SPRAY_LINE!=from_wp.action && TRUE==spray_switch_flag )
+	else if( SPRAY_LINE!=from_wp.action && get_spray_switch_state())  //TRUE==spray_switch_flag )
 	{
 	   #ifdef OPS_OPTION
 		ops_stop_spraying(); 
 	   #endif 	
-	   spray_switch_flag = FALSE;
+	   //spray_switch_flag = FALSE;
 	}
 
 	/*convert info pre_caculate*/
@@ -401,6 +474,16 @@ void spray_work_run(void)
 			spray_convert_info.useful = FALSE;
 		}
 		spray_caculate_flag = TRUE;
+		
+		#if PERIODIC_TELEMETRY
+	    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+        DOWNLINK_SEND_SPRAY_CONVERT_INFO(DefaultChannel, DefaultDevice, 
+			                &spray_convert_info.center.x,
+			                &spray_convert_info.center.y,
+			                &spray_convert_info.radius,
+			                &spray_convert_info.heading_sp,
+			                &spray_convert_info.useful   );
+		#endif
 	}
 	else if( SPRAY_LINE != from_wp.action && TRUE==spray_caculate_flag)
 	{
@@ -422,7 +505,8 @@ bool_t task_wp_empty_handle(void)
 	}
 	else
 	{
-		//no more task_wp exeption generate,need hover first!!!
+		//no more task_wp exeption generate
+		task_error_state = TASK_RUN_OVER;
 		return FALSE;
 	}
 }
@@ -523,6 +607,7 @@ void send_task_info_pc(void)
 	{
 		j=0;
 	}
+	uint8_t nb_unexecuted_wp = 1;
 	uint8_t wp_state = j%2+1;
 	uint16_t system_time = sys_time.nb_sec;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
@@ -530,7 +615,8 @@ void send_task_info_pc(void)
 	   	                              &system_time,
 	   	                              &task_wp[j].wp_id,
 	   	                              &task_wp[j].action,	
-	   	                              &k);
+	   	                              &k,
+	   	                              &nb_unexecuted_wp);
 #endif
    #endif
 }
@@ -539,12 +625,22 @@ void send_task_info_pc(void)
 void send_current_task_state(uint8_t wp_state) 
 {
 	uint16_t system_time = sys_time.nb_sec;
+	uint8_t nb_unexecuted_wp;
+	if(TASK_RUN_OVER==task_error_state)
+	{
+		nb_unexecuted_wp = 0;
+	}
+	else
+	{
+		nb_unexecuted_wp = nb_pending_wp + 1;
+	}
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_CURRENT_TASK_STATE(DefaultChannel, DefaultDevice,
 	   	                              &system_time,
 	   	                              &from_wp.wp_id,
 	   	                              &from_wp.action,
-	   	                              &wp_state);
+	   	                              &wp_state,
+	   	                              &nb_unexecuted_wp);
 }
 
 void send_current_task(uint8_t wp_state)

@@ -159,7 +159,7 @@ void wdg_systick_feed(void)
 ***********************************************************************/
 void wdg_enable_systick_feed(void)
 {
-     wdg_systick_feed_flag = TRUE;
+     //wdg_systick_feed_flag = TRUE;
 	 RCC_APB1PeriphClockCmd(RCC_APB1Periph_WWDG, DISABLE);
 }
 
@@ -171,7 +171,7 @@ void wdg_enable_systick_feed(void)
 ***********************************************************************/
 void wdg_disable_systick_feed(void)
 {
-     wdg_systick_feed_flag = FALSE;
+     //wdg_systick_feed_flag = FALSE;
 	 RCC_APB1PeriphClockCmd(RCC_APB1Periph_WWDG, ENABLE);
 }
 

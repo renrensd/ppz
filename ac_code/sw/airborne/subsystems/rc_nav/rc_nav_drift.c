@@ -28,7 +28,6 @@
 #include "modules/system/timer_if.h"
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
-#include "modules/system/types.h"
 
 
 //TIMER(TIMER_RC_SPEED_RL_DRIFT_STOP,             rc_speed_rl_drift_stop,                 TIMER_TASK_RC)

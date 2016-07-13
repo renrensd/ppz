@@ -50,7 +50,7 @@
 #define BB_MS5611_TYPE_MS5607 FALSE
 #endif
 
-#define DEBUG 0
+#define DEBUG FALSE
 
 struct Ms5611_Spi bb_ms5611;
 

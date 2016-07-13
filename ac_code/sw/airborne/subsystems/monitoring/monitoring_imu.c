@@ -120,8 +120,10 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 		em[IMU_CRITICAL].finished =FALSE;
 		em[IMU_MAG_EMI].active =FALSE;
 		em[IMU_MAG_EMI].finished =FALSE;
-		//only momentary,recover  do nothing
-		set_except_misssion(IMU_MOMENTARY,TRUE,FALSE, FALSE,0, FALSE,FALSE,1);	
+		//only momentary,recover do nothing
+		set_except_mission(IMU_MOMENTARY,FALSE,FALSE, FALSE,0, FALSE,FALSE,0);	
+
+		//TODOM:need add to black_block for recording
 		#if TEST_MSG
 		 fs_imu=1;
 		#endif
@@ -130,8 +132,9 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 	{   
 		em[IMU_CRITICAL].active =FALSE;
 		em[IMU_CRITICAL].finished =FALSE;
-		//set_except_misssion(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
-		set_except_misssion(IMU_MAG_EMI,TRUE,FALSE, FALSE,0, FALSE,FALSE,2);
+		//set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
+		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, FALSE,0, FALSE,FALSE,2);
+		//TODOM:after RTK GPS course add,need modify
 		#if TEST_MSG
 		 fs_imu=2;
 		#endif
@@ -139,7 +142,7 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 	else 
 	{   //other error:fix_data or frequence
 	    //set limit height hover until other cmd
-	    set_except_misssion(IMU_CRITICAL,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
+	    set_except_mission(IMU_CRITICAL,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
 		#if TEST_MSG
 		 fs_imu=3;
 		#endif
@@ -169,7 +172,7 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
 		}
 	}
 	
-	if( imu_moni.gyro_update_counter >200)
+	if( imu_moni.gyro_update_counter >100)
     {
 		imu_moni.imu_error[0] &=0xFD;   //frequence is normal
     }
@@ -181,7 +184,7 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
 		fre_imu=1;
 		#endif
 	}
-    if( imu_moni.accel_update_counter >200)
+    if( imu_moni.accel_update_counter >100)
     {
 		imu_moni.imu_error[1] &=0xFD;   //frequence is normal
     }
@@ -193,7 +196,7 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
 		fre_imu=2;
 		#endif
 	}
-    if( imu_moni.mag_update_counter >100)
+    if( imu_moni.mag_update_counter >20)
     {
 		imu_moni.imu_error[2] &=0xFD;   //frequence is normal
     }
@@ -220,7 +223,7 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
 * RETURN      : none
 ***********************************************************************/
 static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
-                     uint32_t stamp, struct Int32Vect3 *accel)
+                     uint32_t stamp __attribute__((unused)), struct Int32Vect3 *accel)
 {
   
   static struct Int32Vect3 accel_last;
@@ -283,9 +286,9 @@ static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
   
   else //imu_moni.accel_ground_counter>=6000, check noise
   {
-  	if(imu_moni.accel_interval_counter.x >200 ||
-	   imu_moni.accel_interval_counter.y >200 ||
-	   imu_moni.accel_interval_counter.z >200)
+  	if(imu_moni.accel_interval_counter.x >500 ||
+	   imu_moni.accel_interval_counter.y >500 ||
+	   imu_moni.accel_interval_counter.z >500)
   	{   //data is unnormal, set fail
   	    imu_moni.imu_error[1] |=4;  //noise error
         imu_moni.imu_status=0;  //set imu fail
@@ -319,7 +322,7 @@ static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
 * RETURN      : none
 ***********************************************************************/
 static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
-                     uint32_t stamp, struct Int32Rates *gyro)
+                     uint32_t stamp __attribute__((unused)), struct Int32Rates *gyro)
 {
   static struct Int32Rates gyro_last;
   imu_moni.gyro_update_counter++;    //reset to 0 in main monitoring
@@ -418,7 +421,7 @@ static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
 * RETURN      : none
 ***********************************************************************/
 static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
-                     uint32_t stamp, struct Int32Vect3 *mag)
+                     uint32_t stamp __attribute__((unused)), struct Int32Vect3 *mag)
 {
   static struct Int32Vect3 mag_last;
   static uint32_t mag_len2_aver, last_ts;
@@ -449,32 +452,29 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 	  	 if( (get_sys_time_msec()-last_ts)<2000 )   //request time interval >2s
 	  	 {
 		 	 imu_moni.mag_len2_counter++;
-			 //DOWNLINK_SEND_VIDEO_SYNC(DefaultChannel, DefaultDevice, &imu_moni.mag_len2_counter);
-			 if(imu_moni.mag_len2_counter>200)
-			 imu_moni.mag_len2_counter=200;	
 			 #if TEST_MSG
-			 mag_emi_counter=imu_moni.mag_len2_counter;
+			 mag_emi_counter = imu_moni.mag_len2_counter;
 			 #endif
-
 	  	 }
 		 else 
 		 {
-		 	imu_moni.mag_len2_counter=0;
+		 	imu_moni.mag_len2_counter = 0;
 			imu_moni.imu_error[2] &=0xEF;  //mag interference recover
 			#if TEST_MSG
 			 mag_emi=0;
-			 #endif
+			#endif
 
 		 }
-		 if(imu_moni.mag_len2_counter>10)
+		 if(imu_moni.mag_len2_counter > 200)
 		 {
+		 	imu_moni.mag_len2_counter = 201;  //avoid run flow
 		 	imu_moni.imu_error[2] |=0x10;  //mag interference error
-			imu_moni.imu_status=0;
-			 #if TEST_MSG
-			 mag_emi=1;
-			 #endif
+			imu_moni.imu_status = 0;
+			#if TEST_MSG
+			 mag_emi = 1;
+			#endif
 		 }
-		 last_ts=get_sys_time_msec();
+		 last_ts = get_sys_time_msec();
       }
   }
 

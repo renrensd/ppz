@@ -17,8 +17,8 @@
 #endif
 #define LED_1_GPIO GPIOD
 #define LED_1_GPIO_PIN GPIO11
-#define LED_1_GPIO_ON gpio_clear
-#define LED_1_GPIO_OFF gpio_set
+#define LED_1_GPIO_ON gpio_set
+#define LED_1_GPIO_OFF gpio_clear
 #define LED_1_AFIO_REMAP ((void)0)
 
 /* green, on PD12 */
@@ -27,8 +27,8 @@
 #endif
 #define LED_2_GPIO GPIOD
 #define LED_2_GPIO_PIN GPIO12
-#define LED_2_GPIO_ON gpio_clear
-#define LED_2_GPIO_OFF gpio_set
+#define LED_2_GPIO_ON gpio_set
+#define LED_2_GPIO_OFF gpio_clear
 #define LED_2_AFIO_REMAP ((void)0)
 
 /* red, on PC0 */
@@ -37,8 +37,8 @@
 #endif
 #define LED_3_GPIO GPIOC
 #define LED_3_GPIO_PIN GPIO0
-#define LED_3_GPIO_ON gpio_clear
-#define LED_3_GPIO_OFF gpio_set
+#define LED_3_GPIO_ON gpio_set
+#define LED_3_GPIO_OFF gpio_clear
 #define LED_3_AFIO_REMAP ((void)0)
 
 /*
@@ -322,7 +322,7 @@
 #define SPEKTRUM_BIND_PIN GPIO3
 #define SPEKTRUM_BIND_PIN_PORT GPIOC
 
-#define ADXRS290_SENS
+//#define ADXRS290_SENS
 #ifdef ADXRS290_SENS
 //adxrs290 xy int pin
 #define ADXRS_XY_EOC_PIN GPIO0

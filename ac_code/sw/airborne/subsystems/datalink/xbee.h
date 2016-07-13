@@ -28,7 +28,7 @@
 #ifndef XBEE_H
 #define XBEE_H
 
-#define GCS_V1_OPTION  //defined, we can use gcs/rc/ubuntu_gcs
+//#define GCS_V1_OPTION  //defined, we can use gcs/rc/ubuntu_gcs
 
 
 #ifdef GCS_V1_OPTION   
@@ -67,8 +67,11 @@
 #define A2G_SERIAL_CODE 	    {0x09,0x24,0x52,0x73,0x5D,0x45,0x68,0x21,0x29,0x70}
 #define A2R_SERIAL_CODE 	    {0x09,0x74,0x12,0x83,0x9D,0x15,0x08,0x41,0x21,0x65}
 #define GCS_SERIAL_CODE 		{0x09,0x35,0x40,0x72,0x55,0x76,0x64,0x2A,0x2C,0x6E}
-#define RC_SERIAL_CODE 		    {0x09,0x58,0x4E,0x7B,0x4A,0x5B,0x6D,0x62,0x3B,0x57}
-#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xfb,0xa0,0x80}
+#define RC_SERIAL_CODE 		{0x09,0x58,0x4E,0x7B,0x4A,0x5B,0x6D,0x62,0x3B,0x57}
+
+#define AC_SN_CODE    {0x45,0x46,0x41,0x31,0x31,0x32,0x00,0x00,0x00,0x00}    //"EFA112"
+//#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xc2,0x55,0x99}
+#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xF1,0xEB,0x1B}
 //#define PPZCENTER_ADDR         {0x00,0x13,0xA2,0x00,0x40,0xf3,0x3b,0x3f}
 #define XBEE_ADDR_OFFSET 1
 #define XBEE_ADDR_LEN 8
@@ -87,7 +90,6 @@ void xbee_init(void);
 
 void xbee_set_tx_header(uint8_t seq, uint8_t *addr, uint8_t option);
 void xbee_msg_aircraft_ready_broadcast(void);
-void xbee_msg_heart_beat(void);
 void xbee_msg_rc_ready_response(void);
 
 #endif//GCS_V1_OPTION
@@ -276,7 +278,7 @@ static inline void xbee_parse_payload(struct xbee_transport *t)
 						{
 							xbee_con_info.rc_addr[0][i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
 						}
-						settings_StoreSettings(1);  //save addr to flash
+						//settings_StoreSettings(1);  //save addr to flash
 						xbee_con_info.rc_con_available = TRUE;
 			   		}
 					//else  give up	
@@ -334,6 +336,16 @@ static inline void xbee_check_and_parse(struct link_device *dev, struct xbee_tra
   }
 }
 
+#ifdef GCS_V1_OPTION
 #define XbeeSetRcConFalse()  { xbee_con_info.rc_con_available = FALSE; }
 
+#define XbeeSetGcsConFalse()  { tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC,0); \
+                                xbee_con_info.gcs_con_available = FALSE; }
+
+
+#define XbeeSetFailBind()  { tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC,0); \
+	                          xbee_con_info.gcs_con_available = FALSE; }
+
+#define XbeeSetSuccessBind()  { tm_kill_timer(TIMER_XBEE_HEARTBEAT_MSG); }
+#endif
 #endif /* XBEE_H */

@@ -10,7 +10,7 @@
     <file name="bat_manager.h"/>
   </header>
   <init fun="bm_init()"/>
-  <periodic fun="bat_periodic()" freq="5"/>
+  <periodic fun="bat_periodic()" freq="25"/>
   <event fun="bat_event()" />
   <makefile target="ap">
     <file name="bat_manager.c"/>

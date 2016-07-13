@@ -14,6 +14,10 @@
 #include "subsystems/datalink/downlink.h"
 #include "uplink_ac.h"
 
+#ifdef WDG_OPTION
+#include "wdg.h"
+#endif
+
 static FIL fdata;
 static FIL fraw;
 FIL ffil;
@@ -658,8 +662,9 @@ static void cali_process(void)
 		if( cali_cur_time - cali_init_time > CALI_MAG_TIMEROUT )
 		{
 			cali_info.mag_state = CALI_MAG_STATE_FINISHED_FAIL;
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
 			DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
-			break;
+			return;
 		}
 		err_last = err;
 		err_fun();                                 //calculate sum square error
@@ -696,6 +701,7 @@ static void cali_process(void)
 	imu.mag_sens.z = p0[5];
 	autopilot_mag_cali_store();
 	cali_info.mag_state = CALI_MAG_STATE_FINISHED_SUCCESS;
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
 	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
     //printf("MAG_X_NEUTRAL = %d \n",(int)p0[0]);
     //printf("MAG_Y_NEUTRAL = %d \n",(int)p0[1]);
@@ -710,8 +716,6 @@ void sd_fatfs_init(void)
 {     
     //SD_Init();
     res=f_mount(0, &fs);
-	res = f_open(&ffil, "sd_init.txt", FA_CREATE_ALWAYS);
-	f_close(&ffil);
 	cali_info.mag_entry_flag = FALSE;
 	cali_info.mag_txt_len = 0;
 	cali_info.mag_state = CALI_MAG_STATE_INIT;
@@ -725,13 +729,17 @@ void sd_fatfs_init(void)
 ***********************************************************************/
 void cali_mag_begin(void)
 {
+	#ifdef WDG_OPTION
+	wdg_enable_systick_feed();
+	#endif
+	
 	if( (cali_info.mag_entry_flag == FALSE) && (cali_info.mag_state == CALI_MAG_STATE_INIT) )
 	{
 		cali_magraw_txt_creat();
 		cali_magraw_begin();
 		cali_info.mag_entry_flag = TRUE;
 	}
-
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
 	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state); 
 }
 
@@ -744,6 +752,7 @@ void cali_mag_begin(void)
 void cali_mag_end(void)
 {
 	cali_info.mag_state = CALI_MAG_STATE_WAIT_FINISHED;
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
 	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
 	if(cali_info.mag_entry_flag == TRUE)
 	{
@@ -751,6 +760,10 @@ void cali_mag_end(void)
 		cali_magraw_end();
 		cali_process();
 	}
+
+	#ifdef WDG_OPTION
+	wdg_disable_systick_feed();
+	#endif
 }
 
 /***********************************************************************
@@ -762,6 +775,8 @@ void cali_mag_end(void)
 void cali_mag_state_init(void)
 {
 	cali_info.mag_state = CALI_MAG_STATE_INIT;
+	cali_info.mag_entry_flag = FALSE;
+	cali_info.mag_txt_len = 0;
 }
 
 void sd_write_file_fault(char *name, uint32_t data, uint8_t flag)
@@ -769,8 +784,8 @@ void sd_write_file_fault(char *name, uint32_t data, uint8_t flag)
 	uint32_t br;
 	if(flag == 1)
 	{
-		//f_open(&ffil, "fault.txt", FA_CREATE_ALWAYS);
-		//f_close(&ffil);
+		f_open(&ffil, "fault.txt", FA_CREATE_NEW);
+		f_close(&ffil);
 		f_open(&ffil,"fault.txt",FA_WRITE);
 		br = ffil.fsize;
 		f_lseek(&ffil,br);

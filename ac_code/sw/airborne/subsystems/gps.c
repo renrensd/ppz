@@ -25,6 +25,9 @@
  */
 
 #include "subsystems/gps.h"
+#ifdef USE_GPS_NMEA
+ #include "subsystems/gps/gps_nmea.h"
+#endif
 
 #include "led.h"
 
@@ -143,6 +146,7 @@ void gps_init(void)
   gps.week = 0;
   gps.tow = 0;
   gps.cacc = 0;
+  gps.stable = FALSE;
 
   gps.last_3dfix_ticks = 0;
   gps.last_3dfix_time = 0;
@@ -168,17 +172,24 @@ void gps_init(void)
 #endif
 }
 
+/*call by failsaft function, 20hz*/
 void gps_periodic_check(void)
 {
   if (sys_time.nb_sec - gps.last_msg_time > GPS_TIMEOUT) {
     gps.fix = GPS_FIX_NONE;
   }
+
+  /*ublox or nmea get gps.stable, use for monitoring*/
+ #ifndef USE_GPS_NMEA
   else if(gps.pacc <500) {  //5m
-  	gps.stable =TRUE;
+  	gps.stable = TRUE;
   }
   else if(gps.pacc >600) { 
-    gps.stable =FALSE;
+    gps.stable = FALSE;
   }
+ #else
+  get_gps_nmea_stable();
+ #endif
 }
 
 uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)

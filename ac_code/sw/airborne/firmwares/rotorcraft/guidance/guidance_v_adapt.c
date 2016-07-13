@@ -40,7 +40,7 @@
  *  finds the vehicle needs more thrust.
  */
 #ifndef GUIDANCE_V_ADAPT_INITIAL_HOVER_THROTTLE
-#define GUIDANCE_V_ADAPT_INITIAL_HOVER_THROTTLE 0.20 //0.3,modify by whp
+#define GUIDANCE_V_ADAPT_INITIAL_HOVER_THROTTLE 0.3    //modify by whp
 #endif
 PRINT_CONFIG_VAR(GUIDANCE_V_ADAPT_INITIAL_HOVER_THROTTLE)
 

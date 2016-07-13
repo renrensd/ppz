@@ -18,13 +18,13 @@
       <!--define name="NPS_SIMU"/-->
       <!--use nps simulation,need define NPS_SIMU;shut down autoflight_xbee(navigation.c change to use auto_nav)/ops subsystems/timer.c;recommand ins use gps_passthrough-->
     </target>
-    <!--define name="USE_MISSION"/-->
+    <define name="USE_MISSION"/>
     <!--define name="WITHOUT_RADIO"/-->   <!--not use radio_control-->
     <define name="RADIO_KILL_SWITCH" value="1"/>    
     <define name="USE_FLIGHT_HEIGHT_LIMIT"/>
 
     <define name="DISTANCE_B2G" value="0.3"/>
-    <define name="DISTANCE_ABOVE_GROUNG" value="0.36"/>
+    <define name="DISTANCE_ABOVE_GROUNG" value="0.40"/>
     <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>
     <subsystem name="radio_control" type="ppm"/>   
     <subsystem name="motor_mixing"/>
@@ -60,18 +60,21 @@
     <!--load name="gps_ubx_ucenter.xml"/-->
     <!--load name="send_imu_mag_current.xml"/-->
     <load name="agl_dist.xml"/>
-    <load name="sonar_uart_MB12xx.xml"/>
+    <!--load name="sonar_uart_MB12xx.xml"/-->
     <!--load name="sonar_i2c_mb1242.xml"/-->
     <!--load name="sonar_uart_US100.xml"/-->
     <!--load name="nav_survey_poly_osam.xml"/-->
     <!--load name="laser_r2100.xml"/-->
+    <load name="radar_nra24.xml"/>
     <load name="bat_manager.xml"/>
+    <load name="logger_file.xml"/>
     <!--load name="nav_survey_rectangle_rotorcraft.xml"/-->    
     <!--load name="geo_mag.xml"/>
     <load name="osd_max7456.xml"/>
     <load name="hott_telemetry.xml"/>
     <load name="led_safety_status.xml">
      <define name="SAFETY_WARNING_LED" value="5"/-->
+
   </modules>
 
   <servos driver="Pwm">
@@ -177,7 +180,7 @@
     <!-- calibration SENS = 1.156 :( -->
     <!--define name="SONAR_SENS" value="0.0128633" integer="16"/-->
     <!--define name="SONAR_OFFSET" value="7"-->
-    <define name="SONAR_MAX_RANGE" value="1.5"/>
+    <define name="SONAR_MAX_RANGE" value="1.0"/>
     <!--define name="SONAR_UPDATE_ON_AGL" value="TRUE"/-->
   </section>
 
@@ -266,6 +269,12 @@
     <define name="REF_MIN_ZD" value="-1.0"/>        <!-- max descent speed in m/s -->
     <define name="REF_MAX_ZD" value="1.0"/>         <!-- max climb speed in m/s -->
     <define name="ADAPT_NOISE_FACTOR" value="0.7"/>
+    <!--define name="HOVER_KP" value="105"/>
+    <define name="HOVER_KD" value="180"/>
+    <define name="HOVER_KI" value="195"/>
+    <define name="INSIDE_KP" value="70"/>
+    <define name="INSIDE_KD" value="20"/>
+    <define name="INSIDE_KI" value="10"/-->
     <define name="HOVER_KP" value="288"/>
     <define name="HOVER_KD" value="280"/>
     <define name="HOVER_KI" value="195"/>
@@ -284,7 +293,7 @@
     <define name="USE_REF" value="1"/>
     <define name="USE_SPEED_REF" value="1"/> <!-- using RC to control horizontal setpoint -->
     <define name="MAX_BANK" value="27" unit="deg"/>  <!-- using horizontal angle of PID caculated desire -->
-    <define name="REF_MAX_ACCEL" value="2.0"/> <!-- max reference horizontal acceleration in m/s2 -->
+    <define name="REF_MAX_ACCEL" value="1.5"/> <!-- max reference horizontal acceleration in m/s2 -->
     <define name="REF_MAX_SPEED" value="2.0"/> <!-- max reference horizontal speed in m/s -->
     <!--define name="RC_SPEED_DEAD_BAND" value="200000"/-->
     <!--define name="PGAIN" value="30"/>
@@ -292,11 +301,11 @@
     <define name="IGAIN" value="25"/>
     <define name="VGAIN" value="10"/>
     <define name="AGAIN" value="60"/-->
-    <define name="PGAIN" value="43"/>
+    <define name="PGAIN" value="45"/>
     <define name="DGAIN" value="265"/>
-    <define name="IGAIN" value="90"/>
-    <define name="VGAIN" value="140"/>
-    <define name="AGAIN" value="60"/>
+    <define name="IGAIN" value="85"/>
+    <define name="VGAIN" value="170"/>
+    <define name="AGAIN" value="100"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">

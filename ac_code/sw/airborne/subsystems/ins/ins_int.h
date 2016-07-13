@@ -63,9 +63,13 @@ struct InsInt {
   bool_t baro_initialized;
   bool_t baro_valid;
 
-#if USE_SONAR
+#if 1 //USE_SONAR
   bool_t update_on_agl; ///< use sonar to update agl if available
 #endif
+#if USE_RADAR24
+  bool_t update_radar_agl; ///< use sonar to update agl if available
+#endif
+
 };
 
 /** global INS state */

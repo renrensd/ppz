@@ -28,7 +28,9 @@
 #include "subsystems/monitoring/monitoring_height.h"
 #include "subsystems/monitoring/monitoring_misc.h"
 #include "subsystems/datalink/downlink.h"
+#include "firmwares/rotorcraft/nav_flight.h"
 #include "subsystems/rc_nav/rc_nav_xbee.h"
+#include "subsystems/mission/gcs_nav_xbee.h"
 #include "subsystems/ins/ins_int.h"
 
 #ifdef USE_GPS_NMEA
@@ -64,7 +66,7 @@
 #define OPS_FAIL 8
 #define RC_FAIL 9
 
-uint8_t cur_cmd;  
+uint8_t monitor_cmd;  
 uint8_t rc_alert_grade;
 
 static bool_t ground_check_status;
@@ -73,10 +75,13 @@ bool_t ground_check_pass;
 uint8_t ground_check_step;  //use to sign step in ground check
 
 uint16_t monitoring_fail_code;
+uint32_t em_code;   /*one bit express one emergency in EPT_MS_NB sequence*/
 
 struct except_mission em[EPT_MS_NB];
 
 bool_t rc_cmd_interrupt;
+bool_t gcs_cmd_interrupt;
+bool_t mode_convert_a2m;
 
 
 #if TEST_MSG
@@ -120,10 +125,30 @@ void monitoring_init(void)
 	ground_check_pass = FALSE;
 	ground_check_result = TRUE;
 	monitoring_fail_code = 0;
+	em_code = 0;
 	rc_cmd_interrupt = FALSE;
-    rc_alert_grade = 0;
-	cur_cmd = CM_NONE;	
+	gcs_cmd_interrupt = FALSE;
+	mode_convert_a2m = FALSE;
+	rc_alert_grade = 0;
+	monitor_cmd = CM_NONE;	
 }
+
+int8_t monitoring_reset_emer(void)
+{
+	if(!autopilot_in_flight)
+	{
+		for(uint8_t i = 0; i<EPT_MS_NB; i++)
+		{
+			em[i].active = FALSE;
+		}
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 void monitoring_periodic(void)
 {
 	monitoring_task();
@@ -136,7 +161,7 @@ void monitoring_periodic(void)
 			flight_monitoring();  //once ground_monitoring() finished,it will run.
 		}
 	}
-	//ground_check_pass = TRUE;//dor debug
+	//ground_check_pass = TRUE;//dor debug		
 	
   #if PERIODIC_TELEMETRY
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
@@ -159,20 +184,22 @@ void monitoring_periodic(void)
 							&baro_status,
 							&bat_flight,
 							&gps_flight,
-							&cur_cmd,
+							&monitor_cmd,
 							&rc_alert_grade,
 							&ins_int.update_on_agl,
-							&ins_int.baro_valid );
+							&ins_int.baro_valid,
+							&em_code );
 	#endif
   #endif
 }
 
 static void monitoring_task(void)
 {
-	RunOnceEvery( MONITORING_FREQUENCY/2,imu_frequence_check() );     //need periodic =2hz
-	RunOnceEvery( MONITORING_FREQUENCY,height_frequence_check() );    //need periodic =1hz
-	RunOnceEvery( MONITORING_FREQUENCY, except_mission_update());     //need periodic =1hz
-	RunOnceEvery( MONITORING_FREQUENCY/2,rc_lost_check() );           //need periodic =2hz
+	RunOnceEvery( MONITORING_FREQUENCY/2, imu_frequence_check() );     //need periodic =2hz
+	RunOnceEvery( MONITORING_FREQUENCY, height_frequence_check() );    //need periodic =1hz
+	RunOnceEvery( MONITORING_FREQUENCY, except_mission_update() );     //need periodic =1hz
+	RunOnceEvery( MONITORING_FREQUENCY/2, rc_lost_check() );           //need periodic =2hz
+	RunOnceEvery( MONITORING_FREQUENCY/2, gcs_lost_check() );           //need periodic =2hz
 	except_mission_manage();	
 }
 
@@ -231,6 +258,7 @@ void ground_monitoring(void)
 			break;
 			
 		case HEIGHT_CHECK:
+		  #if 0
 			check_state=height_ground_check();
 			
 			if(check_state==FAILED)
@@ -247,16 +275,14 @@ void ground_monitoring(void)
 			{
 				monitoring_fail_code=HEIGHT_FAIL;
 			}
+		  #else
+		   ins_int.baro_valid = TRUE;
+		   ground_check_step++;  //next step
+		  #endif
 			break;
 			
 		case GPS_CHECK:
-			if(GpsFixValid() 
-			  #ifdef USE_GPS_NMEA
-			   &&gps_nmea.gps_qual == 52
-			  #else
-			   && gps.stable 
-			  #endif
-			                             ) 
+			if( GpsFixValid() && gps.stable ) 
 			{
 				ground_check_step++;  //next step
 				monitoring_fail_code = PASS;
@@ -286,10 +312,10 @@ void ground_monitoring(void)
 			//sign finished
 			break;
 		case RC_CONNECT:			
-			if(!rc_lost) 
+			if( (flight_mode==nav_rc_mode&&!rc_lost) || (flight_mode==nav_gcs_mode&&!gcs_lost) )
 			{
-				ground_check_step =0;        //reset step
-				ground_check_status =TRUE;    //finished ground check,pass
+				ground_check_step = 0;        //reset step
+				ground_check_status = TRUE;    //finished ground check,pass
 				ground_check_pass = TRUE;
 				//ground check pass,set NAV mode flag				
 			}
@@ -303,7 +329,7 @@ void ground_monitoring(void)
 	{
 		ground_check_result = FALSE;    //ground check fail,out of monitoring
 		ground_check_step = 0; 
-		ground_check_status =TRUE;
+		ground_check_status = TRUE;
 		ground_check_pass = FALSE;
 	}
 }
@@ -318,61 +344,77 @@ void flight_monitoring_init(void)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
-void flight_monitoring(void)  //need conside each step periodic
-{
-	
-	RunOnceEvery(MONITORING_FREQUENCY*2, battery_flight_check());
-	//RunOnceEvery(MONITORING_FREQUENCY*2, board_flight_check());
-	RunOnceEvery(MONITORING_FREQUENCY, imu_flight_check());
-    RunOnceEvery(MONITORING_FREQUENCY, height_flight_check());
-	RunOnceEvery(MONITORING_FREQUENCY, gps_flight_check());
-    RunOnceEvery(MONITORING_FREQUENCY*2, ops_flight_check());
-	RunOnceEvery(MONITORING_FREQUENCY, rc_flight_check());
-	//RunOnceEvery(MONITORING_FREQUENCY, lift_flight_check());
+void flight_monitoring(void)  //TODOM:need conside each step periodic
+{	
+	RunOnceEvery( MONITORING_FREQUENCY*2, battery_flight_check() );
+	//RunOnceEvery( MONITORING_FREQUENCY*2, board_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY, imu_flight_check() );
+	//RunOnceEvery( MONITORING_FREQUENCY, height_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY, gps_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY*2, ops_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY, rc_communication_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY, gcs_communication_flight_check() );
+	//RunOnceEvery( MONITORING_FREQUENCY, lift_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY, task_running_check() );   
+	RunOnceEvery( MONITORING_FREQUENCY, mode_convert_check() );   
 	if(0)  //land,turn to ground monitoring
 	{
 		imu_ground_reset();
 		height_ground_reset();
-		ground_check_status=FALSE;
+		ground_check_status = FALSE;
 	}
 }
 
 
 static void except_mission_manage(void)
 { 	
-	if(rc_cmd_interrupt)
+	if( flight_mode==nav_rc_mode && rc_cmd_interrupt ) 
 	{   // set all active ms finished
 		for(uint8_t i=0; i<EPT_MS_NB; i++)
 		{
 			if(em[i].active)  em[i].finished=TRUE;   
 		}
 		//current motion set none
-		cur_cmd=CM_NONE;
-		rc_cmd_interrupt =FALSE;  //reset 
+		monitor_cmd = CM_NONE;
+		rc_cmd_interrupt = FALSE;  //reset 
+		gcs_cmd_interrupt = FALSE;
 		return;
 	}
+	else if( flight_mode==nav_gcs_mode && gcs_cmd_interrupt ) 
+	{   // set all active ms finished
+		for(uint8_t i=0; i<EPT_MS_NB; i++)
+		{
+			if(em[i].active)  em[i].finished=TRUE;   
+		}
+		//current motion set none
+		monitor_cmd = CM_NONE;
+		rc_cmd_interrupt = FALSE;  //reset 
+		gcs_cmd_interrupt = FALSE;
+		return;
+	}
+	
 	else
 	{ 
-		if(cur_cmd ==CM_LAND)
+		if(monitor_cmd == CM_LAND)
 		{
 			return;   //land can not interrupt
 		}
 		if(check_land_ms())
 		{
-			cur_cmd =CM_LAND;
-		    return;
+			monitor_cmd = CM_LAND;
+			return;
 		}
 		if(check_home_ms())
 		{
-			cur_cmd =CM_HOME;
-		    return;
+			monitor_cmd = CM_HOME;
+			return;
 		}
 		if(check_hover_ms())
 		{
-			cur_cmd =CM_HOVER;
-		    return;
+			monitor_cmd = CM_HOVER;
+			return;
 		}
-		cur_cmd =CM_NONE;   //if no ept,set cur_cmd=CM_NONE
+		monitor_cmd = CM_NONE;   //if no ept,set monitor_cmd=CM_NONE
 	}	
 }
 
@@ -423,12 +465,18 @@ static void except_mission_update(void)
 		{
 			if(em[i].hover.hover)
 			{ 
-				if(em[i].hover.keep_time)  em[i].hover.keep_time--;
-				if(!em[i].hover.keep_time)  em[i].hover.hover=FALSE;
+				if(em[i].hover.keep_time && em[i].hover.keep_time != 0xFF)  
+				{
+					em[i].hover.keep_time--;
+				}
+				if(!em[i].hover.keep_time)  
+				{
+					em[i].hover.hover = FALSE;
+				}
 			}
 			if(!(em[i].hover.hover) && !(em[i].home) && !(em[i].land))
 			{   
-				em[i].finished=TRUE;   
+				em[i].finished = TRUE;   
 			}			
 		}
 	}
@@ -437,12 +485,17 @@ static void except_mission_update(void)
 
 static inline void alert_grade_update(void)
 {
-	rc_alert_grade=0;  //reset grade to 0
+	rc_alert_grade = 0;  //reset grade to 0
+	em_code = 0;  //set default 0,use active to set 1
 	for(uint8_t i=0; i<EPT_MS_NB; i++)
 	{
 		if(em[i].active)
 		{ 
-			if(em[i].alert_grade >rc_alert_grade)  rc_alert_grade=em[i].alert_grade;
+			if(em[i].alert_grade >rc_alert_grade)  
+			{
+				rc_alert_grade=em[i].alert_grade;
+			}
+			em_code = em_code|(1<<i);
 		}			
 	}
 }
@@ -462,7 +515,7 @@ uint8_t data_fix_check(int32_t data, int32_t last_data, uint8_t *counter, uint8_
 	}
 }
 
-void set_except_misssion(uint8_t em_nb,
+void set_except_mission(    uint8_t em_nb,
 	                     bool_t em_active,
 	                     bool_t em_finished,
 	                     bool_t em_hover,

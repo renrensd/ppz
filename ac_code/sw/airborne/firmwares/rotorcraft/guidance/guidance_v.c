@@ -33,6 +33,7 @@
 #include "firmwares/rotorcraft/navigation.h"
 
 #include "state.h"
+#include"subsystems/gps.h"
 
 #include "math/pprz_algebra_int.h"
 
@@ -588,7 +589,8 @@ here is the anti_windup block   ends*/
 
   /* bound the nominal command to 0.9*MAX_PPRZ */
   Bound(guidance_v_ff_cmd, 0, 8640);
-  
+
+  inside_pid_var_check(); //check inner pid loop var
 /*output by outer loop */
   c_z = guidance_v_zd_ref+ ((guidance_v_kp* err_z)*20)+guidance_v_ki*(guidance_v_z_sum_err>>10)+((guidance_v_kd*err_zd)>>8);
   //bound outter loop
@@ -596,8 +598,6 @@ here is the anti_windup block   ends*/
   
   /*calculating the derivative of c_z*/
   Tracking_differntiator((float)err_vz);
-
-  //inside_pid_var_check(); //1      //check inner pid loop var
  
   guidance_v_fb_cmd = ((-err_vz*guidance_vi_kp)>>16) + (-guidance_vi_kd*(int32_t)x2>>24) + ((-guidance_v_zd_sum_err*guidance_vi_ki)>>24);
   Bound(guidance_v_fb_cmd, -2000, 2000);
@@ -612,18 +612,24 @@ here is the anti_windup block   ends*/
 
 /*check inside loop pid,according to flight height*/
 static void inside_pid_var_check(void)  //1
-{   //beloow 2.5m:100 + 170   upper 3.2m:25 + 65
-	if(stateGetPositionNed_f()->z <-3.2)
+{  
+	if(!gps.stable)
 	{
-		guidance_vi_kp=25;
-		guidance_vi_kd=70;
-		guidance_vi_ki =180;
+		guidance_v_kp = 105;
+		guidance_v_kd = 180;
+		guidance_v_ki = 195;
+		guidance_vi_kp=70;
+		guidance_vi_kd=20;
+		guidance_vi_ki =10;
 	}	
-	else if(stateGetPositionNed_f()->z >-2.5)
+	else
 	{
-		guidance_vi_kp=120;
-		guidance_vi_kd=180;
-		guidance_vi_ki =132;
+		guidance_v_kp = 288;
+		guidance_v_kd = 280;
+		guidance_v_ki = 195;
+		guidance_vi_kp=77;
+		guidance_vi_kd=77;
+		guidance_vi_ki =49;
 	}	
 }
 

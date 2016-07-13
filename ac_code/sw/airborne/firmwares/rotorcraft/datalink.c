@@ -49,7 +49,9 @@
 #include "subsystems/datalink/downlink_xbee_periodic.h"
 
 #include "subsystems/rc_nav/rc_nav_xbee.h"
+#include "subsystems/mission/gcs_nav_xbee.h"
 #include "subsystems/mission/task_manage.h"
+#include "subsystems/mission/task_spray_misc.h"
 #endif
 #endif
 
@@ -100,9 +102,15 @@
 	                                                     +4*DL_UPDATE_TASK_waypoints_lon_length_cor(_payload)))	                                                     
 
 
-#define DL_LAND_TASK_waypoints_lat_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+6+4*DL_LAND_TASK_waypoints_lon_length(_payload))))
+#define DL_LAND_TASK_waypoints_lon_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+5+DL_LAND_TASK_land_type_length(_payload))))
 
-#define DL_LAND_TASK_waypoints_lat_cor(_payload) ((int32_t*)(_payload+7+4*DL_LAND_TASK_waypoints_lon_length(_payload)))
+#define DL_LAND_TASK_waypoints_lon_cor(_payload) ((int32_t*)(_payload+6+DL_LAND_TASK_land_type_length(_payload)))
+
+#define DL_LAND_TASK_waypoints_lat_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+6+DL_LAND_TASK_land_type_length(_payload) \
+	                                                     +4*DL_LAND_TASK_waypoints_lon_length_cor(_payload))))
+
+#define DL_LAND_TASK_waypoints_lat_cor(_payload) ((int32_t*)(_payload+7+DL_LAND_TASK_land_type_length(_payload) \
+	                                                     +4*DL_LAND_TASK_waypoints_lon_length_cor(_payload)))
 
 #endif //GCS_V1_OPTION
 
@@ -160,18 +168,16 @@ void dl_parse_msg(void)
 		{ 
 		  /*check rc serial_code*/
 		  bool_t code_check = TRUE;
-		  uint8_t rc_serial_code[10]=RC_SERIAL_CODE;
-		  uint8_t *pt_serial_code=DL_RC_BIND_STATE_serial_code(dl_buffer);
-		  
+		  const char rc_serial_code[10] = RC_SERIAL_CODE;
+		  char *pt_serial_code = DL_RC_BIND_STATE_serial_code(dl_buffer);
 		  for(uint8_t i=0; i<10;i++)
 		  {    
-		  	 if( *(pt_serial_code+i)!=rc_serial_code[i] )
+		  	 if( *(pt_serial_code+i)!=rc_serial_code[i] )  
 			 {
 			     code_check = FALSE;         
 				 break; 
 		  	 }
 		  }
-		  
 		  //ack with bind rc message,if send fail it will continual reveice rc_bind state message
 		  if(code_check)
 		  {
@@ -224,8 +230,16 @@ void dl_parse_msg(void)
 #define DL_EMERGENCY_RECORD_ACK_STATE 102
 #define PPRZ_MSG_ID_EMERGENCY_RECORD_ACK_STATE 102
 */
+       case DL_HEART_BEAT_GCS_STATE: 
+		{
+			gcs_set_connect();
+			break;
+	    }
+	   
        case DL_ADD_TASK:
 	   	{
+			gcs_set_connect();
+			
 			struct Task_Info dl_task_info;
 			int8_t response = 0;
 			dl_task_info.task_code = DL_ADD_TASK_task_code(dl_buffer);
@@ -261,6 +275,8 @@ void dl_parse_msg(void)
 
 	   case DL_UPDATE_TASK:
 	   	{
+			gcs_set_connect();
+			
 			struct Task_Info dl_task_info;
 			int8_t response = 0;
 			dl_task_info.task_code = DL_UPDATE_TASK_task_code(dl_buffer);
@@ -297,6 +313,8 @@ void dl_parse_msg(void)
 
 	   case DL_DELETE_TASK:
 	   	{
+			gcs_set_connect();
+			
 			uint8_t task_code = DL_DELETE_TASK_task_code(dl_buffer);
 			uint8_t wp_start_id = DL_DELETE_TASK_wp_start_id(dl_buffer);
 			uint8_t wp_end_id = DL_DELETE_TASK_wp_end_id(dl_buffer);
@@ -313,6 +331,8 @@ void dl_parse_msg(void)
 
 	   case DL_GET_TASK:
 	   	{
+			gcs_set_connect();
+			
 			uint8_t task_code = DL_GET_TASK_task_code(dl_buffer);
 			uint8_t wp_start_id = DL_GET_TASK_wp_start_id(dl_buffer);
 			uint8_t wp_end_id = DL_GET_TASK_wp_end_id(dl_buffer);
@@ -322,33 +342,38 @@ void dl_parse_msg(void)
 
 	   case DL_LAND_TASK:
 	   	{
+			gcs_set_connect();
+			
 			int8_t response = 0;
 			struct Land_Info dl_land_info;
 			dl_land_info.operation_type = DL_LAND_TASK_operation_type(dl_buffer);
-			dl_land_info.land_type = DL_LAND_TASK_land_type(dl_buffer);
 			dl_land_info.wp_type = DL_LAND_TASK_wp_type(dl_buffer);
-			dl_land_info.waypoints_length = DL_LAND_TASK_waypoints_lon_length(dl_buffer);
+			dl_land_info.land_type_length = DL_LAND_TASK_land_type_length(dl_buffer);
+			dl_land_info.land_type = DL_LAND_TASK_land_type(dl_buffer);
+			dl_land_info.waypoints_length = DL_LAND_TASK_waypoints_lon_length_cor(dl_buffer);
 			if( dl_land_info.waypoints_length <= 5 
-				&& dl_land_info.waypoints_length == DL_LAND_TASK_waypoints_lat_length_cor(dl_buffer) )
+				&& dl_land_info.waypoints_length == DL_LAND_TASK_waypoints_lat_length_cor(dl_buffer)
+				&& dl_land_info.waypoints_length == dl_land_info.land_type_length                   )
 			{
-				dl_land_info.waypoints_lon = DL_LAND_TASK_waypoints_lon(dl_buffer);
+				dl_land_info.waypoints_lon = DL_LAND_TASK_waypoints_lon_cor(dl_buffer);
 				dl_land_info.waypoints_lat = DL_LAND_TASK_waypoints_lat_cor(dl_buffer);
 				response = parse_land_task(dl_land_info);
 			}
 			else
 			{
-				response =1;
+				response = 1;
 			}
 			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 			DOWNLINK_SEND_LAND_TASK_ACK_STATE(DefaultChannel, DefaultDevice, 
 		   	                               &dl_land_info.operation_type,
-		   	                               &dl_land_info.land_type,
 		   	                               &response);
 			break;
 	   	}
 	   
        case DL_SET_CONFIG:
 		{  
+			gcs_set_connect();
+			
 		   uint8_t id = DL_SET_CONFIG_parameter_id(dl_buffer);
 		   uint8_t length = DL_SET_CONFIG_parameter_value_length(dl_buffer);
 		   int8_t *pt_value = DL_SET_CONFIG_parameter_value(dl_buffer);
@@ -358,11 +383,13 @@ void dl_parse_msg(void)
         }
 		
 		case DL_SET_COMMAND:
-		{  
+		{
+			gcs_set_connect();
+			
 		   uint8_t id = DL_SET_COMMAND_command_id(dl_buffer);
-		   uint8_t length = DL_SET_COMMAND_command_value_length(dl_buffer);
-		   int8_t *pt_value = DL_SET_COMMAND_command_value(dl_buffer);
-		   int8_t response = DlSetCommand(id, pt_value ,length);
+		   //uint8_t length = DL_SET_COMMAND_command_value_length(dl_buffer);
+		   uint8_t pt_value = DL_SET_COMMAND_command_value(dl_buffer);
+		   int8_t response = (int8_t)(DlSetCommand(id, pt_value));
 		   xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 		   DOWNLINK_SEND_SET_COMMAND_ACK_STATE(DefaultChannel, DefaultDevice, &id, &response);
 		   break;
@@ -371,10 +398,9 @@ void dl_parse_msg(void)
 		case DL_BIND_AIRCRAFT: 
 		{ 
 		  /*check gcs serial_code*/
-		  bool_t code_check = TRUE;
-		  const uint8_t gcs_serial_code[10] = GCS_SERIAL_CODE;
-		  uint8_t *pt_serial_code=DL_BIND_AIRCRAFT_serial_code(dl_buffer);
-		  
+		  uint8_t code_check = TRUE;
+		  const char gcs_serial_code[] = AC_SN_CODE;
+		  char *pt_serial_code = DL_BIND_AIRCRAFT_sn_code(dl_buffer);
 		  for(uint8_t i=0; i<10;i++)
 		  {    
 		  	 if( *(pt_serial_code+i)!=gcs_serial_code[i] )  
@@ -383,20 +409,30 @@ void dl_parse_msg(void)
 			 	break; 
 		  	 }
 		  }
-		  
 		  if(code_check)
 		  {
-		      send_aircraft_info_state();
+		  		XbeeSetSuccessBind();
+				gcs_set_connect();
 		  }
+		  else 
+		  {
+		  		XbeeSetFailBind();
+		  }
+          xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+		  DOWNLINK_SEND_AIRCRAFT_BIND_ACK_STATE(DefaultChannel, DefaultDevice, &code_check);
 		  break;
-	    }	
+	   }	
 		
-		case DL_HEART_BEAT_GCS_STATE: 
-		{ 
-		  send_heart_beat_A2G_msg();
-		  send_aircraft_info_state();
-		  break;
-	    }
+		case DL_EMERGENCY_RECORD_ACK_STATE:
+		{
+			gcs_set_connect();
+			
+			if(DL_EMERGENCY_RECORD_ACK_STATE_response(dl_buffer)==0)
+			{
+				spray_bac_msg_stop();    /*gcs get record success, stop send msg timer */
+			}
+			break;
+		}
 		
 	    default: break;
     }

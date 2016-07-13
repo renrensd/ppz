@@ -398,7 +398,7 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   nav_leg_progress = leg_progress2 / nav_leg_length;                                    //nav_leg_progress is shadow length of flighted line
  
 #if 1  //use cornering calibrate
-  /** caculate corrective wp to ajust progress lenght ,by WHP**/
+  /** caculate corrective wp to ajust progress length ,by WHP**/
   //get dot product point   
   int16_t s = (int16_t)( ((double)(leg_progress2))/((double)(leg_length2))*1000 );
   VECT2_SMUL(wp_corre, wp_diff_prec, s);
@@ -433,11 +433,11 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   horizontal_mode = HORIZONTAL_MODE_ROUTE;
 
   dist2_to_wp = get_dist2_to_point(wp_end);
-   			#if 0//PERIODIC_TELEMETRY
-			 uint16_t a = (uint16_t)progress;
-   	        xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-            DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &a, &corner_len2);
-			#endif
+	#if 0//PERIODIC_TELEMETRY
+	 uint16_t a = (uint16_t)progress;
+     xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+     DOWNLINK_SEND_ROUTE_LEN(DefaultChannel, DefaultDevice, &a, &corner_len2);
+	#endif
 }
 
 //return arrive at wp/true or false,after using approaching_time later

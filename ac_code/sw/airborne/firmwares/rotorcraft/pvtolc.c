@@ -104,7 +104,7 @@ bool_t land_motion(bool_t reset)
   switch(step_l) {
   	case 0:
 	  //wp_ToL=*stateGetPositionEnu_i(); //wp_ToL should be given wp_land before this function called 
-	  if( stateGetHorizontalSpeedNorm_f() <0.2 )
+	  if( NavGetHoverSteady() )
 	  {
 	  	step_l++;
 	  }
@@ -127,7 +127,7 @@ bool_t land_motion(bool_t reset)
 	case 3:
 	  //not use agl_sonar detect touching ground,
 	  //once on_ground,thrust will deline
-	  if(stabilization_cmd[COMMAND_THRUST]>3000) return TRUE;
+	  if(stabilization_cmd[COMMAND_THRUST]>4000) return TRUE;
 	  NavAttitude(RadOfDeg(0));
 	  NavVerticalAutoThrottleMode(RadOfDeg(0));
 	  NavVerticalThrottleMode(9600*(0));
@@ -172,7 +172,6 @@ int8_t nav_toward_waypoint(struct EnuCoor_i *wp_end,bool_t reset)
 	switch(step_h)
 	{
 		case 0:  //set heading toward wp_end
-		  //record_current_waypoint(&wp_start);	
 		  nav_set_heading_towards( POS_FLOAT_OF_BFP(wp_end->x), POS_FLOAT_OF_BFP(wp_end->y) );
 		  step_h++;
 		  break;

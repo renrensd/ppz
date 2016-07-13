@@ -102,7 +102,9 @@
 #ifndef AGL_SONAR_NPS_ID
 #define AGL_SONAR_NPS_ID 3
 #endif
-
+#ifndef AGL_NRA_24_ID
+#define AGL_NRA_24_ID 4
+#endif
 /*
  * IDs of magnetometer sensors (including IMUs with mag)
  */

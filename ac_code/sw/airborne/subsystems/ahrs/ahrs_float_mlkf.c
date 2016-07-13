@@ -46,6 +46,10 @@
 #define AHRS_MAG_NOISE_Z 0.4//0.2
 #endif
 
+#ifndef AHRS_PROPAGATE_LOW_PASS_RATES
+ #define AHRS_PROPAGATE_LOW_PASS_RATES
+#endif
+
 static inline void propagate_ref(struct Int32Rates *gyro, float dt);
 static inline void propagate_state(float dt);
 static inline void update_state(const struct FloatVect3 *i_expected,
@@ -55,6 +59,8 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
                                         struct FloatVect3 *b_measured,
                                         struct FloatVect3 *noise);
 static inline void reset_state(void);
+
+static inline float leadlag_filter(float in_now, float in_last, float out_last, float dt);
 
 struct AhrsMlkf ahrs_mlkf;
 
@@ -121,12 +127,17 @@ bool_t ahrs_mlkf_align(struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
   return TRUE;
 }
 
+
+
+
+/*gyro update function:updateahrs_mlkf.ltp_to_imu_quat, caculate P(k+1|k)*/
 void ahrs_mlkf_propagate(struct Int32Rates *gyro, float dt)
 {
   propagate_ref(gyro, dt);
   propagate_state(dt);
 }
 
+/*accel update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)*/
 void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
 {
   struct FloatVect3 imu_g;
@@ -141,6 +152,7 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
   reset_state();
 }
 
+/*mag update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)*/
 void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 {
 #if AHRS_MAG_UPDATE_ALL_AXES
@@ -149,6 +161,9 @@ void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
   ahrs_mlkf_update_mag_2d(mag);
 #endif
 }
+
+
+
 
 void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag)
 {
@@ -166,6 +181,19 @@ void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag)
   reset_state();
 }
 
+/*leadlag function*/
+static inline float leadlag_filter(float in_now, float in_last, float out_last, float dt)
+{
+	const float lead = 0.0;
+	const float lag = 5.0*dt;
+	const float gain = 1.0;
+	float k1 = gain * (dt+2.0*lead)/(dt+2.0*lag);
+	float k2 = gain * (dt-2.0*lead)/(dt+2.0*lag);
+	float k3 = gain * (2.0*lag-dt)/(2.0*lag+dt);
+
+	return k1*in_now + k2*in_last + k3*out_last;	
+}
+
 
 static inline void propagate_ref(struct Int32Rates *gyro, float dt)
 {
@@ -175,7 +203,7 @@ static inline void propagate_ref(struct Int32Rates *gyro, float dt)
 
   /* unbias measurement */
   RATES_SUB(gyro_float, ahrs_mlkf.gyro_bias);
-
+#if 1
 #ifdef AHRS_PROPAGATE_LOW_PASS_RATES
   /* lowpass angular rates */
   const float alpha = 0.1;
@@ -183,6 +211,13 @@ static inline void propagate_ref(struct Int32Rates *gyro, float dt)
                       (1. - alpha), gyro_float, alpha);
 #else
   RATES_COPY(ahrs_mlkf.imu_rate, gyro_float);
+#endif
+#else 
+  static struct FloatRates gyro_float_last;
+  ahrs_mlkf.imu_rate.p = leadlag_filter(gyro_float.p, gyro_float_last.p, ahrs_mlkf.imu_rate.p, dt);
+  ahrs_mlkf.imu_rate.q = leadlag_filter(gyro_float.q, gyro_float_last.q, ahrs_mlkf.imu_rate.q, dt);
+  ahrs_mlkf.imu_rate.r = leadlag_filter(gyro_float.r, gyro_float_last.r, ahrs_mlkf.imu_rate.r, dt);
+  RATES_COPY(gyro_float_last, gyro_float);
 #endif
 
   /* propagate reference quaternion */
@@ -203,11 +238,11 @@ static inline void propagate_state(float dt)
   const float dr = ahrs_mlkf.imu_rate.r * dt;
 
   float F[6][6] = {{  1.,   dr,  -dq,  -dt,   0.,   0.  },
-    { -dr,   1.,   dp,   0.,  -dt,   0.  },
-    {  dq,  -dp,   1.,   0.,   0.,  -dt  },
-    {  0.,   0.,   0.,   1.,   0.,   0.  },
-    {  0.,   0.,   0.,   0.,   1.,   0.  },
-    {  0.,   0.,   0.,   0.,   0.,   1.  }
+				    { -dr,   1.,   dp,   0.,  -dt,   0.  },
+				    {  dq,  -dp,   1.,   0.,   0.,  -dt  },
+				    {  0.,   0.,   0.,   1.,   0.,   0.  },
+				    {  0.,   0.,   0.,   0.,   1.,   0.  },
+				    {  0.,   0.,   0.,   0.,   0.,   1.  }
   };
   // P = FPF' + GQG
   float tmp[6][6];

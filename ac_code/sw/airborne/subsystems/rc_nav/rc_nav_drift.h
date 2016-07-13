@@ -25,7 +25,7 @@
 
 extern void rc_speed_rl_drift(int8_t sign);
 extern void rc_rate_rotation_drift(int8_t sign);
-//extern void rc_speed_rl_drift_stop(void);
-//extern void rc_rate_rotation_drift_stop(void);
+extern void rc_speed_rl_drift_stop(void);
+extern void rc_rate_rotation_drift_stop(void);
     
 #endif /* END OF RC_NAV_DRIFT_H */

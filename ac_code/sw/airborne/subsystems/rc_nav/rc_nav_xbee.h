@@ -18,13 +18,12 @@
 
 struct rc_motion
 {
+	bool_t orientation_flag;
+	int8_t orientation_fb;
 	float speed_fb;
 	float speed_rl;
 	float rotation_rate;
-	float speed_v;
-	int8_t orientation_fb;
-	bool_t orientation_flag;
-	
+	float speed_v;	
 };
 
 struct rc_set

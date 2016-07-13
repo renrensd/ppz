@@ -25,6 +25,12 @@
 
 #include "math/pprz_geodetic_double.h"
 
+/***********************************************************************
+* FUNCTION    : get_max_pending_id
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : max wp_id in pending waypoints
+***********************************************************************/
 uint8_t get_max_pending_id(void)
 {
 	if(0 == nb_pending_wp) return 0;
@@ -32,6 +38,12 @@ uint8_t get_max_pending_id(void)
 	return task_wp[nb_pending_wp-1].wp_id;
 }
 
+/***********************************************************************
+* FUNCTION    : get_task_wp_offset
+* DESCRIPTION : 
+* INPUTS      : wp_id
+* RETURN      : if exist, offset in pending, 
+***********************************************************************/
 int8_t get_task_wp_offset(uint8_t id)
 {
 	for(uint8_t i=0; i<nb_pending_wp; i++)
@@ -44,6 +56,12 @@ int8_t get_task_wp_offset(uint8_t id)
 	return -1;
 }
 
+/***********************************************************************
+* FUNCTION    : check_task_wp_id
+* DESCRIPTION : 
+* INPUTS      : wp_id
+* RETURN      : TRUE or FALSE
+***********************************************************************/
 uint8_t check_task_wp_id(uint8_t id)
 {
 	for(uint8_t i=0; i<nb_pending_wp; i++)
@@ -56,15 +74,21 @@ uint8_t check_task_wp_id(uint8_t id)
 	return FALSE;
 }
 
+/***********************************************************************
+* FUNCTION    : task_lla_to_enu_convert
+* DESCRIPTION : convert lla pos to enu pos
+* INPUTS      : pointer of lla/enu data
+* RETURN      : TRUE or FALSE
+***********************************************************************/
 uint8_t task_lla_to_enu_convert(struct EnuCoor_i *enu, struct LlaCoor_i *lla)
 {
 	/* return fail if there is no valid local coordinate system*/	
-  #if 1 //only for debug not open
+  #if 1 //only for debug not open  
    if (!state.ned_initialized_i) 
    	{
 		return FALSE;
 	}
-  #endif  
+  #endif   
   
    /* lla conver to ecef,using double precision */
    struct LlaCoor_d in_d;

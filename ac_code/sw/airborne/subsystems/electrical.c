@@ -186,7 +186,7 @@ void electrical_periodic(void)
   // mAh = mA * dt (10Hz -> hours)
   electrical.energy += ((float)electrical.current) / 3600.0f / ELECTRICAL_PERIODIC_FREQ;
 #else
-	electrical.vsupply = bat_info.volt / 100;
+	electrical.vsupply = bat_info.vcc12 / 100;
 	electrical.energy = bat_info.remaining;
 	electrical.current = bat_info.avrcurr;
 #endif

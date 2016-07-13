@@ -120,8 +120,8 @@ int32_t rc_turn_rate;    //using in HORIZONTAL_MODE_RC,cmd of psi rate
 //int32_t guidance_h_vgain;
 
 //add in bouble control loop
-int32_t sum_in_x=0;
-int32_t sum_in_y=0;
+int32_t sum_in_x = 0;
+int32_t sum_in_y = 0;
 //add
 static void guidance_h_update_reference(void);
 #if !GUIDANCE_INDI

@@ -170,7 +170,7 @@ void height_flight_check(void)
 		//force to use sonar and baro,(height limit set before)
 		ins_int.baro_valid =TRUE;
 		ins_int.update_on_agl=TRUE;
-		set_except_misssion(HEIGHT_BOTH,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
+		set_except_mission(HEIGHT_BOTH,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
 	}
 	else
 	{
@@ -195,7 +195,7 @@ static inline void sonar_flight_check(void)
 		{
 			//on ground frequence error,need close takeoff cmd,do later!!!
 			
-			set_except_misssion(HEIGHT_SONAR,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);
+			set_except_mission(HEIGHT_SONAR,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);
 			#if TEST_MSG
 			sonar_bound=3;
 			#endif
@@ -241,7 +241,7 @@ static inline void sonar_flight_check(void)
 			//|| (ins_int.baro_valid && ins_int.baro_z <-3.5) 
 			if( h_moni.sonar_code )    
 			{			
-				set_except_misssion(HEIGHT_SONAR,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);
+				set_except_mission(HEIGHT_SONAR,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);
 				#if TEST_MSG
 				sonar_bound=3;
 				#endif
@@ -274,7 +274,7 @@ static inline void baro_flight_check(void)
 	{
 		ins_int.baro_valid =FALSE;
 		flight_limit_height=BARO_LIMIT_HEIGHT;
-		set_except_misssion(HEIGHT_BARO,TRUE,FALSE, FALSE,0, FALSE,FALSE,1);
+		set_except_mission(HEIGHT_BARO,TRUE,FALSE, FALSE,0, FALSE,FALSE,1);
         #if TEST_MSG
 		baro_status=1;
 		#endif

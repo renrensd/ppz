@@ -17,30 +17,48 @@
 * Version       Date    Name    Changes and comments
 * 
 *=====================================================================*/
+#include "subsystems/mission/task_spray_misc.h"
+#include "subsystems/datalink/downlink.h"
+#include "subsystems/ops/ops_app_if.h"
 
-#include "subsystems/mission/task_spray_convert.h"
+#include "modules/system/timer_if.h"
+
 
 
 Spray_Convert_Info spray_convert_info;
+Spray_Conti_Info spray_continual_info;
 
-void spray_convert_init(void)
+static void spray_convert_init(void);
+static void spray_continual_init(void);
+
+void task_spray_misc_init(void)
+{
+	spray_convert_init();
+	spray_continual_init();
+}
+
+static void spray_convert_init(void)
 {
 	spray_convert_info.useful = FALSE;
 }
 
+static void spray_continual_init(void)
+{
+	spray_continual_info.flag_record = FALSE;
+	spray_continual_info.flag_ack = FALSE;
+}
+
 
 /******here is diagrammatic sketch for convert caculate****/
-
-/* (from wp)       D(shadow point)
-   A *************************** B(next wp)
-       *           *
-          *        *
-             *     *
-                *  *
-E ****************** C(next line wp)                     
-*/
+	/* (from wp)       D(shadow point)
+	   A *************************** B(next wp)
+	       *           *
+	          *        *
+	             *     *
+	                *  *
+	E ****************** C(next line wp)                     
+	*/
 /**********************************************************/
-
 bool_t spray_convert_caculate(void)
 {
 	if( SPRAY_LINE==from_wp.action 
@@ -65,12 +83,22 @@ bool_t spray_convert_caculate(void)
 
 		VECT2_SDIV(wp_c, wp_c, 2);
 		VECT2_SDIV(wp_d, wp_d, 2);
-		/*get circle center for next spray line*/
-		VECT2_SUM(spray_convert_info.center, wp_c, wp_d);
 		VECT2_DIFF(vect_r, wp_c, wp_d);
-		spray_convert_info.radius = VECT2_NORM2(vect_r);
+		
 		/*get radius for next spray line*/
+		spray_convert_info.radius = VECT2_NORM2(vect_r);
 		spray_convert_info.radius = (int32_t)sqrt((double)spray_convert_info.radius);
+
+		/*get circle center for next spray line*/
+		//VECT2_SUM(spray_convert_info.center, wp_c, wp_d);
+		if( s>=1 )
+		{
+			VECT2_SUM(spray_convert_info.center, wp_c, wp_d);
+		}
+		else
+		{
+			VECT2_SUM(spray_convert_info.center, wp_b, vect_r);
+		}
 		
 		int32_t line_orientation = int32_atan2(vect_ab.y, vect_ab.x);  /*toward east*/
 		int32_t next_orientation = int32_atan2(vect_ac.y, vect_ac.x);
@@ -94,6 +122,43 @@ bool_t spray_convert_caculate(void)
 		
 	}
 	return FALSE;
+}
+
+//TIMER(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG,        spray_break_continual_msg,            TIMER_TASK_GCS)
+bool_t spray_break_and_continual(void)
+{
+	if(!spray_continual_info.flag_record)
+   {
+   		spray_continual_info.break_pos_lla = *stateGetPositionLla_i();
+		spray_continual_info.break_spray_work = ops_info.spray_state;
+		spray_continual_info.flag_record = TRUE;
+		tm_kill_timer(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG);
+		tm_create_timer(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG, (2000 MSECONDS), 20,0);
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+void spray_break_continual_msg(void)
+{
+	uint8_t wp_type = 1;  //default lla coordinate
+	int32_t pos_break_lon = (int32_t)( (int64_t)(spray_continual_info.break_pos_lla.lon) * 174533/1000000 ); 
+	int32_t pos_break_lat = (int32_t)( (int64_t)(spray_continual_info.break_pos_lla.lat) * 174533/1000000 ); 
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+	DOWNLINK_SEND_EMERGENCY_RECORD_STATE(DefaultChannel, DefaultDevice,
+	                                      &wp_type,
+	                                      &spray_continual_info.break_spray_work,
+	                                      &pos_break_lon,
+	                                      &pos_break_lat);
+}
+
+void spray_bac_msg_stop(void)
+{
+	spray_continual_info.flag_ack = TRUE;
+	tm_kill_timer(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG);
 }
 
 /****************************** END OF FILE ***************************/

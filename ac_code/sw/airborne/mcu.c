@@ -290,6 +290,7 @@ void mcu_event(void)
 #if USE_USB_SERIAL
   VCOM_event();
 #endif
+
 #if 0
 	if(mcu_val == 100)
 	{

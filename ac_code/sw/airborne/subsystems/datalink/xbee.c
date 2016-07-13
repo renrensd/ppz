@@ -355,7 +355,6 @@ void xbee_init(void)
   xbee_con_info.gcs_con_available = FALSE;
   xbee_con_info.ppzcenter_con_available = FALSE;
 /*stop register timer call back,use timer.c*/  //xbee_bc_tid = sys_time_register_timer(1./XBEE_BC_PERIODIC_FREQUENCY, (sys_time_cb)xbee_msg_aircraft_ready_broadcast);
-//TIMER(TIMER_XBEE_HEARTBEAT_MSG,                 xbee_msg_aircraft_ready_broadcast,      TIMER_TASK_TELEMETRY)
   tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC,0);
 #endif //GCS_V1_OPTION
 }
@@ -363,7 +362,6 @@ void xbee_init(void)
 void xbee_periodic(void)
 {
 #ifdef GCS_V1_OPTION
- //xbee_msg_aircraft_ready_broadcast();
  tm_stimulate(TIMER_TASK_TELEMETRY);
 #endif
 }
@@ -371,24 +369,10 @@ void xbee_periodic(void)
 #ifdef GCS_V1_OPTION
 void xbee_msg_aircraft_ready_broadcast(void)  //call by xbee_init,priodic send until binded
 {
-	const uint8_t serialcode[] = A2G_SERIAL_CODE;
+	const char serialcode[] = A2G_SERIAL_CODE;
+	const char ac_sn[] = AC_SN_CODE;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_BC);
-	DOWNLINK_SEND_AIRCRAFT_BIND_STATE(DefaultChannel, DefaultDevice, serialcode);
-}
-
-void xbee_msg_heart_beat(void)  //give up
-{
-	//uint8_t state;
-	const uint8_t serialcode[] = A2R_SERIAL_CODE;	
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
-	DOWNLINK_SEND_BIND_RC(DefaultChannel, DefaultDevice, serialcode);
-}
-
-void xbee_msg_rc_ready_response(void) //give up
-{
-	//const uint8_t serialcode[] = A2R_SERIAL_CODE;
-	//xbee_tx_header(XBEE_ACK,XBEE_ADDR_RC);
-	//DOWNLINK_SEND_RC_READY_RESPONSE(DefaultChannel, DefaultDevice, 0x09 , serialcode);
+	DOWNLINK_SEND_AIRCRAFT_BIND_STATE(DefaultChannel, DefaultDevice, serialcode, ac_sn);
 }
 
 #endif

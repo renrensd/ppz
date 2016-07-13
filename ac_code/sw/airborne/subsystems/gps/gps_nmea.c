@@ -98,10 +98,13 @@ uint32_t CalculateXYZACRC32(uint16_t ulCount,unsigned char *ucBuffer)
 	uint32_t ulTemp1;
 	uint32_t ulTemp2;
 	uint32_t ulCRC = 0;
+	
 	while (ulCount-- != 0)
 	{
 		ulTemp1 = (ulCRC >> 8) & 0x00FFFFFFL;
-		ulTemp2 = CRC32Value( ( (int32_t)ulCRC^*ucBuffer++ )&0xff );
+		//ulTemp2 = CRC32Value( ( (int32_t)ulCRC^*ucBuffer++ )&0xff );
+		ulTemp2 = CRC32Value( ( ulCRC^(uint32_t)(*ucBuffer) )&0x000000FFL );
+		ucBuffer++;
 		ulCRC = ulTemp1^ulTemp2;
 	}
 	return ulCRC;
@@ -680,8 +683,33 @@ static void nmea_parse_XYZ(void)
   gps.ecef_vel.z= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   
 }
+
 #endif
 
+/*run 20hz,use 2s time no fix pos set unstable*/
+void get_gps_nmea_stable(void)
+{
+	static uint8_t counter_nmea_qual = 40;
+	if(gps_nmea.gps_qual != 52) //not fix pos
+	{
+		counter_nmea_qual++;
+	}
+	else
+	{
+		counter_nmea_qual--;
+	}
+
+	if(counter_nmea_qual > 40)
+	{
+		gps.stable = FALSE;
+		counter_nmea_qual = 41;  /*avoid overflow*/
+	}
+	else if(counter_nmea_qual < 1)
+	{
+		gps.stable = TRUE;
+		counter_nmea_qual = 1;
+	}	
+}
 /*
 double my_strtod(const char* s, char** endptr)
 

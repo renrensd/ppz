@@ -22,12 +22,15 @@
 #include "subsystems/monitoring/monitoring_misc.h"
 #include "subsystems/monitoring/monitoring.h"
 #include "firmwares/rotorcraft/nav_flight.h"
-#include "subsystems/electrical.h"
+//#include "subsystems/electrical.h"
+//#include "modules/energy/bat_manager.h"
+#include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/gps.h"
 #include "subsystems/rc_nav/rc_nav_xbee.h"
+#include "subsystems/mission/gcs_nav_xbee.h"
 #include "subsystems/ops/ops_app_if.h"
 #include "subsystems/ops/ops_app.h"
-
+#include "subsystems/mission/task_process.h"
 #include "state.h"
 
 
@@ -44,6 +47,8 @@
 #define MAX_GROUND_INS_S  1.0  //0.8
 #define MAX_GROUND_INS_A  0.5
 #define MAX_GROUND_INS_Z  0.6
+
+#define MAX_FLIGHT_TIME 510   //13min
 
 #define LESS_RES_CAP 5  //5%
 
@@ -62,7 +67,7 @@ static uint8_t ins_ground_check(void);
 ***********************************************************************/
 void misc_moni_init(void)
 {
-	rc_lost=TRUE;
+	rc_lost = TRUE;
 }
 
 /***********************************************************************
@@ -92,30 +97,45 @@ uint8_t battery_ground_check(void)
 ***********************************************************************/
 void battery_flight_check(void)
 {	
-	#if 0
+	bool_t flag_trigger = 0;
+#if 0
 	bool_t flag_trigger=0;
-	if( electrical.bat_low || (sqrt(distance2_to_home)*HOME_ELEC_RATIO) >electrical.energy  )
+	if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
 	{   //hover 10s,back home
 	    flag_trigger=1;   //record error trigger
-	    set_except_misssion(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
-        #if TEST_MSG
+	    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,5, TRUE,FALSE,2);	
+		//need give special alter to RC and GCS
+                  #if TEST_MSG
 		bat_flight=1;
 		#endif
 	}
-
+#else
+	if( autopilot_flight_time >MAX_FLIGHT_TIME)
+	{   //hover 10s,back home
+	    flag_trigger = 1;   //record error trigger
+	    set_except_mission(BAT_LOW,TRUE,FALSE, FALSE,0, TRUE,FALSE,2);	
+		//need give special alter to RC and GCS
+                  #if TEST_MSG
+		bat_flight=1;
+		#endif
+	}
+#endif
+	
+        /*
 	if( electrical.bat_critical )
 	{   //only alert
 	    flag_trigger=1;   //record error trigger
-	    set_except_misssion(BAT_CRITICAL,TRUE,FALSE, FALSE,0, FALSE,FALSE,3);	
+	    set_except_mission(BAT_CRITICAL,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	
 		#if TEST_MSG
 		bat_flight=2;
 		#endif
 	}
+	*/
    /*
 	if( electrical.current >FLIGHT_LIMIT_CURRENT )
 	{   //only alert
 	    flag_trigger=1;   //record error trigger
-	    set_except_misssion(BAT_OTHER,TRUE,FALSE, FALSE,0, FALSE,FALSE,3);	
+	    set_except_mission(BAT_OTHER,TRUE,FALSE, FALSE,0, FALSE,FALSE,3);	
 		#if TEST_MSG
 		bat_flight=3;
 		#endif
@@ -131,7 +151,6 @@ void battery_flight_check(void)
 		em[BAT_OTHER].active=0;
 		em[BAT_OTHER].finished=0;
     }
-	#endif
 	
 }
 
@@ -146,7 +165,7 @@ void gps_flight_check(void)
     if( GpsFixValid() )
 	{
 		if( gps.stable )
-        {   //recover
+        {   //could be recovered
 			em[GPS_ACC].active =0;
 			em[GPS_ACC].finished =0;
 			em[GPS_LOST].active =0;
@@ -157,9 +176,15 @@ void gps_flight_check(void)
 		}
 		else
 		{   
-			if(gps.pacc <2000)  em[GPS_ACC].alert_grade =2;
-		    else  em[GPS_ACC].alert_grade =3;
-			set_except_misssion(GPS_ACC,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
+			if(gps.pacc <2000)  
+			{
+				em[GPS_ACC].alert_grade = 2;
+			}
+		    else  
+			{
+				em[GPS_ACC].alert_grade = 3;
+		    }
+			set_except_mission(GPS_ACC,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
 			#if TEST_MSG
 			gps_flight=1;
 			#endif
@@ -167,7 +192,7 @@ void gps_flight_check(void)
     }
 	else
 	{
-		set_except_misssion(GPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
+		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
 		#if TEST_MSG
 		gps_flight=2;
 		#endif
@@ -185,19 +210,24 @@ void ops_flight_check(void)
 {
 	if(ops_info.con_flag == OPS_NOT_CONNECT)  //ops lost,maybe spray is open
 	{
-		set_except_misssion(OPS_LOST,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
-	}
-	else if(ops_info.res_cap <LESS_RES_CAP )  //no pesticide and open spray
-	{
-		set_except_misssion(OPS_EMPTY,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,1);	
+		set_except_mission(OPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
 	}
 	else
-	{   //normal.maybe recover
-		em[OPS_EMPTY].active = FALSE;
-		em[OPS_EMPTY].finished = FALSE;
+	{
 		em[OPS_LOST].active = FALSE;
 		em[OPS_LOST].finished = FALSE;
 	}
+/*	
+	if(ops_info.res_cap <LESS_RES_CAP )  //no pesticide and open spray
+	{
+		set_except_mission(OPS_EMPTY,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,1);	
+	}
+	else
+	{   
+		em[OPS_EMPTY].active = FALSE;
+		em[OPS_EMPTY].finished = FALSE;
+	}
+*/
 }
 
 /***********************************************************************
@@ -206,28 +236,76 @@ void ops_flight_check(void)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
-void rc_flight_check(void)
+void rc_communication_flight_check(void)
 {
-	if(rc_lost)
+	if(rc_lost && flight_mode == nav_rc_mode )
 	{
-		set_except_misssion(RC_KEY_LOST,TRUE,FALSE, TRUE,10, TRUE,FALSE,3);	
-	}
-	else if(0) //sign,can not do current
-	{
-		set_except_misssion(RC_KEY_SIGNAL,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
+		set_except_mission(RC_COM_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
 	}
 	else
 	{
-		em[RC_KEY_LOST].active=FALSE;
-		em[RC_KEY_LOST].finished=FALSE;
-		em[RC_KEY_SIGNAL].active=FALSE;	
-		em[RC_KEY_SIGNAL].finished=FALSE;
+		em[RC_COM_LOST].active = FALSE;
+		em[RC_COM_LOST].finished = FALSE;
+	}	
+}
+
+
+/***********************************************************************
+* FUNCTIONS   : gcs flight check
+* DESCRIPTION : ept_ms could close by gcs recover
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void gcs_communication_flight_check(void)
+{
+	if(gcs_lost && flight_mode == nav_gcs_mode )
+	{
+		set_except_mission(GCS_COM_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
+	}
+	else
+	{
+		em[GCS_COM_LOST].active = FALSE;
+		em[GCS_COM_LOST].finished = FALSE;
 	}
 	
 }
 
 void lift_flight_check(void)
 {
+}
+
+void task_running_check(void)
+{
+	if(task_error_state==TASK_NORMAL)
+	{
+		em[TASK_NO].active = FALSE;
+		em[TASK_PARSE].active = FALSE;
+		em[TASK_BREAK].active = FALSE;
+	}
+	else if(task_error_state==TASK_PARSE_ERROR)
+	{
+		set_except_mission(TASK_PARSE,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
+	}
+	else if(task_error_state==TASK_RUN_OVER)
+	{
+		set_except_mission(TASK_NO,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,1);	
+	}
+	else if(task_error_state==TASK_INTERRUPT)
+	{
+		set_except_mission(TASK_BREAK,TRUE,FALSE, FALSE,0, FALSE,FALSE,0);	
+	}
+}
+
+void mode_convert_check(void)
+{
+	if(mode_convert_a2m)
+	{
+		set_except_mission(MODE_CONVERT_A2M,TRUE,FALSE, FALSE,0, FALSE,FALSE,0);	
+	}
+	else
+	{
+		em[MODE_CONVERT_A2M].active = FALSE;
+	}
 }
 
 /***********************************************************************

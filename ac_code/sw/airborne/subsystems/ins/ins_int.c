@@ -68,7 +68,11 @@
 
 #include "generated/flight_plan.h"
 
-float   sonar_distance,sonar_distance_i;
+//float   sonar_distance,sonar_distance_i;
+
+#if USE_BARO_BOARD
+#define BARO_OFFSET 0.3   //baro upper agl 0.3m
+#endif
 
 #if USE_SONAR
 #if !USE_VFF_EXTENDED
@@ -95,7 +99,7 @@ static void sonar_cb(uint8_t sender_id, float distance);
 #ifndef INS_SONAR_MAX_RANGE
 #define INS_SONAR_MAX_RANGE 2.0
 #endif
-#define VFF_R_SONAR_0 0.10
+#define VFF_R_SONAR_0 0.5
 #ifndef VFF_R_SONAR_OF_M
 #define VFF_R_SONAR_OF_M 0.2
 #endif
@@ -103,19 +107,34 @@ static void sonar_cb(uint8_t sender_id, float distance);
 #define INS_SONAR_DETA_RANGE 0.5
 #endif
 
-#if USE_BARO_BOARD
-#define BARO_OFFSET 0.3   //baro upper agl 0.3m
-#endif
-
 #ifndef INS_SONAR_UPDATE_ON_AGL
 #define INS_SONAR_UPDATE_ON_AGL FALSE
 PRINT_CONFIG_MSG("INS_SONAR_UPDATE_ON_AGL defaulting to FALSE")
 #endif
-
 #endif // USE_SONAR
+
+
+#if USE_RADAR24
+
+#ifndef INS_RADAR24_MIN_RANGE
+#define INS_RADAR24_MIN_RANGE 0.20
+#endif
+
+#ifndef INS_RADAR24_MAX_RANGE
+#define INS_RADAR24_MAX_RANGE 20.00
+#endif
+
+#define VFF_R_RADAR24_0  3.0
+
+#ifndef VFF_R_RADAR24_OF_M
+#define VFF_R_RADAR24_OF_M  0.3
+#endif
+
+#endif// USE_RADAR24
+
 #ifdef USE_GPS_NMEA
  #ifndef INS_VFF_R_GPS
- #define INS_VFF_R_GPS 2.0
+ #define INS_VFF_R_GPS 3.0
  #endif
  #define INS_USE_GPS_ALT TRUE
  #define USE_INS_NAV_INIT FALSE
@@ -157,6 +176,9 @@ static void baro_cb(uint8_t sender_id, float pressure);
 #endif
 static abi_event accel_ev;
 static abi_event gps_ev;
+
+abi_event radar24_ev;
+static void radar24_cb(uint8_t sender_id, float distance);
 
 struct InsInt ins_int;
 
@@ -241,6 +263,9 @@ void ins_int_init(void)
   ins_int.update_on_agl = FALSE;  //INS_SONAR_UPDATE_ON_AGL; default FALSE, it will change in mornitoring
   // Bind to AGL message
   AbiBindMsgAGL(INS_SONAR_ID, &sonar_ev, sonar_cb);
+#endif
+#if USE_RADAR24
+    AbiBindMsgRADAR_24(AGL_NRA_24_ID,&radar24_ev,radar24_cb);
 #endif
 
   ins_int.vf_reset = FALSE;
@@ -377,6 +402,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
     }
     else if(ins_int.baro_valid)
 	{
+	  #if 0 //false, not use sonar calibrate baro
    	  /*use sonar dist modify ins_int.qfe, by whp*/	   
    	  if( ins_int.update_on_agl && agl_dist_value_filtered <2.0 )
 	  //( (last_agl_dist!=agl_dist_value_filtered) && (agl_dist_value_filtered <2.2) )
@@ -398,21 +424,18 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
 	  }
 	  //last_agl_dist=agl_dist_value_filtered;
 	  
-      ins_int.baro_z = -pprz_isa_height_of_pressure(pressure, ins_int.qfe)-BARO_OFFSET;  //ISA conditions
+      ins_int.baro_z = -pprz_isa_height_of_pressure(pressure, ins_int.qfe) - BARO_OFFSET;  //ISA conditions
       
       //baro_z below 1.0m or sonar dist below 2.0m,only use sonar. --by whp
-      if( 0)//ins_int.update_on_agl )   //sonar useful
+      if( ins_int.update_on_agl )   //sonar useful
       {
 	  	  if( ins_int.baro_z> -1.0 || agl_dist_value_filtered< 2.0 )   return; 
       }
-
-	  //return;
-
-
-
-
-	  
 	  //else must use baro_z to update ins
+	  #else
+	  ins_int.baro_z = -pprz_isa_height_of_pressure(pressure, ins_int.qfe) - BARO_OFFSET;  //ISA conditions
+	  #endif
+	  
 #if USE_VFF_EXTENDED
       vff_update_baro(ins_int.baro_z);
 #else
@@ -473,11 +496,8 @@ void ins_int_update_gps(struct GpsState *gps_s)
   }
 #endif
 
-  if (!ins_int.ltp_initialized
-    #ifdef USE_GPS_NMEA
-	 && gps_nmea.gps_qual==52
-	#endif
-	) {
+  if (!ins_int.ltp_initialized && gps.stable)
+  {
     ins_reset_local_origin();
   }
 
@@ -518,17 +538,24 @@ void ins_int_update_gps(struct GpsState *gps_s)
   }
 
 #if INS_USE_GPS_ALT
-  if(gps_nmea.gps_qual==52)
+  if(gps.stable)//gps_nmea.gps_qual==52)
   {
-    vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
+  	ins_int.update_radar_agl = FALSE;
+         vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
   }
+  else
+  {
+  	ins_int.update_radar_agl = TRUE;
+  }
+  /*
   else if(gps_nmea.gps_qual==53)
   {
     vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS);
   }
+  */
  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,&gps_pos_cm_ned.z,&gps_nmea.gps_qual);
+  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice, &gps_pos_cm_ned.z, &gps_nmea.gps_qual);
  #endif
 #endif
 
@@ -657,7 +684,7 @@ static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
   float deta_distance = distance-last_distance;
   if( fabs(deta_distance) >INS_SONAR_DETA_RANGE )
   {
-  	  distance = last_distance + 0.1*deta_distance;
+  	  distance = 0.9*last_distance + 0.1*deta_distance;
   }
   last_distance = distance;
   */
@@ -692,6 +719,41 @@ static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 }
 #endif // USE_SONAR
 
+
+#if USE_RADAR24  //without default bar
+static void radar24_cb(uint8_t __attribute__((unused)) sender_id, float distance)
+{
+  static float last_radar_offset = 0.;
+  static float last_distance = 0;
+  static float distance_avr = 0;
+
+  /*set deta distance < 1.0*/  
+  #if 1
+  /* update filter assuming a flat ground */
+  if (  distance < INS_RADAR24_MAX_RANGE 
+  	 && distance > INS_RADAR24_MIN_RANGE
+  	 && fabs(distance-last_distance) < 1.0
+  	 && ins_int.update_radar_agl           ) 
+   {
+   		distance_avr = 0.8*distance_avr + 0.2*distance;
+		distance = distance_avr;
+        vff_update_z_conf(-(distance),  VFF_R_RADAR24_0 + VFF_R_RADAR24_OF_M * fabs(distance));
+        last_radar_offset = vff.offset;
+  } 
+  else 
+  {
+    /* update offset with last value to avoid divergence */
+        vff_update_offset(last_radar_offset);
+  }
+  last_distance = distance;
+  #else
+  vff_update_z_conf(-(distance), 0.5);  // VFF_R_SONAR_OF_M * fabsf(distance));
+  #endif
+
+  /* reset the counter to indicate we just had a measurement update */
+  ins_int.propagation_cnt = 0;
+}
+#endif // USE_RADAR24
 
 /** initialize the local origin (ltp_def) from flight plan position */
 static void ins_init_origin_from_flightplan(void)

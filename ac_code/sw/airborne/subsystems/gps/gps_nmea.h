@@ -70,6 +70,7 @@ extern uint8_t nmea_calc_crc(const char *buff, int buff_sz);
 extern void nmea_parse_prop_init(void);
 extern void nmea_parse_prop_msg(void);
 extern void gps_nmea_msg(void);
+extern void get_gps_nmea_stable(void);
 
 static inline void GpsEvent(void)
 {

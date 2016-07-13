@@ -76,7 +76,9 @@
     <message name="FLOW" id="13">
       <field name="flow_data" type="struct Px4_flow_Data *"/>
     </message>
-
+    <message name="RADAR_24" id="14">
+       <field name="distance" type="float" unit="m"/>
+    </message>
   </msg_class>
 
 </protocol>

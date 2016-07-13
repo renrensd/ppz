@@ -33,7 +33,7 @@ void mission_init(void)
   {  
   	mission.elements[i].element_exist=FALSE;
   }  
-  space_id=0;                //space relative lenght
+  space_id=0;                //space relative length
   memset(wp_space, 0, MS_SP_NB*sizeof(union ms_wp)); //clear space
 }
 
@@ -139,9 +139,9 @@ int8_t mission_add_parse(struct mission_info ms_info)
 	
 	uint8_t len_data=ms_info.wp_len;
 	uint8_t nb_wp=(uint8_t)ms_info.nb_wp;
-	if(!nb_wp) return error_code=2;     //error,waypoints lenght is wrong
+	if(!nb_wp) return error_code=2;     //error,waypoints length is wrong
 	uint8_t nb_rsland=(uint8_t)ms_info.nb_backup_land;
-    if( (nb_wp+nb_rsland)*2!=len_data )  return error_code=2;  //error,waypoints lenght is wrong
+    if( (nb_wp+nb_rsland)*2!=len_data )  return error_code=2;  //error,waypoints length is wrong
 
 	if(space_id+len_data>MS_SP_NB)  return error_code =12;     //space is not enought
 
