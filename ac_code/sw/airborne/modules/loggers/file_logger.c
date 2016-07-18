@@ -27,64 +27,96 @@
 #include "file_logger.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "std.h"
-
+#include "sdio_sd.h"
+#include "ff.h"
+#include "diskio.h"
 #include "subsystems/imu.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "state.h"
 
+//#include "ops_app.h"   
+//#include "ops_app_if.h" 
+#include "subsystems/ops/ops_msg_if.h"
+#include "subsystems/ops/ops_app_if.h" 
+
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
-#define FILE_LOGGER_PATH /data/video/usb
+#define FILE_LOGGER_PATH /data/logger/000
 #endif
 
 /** The file pointer */
-static FILE *file_logger = NULL;
+static FIL flog;
+static FRESULT res;
 
 /** Start the file logger and open a new file */
 void file_logger_start(void)
 {
+	ops_info.ops_debug = TRUE;
+	ops_msg_start_spraying();
+	#if 0
   uint32_t counter = 0;
   char filename[512];
 
   // Check for available files
+  #if 0
   sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
-  while ((file_logger = fopen(filename, "r"))) {
-    fclose(file_logger);
+  res = f_open(&flog, filename, "r");
+  if(res != FR_OK)
+  {
+    f_close(&flog);
 
     counter++;
     sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
   }
+  #endif
 
-  file_logger = fopen(filename, "w");
+  f_open(&flog, "logger.csv", FA_CREATE_NEW);
+  f_close(&flog);
 
-  if (file_logger != NULL) {
-    fprintf(
-      file_logger,
+
+  res = f_open(&flog, "logger.csv", FA_WRITE);
+
+  if (res == FR_OK) 
+  {
+    f_printf(
+      &flog,
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
     );
   }
+  #endif
 }
 
 /** Stop the logger an nicely close the file */
 void file_logger_stop(void)
 {
-  if (file_logger != NULL) {
-    fclose(file_logger);
-    file_logger = NULL;
+	ops_info.ops_debug = FALSE;
+	ops_msg_stop_spraying();
+
+	#if 0
+  if (res == FR_OK) 
+  {
+    f_close(&flog);
   }
+  #endif
 }
 
 /** Log the values to a csv file */
 void file_logger_periodic(void)
 {
-  if (file_logger == NULL) {
+
+	
+	#if 0
+  if (res != FR_OK) 
+  {
     return;
   }
   static uint32_t counter;
   struct Int32Quat *quat = stateGetNedToBodyQuat_i();
 
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  f_printf(&flog, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
           counter,
           imu.gyro_unscaled.p,
           imu.gyro_unscaled.q,
@@ -105,4 +137,5 @@ void file_logger_periodic(void)
           quat->qz
          );
   counter++;
+  #endif
 }

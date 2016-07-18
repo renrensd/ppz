@@ -610,7 +610,7 @@ here is the anti_windup block   ends*/
 }
 
 
-/*check inside loop pid,according to flight height*/
+/*check inside loop pid*/
 static void inside_pid_var_check(void)  //1
 {  
 	if(!gps.stable)

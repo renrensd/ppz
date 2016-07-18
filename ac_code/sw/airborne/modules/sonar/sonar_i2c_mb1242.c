@@ -428,8 +428,12 @@ void sonar_i2c_read(void)
     // Send ABI message
 	AbiSendMsgAGL(AGL_SONAR_ADC_ID, sonar_mb1242.distance_m);
 
-   	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-    DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &sonar_mb1242.distance_cm, &agl_dist_value_filtered);
-
 	MB1242_start_sensor(MB1242_ADDR);
+	#if PERIODIC_TELEMETRY
+	RunOnceEvery(10,
+	{ 	
+		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+        DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &sonar_mb1242.distance_cm, &agl_dist_value_filtered);
+	});
+	#endif
 }

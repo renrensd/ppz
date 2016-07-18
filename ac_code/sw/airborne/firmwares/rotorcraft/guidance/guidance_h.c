@@ -782,8 +782,8 @@ static void guidance_h_traj_run(bool_t in_flight)
   	    + (guidance_h_speed_err.y>>6)*guidance_h.gains.v
   	    + (sum_in_y>>11);
 */
-  int32_t error_x= c_x -(stateGetSpeedNed_i()->x) ;
-  int32_t error_y= c_y -(stateGetSpeedNed_i()->y) ;
+  int32_t error_x= c_x - stateGetSpeedNed_i()->x;
+  int32_t error_y= c_y - stateGetSpeedNed_i()->y;
 
   Tracking_differntiator_hx( (float)(error_x) );
   Tracking_differntiator_hy( (float)(error_y) );	
@@ -829,7 +829,8 @@ static void guidance_h_traj_run(bool_t in_flight)
   }	
 
  #ifndef NPS_SIMU   //sonar  don't work in simulator
-  if((agl_dist_value_filtered<DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30)
+  //if((agl_dist_value_filtered<DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30)
+  if(stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG+0.1) || stateGetHorizontalSpeedNorm_f()>30.0)
   {    
   	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
 	flag_of_int_inner_x = 0;

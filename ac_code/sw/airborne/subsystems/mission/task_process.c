@@ -27,6 +27,11 @@
 
 #include "subsystems/datalink/downlink.h"
 
+#include "firmwares/rotorcraft/guidance/guidance_h_ref.h"
+
+#define FLIGHT_PATH  1
+#define SPRAY_PATH  2
+
 
 enum Gcs_Task_Cmd gcs_task_cmd;
 enum Gcs_Task_Cmd last_task_cmd;
@@ -55,7 +60,8 @@ bool_t task_wp_empty_handle(void);
 
 static inline bool_t task_nav_hover(struct EnuCoor_i hover_wp);
 static inline bool_t task_nav_wp(struct EnuCoor_i first_wp);
-static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, float flight_height);
+static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type);
+static float set_path_flight_info(uint8_t type);
 
 void send_current_task_state(uint8_t wp_state); 
 void send_current_task(uint8_t wp_state);
@@ -207,7 +213,7 @@ Gcs_State gcs_task_run(void)
 			}
 			else
 			{   			
-				if( !task_nav_path(current_wp_scene, home_wp_enu, ac_config_info.max_flight_height) ) 
+				if( !task_nav_path(current_wp_scene, home_wp_enu, FLIGHT_PATH) ) 
 				{
 					/*no more task_wp to run, do land motion*/
 					task_nav_hover(home_wp_enu);
@@ -225,7 +231,7 @@ Gcs_State gcs_task_run(void)
 			}
 			else
 			{   
-				if( !task_nav_path(current_wp_scene, reland_wp_enu, ac_config_info.max_flight_height) ) 
+				if( !task_nav_path(current_wp_scene, reland_wp_enu, FLIGHT_PATH) ) 
 				{
 					/*no more task_wp to run, do land motion*/
 					task_nav_hover(reland_wp_enu);
@@ -341,7 +347,7 @@ bool_t run_normal_task(void)
 	{
 		case FLIGHT_LINE:
 		{
-			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, ac_config_info.max_flight_height) ) 
+			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH) ) 
 			{
 				/*no more task_wp to run*/
 				if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
@@ -365,7 +371,7 @@ bool_t run_normal_task(void)
 			
 		case SPRAY_LINE:
 		{
-			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, ac_config_info.spray_height) ) 
+			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, SPRAY_PATH) ) 
 			{	
 				/*no more task_wp to run*/
 				if( !achieve_next_wp() )  
@@ -420,7 +426,7 @@ bool_t run_normal_task(void)
 		case TERMINATION:
 		{
 			VECT2_COPY(home_wp_enu, wp_home);		
-			if( !task_nav_path(from_wp.wp_en, home_wp_enu, ac_config_info.max_flight_height) ) 
+			if( !task_nav_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH) ) 
 			{
 				wp_state = 1;
 				task_nav_hover(home_wp_enu);
@@ -511,6 +517,22 @@ bool_t task_wp_empty_handle(void)
 	}
 }
 
+static float set_path_flight_info(uint8_t type)
+{
+  switch(type) 
+  {
+  		case FLIGHT_PATH:
+			gh_set_max_speed(ac_config_info.max_flight_speed);
+			return ac_config_info.max_flight_height;
+			
+		case SPRAY_PATH:
+			gh_set_max_speed(ac_config_info.spray_speed);
+			return ac_config_info.spray_height;
+			
+		default:
+			return ac_config_info.max_flight_height;
+  }
+}
 /** Navigation function hover flight
 */
 static inline bool_t task_nav_hover(struct EnuCoor_i hover_wp)
@@ -549,13 +571,16 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 
 /** Navigation function along a segment
 */
-static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, float flight_height)
+static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type)
 {
-  //Check proximity and wait for 'duration' seconds in proximity circle if desired
+  float flight_height = set_path_flight_info(flight_type); 
+	
+  //Check proximity and wait for 'duration' seconds in proximity circle if desired 
   if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) ) 
   {
   	   return FALSE;
   }
+  
   nav_set_heading_along(&p_start_wp, &p_end_wp);  /*it can caculate once economize CPU*/
   if( nav_check_heading() )    //check heading error
   {
