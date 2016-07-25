@@ -689,25 +689,21 @@ static void nmea_parse_XYZ(void)
 /*run 20hz,use 2s time no fix pos set unstable*/
 void get_gps_nmea_stable(void)
 {
-	static uint8_t counter_nmea_qual = 40;
+	static uint8_t counter_nmea_qual = 0;
 	if(gps_nmea.gps_qual != 52) //not fix pos
 	{
-		counter_nmea_qual++;
+		gps.stable = FALSE;
+		counter_nmea_qual = 0;
 	}
 	else
 	{
-		counter_nmea_qual--;
+		counter_nmea_qual++;
 	}
 
 	if(counter_nmea_qual > 40)
 	{
-		gps.stable = FALSE;
-		counter_nmea_qual = 41;  /*avoid overflow*/
-	}
-	else if(counter_nmea_qual < 1)
-	{
 		gps.stable = TRUE;
-		counter_nmea_qual = 1;
+		counter_nmea_qual = 41;  /*avoid overflow*/
 	}	
 }
 /*

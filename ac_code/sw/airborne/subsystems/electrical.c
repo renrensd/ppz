@@ -188,7 +188,29 @@ void electrical_periodic(void)
 #else
 	electrical.vsupply = bat_info.vcc12 / 100;
 	electrical.energy = bat_info.remaining;
-	electrical.current = bat_info.avrcurr;
+	//electrical.current = bat_info.avrcurr;   replace with thrust command
+	#if defined MILLIAMP_AT_FULL_THROTTLE && defined COMMAND_CURRENT_ESTIMATION
+
+	  float full_current = (float)MILLIAMP_AT_FULL_THROTTLE;
+	  float idle_current = (float)MILLIAMP_AT_IDLE_THROTTLE;
+
+	  float x = ((float)commands[COMMAND_CURRENT_ESTIMATION]) / ((float)MAX_PPRZ);
+
+	  if(x > 1.0f)  {  x = 1.0f;  } 
+	  else if(x < 0.0f)  {  x = 0.0f;  }
+
+	  if(kill_throttle)
+	  {
+	    electrical.current = 0;
+	  } 
+	  else 
+	  {
+	    electrical.current = full_current -
+	                         pow((pow(full_current - idle_current, electrical_priv.nonlin_factor) -
+	                              pow(((full_current - idle_current) * x), electrical_priv.nonlin_factor)),
+	                              (1. / electrical_priv.nonlin_factor));
+	  }
+	 #endif
 #endif
 
   /*if valid voltage is seen then start checking. Set min level to 0 to always start*/

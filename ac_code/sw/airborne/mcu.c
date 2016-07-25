@@ -396,6 +396,8 @@ void mcu_check_reset_source(void)
 	
 }
 
+
+#ifdef FAULT_OPTION
 /*****************************************************************************
 *  Name        : mcu_set_reset_type
 *  Description : 
@@ -458,6 +460,9 @@ void hard_fault_handler(void)
 	mcu_fault_info_handle(0x08);
 	while(1);
 }
+#endif
+
+
 
 #ifdef WDG_OPTION
 /***********************************************************************

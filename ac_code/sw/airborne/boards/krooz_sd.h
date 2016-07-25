@@ -361,7 +361,7 @@
 #define I2C_SONAR_GPIO_SCL GPIO9
 
 #define HMC5983_OPTION
-//#define GCS_V1_OPTION  //defined, we can use gcs/rc/ubuntu_gcs
+
 
 /* DEBUG_GPIO_OPTION */
 #define DEBUG_GPIO_OPTION

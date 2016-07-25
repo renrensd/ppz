@@ -618,9 +618,9 @@ static void inside_pid_var_check(void)  //1
 		guidance_v_kp = 105;
 		guidance_v_kd = 180;
 		guidance_v_ki = 195;
-		guidance_vi_kp=70;
-		guidance_vi_kd=20;
-		guidance_vi_ki =10;
+		guidance_vi_kp = 70;
+		guidance_vi_kd = 10;
+		guidance_vi_ki = 5;
 	}	
 	else
 	{

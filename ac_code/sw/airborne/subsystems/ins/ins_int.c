@@ -265,6 +265,7 @@ void ins_int_init(void)
   AbiBindMsgAGL(INS_SONAR_ID, &sonar_ev, sonar_cb);
 #endif
 #if USE_RADAR24
+    ins_int.update_radar_agl = TRUE;   //initial use radar until gps stable
     AbiBindMsgRADAR_24(AGL_NRA_24_ID,&radar24_ev,radar24_cb);
 #endif
 
@@ -346,10 +347,13 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
    * This should only be relevant in the startup phase when the baro is not yet initialized
    * and there is no gps fix yet...
    */
-  if (ins_int.propagation_cnt < INS_MAX_PROPAGATION_STEPS) {
+  if (ins_int.propagation_cnt < INS_MAX_PROPAGATION_STEPS) 
+  {
     vff_propagate(z_accel_meas_float, dt);
     ins_update_from_vff();
-  } else {
+  } 
+  else 
+  {
     // feed accel from the sensors
     // subtract -9.81m/s2 (acceleration measured due to gravity,
     // but vehicle not accelerating in ltp)
@@ -386,7 +390,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
     // wait for a first positive value
     ins_int.qfe = pressure;
 	pressure_origin=pressure;    //record origin pressure
-    ins_int.baro_initialized =TRUE;
+    ins_int.baro_initialized = TRUE;
   }
 
   if (ins_int.baro_initialized)
@@ -541,7 +545,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
   if(gps.stable)//gps_nmea.gps_qual==52)
   {
   	ins_int.update_radar_agl = FALSE;
-         vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
+    vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
   }
   else
   {
@@ -608,14 +612,14 @@ static void flow_to_state(struct HfilterFloat *flow_hff)
    float c_psi = cosf(psi);
    pos_flow.x = c_psi * flow_hff->x - s_psi * flow_hff->y;
    pos_flow.y = s_psi * flow_hff->x + c_psi * flow_hff->y;
-   speed_flow.x=c_psi * flow_hff->xdot - s_psi * flow_hff->ydot;
+   speed_flow.x = c_psi * flow_hff->xdot - s_psi * flow_hff->ydot;
    speed_flow.y = s_psi * flow_hff->xdot + c_psi * flow_hff->ydot;
 		   //pos_flow.z=stateGetPositionNed_f()->z;
 		   //speed_flow.z=stateGetSpeedNed_f()->z;	   
    VECT2_ADD(pos_flow,local_flow_pos);  //add local pos to absolute
 #if 1
-   b2_hff_state.x=pos_flow.x;
-   b2_hff_state.y=pos_flow.y;
+   b2_hff_state.x = pos_flow.x;
+   b2_hff_state.y = pos_flow.y;
    b2_hff_state.xdot=(b2_hff_state.xdot * 4.0 + speed_flow.x) /5.0; //smooth the speed
    b2_hff_state.ydot=(b2_hff_state.ydot * 4.0 + speed_flow.y) /5.0;
    ins_update_from_hff();
@@ -740,11 +744,12 @@ static void radar24_cb(uint8_t __attribute__((unused)) sender_id, float distance
         vff_update_z_conf(-(distance),  VFF_R_RADAR24_0 + VFF_R_RADAR24_OF_M * fabs(distance));
         last_radar_offset = vff.offset;
   } 
-  else 
+  else if(ins_int.update_radar_agl)
   {
     /* update offset with last value to avoid divergence */
         vff_update_offset(last_radar_offset);
   }
+  
   last_distance = distance;
   #else
   vff_update_z_conf(-(distance), 0.5);  // VFF_R_SONAR_OF_M * fabsf(distance));

@@ -311,8 +311,9 @@ void ground_monitoring(void)
 			ground_check_step++;  //next step
 			//sign finished
 			break;
-		case RC_CONNECT:			
-			if( (!rc_lost) || (flight_mode==nav_gcs_mode&&!gcs_lost) )
+		case RC_CONNECT:	
+			//if( (flight_mode==nav_rc_mode!rc_lost) || (flight_mode==nav_gcs_mode&&!gcs_lost) )
+			if( (flight_mode!=nav_kill_mode&&!rc_lost) || (flight_mode==nav_gcs_mode&&!gcs_lost) )
 			{
 				ground_check_step = 0;        //reset step
 				ground_check_status = TRUE;    //finished ground check,pass

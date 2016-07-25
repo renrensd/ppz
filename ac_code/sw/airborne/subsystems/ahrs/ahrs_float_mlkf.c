@@ -40,15 +40,22 @@
 
 //#include <stdio.h>
 
+#define AHRS_PROPAGATE_LOW_PASS_RATES
+//#define AHRS_GYRO_LEADLAG_FILTER
+//#define AHRS_GYRO_BW_FILTER
+//#define AHRS_GYRO_BW_FLOAT_FILTER
+//#define AHRS_GYRO_PASSTHROUGH
+
+#if defined AHRS_GYRO_BW_FILTER || defined AHRS_GYRO_BW_FLOAT_FILTER
+ #include "filters/low_pass_filter.h"
+#endif
+
 #ifndef AHRS_MAG_NOISE_X
 #define AHRS_MAG_NOISE_X 0.4//0.2
 #define AHRS_MAG_NOISE_Y 0.4//0.2
 #define AHRS_MAG_NOISE_Z 0.4//0.2
 #endif
 
-#ifndef AHRS_PROPAGATE_LOW_PASS_RATES
- #define AHRS_PROPAGATE_LOW_PASS_RATES
-#endif
 
 static inline void propagate_ref(struct Int32Rates *gyro, float dt);
 static inline void propagate_state(float dt);
@@ -60,9 +67,23 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
                                         struct FloatVect3 *noise);
 static inline void reset_state(void);
 
+#ifdef AHRS_GYRO_LEADLAG_FILTER
 static inline float leadlag_filter(float in_now, float in_last, float out_last, float dt);
+#endif
 
 struct AhrsMlkf ahrs_mlkf;
+
+#ifdef AHRS_GYRO_BW_FILTER
+	Butterworth2LowPass_int filter_p;
+	Butterworth2LowPass_int filter_q;
+	Butterworth2LowPass_int filter_r;
+#endif
+
+#ifdef AHRS_GYRO_BW_FLOAT_FILTER
+	Butterworth2LowPass filter_p;
+	Butterworth2LowPass filter_q;
+	Butterworth2LowPass filter_r;
+#endif
 
 
 void ahrs_mlkf_init(void)
@@ -92,6 +113,18 @@ void ahrs_mlkf_init(void)
   memcpy(ahrs_mlkf.P, P0, sizeof(P0));
 
   VECT3_ASSIGN(ahrs_mlkf.mag_noise, AHRS_MAG_NOISE_X, AHRS_MAG_NOISE_Y, AHRS_MAG_NOISE_Z);
+
+#ifdef AHRS_GYRO_BW_FILTER
+  init_butterworth_2_low_pass_int(&filter_p, 18, (1. / 512), 0);
+  init_butterworth_2_low_pass_int(&filter_q, 18, (1. / 512), 0);
+  init_butterworth_2_low_pass_int(&filter_r, 18, (1. / 512), 0);
+#endif
+
+#ifdef AHRS_GYRO_BW_FLOAT_FILTER   //tau = 0.1592/cuf_off_fre   18hz:0.00885   10hz:0.01592  6hz:0.02653
+  init_butterworth_2_low_pass(&filter_p, 0.00885, (1. / 512), 0.);
+  init_butterworth_2_low_pass(&filter_q, 0.00885, (1. / 512), 0.);
+  init_butterworth_2_low_pass(&filter_r, 0.00885, (1. / 512), 0.);
+#endif
 }
 
 void ahrs_mlkf_set_body_to_imu(struct OrientationReps *body_to_imu)
@@ -182,6 +215,7 @@ void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag)
 }
 
 /*leadlag function*/
+#ifdef AHRS_GYRO_LEADLAG_FILTER
 static inline float leadlag_filter(float in_now, float in_last, float out_last, float dt)
 {
 	const float lead = 0.0;
@@ -193,6 +227,7 @@ static inline float leadlag_filter(float in_now, float in_last, float out_last, 
 
 	return k1*in_now + k2*in_last + k3*out_last;	
 }
+#endif
 
 
 static inline void propagate_ref(struct Int32Rates *gyro, float dt)
@@ -200,25 +235,52 @@ static inline void propagate_ref(struct Int32Rates *gyro, float dt)
   /* converts gyro to floating point */
   struct FloatRates gyro_float;
   RATES_FLOAT_OF_BFP(gyro_float, *gyro);
-
+  
+ #ifdef AHRS_GYRO_BW_FILTER
+  struct Int32Rates gyro_filtered;
+  gyro_filtered.p = update_butterworth_2_low_pass_int(&filter_p, gyro->p);
+  gyro_filtered.q = update_butterworth_2_low_pass_int(&filter_q, gyro->q);
+  gyro_filtered.r = update_butterworth_2_low_pass_int(&filter_r, gyro->r);
+  
+  RATES_FLOAT_OF_BFP(gyro_float, gyro_filtered);
   /* unbias measurement */
   RATES_SUB(gyro_float, ahrs_mlkf.gyro_bias);
-#if 1
-#ifdef AHRS_PROPAGATE_LOW_PASS_RATES
+  RATES_COPY(ahrs_mlkf.imu_rate, gyro_float);
+ #endif  
+
+ #ifdef AHRS_GYRO_BW_FLOAT_FILTER
+  /* unbias measurement */
+  RATES_SUB(gyro_float, ahrs_mlkf.gyro_bias);
+ 
+  ahrs_mlkf.imu_rate.p = update_butterworth_2_low_pass(&filter_p, gyro_float.p);
+  ahrs_mlkf.imu_rate.q = update_butterworth_2_low_pass(&filter_q, gyro_float.q);
+  ahrs_mlkf.imu_rate.r = update_butterworth_2_low_pass(&filter_r, gyro_float.r);  
+ #endif  
+
+ #ifdef AHRS_PROPAGATE_LOW_PASS_RATES
+  /* unbias measurement */
+  RATES_SUB(gyro_float, ahrs_mlkf.gyro_bias);
   /* lowpass angular rates */
   const float alpha = 0.1;
   FLOAT_RATES_LIN_CMB(ahrs_mlkf.imu_rate, ahrs_mlkf.imu_rate,
                       (1. - alpha), gyro_float, alpha);
-#else
-  RATES_COPY(ahrs_mlkf.imu_rate, gyro_float);
-#endif
-#else 
+ #endif
+
+ #ifdef AHRS_GYRO_LEADLAG_FILTER
+  /* unbias measurement */
+  RATES_SUB(gyro_float, ahrs_mlkf.gyro_bias);
   static struct FloatRates gyro_float_last;
   ahrs_mlkf.imu_rate.p = leadlag_filter(gyro_float.p, gyro_float_last.p, ahrs_mlkf.imu_rate.p, dt);
   ahrs_mlkf.imu_rate.q = leadlag_filter(gyro_float.q, gyro_float_last.q, ahrs_mlkf.imu_rate.q, dt);
   ahrs_mlkf.imu_rate.r = leadlag_filter(gyro_float.r, gyro_float_last.r, ahrs_mlkf.imu_rate.r, dt);
   RATES_COPY(gyro_float_last, gyro_float);
-#endif
+ #endif
+
+ #ifdef AHRS_GYRO_PASSTHROUGH
+  /* unbias measurement */
+  RATES_SUB(gyro_float, ahrs_mlkf.gyro_bias);
+  RATES_COPY(ahrs_mlkf.imu_rate, gyro_float);
+ #endif
 
   /* propagate reference quaternion */
   float_quat_integrate(&ahrs_mlkf.ltp_to_imu_quat, &ahrs_mlkf.imu_rate, dt);
