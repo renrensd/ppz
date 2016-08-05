@@ -351,7 +351,16 @@ void xbee_init(void)
 #endif
 
 #ifdef GCS_V1_OPTION
-  xbee_con_info.rc_con_available = FALSE;
+  xbee_con_info.rc_con_available = TRUE;   //set TRUE only for heartbeat communication
+  uint8_t rc_add[]= {0x00, 0x13, 0xA2, 0x00, 0x40, 0xF5, 0x4A, 0xE9};
+  for (uint8_t i = 0; i < 8; i++) 
+  {
+	  xbee_con_info.rc_addr[0][i] = rc_add[i];
+  }
+
+
+  
+
   xbee_con_info.gcs_con_available = FALSE;
   xbee_con_info.ppzcenter_con_available = FALSE;
 /*stop register timer call back,use timer.c*/  //xbee_bc_tid = sys_time_register_timer(1./XBEE_BC_PERIODIC_FREQUENCY, (sys_time_cb)xbee_msg_aircraft_ready_broadcast);

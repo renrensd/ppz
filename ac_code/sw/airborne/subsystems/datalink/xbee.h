@@ -272,7 +272,7 @@ static inline void xbee_parse_payload(struct xbee_transport *t)
 		       if( xbee_con_info.rc_addr[0][i-XBEE_ADDR_OFFSET] != t->trans_rx.payload[i] )
 		       {   
 			   	    rc_equal = FALSE;  //indecate addr is different
-			   		if( autopilot_check_rc_bind() )
+			   		if(1)// autopilot_check_rc_bind() )
 			   		{  //AC attitude >30deg,record address
 						for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
 						{

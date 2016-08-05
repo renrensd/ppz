@@ -142,7 +142,8 @@ int32_t guidance_v_z_sum_err;
 int32_t guidance_v_zd_sum_err;
 int32_t guidance_v_thrust_coeff;
 
-int32_t c_z=0;
+int32_t c_z = 0;
+
 
 #define GuidanceVSetRef(_pos, _speed, _accel) { \
     gv_set_ref(_pos, _speed, _accel);        \
@@ -153,7 +154,7 @@ int32_t c_z=0;
 
 static int32_t get_vertical_thrust_coeff(void);
 static void run_hover_loop(bool_t in_flight);
-static void inside_pid_var_check(void);  
+static void dynamic_pid_check(void);  
 
 float fsg(float x,float d);
 float fhan(float signal);
@@ -166,7 +167,7 @@ float x2 = 0;
 
 float vh = 0.002*512*1025;
 float vh0 = 0.5*512*1025;  //0.6
-const float r = 100;
+float r_vert = 100;
 //*****************************************************//
 //                define done here                                                    //
 
@@ -183,13 +184,13 @@ float fsg(float x,float d)
 inline float fhan(float signal)
 {
 	float d,a0,y,a1,a2,a,out;
-	d = r*vh0*vh0;
+	d = r_vert*vh0*vh0;
 	a0 = vh0*x2;
 	y = (x1-signal) + a0;
 	a1 = sqrt( d*(d+8*fabs(y)) );
 	a2 = a0 + Sign(y)*(a1-d)/2;
 	a = (a0+y)*fsg(y,d) + a2*(1-fsg(y,d));
-	out = -r*(a/d)*fsg(a,d) -r*Sign(a)*(1-fsg(a,d));
+	out = -r_vert*(a/d)*fsg(a,d) -r_vert*Sign(a)*(1-fsg(a,d));
 	return out;
 }
 
@@ -255,7 +256,7 @@ void guidance_v_init(void)
   guidance_vi_ki = GUIDANCE_V_INSIDE_KI;
   vh = GUIDANCE_V_TD_H;
   vh0 = GUIDANCE_V_TD_H0;
-  
+  r_vert = GUIDANCE_V_TD_R;
 
   guidance_v_z_sum_err = 0;
 
@@ -523,6 +524,20 @@ static int32_t get_vertical_thrust_coeff(void)
 
 #define FF_CMD_FRAC 18
 
+#define MAX_MONITOR_ERROR_Z  256  //1m
+
+uint8_t get_error_z(void)
+{
+	if( abs(guidance_v_z_ref - stateGetPositionNed_i()->z) > MAX_MONITOR_ERROR_Z)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 static void run_hover_loop(bool_t in_flight)
 {
 
@@ -590,7 +605,7 @@ here is the anti_windup block   ends*/
   /* bound the nominal command to 0.9*MAX_PPRZ */
   Bound(guidance_v_ff_cmd, 0, 8640);
 
-  inside_pid_var_check(); //check inner pid loop var
+  dynamic_pid_check(); //check inner pid loop var
 /*output by outer loop */
   c_z = guidance_v_zd_ref+ ((guidance_v_kp* err_z)*20)+guidance_v_ki*(guidance_v_z_sum_err>>10)+((guidance_v_kd*err_zd)>>8);
   //bound outter loop
@@ -610,27 +625,29 @@ here is the anti_windup block   ends*/
 }
 
 
-/*check inside loop pid*/
-static void inside_pid_var_check(void)  //1
+/*check loop pid*/
+static void dynamic_pid_check(void)  //1
 {  
+#ifdef USE_GPS_NMEA
 	if(!gps.stable)
 	{
-		guidance_v_kp = 105;
-		guidance_v_kd = 180;
-		guidance_v_ki = 195;
-		guidance_vi_kp = 70;
-		guidance_vi_kd = 10;
-		guidance_vi_ki = 5;
+		guidance_v_kp = 100;
+		guidance_v_kd = 145;
+		guidance_v_ki = 190;
+		guidance_vi_kp = 95;
+		guidance_vi_kd = 75;
+		guidance_vi_ki = 25;
 	}	
 	else
 	{
 		guidance_v_kp = 288;
 		guidance_v_kd = 280;
 		guidance_v_ki = 195;
-		guidance_vi_kp=77;
-		guidance_vi_kd=77;
-		guidance_vi_ki =49;
-	}	
+		guidance_vi_kp = 77;
+		guidance_vi_kd = 77;
+		guidance_vi_ki = 49;
+	}
+#endif
 }
 
 bool_t guidance_v_set_guided_z(float z)

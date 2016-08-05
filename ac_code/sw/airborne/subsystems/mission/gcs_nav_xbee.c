@@ -28,6 +28,7 @@ bool_t  gcs_lost;
 
 void gcs_lost_check(void)
 {
+	#ifdef GCS_V1_OPTION
 	if(!gcs_lost)
 	{
 		gcs_count++;
@@ -42,9 +43,10 @@ void gcs_lost_check(void)
 	{
 		if(xbee_con_info.gcs_con_available)
 		{
-			XbeeSetGcsConFalse(); 
+		   	XbeeSetGcsConFalse(); 
 		}
 	}
+	#endif
 }
 
 void gcs_set_connect(void)

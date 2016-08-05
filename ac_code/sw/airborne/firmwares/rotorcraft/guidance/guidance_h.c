@@ -183,9 +183,9 @@ float xh1 = 0.0;
 float xh2 = 0.0;
 float yh1 = 0.0;
 float yh2 = 0.0;
-const float hh = 0.002*512*1024;
-const float hh0 = 0.2*512*1024;
-const float rh = 300.0;
+float hh = 0.002*512*1024;
+float hh0 = 0.2*512*1024;
+float r_h = 300.0;
 //*****************************************************//
 //                define done here                                                    //
 
@@ -218,13 +218,13 @@ int32_t fhan_control(float pos, float vel, float repul, float h1)
 float fhan_h(float signal,float x1,float x2)
 {
 	float d,a0,y,a1,a2,a,out;
-	d = rh * hh0*hh0;
+	d = r_h * hh0*hh0;
 	a0 = hh0 * x2;
 	y = (x1-signal) + a0;
 	a1 = sqrt( d*(d + 8*fabs(y)) );
 	a2 = a0 + Sign(y)*(a1-d)/2;
 	a = (a0+y)*fsg_h(y,d) + a2*(1-fsg_h(y,d));
-	out = -rh*(a/d)*fsg_h(a,d) - rh*Sign(a)*(1-fsg_h(a,d));
+	out = -r_h*(a/d)*fsg_h(a,d) - r_h*Sign(a)*(1-fsg_h(a,d));
 	
 	return out;
 }
@@ -350,6 +350,11 @@ void guidance_h_init(void)
   guidance_h.gains.d = GUIDANCE_H_DGAIN;
   guidance_h.gains.a = GUIDANCE_H_AGAIN;
   guidance_h.gains.v = GUIDANCE_H_VGAIN;
+
+  hh0 = GUIDANCE_H_TD_H0;
+  hh = GUIDANCE_H_TD_H;
+  r_h = GUIDANCE_H_TD_R;
+  
   transition_percentage = 0;
   transition_theta_offset = 0;
   rc_turn_rate = 0;
@@ -837,7 +842,6 @@ static void guidance_h_traj_run(bool_t in_flight)
 	flag_of_int_inner_y = 0;
   }  //angle is 3deg limited
  #endif
-
 
   VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 30` limited
 

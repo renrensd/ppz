@@ -106,12 +106,15 @@ extern int32_t guidance_vi_kd; ///< vertical inside control D-gain
 extern int32_t guidance_vi_ki; ///< vertical inside control I-gain
 extern float vh;
 extern float vh0;
+extern float r_vert;
 
 extern void guidance_v_init(void);
 extern void guidance_v_read_rc(void);
 extern void guidance_v_mode_changed(uint8_t new_mode);
 extern void guidance_v_notify_in_flight(bool_t in_flight);
 extern void guidance_v_run(bool_t in_flight);
+
+extern uint8_t get_error_z(void);
 
 /** Set z setpoint in GUIDED mode.
  * @param z Setpoint (down is positive) in meters.

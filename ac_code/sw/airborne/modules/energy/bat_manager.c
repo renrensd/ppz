@@ -81,7 +81,7 @@ void bm_init(void)////test vo   change
 	//bq7692_init(&bat_info.bq7692, &(BM_I2C_DEV), BQ76920_ADDR);
 	//bq7693_init(&bat_info.bq7693, &(BM_I2C_DEV), BQ76930_ADDR);
 	bq7694_init(&bat_info.bq7694, &(BM_I2C_DEV), BQ76940_ADDR);
-	bq34z_init(&bat_info.bq34z, &(BM_I2C_DEV), BQ34Z100_ADDR);
+	//bq34z_init(&bat_info.bq34z, &(BM_I2C_DEV), BQ34Z100_ADDR);
 }
 /***********************************************************************
 *  Name        : bq7692_init
@@ -855,7 +855,7 @@ void bat_periodic(void)
 	//bq7692_periodic(&bat_info.bq7692);
 	//bq7693_periodic(&bat_info.bq7693);
 	bq7694_periodic(&bat_info.bq7694);
-	bq34z_periodic(&bat_info.bq34z);
+	//RunOnceEvery(5, bq34z_periodic(&bat_info.bq34z) );
 	//clear_data();
 	//clear_faults();
 	//gpio_clear(TEST_GPIO_PIN1);
@@ -866,7 +866,7 @@ void bat_event(void)
          //bq7692_event(&bat_info.bq7692);
 	//bq7693_event(&bat_info.bq7693);
 	bq7694_event(&bat_info.bq7694);
-	bq34z_event(&bat_info.bq34z);
+	//bq34z_event(&bat_info.bq34z);
 }
 
 static uint8_t cal_crc(uint8_t *ptr, uint16_t len)

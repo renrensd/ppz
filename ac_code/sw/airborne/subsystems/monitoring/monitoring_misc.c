@@ -22,7 +22,7 @@
 #include "subsystems/monitoring/monitoring_misc.h"
 #include "subsystems/monitoring/monitoring.h"
 #include "firmwares/rotorcraft/nav_flight.h"
-//#include "subsystems/electrical.h"
+#include "subsystems/electrical.h"
 //#include "modules/energy/bat_manager.h"
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/gps.h"
@@ -31,6 +31,10 @@
 #include "subsystems/ops/ops_app_if.h"
 #include "subsystems/ops/ops_app.h"
 #include "subsystems/mission/task_process.h"
+
+#include "firmwares/rotorcraft/guidance/guidance_v.h"
+#include "firmwares/rotorcraft/stabilization.h"
+
 #include "state.h"
 
 
@@ -49,11 +53,13 @@
 #define MAX_GROUND_INS_Z  0.6
 
 #define MAX_FLIGHT_TIME 510   //13min
+#define BAT_LIMIT_VOL  425   //unit:0.1v
 
 #define LESS_RES_CAP 5  //5%
 
 static uint8_t ahrs_ground_check(void);
 static uint8_t ins_ground_check(void);
+static bool_t yaw_command_monitor(void);
 
 
 
@@ -98,14 +104,15 @@ uint8_t battery_ground_check(void)
 void battery_flight_check(void)
 {	
 	bool_t flag_trigger = 0;
-#if 0
-	bool_t flag_trigger=0;
-	if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
+
+#if 1
+	//if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
+	if( electrical.vsupply && electrical.vsupply < BAT_LIMIT_VOL )
 	{   //hover 10s,back home
 	    flag_trigger=1;   //record error trigger
-	    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,5, TRUE,FALSE,2);	
+	    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
 		//need give special alter to RC and GCS
-                  #if TEST_MSG
+        #if TEST_MSG
 		bat_flight=1;
 		#endif
 	}
@@ -120,8 +127,8 @@ void battery_flight_check(void)
 		#endif
 	}
 #endif
-	
-        /*
+
+   /*
 	if( electrical.bat_critical )
 	{   //only alert
 	    flag_trigger=1;   //record error trigger
@@ -144,8 +151,8 @@ void battery_flight_check(void)
     if(!flag_trigger)
     {
 		//recover
-		em[BAT_LOW].active =0;
-		em[BAT_LOW].finished =0;
+		//em[BAT_LOW].active =0;
+		//em[BAT_LOW].finished =0;
 		em[BAT_CRITICAL].active =0;
 		em[BAT_CRITICAL].finished =0;
 		em[BAT_OTHER].active=0;
@@ -176,7 +183,7 @@ void gps_flight_check(void)
 		}
 		else
 		{   
-			if(gps.pacc <2000)  
+			if(gps.pacc <6000)  
 			{
 				em[GPS_ACC].alert_grade = 2;
 			}
@@ -192,7 +199,7 @@ void gps_flight_check(void)
     }
 	else
 	{
-		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
+		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0x03, FALSE,TRUE,3);	
 		#if TEST_MSG
 		gps_flight=2;
 		#endif
@@ -270,8 +277,44 @@ void gcs_communication_flight_check(void)
 	
 }
 
+#define MAX_ERROR_Z_THRUST  8000
+#define MAX_ERROR_YAW_COMMAND 5000
+
 void lift_flight_check(void)
 {
+	/*ac lower setpoint height >1m and thrust cmd >MAX_ERROR_Z_THRUST*/
+	if( get_error_z() )  
+	{
+		if(stabilization_cmd[COMMAND_THRUST] > MAX_ERROR_Z_THRUST)
+		{
+			set_except_mission(LIFT_POWER,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	//land direct
+		}
+	}
+
+    /*yaw command overrun continual 3s*/
+	if( yaw_command_monitor() )
+	{
+		set_except_mission(LIFT_POWER,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	//land direct
+	}
+	
+}
+
+static bool_t yaw_command_monitor(void)
+{
+	static uint8_t counter = 0;
+	if( abs(stabilization_cmd[COMMAND_YAW]) > MAX_ERROR_YAW_COMMAND )
+	{
+		counter++;
+		if(counter > 3)
+		{
+			return TRUE;
+		}
+	}
+	else
+	{
+		counter = 0;
+	}
+	return FALSE;
 }
 
 void task_running_check(void)
@@ -349,7 +392,18 @@ static uint8_t ins_ground_check(void)
 	else return 1;
 }
 
-
+#define MAX_ERROR_ATT 60.0
+bool_t out_of_control_detect(void)
+{
+	if( autopilot_in_flight)
+	{
+		if( fabs(stateGetNedToBodyEulers_f()->phi)>MAX_ERROR_ATT || fabs(stateGetNedToBodyEulers_f()->theta)>MAX_ERROR_ATT )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
 /**************** END OF FILE *****************************************/
 
 

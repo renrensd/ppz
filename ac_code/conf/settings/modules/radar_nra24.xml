@@ -1,0 +1,11 @@
+      <dl_settings name="RADAR_24">
+   <dl_setting var="RADAR24_DILUT_SPEED_R" min="0" step="10" max="300"   module="modules/radar_nra24/radar_nra24" shortname="SEPPDR" param="RADAR24_SPEED_R"/>
+   <dl_setting var="RADAR24_DILUT_fILTER_H" min="0" step="0.01" max="20"   module="modules/radar_nra24/radar_nra24" shortname="FILTERH" param="RADAR24_fILTER_H"/>
+   <dl_setting var="RADAR24_STER_LENGTH" min="0" step="0.01" max="10"   module="modules/radar_nra24/radar_nra24" shortname="LENTH24" param="RADAR24_LENGTH"/>
+   <dl_setting var="Radar24_G" min="0" step="0.01" max="0.7"   module="modules/radar_nra24/radar_nra24" shortname="GLENTH24" param="RADAR24_G"/>
+   <dl_setting var="CUT_OFF" min="10" step="1" max="40"   module="modules/radar_nra24/radar_nra24" shortname="CUFF" param="CUT_OFF_PV"/>
+   <dl_setting var="model_change" min="0" step="1" max="3"   module="modules/radar_nra24/radar_nra24" shortname="MODEL" param="CHANGE_MODE"/>
+   <dl_setting var="FILTER_NUM" min="5" step="1" max="50"   module="modules/radar_nra24/radar_nra24" shortname="NUM_F" param="NUM_FIL"/>
+   <dl_setting var="radar_intdistance" min="10" step="1" max="50" module="modules/radar_nra24/radar_nra24" shortname="INTDIS" param="RADINTDIS" />
+   <dl_setting var="radar_distance_speed" min="1" step="1" max="100"  module="modules/radar_nra24/radar_nra24" shortname="DISSPEED" param="RADDISSPEED"/>
+   </dl_settings>

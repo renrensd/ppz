@@ -101,6 +101,10 @@ struct HorizontalGuidance {
 };
 extern int32_t rc_turn_rate;                        ///< with #INT32_RATE_FRAC
 
+extern float hh;
+extern float hh0;
+extern float r_h;
+
 extern struct HorizontalGuidance guidance_h;
 
 //#if GUIDANCE_H_USE_SPEED_REF

@@ -1050,7 +1050,7 @@
  	<field name="timestamp" type="uint32"/>
  </message>
 
-  <message name="STAB_ATTITUDE_FLOAT" id="130">
+  <!--message name="STAB_ATTITUDE_FLOAT" id="130">
     <field name="est_p"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
     <field name="est_q"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
     <field name="est_r"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
@@ -1075,6 +1075,30 @@
     <field name="est_p_d"       type="float" alt_unit="deg/s^2" alt_unit_coef="57.29578"/>
     <field name="est_q_d"       type="float" alt_unit="deg/s^2" alt_unit_coef="57.29578"/>
     <field name="est_r_d"       type="float" alt_unit="deg/s^2" alt_unit_coef="57.29578"/>
+  </message-->
+
+  <message name="STAB_ATTITUDE_FLOAT" id="130">
+    <field name="est_p"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
+    <field name="est_q"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
+    <field name="est_r"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
+    <field name="est_phi"       type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="est_theta"     type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="est_psi"       type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="ref_phi"       type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="ref_theta"     type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="ref_psi"       type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="sum_err_phi"   type="float"/>
+    <field name="sum_err_theta" type="float"/>
+    <field name="sum_err_psi"   type="float"/>
+    <field name="pd_cmd_roll"   type="float" />
+    <field name="pd_cmd_pitch"  type="float" />
+    <field name="pd_cmd_yaw"    type="float" />
+    <field name="desired_p"    type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="desired_q"    type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="desired_r"    type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
+    <field name="delta_a"       type="int32"/>
+    <field name="delta_e"       type="int32"/>
+    <field name="delta_r"       type="int32"/>
   </message>
 
   <message name="IMU_GYRO_SCALED" id="131">
@@ -2072,6 +2096,7 @@
     <field name="ap_h_mode"    type="uint8" values="KILL|RATE|ATTITUDE|HOVER|NAV|RC_DIRECT|CF|FORWARD|MODULE|FLIP|GUIDED"/>
     <field name="ap_v_mode"    type="uint8" values="KILL|RC_DIRECT|RC_CLIMB|CLIMB|HOVER|NAV|MODULE|FLIP|GUIDED"/>
     <field name="vsupply"      type="uint16" unit="decivolt"/>
+    <field name="current"      type="int32" unit="mA"/>
     <field name="cpu_time"     type="uint16" unit="s"/>
   </message>
 

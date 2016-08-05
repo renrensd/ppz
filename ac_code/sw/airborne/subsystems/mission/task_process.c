@@ -28,6 +28,8 @@
 #include "subsystems/datalink/downlink.h"
 
 #include "firmwares/rotorcraft/guidance/guidance_h_ref.h"
+#include "uplink_ac.h"
+
 
 #define FLIGHT_PATH  1
 #define SPRAY_PATH  2

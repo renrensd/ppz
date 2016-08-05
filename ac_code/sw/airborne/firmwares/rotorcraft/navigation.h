@@ -130,7 +130,7 @@ extern void auto_nav_fp(void);
 #define NavCopyWaypointPositionOnly(_wp1, _wp2) ({ waypoint_position_copy(_wp1, _wp2); FALSE; })
 
 #define HOVER_STEADY_SPEED_H  0.25
-#define HOVER_STEADY_ACCEL_H  0.5
+#define HOVER_STEADY_ACCEL_H  0.4
 #define NavGetHoverSteady() (  fabs(stateGetHorizontalSpeedNorm_f()) < (HOVER_STEADY_SPEED_H)  \
 	                           && fabs(stateGetAccelNed_f()->x) < (HOVER_STEADY_ACCEL_H)       \
 	                           && fabs(stateGetAccelNed_f()->y) < (HOVER_STEADY_ACCEL_H)        )

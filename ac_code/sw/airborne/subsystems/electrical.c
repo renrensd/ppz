@@ -46,10 +46,12 @@
 #warning "BATTERY_SENS and BATTERY_OFFSET are deprecated, please remove them --> if you want to change the default use VoltageOfAdc"
 #endif
 
+#ifndef ADC_CHANNEL_CURRENT
 #if defined COMMAND_THROTTLE
 #define COMMAND_CURRENT_ESTIMATION COMMAND_THROTTLE
 #elif defined COMMAND_THRUST
 #define COMMAND_CURRENT_ESTIMATION COMMAND_THRUST
+#endif
 #endif
 
 #ifndef BAT_CHECKER_DELAY
@@ -69,7 +71,8 @@ PRINT_CONFIG_VAR(MIN_BAT_LEVEL)
 struct Electrical electrical;
 
 #if defined ADC_CHANNEL_VSUPPLY || (defined ADC_CHANNEL_CURRENT && !defined SITL) || defined MILLIAMP_AT_FULL_THROTTLE
-static struct {
+static struct 
+{
 #ifdef ADC_CHANNEL_VSUPPLY
   struct adc_buf vsupply_adc_buf;
 #endif
@@ -89,6 +92,7 @@ static struct {
 #define MilliAmpereOfAdc(adc) DefaultMilliAmpereOfAdc(adc)
 #endif
 
+#ifndef ADC_CHANNEL_CURRENT
 #ifndef CURRENT_ESTIMATION_NONLINEARITY
 #define CURRENT_ESTIMATION_NONLINEARITY 1.2
 #endif
@@ -99,6 +103,7 @@ static struct {
 #endif
 
 PRINT_CONFIG_VAR(MILLIAMP_AT_IDLE_THROTTLE)
+#endif	/* ADC_CHANNEL_CURRENT */
 
 void electrical_init(void)
 {
@@ -129,19 +134,19 @@ void electrical_periodic(void)
   static bool_t vsupply_check_started = FALSE;
 
 #ifdef NPS_SIMU   //nps could not use bat_manager
-#if defined(ADC_CHANNEL_VSUPPLY) && !defined(SITL)
+ #if defined(ADC_CHANNEL_VSUPPLY) && !defined(SITL)
   electrical.vsupply = 10 * VoltageOfAdc((electrical_priv.vsupply_adc_buf.sum /
                                           electrical_priv.vsupply_adc_buf.av_nb_sample));
-#endif
+ #endif
 
-#ifdef ADC_CHANNEL_CURRENT
-#ifndef SITL
+ #ifdef ADC_CHANNEL_CURRENT
+ #ifndef SITL
   int32_t current_adc = electrical_priv.current_adc_buf.sum / electrical_priv.current_adc_buf.av_nb_sample;
   electrical.current = MilliAmpereOfAdc(current_adc);
   /* Prevent an overflow on high current spikes when using the motor brake */
   BoundAbs(electrical.current, 65000);
-#endif
-#elif defined MILLIAMP_AT_FULL_THROTTLE && defined COMMAND_CURRENT_ESTIMATION
+ #endif
+ #elif defined MILLIAMP_AT_FULL_THROTTLE && defined COMMAND_CURRENT_ESTIMATION
   /*
    * Superellipse: abs(x/a)^n + abs(y/b)^n = 1
    * with a = 1
@@ -168,24 +173,39 @@ void electrical_periodic(void)
   /* electrical.current y = ( b^n - (b* x/a)^n )^1/n
    * a=1, n = electrical_priv.nonlin_factor
    */
-#ifndef FBW
+  #ifndef FBW
   if(kill_throttle) {
     // Assume no current when throttle killed (motors off)
     electrical.current = 0;
   } else {
-#endif
+  #endif
     electrical.current = full_current -
                          pow((pow(full_current - idle_current, electrical_priv.nonlin_factor) -
                               pow(((full_current - idle_current) * x), electrical_priv.nonlin_factor)),
                            (1. / electrical_priv.nonlin_factor));
-#ifndef FBW
+  #ifndef FBW
   }
-#endif
-#endif /* ADC_CHANNEL_CURRENT */
+  #endif
+ #endif /* ADC_CHANNEL_CURRENT */
 
   // mAh = mA * dt (10Hz -> hours)
   electrical.energy += ((float)electrical.current) / 3600.0f / ELECTRICAL_PERIODIC_FREQ;
 #else
+	#ifdef BAT_MANAGER_OPTION
+		electrical.vsupply = bat_info.vcc12 / 100;
+		electrical.energy = bat_info.remaining;
+	#endif	/* BAT_MANAGER_OPTION */
+
+	#ifdef ADC_CHANNEL_CURRENT
+		#ifndef SITL
+		  int32_t current_adc = electrical_priv.current_adc_buf.sum / electrical_priv.current_adc_buf.av_nb_sample;
+		  electrical.current = MilliAmpereOfAdc(current_adc);
+		  /* Prevent an overflow on high current spikes when using the motor brake */
+		  //BoundAbs(electrical.current, 200000);
+		#endif
+	#endif	/* ADC_CHANNEL_CURRENT */
+
+	#if 0
 	electrical.vsupply = bat_info.vcc12 / 100;
 	electrical.energy = bat_info.remaining;
 	//electrical.current = bat_info.avrcurr;   replace with thrust command
@@ -210,6 +230,7 @@ void electrical_periodic(void)
 	                              pow(((full_current - idle_current) * x), electrical_priv.nonlin_factor)),
 	                              (1. / electrical_priv.nonlin_factor));
 	  }
+	 #endif
 	 #endif
 #endif
 

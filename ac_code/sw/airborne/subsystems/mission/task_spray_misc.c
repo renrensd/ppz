@@ -132,8 +132,10 @@ bool_t spray_break_and_continual(void)
    		spray_continual_info.break_pos_lla = *stateGetPositionLla_i();
 		spray_continual_info.break_spray_work = ops_info.spray_state;
 		spray_continual_info.flag_record = TRUE;
+		#ifdef GCS_V1_OPTION
 		tm_kill_timer(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG);
 		tm_create_timer(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG, (2000 MSECONDS), 20,0);
+		#endif
 		return TRUE;
 	}
 	else
@@ -158,7 +160,9 @@ void spray_break_continual_msg(void)
 void spray_bac_msg_stop(void)
 {
 	spray_continual_info.flag_ack = TRUE;
+	#ifdef GCS_V1_OPTION
 	tm_kill_timer(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG);
+	#endif
 }
 
 /****************************** END OF FILE ***************************/

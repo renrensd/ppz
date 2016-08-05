@@ -23,9 +23,11 @@
     <define name="RADIO_KILL_SWITCH" value="1"/>    
     <define name="USE_FLIGHT_HEIGHT_LIMIT"/>
 
+    <!--define name="MILLIAMP_AT_FULL_THROTTLE" value="80000"/-->
+
     <define name="DISTANCE_B2G" value="0.3"/>
-    <define name="DISTANCE_ABOVE_GROUNG" value="0.40"/>
-    <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>
+    <define name="DISTANCE_ABOVE_GROUNG" value="0.45"/>
+    <!--define name="USE_PERSISTENT_SETTINGS" value="TRUE"/-->
     <subsystem name="radio_control" type="ppm"/>   
     <subsystem name="motor_mixing"/>
     <subsystem name="actuators" type="pwm">
@@ -58,7 +60,7 @@
 
   <modules main_freq="500">
     <!--load name="gps_ubx_ucenter.xml"/-->
-    <!--load name="send_imu_mag_current.xml"/-->
+    <load name="send_imu_mag_current.xml"/>
     <load name="agl_dist.xml"/>
     <!--load name="sonar_uart_MB12xx.xml"/-->
     <!--load name="sonar_i2c_mb1242.xml"/-->
@@ -264,8 +266,8 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="REF_MIN_ZDD" value="-0.15*9.81"/> <!-- max descent acceleration in m/s2 -->
-    <define name="REF_MAX_ZDD" value="0.15*9.81"/>  <!-- max climb acceleration in m/s2 -->
+    <define name="REF_MIN_ZDD" value="-0.5"/> <!-- max descent acceleration in m/s2 -->
+    <define name="REF_MAX_ZDD" value="0.5"/>  <!-- max climb acceleration in m/s2 -->
     <define name="REF_MIN_ZD" value="-1.0"/>        <!-- max descent speed in m/s -->
     <define name="REF_MAX_ZD" value="1.0"/>         <!-- max climb speed in m/s -->
     <define name="ADAPT_NOISE_FACTOR" value="0.7"/>
@@ -281,8 +283,9 @@
     <define name="INSIDE_KP" value="77"/>
     <define name="INSIDE_KD" value="77"/>
     <define name="INSIDE_KI" value="49"/>
-    <define name="TD_H"  value="1049.6"/>
-    <define name="TD_H0"  value="524800.0"/>
+    <define name="TD_H"  value="1050"/>
+    <define name="TD_H0"  value="1024800"/>
+    <define name="TD_R" value="100"/>
     <define name="GUIDANCE_V_MAX_SUM_ERR" value="2000000"/>   <!-- add to limit I_SUM/true is 30-->
     <!--define name="RC_DESCENT_COEF" value ="200"/-->
     <define name="NOMINAL_HOVER_THROTTLE" value="0.45"/>
@@ -293,7 +296,7 @@
     <define name="USE_REF" value="1"/>
     <define name="USE_SPEED_REF" value="1"/> <!-- using RC to control horizontal setpoint -->
     <define name="MAX_BANK" value="27" unit="deg"/>  <!-- using horizontal angle of PID caculated desire -->
-    <define name="REF_MAX_ACCEL" value="1.5"/> <!-- max reference horizontal acceleration in m/s2 -->
+    <define name="REF_MAX_ACCEL" value="1.2"/> <!-- max reference horizontal acceleration in m/s2 -->
     <define name="REF_MAX_SPEED" value="2.0"/> <!-- max reference horizontal speed in m/s -->
     <!--define name="RC_SPEED_DEAD_BAND" value="200000"/-->
     <!--define name="PGAIN" value="30"/>
@@ -306,6 +309,9 @@
     <define name="IGAIN" value="85"/>
     <define name="VGAIN" value="170"/>
     <define name="AGAIN" value="100"/>
+    <define name="TD_H" value="1024"/>
+    <define name="TD_H0" value="102458"/>
+    <define name="TD_R" value="300"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">

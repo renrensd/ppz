@@ -148,8 +148,8 @@ PRINT_CONFIG_MSG("INS_SONAR_UPDATE_ON_AGL defaulting to FALSE")
 #endif
 
 #ifndef USE_INS_NAV_INIT
- #define USE_INS_NAV_INIT TRUE
-PRINT_CONFIG_MSG("USE_INS_NAV_INIT defaulting to TRUE")
+ #define USE_INS_NAV_INIT FALSE
+PRINT_CONFIG_MSG("USE_INS_NAV_INIT defaulting to FALSE")
 #endif
 
 #ifdef INS_BARO_SENS
@@ -507,7 +507,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
 
   struct NedCoor_i gps_pos_cm_ned;
   ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_int.ltp_def, &gps_s->ecef_pos);
-  gps_pos_cm_ned.z=gps_pos_cm_ned.z - 32;
+  gps_pos_cm_ned.z = gps_pos_cm_ned.z - (int32_t)(DISTANCE_B2G*100 + 2);
   
   /*add pos diff inspect, request pos diff <10m*/
   if( !gps_pos_inspect(gps_pos_cm_ned) ) 
@@ -729,8 +729,8 @@ static void radar24_cb(uint8_t __attribute__((unused)) sender_id, float distance
 {
   static float last_radar_offset = 0.;
   static float last_distance = 0;
-  static float distance_avr = 0;
-
+  //static float distance_avr = 0;
+  
   /*set deta distance < 1.0*/  
   #if 1
   /* update filter assuming a flat ground */
@@ -739,8 +739,8 @@ static void radar24_cb(uint8_t __attribute__((unused)) sender_id, float distance
   	 && fabs(distance-last_distance) < 1.0
   	 && ins_int.update_radar_agl           ) 
    {
-   		distance_avr = 0.8*distance_avr + 0.2*distance;
-		distance = distance_avr;
+   		//distance_avr = 0.8*distance_avr + 0.2*distance;
+		//distance = distance_avr;
         vff_update_z_conf(-(distance),  VFF_R_RADAR24_0 + VFF_R_RADAR24_OF_M * fabs(distance));
         last_radar_offset = vff.offset;
   } 

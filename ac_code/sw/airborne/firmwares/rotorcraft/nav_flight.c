@@ -18,6 +18,7 @@
 #include "generated/flight_plan.h"
 #endif
 #include "subsystems/ops/ops_app_if.h"
+#include "subsystems/ops/ops_msg_if.h"
 #include "firmwares/rotorcraft/pvtolc.h"
 
 #include "modules/system/timer_if.h"
@@ -47,8 +48,8 @@ static void  ac_config_set_default(void);
 
 void nav_flight_init(void)
 { 
-	flight_mode=nav_gcs_mode;  //default in nav_kill_mode
-	nav_toward_wp_flag=FALSE;
+	flight_mode = nav_gcs_mode;  //default in nav_kill_mode
+	nav_toward_wp_flag = FALSE;
 	task_init();            //mission initial
 	rc_nav_init();             //rc info initial
 	ac_config_set_default();
@@ -227,9 +228,9 @@ void nav_flight(void)
 				}
 		  	   else if(rc_set_info.vtol==TAKE_OFF) 
 			   {
-			   	monitoring_reset_emer();
-			   	flight_mode_enter(nav_rc_mode); 	/*get rc take off cmd*/
-				flight_step++;
+				   	monitoring_reset_emer();
+				   	flight_mode_enter(nav_rc_mode); 	/*get rc take off cmd*/
+					flight_step++;
 		  	   }
 			   else   /*rc_set_info.vtol==LOCKED/CRUISE*/
 			   {
@@ -294,6 +295,13 @@ void nav_flight(void)
 				else if(rc_set_info.home)
 				{
 					RC_HOVER();
+
+					/*get current height, if height lower 2m, set height 2m*/
+					wp_take_off.z = stateGetPositionEnu_i()->z;
+					if( wp_take_off.z < POS_BFP_OF_REAL(2.0) )
+					{
+						wp_take_off.z = POS_BFP_OF_REAL(2.0);
+					}
 					flight_step = 4;          //goto home
 				}
 				//else: execution rc_cmd

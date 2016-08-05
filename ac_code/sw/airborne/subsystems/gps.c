@@ -181,10 +181,10 @@ void gps_periodic_check(void)
 
   /*ublox or nmea get gps.stable, use for monitoring*/
  #ifndef USE_GPS_NMEA
-  else if(gps.pacc <500) {  //5m
+  else if(gps.pacc < 200) {
   	gps.stable = TRUE;
   }
-  else if(gps.pacc >600) { 
+  else if(gps.pacc > 500) { 
     gps.stable = FALSE;
   }
  #else

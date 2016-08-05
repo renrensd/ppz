@@ -91,6 +91,8 @@ void send_heart_beat_A2G_msg(void)
    int16_t flight_alt = (int16_t)( (stateGetPositionEnu_f()->z )*100 );    
    int32_t pos_lon = (int32_t)( (int64_t)(stateGetPositionLla_i()->lon) * 17453293/100000000 ); 
    int32_t pos_lat = (int32_t)( (int64_t)(stateGetPositionLla_i()->lat) * 17453293/100000000 ); 
+   //int32_t pos_lon = 198833922;
+   //int32_t pos_lat = 39340866;
   /*
    static uint8_t i = 1;
    int32_t pos_lon = 198833922 + 10*i;

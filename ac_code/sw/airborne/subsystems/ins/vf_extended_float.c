@@ -47,6 +47,9 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 #include "subsystems/datalink/downlink.h"
 #endif
 
+/*use for z_accel butterworth filter*/
+#include "filters/low_pass_filter.h"
+
 /** initial covariance diagonal */
 #ifndef VFF_EXTENDED_INIT_PXX
 #define VFF_EXTENDED_INIT_PXX 1.0
@@ -54,7 +57,7 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 
 /** process noise covariance Q */
 #ifndef VFF_EXTENDED_ACCEL_NOISE
-#define VFF_EXTENDED_ACCEL_NOISE  10.0//0.5
+#define VFF_EXTENDED_ACCEL_NOISE  10.0
 #endif
 
 #define Qbiasbias 1e-7
@@ -64,6 +67,8 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 #define R_OFFSET 1.
 
 struct VffExtended vff;
+
+Butterworth2LowPass acc_z_filter;
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -97,6 +102,8 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
     vff.P[i][i] = VFF_EXTENDED_INIT_PXX;
   }
 
+  init_butterworth_2_low_pass(&acc_z_filter, 0.0106, (1. / 512), 0.);    //tau = 0.1592/cutoff_fre
+
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
 #endif
@@ -127,6 +134,9 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
  */
 void vff_propagate(float accel, float dt)
 {
+  /*accel first pass buterworth filter*/
+  accel = update_butterworth_2_low_pass(&acc_z_filter, accel);
+  
   /* update state */
   vff.zdotdot = accel + 9.81 - vff.bias;
   vff.z = vff.z + dt * vff.zdot;

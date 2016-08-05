@@ -10,7 +10,7 @@
   <header>
     <file name="radar_nra24.h"/>
   </header>
-
+  <init fun="Init_radar24()"/>
   <periodic fun="radar_nra24_get_data()"freq="60"/>
   <makefile target="ap">
     <file name="radar_nra24.c"/>

@@ -208,7 +208,8 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
                                   &fix, &autopilot_mode,
                                   &autopilot_in_flight, &autopilot_motors_on,
                                   &guidance_h.mode, &guidance_v_mode,
-                                  &electrical.vsupply, &time_sec);
+                                  &electrical.vsupply, &electrical.current,
+								  &time_sec);
 }
 
 static void send_energy(struct transport_tx *trans, struct link_device *dev)
@@ -646,10 +647,10 @@ void autopilot_check_in_flight(bool_t motors_on)
   { /* currently not in flight */
     if (autopilot_in_flight) 
 	{
-      if (stabilization_cmd[COMMAND_THRUST] >3000 && stateGetPositionEnu_f()->z >DISTANCE_ABOVE_GROUNG)//agl_dist_value_filtered >0.38) 
+      if (stabilization_cmd[COMMAND_THRUST] >3000 && stateGetPositionEnu_f()->z >DISTANCE_ABOVE_GROUNG)
 	  {
         above_ground_counter++;
-        if (autopilot_in_flight_counter > (3*AUTOPILOT_IN_FLIGHT_TIME) )   //continue 3s
+        if (autopilot_in_flight_counter > (1*AUTOPILOT_IN_FLIGHT_TIME) )   //continue 1s
 		{
           above_ground = TRUE;
 		  above_ground_counter = 0;

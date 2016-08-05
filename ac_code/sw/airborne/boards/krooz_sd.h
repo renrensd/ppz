@@ -77,6 +77,7 @@
 
 //#define DefaultVoltageOfAdc(adc) (0.0088623*adc)
 #define DefaultVoltageOfAdc(adc) (0.008862*2600)
+#define DefaultMilliAmpereOfAdc(adc) 	(600000-adc*183.15018315)   	//*3300*6000/26.4/4095 ) )
 
 
 /* UART */
@@ -163,9 +164,9 @@
  * 4th (index 3) is used for bat monitoring by default
  */
 /* allow to define ADC_CHANNEL_VSUPPLY in the airframe file*/
-#ifndef ADC_CHANNEL_VSUPPLY
-#define ADC_CHANNEL_VSUPPLY ADC_1
-#endif
+//#ifndef ADC_CHANNEL_VSUPPLY
+//#define ADC_CHANNEL_VSUPPLY ADC_1
+//#endif
 
 //#define ADC_CHANNEL_CAM1    ADC_2
 
@@ -178,18 +179,13 @@
 #define USE_ADC_1 1
 #endif
 #if USE_ADC_1
-#define AD1_1_CHANNEL 3
+#define AD1_1_CHANNEL 4
 #define ADC_1 AD1_1
 #define ADC_1_GPIO_PORT GPIOA
-#define ADC_1_GPIO_PIN GPIO3
+#define ADC_1_GPIO_PIN GPIO4
 #endif
 
-#if USE_ADC_2
-#define AD1_2_CHANNEL 4
-#define ADC_2 AD1_2
-#define ADC_2_GPIO_PORT GPIOA
-#define ADC_2_GPIO_PIN GPIO4
-#endif
+#define ADC_CHANNEL_CURRENT ADC_1
 
 
 /* by default activate onboard baro */
@@ -366,5 +362,6 @@
 /* DEBUG_GPIO_OPTION */
 #define DEBUG_GPIO_OPTION
 #define DEBUG_GPIO 	GPIOE,GPIO8
+
 
 #endif /* CONFIG_KROOZ_SD_H */

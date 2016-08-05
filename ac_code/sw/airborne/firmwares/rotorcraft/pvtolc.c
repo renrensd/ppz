@@ -69,12 +69,13 @@ bool_t take_off_motion(bool_t reset)
 	  if ((NavResurrect())) return TRUE;  //auto unlocked
 	  step_t++;
 	  break;
-	case 2://set dynamic wp_takeoff when z <0.3,avoid airframe dump
-	  if ( stateGetPositionEnu_f()->z < DISTANCE_ABOVE_GROUNG ) { 
+	case 2://set dynamic wp_takeoff when z <DISTANCE_ABOVE_GROUNG,avoid airframe dump
+	  if ( above_ground )//stateGetPositionEnu_f()->z < DISTANCE_ABOVE_GROUNG ) 
+	  { 
 	    wp_ToL=*stateGetPositionEnu_i();  
 		NavGotoWaypoint_wp(wp_ToL);
 	    NavVerticalAutoThrottleMode(RadOfDeg(0.0));
-	    NavVerticalAltitudeMode(Height(1.200000), 0.);
+	    NavVerticalAltitudeMode(Height(2.000000), 0.);
 	    return TRUE; 
 	  }
 	  step_t++;
@@ -83,11 +84,11 @@ bool_t take_off_motion(bool_t reset)
 	  //stay takeoff waypoint,height
 	  NavGotoWaypoint_wp(wp_ToL);
 	  //NavVerticalClimbMode(0.5);
-	  NavVerticalAltitudeMode(Height(1.200000), 0.);
-	  if( (stateGetPositionEnu_f()->z  >1.0)&&(stateGetSpeedEnu_f()->z < 0.2))
+	  NavVerticalAltitudeMode(Height(2.000000), 0.);
+	  if( (stateGetPositionEnu_f()->z  >1.8)&&(stateGetSpeedEnu_f()->z < 0.2))
 	  {
 	  	//NavVerticalAltitudeMode(Height(1.200000), 0.);
-	  	step_t=0;   //reset
+	  	step_t = 0;   //reset
 	  	return FALSE;   //finish take off motion
 	  }
 	  
@@ -110,10 +111,10 @@ bool_t land_motion(bool_t reset)
 	  }
 	  break;
 	case 1:
-	  if(stateGetPositionEnu_f()->z >0.600000) {   
+	  if(stateGetPositionEnu_f()->z >0.700000) {   
 	    //NavGotoWaypoint_wp(wp_ToL);
 	    NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
-	    NavVerticalClimbMode(-0.3 ); 
+	    NavVerticalClimbMode(-0.5 ); 
 	    return TRUE;
       }
       step_l++;
@@ -121,7 +122,7 @@ bool_t land_motion(bool_t reset)
 	case 2:
 	  //NavGotoWaypoint_wp(wp_ToL);
 	  NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
-	  NavVerticalClimbMode(-0.15 ); 
+	  NavVerticalClimbMode(-0.2 ); 
 	  step_l++;
 	  break;
 	case 3:
@@ -180,7 +181,8 @@ int8_t nav_toward_waypoint(struct EnuCoor_i *wp_end,bool_t reset)
 		  break;
 		case 2:  //route flight
 		  NavGotoWaypoint_wp(*wp_end);
-		  NavVerticalAltitudeMode(Height(1.200000), 0.);   //POS_FLOAT_OF_BFP(wp_end->z)
+		  //NavVerticalAltitudeMode(Height(2.000000), 0.);  
+		  NavVerticalAltitudeMode(POS_FLOAT_OF_BFP(wp_end->z), 0.);
 		  if( nav_approaching_from(wp_end,NULL,0) )        {  step_h=0;  return error_code=0; } 
 		  break;
 	    default: return error_code=2;

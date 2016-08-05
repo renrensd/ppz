@@ -45,6 +45,7 @@ typedef void (*timer)(void);
 
 #endif //_TIMER_CLASS_H_
 
+/*define timer_array[TIMER_MAX] for y,z*/
 #ifdef TIMER_PASS_3
     #undef  TIMER_PASS_3
     #undef  BEGIN_TIMERS
@@ -55,6 +56,7 @@ typedef void (*timer)(void);
     #define TIMER(x,y,z)          {y,z},
 #endif
 
+/*declare callback function:y*/
 #ifdef TIMER_PASS_2
     #undef  TIMER_PASS_2
     #define TIMER_PASS_3
@@ -66,6 +68,7 @@ typedef void (*timer)(void);
     #define TIMER(x,y,z)         extern void y(U16 param);
 #endif
 
+/*define enum of TIMERS_ENUM:x*/
 #ifdef TIMER_PASS_1
     #undef TIMER_PASS_1
     #define TIMER_PASS_2

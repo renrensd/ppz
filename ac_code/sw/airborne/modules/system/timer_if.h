@@ -26,12 +26,12 @@
 /**** Definition of types ****/ 
 typedef enum
 {
-    TIMER_TASK_OPS,
+	TIMER_TASK_OPS,
 	TIMER_TASK_RC,
 	TIMER_TASK_GCS,
 	TIMER_TASK_MODULE,
 	TIMER_TASK_TELEMETRY,
-    TIMER_TASK_MAX    
+	TIMER_TASK_MAX    
 }TIMER_TASK_IDS;
 
 typedef enum

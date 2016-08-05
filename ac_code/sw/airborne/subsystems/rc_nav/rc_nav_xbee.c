@@ -73,7 +73,7 @@
 #define K_CCW        0x89
 #define K_HOVER      0
 
-#define RC_MAX_COUNT  6   //lost_time_out =10/(2hz)=5s
+#define RC_MAX_COUNT  4   //lost_time_out =10/(2hz)=5s
 
 struct rc_set rc_set_info;   //rc mode information
 struct rc_motion rc_motion_info;
@@ -101,7 +101,8 @@ void rc_nav_init(void)
 ***********************************************************************/
 void rc_setpoint_speed_parse(float speed_fb,float speed_rl)
 {  
-   float psi= stateGetNedToBodyEulers_f()->psi; //yaw angle
+   //float psi= stateGetNedToBodyEulers_f()->psi; //yaw angle,replace with nav_heading
+   float psi= ANGLE_FLOAT_OF_BFP(nav_heading);
    float s_psi = sinf(psi);
    float c_psi = cosf(psi);
    
@@ -244,7 +245,8 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		case  K_HOLD:
 			if(nav_climb)
 			{
-				RC_Z_HOLD();
+				//RC_Z_HOLD();  replace with stop climb speed
+				RC_Z_STOP();
 			}
 			else
 			{
@@ -528,7 +530,7 @@ void rc_set_info_reset(void)
 
 void rc_set_info_init(void)
 {
-    //rc_set_info.mode_state= nav_rc_mode; //or nav_gcs_mode,use in rc_cmd mode change
+    rc_set_info.mode_state= nav_gcs_mode; //or nav_gcs_mode,use in rc_cmd mode change
 	rc_set_info.vtol = LOCKED;
 	rc_set_info.home = FALSE;
 	rc_set_info.spray_grade= 0;
@@ -559,7 +561,9 @@ void rc_lost_check(void)
 	       rc_lost = TRUE;
 		   rc_count = 0;
 		   #ifdef GCS_V1_OPTION
-		   XbeeSetRcConFalse();   //close rc communication,wait for restart connect
+
+		   //unused for only heartbeat communication
+		   //XbeeSetRcConFalse();   //close rc communication,wait for restart connect
 		   #endif
 	}
 }

@@ -70,11 +70,15 @@ enum manual_mission
     NavVerticalAltitudeMode(alt,0); \
   }
 
+#define RC_Z_STOP()  {\
+	NavVerticalClimbMode(0); \
+  }
+
 //horizontal control functions
-#define FB_Accel 0.6
-#define FB_Max_Speed 3
-#define RL_DRIFT_SPEED 0.3
-#define RL_SPEED 0.5
+#define FB_Accel 1.2
+#define FB_Max_Speed 6.0
+#define RL_DRIFT_SPEED 0.4
+#define RL_SPEED 1.0
 
 #define ROTATION_RATE 0.5       //unit =rad/s
 #define ROTATION_DRIFT_RATE 0.2

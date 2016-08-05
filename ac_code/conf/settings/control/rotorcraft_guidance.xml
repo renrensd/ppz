@@ -12,8 +12,8 @@
       <dl_setting var="guidance_vi_ki" min="0" step="1" max="300"   module="guidance/guidance_v" shortname="kii" param="GUIDANCE_V_INSIDE_KI" persistent="true"/>
       <dl_setting var="vh"              min="0" step="500" max="1000000"   module="guidance/guidance_v" shortname="V_h"   param="GUIDANCE_V_TD_H" persistent="true"/>
       <dl_setting var="vh0"             min="0" step="500" max="1000000"   module="guidance/guidance_v" shortname="V_h0"  param="GUIDANCE_V_TD_H0" persistent="true"/>
-      
-	  <dl_setting var="guidance_v_nominal_throttle" min="0.2" step="0.01" max="0.8" module="guidance/guidance_v" shortname="nominal_throttle" param="GUIDANCE_V_NOMINAL_HOVER_THROTTLE" persistent="true"/>
+      <dl_setting var="r_vert"          min="0" step="10" max="2000"   module="guidance/guidance_v" shortname="V_r"  param="GUIDANCE_V_TD_R" persistent="true"/>
+      <dl_setting var="guidance_v_nominal_throttle" min="0.2" step="0.01" max="0.8" module="guidance/guidance_v" shortname="nominal_throttle" param="GUIDANCE_V_NOMINAL_HOVER_THROTTLE" persistent="true"/>
       <dl_setting var="guidance_v_adapt_throttle_enabled" min="0" step="1" max="1" module="guidance/guidance_v" shortname="adapt_throttle" param="GUIDANCE_V_ADAPT_THROTTLE_ENABLED" values="FALSE|TRUE" persistent="true"/>
       <dl_setting var="guidance_v_z_sp" min="-5" step="0.5" max="3" module="guidance/guidance_v" shortname="sp" unit="2e-8m" alt_unit="m" alt_unit_coef="0.00390625"/>
     </dl_settings>
@@ -36,6 +36,9 @@
       <dl_setting var="guidance_h.gains.i" min="0" step="1" max="400" module="guidance/guidance_h" shortname="ki" handler="set_igain" param="GUIDANCE_H_IGAIN" type="int32" persistent="true"/>
       <dl_setting var="guidance_h.gains.v" min="0" step="1" max="400" module="guidance/guidance_h" shortname="kv" param="GUIDANCE_H_VGAIN" type="int32" persistent="true"/>
       <dl_setting var="guidance_h.gains.a" min="0" step="1" max="400" module="guidance/guidance_h" shortname="ka" param="GUIDANCE_H_AGAIN" type="int32" persistent="true"/>
+      <dl_setting var="hh"             min="0" step="500" max="1000000"   module="guidance/guidance_v" shortname="H_h"  param="GUIDANCE_H_TD_H" persistent="true"/>
+      <dl_setting var="hh0"            min="0" step="500" max="1000000"   module="guidance/guidance_v" shortname="H_h0"  param="GUIDANCE_H_TD_H0" persistent="true"/>
+      <dl_setting var="r_h"            min="0" step="10" max="2000"   module="guidance/guidance_v" shortname="H_r"  param="GUIDANCE_H_TD_R" persistent="true"/>
       <dl_setting var="guidance_h.sp.pos.x" MIN="-10" MAX="10" STEP="1"  module="guidance/guidance_h" shortname="sp_x_ned" unit="1/2^8m" alt_unit="m" alt_unit_coef="0.00390625"/>
       <dl_setting var="guidance_h.sp.pos.y" MIN="-10" MAX="10" STEP="1"  module="guidance/guidance_h" shortname="sp_y_ned" unit="1/2^8m" alt_unit="m" alt_unit_coef="0.00390625"/>
     </dl_settings>

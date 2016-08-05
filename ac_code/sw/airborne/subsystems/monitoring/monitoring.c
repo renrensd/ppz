@@ -355,7 +355,7 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 	RunOnceEvery( MONITORING_FREQUENCY*2, ops_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY, rc_communication_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY, gcs_communication_flight_check() );
-	//RunOnceEvery( MONITORING_FREQUENCY, lift_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY, lift_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY, task_running_check() );   
 	RunOnceEvery( MONITORING_FREQUENCY, mode_convert_check() );   
 	if(0)  //land,turn to ground monitoring
@@ -363,6 +363,10 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 		imu_ground_reset();
 		height_ground_reset();
 		ground_check_status = FALSE;
+	}
+	if(out_of_control_detect())
+	{
+		ground_check_pass = FALSE;   //AP_MODE will set kill,lock motors
 	}
 }
 

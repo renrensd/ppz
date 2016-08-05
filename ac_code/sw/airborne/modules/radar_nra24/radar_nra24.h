@@ -34,6 +34,20 @@
 #define RADAR_NRA24_PAYLOAD_LEN 8
 #endif
 
+#define  RADAR24_SPEED_R   10     //dilution of speed
+#define  RADAR24_fILTER_H  0.05  //dilution of filter
+#define  RADAR24_LENGTH 0.02     //tracing step length
+#define  RADAR24_G 0.25
+#define  CUT_OFF_PV 15
+#define  NUM_FIL 8
+
+
+#define RADAR_SMOOTH_MA 0
+#define RADAR_BUTTERWORTH 1
+#define RADAR_DIFF 2
+#define CHANGE_MODE 0
+
+
 struct RADAR_NRA24
 {
   volatile bool_t msg_received;           ///< message received flag
@@ -51,6 +65,15 @@ struct RADAR_NRA24_DATA
 
 extern struct RADAR_NRA24  radar_nra24;
 extern struct RADAR_NRA24_DATA radar_nra24_data;
+
+extern float RADAR24_DILUT_SPEED_R;     //dilution of speed
+extern float  RADAR24_DILUT_fILTER_H;    //dilution of filter
+extern float  RADAR24_STER_LENGTH;     //tracing step length
+extern float Radar24_G;
+extern float CUT_OFF;
+extern unsigned char FILTER_NUM;
+
+extern void Init_radar24(void);
 
  void  radar_nra24_get_data(void);
 
