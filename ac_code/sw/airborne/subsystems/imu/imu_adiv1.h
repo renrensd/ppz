@@ -32,14 +32,16 @@
 #include "generated/airframe.h"
 #include "subsystems/imu.h"
 
-#include "peripherals/adxrs290_spi.h"
+
+#include "peripherals/adxrs453_spi.h"
 #include "peripherals/hmc58xx.h"
-#include "peripherals/adxl345_spi.h"
+#include "peripherals/adxl350_spi.h"
 
 enum ADXRS_AXIS_TYPE
 {
-	ADXRS_AXIS_XY = 1,
-	ADXRS_AXIS_Z = 2,
+	ADXRS_AXIS_X = 1,
+	ADXRS_AXIS_Y = 2,
+	ADXRS_AXIS_Z = 3,
 };
 
 /* include default adi v1 sensitivity definitions */
@@ -62,22 +64,23 @@ enum ADXRS_AXIS_TYPE
 #define IMU_MAG_Z_SIGN    1
 #endif
 
-/** default adxrs290 gyro sensitivy and neutral from the datasheet
- * MPU with 100 deg/s has 200 LSB/(deg/s)
- * sens = 1/200 * pi/180 * 2^INT32_RATE_FRAC
- * sens = 1/200 * pi/180 * 4096 = 0.357443431
+/** default adxrs453 gyro sensitivy and neutral from the datasheet
+ * MPU with 300 deg/s has 80 LSB/(deg/s)
+ * sens = 1/80 * pi/180 * 2^INT32_RATE_FRAC
+ * sens = 1/80 * pi/180 * 4096 = 0.8936085770210967
  I*/
 #if !defined IMU_GYRO_P_SENS & !defined IMU_GYRO_Q_SENS & !defined IMU_GYRO_R_SENS
-// FIXME
-#define IMU_GYRO_P_SENS 0.357443431
-#define IMU_GYRO_P_SENS_NUM 4502
-#define IMU_GYRO_P_SENS_DEN 12595
-#define IMU_GYRO_Q_SENS 0.357443431
-#define IMU_GYRO_P_SENS_NUM 4502
-#define IMU_GYRO_P_SENS_DEN 12595
-#define IMU_GYRO_R_SENS 0.357443431
-#define IMU_GYRO_P_SENS_NUM 4502
-#define IMU_GYRO_P_SENS_DEN 12595
+// FIXME, TO CONFIRM
+#define IMU_GYRO_P_SENS 0.8936085770210967
+#define IMU_GYRO_P_SENS_NUM 2251
+#define IMU_GYRO_P_SENS_DEN 2519
+#define IMU_GYRO_Q_SENS 0.8936085770210967
+#define IMU_GYRO_Q_SENS_NUM 2251
+#define IMU_GYRO_Q_SENS_DEN 2519
+#define IMU_GYRO_R_SENS 0.8936085770210967
+#define IMU_GYRO_R_SENS_NUM 2251
+#define IMU_GYRO_R_SENS_DEN 2519
+
 #endif
 #if !defined IMU_GYRO_P_NEUTRAL & !defined IMU_GYRO_Q_NEUTRAL & !defined IMU_GYRO_R_NEUTRAL
 #define IMU_GYRO_P_NEUTRAL 0
@@ -87,8 +90,8 @@ enum ADXRS_AXIS_TYPE
 
 
 /** default accel sensitivy using 16 bit AD7689 adc
- * adxl345 with 8g has 64 LSB/g
- * sens = 9.81 [m/s^2] / 64 [LSB/g] * 2^INT32_ACCEL_FRAC = 156.96
+ * adxl350 with 4g has 128 LSB/g
+ * sens = 9.81 [m/s^2] / 512 [LSB/g] * 2^INT32_ACCEL_FRAC = 19.62
  
  */
 #if 0
@@ -113,15 +116,15 @@ enum ADXRS_AXIS_TYPE
 
 struct ImuAdiv1 {
   volatile uint8_t accel_valid;
-  volatile uint8_t gyro_xy_valid;
+  volatile uint8_t gyro_x_valid;
+  volatile uint8_t gyro_y_valid;
   volatile uint8_t gyro_z_valid;
   volatile uint8_t mag_valid;
-  struct Adxl345_Spi acc_adxl;
-  struct Adxrs290_Spi gyro_xy;
-  struct Adxrs290_Spi gyro_z;
+  struct Adxl350_Spi acc_adxl;
+  struct Adxrs453_Spi gyro_x;
+  struct Adxrs453_Spi gyro_y;
+  struct Adxrs453_Spi gyro_z;
   struct Hmc58xx mag_hmc;
-  volatile uint8_t adxrs290_xy_eoc;
-  volatile uint8_t adxrs290_z_eoc;
 };
 
 extern struct ImuAdiv1 imu_adiv1;

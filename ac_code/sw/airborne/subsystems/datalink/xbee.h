@@ -30,13 +30,10 @@
 
 //#define GCS_V1_OPTION  //defined, we can use gcs/rc/ubuntu_gcs
 
-
-#ifdef GCS_V1_OPTION   
 #include "modules/system/timer_if.h"
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
 //#include "modules/system/types.h"
-#endif
 
 #include "subsystems/datalink/datalink.h"
 #include "generated/airframe.h"

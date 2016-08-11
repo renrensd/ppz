@@ -177,8 +177,7 @@ void run_ekf (void) {
 
 
 
-int
-main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
 
   ad = ahrs_data_read_log("../data/log_ahrs_bug");

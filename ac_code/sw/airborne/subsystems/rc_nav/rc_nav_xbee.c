@@ -26,8 +26,9 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "math.h"
-#ifdef OPS_OPTION
+
 #include "subsystems/ops/ops_app_if.h"
+#ifdef OPS_OPTION
 #include "subsystems/ops/ops_msg_if.h"   
 #endif
 #include "subsystems/monitoring/monitoring.h" 

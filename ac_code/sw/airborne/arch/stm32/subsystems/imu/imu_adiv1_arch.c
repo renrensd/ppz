@@ -32,8 +32,7 @@
 void imu_adiv1_arch_init(void)
 {
   rcc_periph_clock_enable(RCC_SYSCFG);
-  gpio_setup_input_pulldown(ADXRS_XY_EOC_PIN_PORT,ADXRS_XY_EOC_PIN);
-  gpio_setup_input_pulldown(ADXRS_Z_EOC_PIN_PORT,ADXRS_Z_EOC_PIN);
+  //gpio_setup_input_pulldown(ADXRS_XY_EOC_PIN_PORT,ADXRS_XY_EOC_PIN);
 
   #if 0
   exti_select_source(EXTI0, ADXRS_XY_EOC_PIN_PORT);
@@ -55,12 +54,6 @@ void imu_adiv1_arch_init(void)
 void exti0_isr(void)
 {
   exti_reset_request(EXTI0);
-  imu_adiv1.adxrs290_xy_eoc = TRUE;
 }
 
-void exti1_isr(void)
-{
-  exti_reset_request(EXTI1);
-  imu_adiv1.adxrs290_z_eoc = TRUE;
-}
 
