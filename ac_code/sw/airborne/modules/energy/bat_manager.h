@@ -35,10 +35,14 @@
 
 
 /**** Definition of constants ****/
+#define BQ76940_OPTION
+
 #define BQ76920_ADDR   		0x30	/* 8bit write address for i2c. */
 #define BQ76930_ADDR   		0x10	/* 8bit write address for i2c. */
 #define BQ76940_ADDR   		0x10	/* 8bit write address for i2c. */
 #define BQ34Z100_ADDR    	0xAA	/* 8bit write address for i2c. */
+
+#define BAT_INFO_WDG_CNT	240	/* 1s. */		
 /** config status states */
 enum BQ769XCONFIG
 {
@@ -47,6 +51,7 @@ enum BQ769XCONFIG
 	BQ76940_CONFIG
 };
 
+#ifdef BQ76920_OPTION
 enum BQ7692CONFSTAUS
 {
   	BQ7692_CONF_UNINIT,
@@ -96,7 +101,9 @@ enum BQ7692READSTAUS
   	
   	BQ7692_READ_DONE
 };
+#endif	/* BQ76920_OPTION */
 
+#ifdef BQ76930_OPTION
 enum BQ7693CONFSTAUS
 {
   	BQ7693_CONF_UNINIT,
@@ -158,7 +165,9 @@ enum BQ7693READSTAUS
   	
   	BQ7693_READ_DONE
 };
+#endif	/* BQ76920_OPTION */
 
+#ifdef BQ76940_OPTION
 enum BQ7694CONFSTAUS
 {
   	BQ7694_CONF_UNINIT,
@@ -244,6 +253,7 @@ enum BQ7694READSTAUS
   	
   	BQ7694_READ_DONE
 };
+#endif	/* BQ76940_OPTION */
 
 enum BQ34ZCONFSTAUS
 {
@@ -264,6 +274,7 @@ enum BQ34ZREADSTAUS
 };
 
 /**** Declaration of variables ****/
+#ifdef BQ76920_OPTION
 struct BQ76920
 {
 	struct i2c_periph *i2c_p;
@@ -277,7 +288,9 @@ struct BQ76920
 	uint8_t gain2;
 	uint8_t offset;
 };
+#endif	/* BQ76920_OPTION */
 
+#ifdef BQ76930_OPTION
 struct BQ76930
 {
 	struct i2c_periph *i2c_p;
@@ -291,7 +304,9 @@ struct BQ76930
 	uint8_t gain2;
 	uint8_t offset;
 };
+#endif	/* BQ76930_OPTION */
 
+#ifdef BQ76940_OPTION
 struct BQ76940
 {
 	struct i2c_periph *i2c_p;
@@ -305,6 +320,8 @@ struct BQ76940
 	uint8_t gain2;
 	uint8_t offset;
 };
+#endif	/* BQ76940_OPTION */
+
 
 struct BQ34Z100
 {
@@ -321,7 +338,7 @@ struct BAT_INFO
 {
 	uint8_t ov_trip_2;
 	uint8_t uv_trip_2;
-         uint8_t ov_trip_3;
+    uint8_t ov_trip_3;
 	uint8_t uv_trip_3;
 	uint8_t ov_trip_4;
 	uint8_t uv_trip_4;
@@ -346,26 +363,38 @@ struct BAT_INFO
 	float temp;
 	uint16_t ov;
 	uint16_t uv;
+	uint16_t wdg_cnt;
 	
 	struct BQ34Z100 bq34z;
+#ifdef BQ76930_OPTION
     struct BQ76930 bq7693;
+#endif
+#ifdef BQ76920_OPTION
 	struct BQ76920 bq7692;
+#endif
+#ifdef BQ76940_OPTION
 	struct BQ76940 bq7694;
-	
+#endif
 };
 
 extern struct BAT_INFO bat_info;
 
 
 /**** Declaration of functions ****/
+#ifdef BQ76920_OPTION
 void bq7692_start_configure(struct BQ76920 *bq7692);
 void bq7692_read(struct BQ76920 *bq7692);
+#endif	/* BQ76920_OPTION */
 
+#ifdef BQ76930_OPTION
 void bq7693_start_configure(struct BQ76930 *bq7693);
 void bq7693_read(struct BQ76930 *bq7693);
+#endif	/* BQ76930_OPTION */
 
+#ifdef BQ76940_OPTION
 void bq7694_start_configure(struct BQ76940 *bq7694);
 void bq7694_read(struct BQ76940 *bq7694);
+#endif	/* BQ76940_OPTION */
 
 void bq34z_start_configure(struct BQ34Z100*bq34z);
 void bq34z_read(struct BQ34Z100 *bq34z);
@@ -375,6 +404,7 @@ extern void bat_periodic(void);
 extern void bat_event(void);
 
 /// convenience function: read or start configuration if not already initialized
+#ifdef BQ76920_OPTION
 static inline void bq7692_periodic(struct BQ76920 *bq7692)
 {
   	if(bq7692->initialized) 
@@ -386,7 +416,9 @@ static inline void bq7692_periodic(struct BQ76920 *bq7692)
     	bq7692_start_configure(bq7692);
   	}
 }
+#endif	/* BQ76920_OPTION */
 
+#ifdef BQ76930_OPTION
 static inline void bq7693_periodic(struct BQ76930 *bq7693)
 {
 	if(bq7693->initialized) 
@@ -399,7 +431,9 @@ static inline void bq7693_periodic(struct BQ76930 *bq7693)
   	}
   	
 }
+#endif	/* BQ76930_OPTION */
 
+#ifdef BQ76940_OPTION
 static inline void bq7694_periodic(struct BQ76940 *bq7694)
 {
   	if(bq7694->initialized) 
@@ -411,7 +445,7 @@ static inline void bq7694_periodic(struct BQ76940 *bq7694)
     	bq7694_start_configure(bq7694);
   	}
 }
-
+#endif	/* BQ76940_OPTION */
 
 static inline void bq34z_periodic(struct BQ34Z100 *bq34z)
 {
