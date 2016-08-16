@@ -70,7 +70,7 @@ bool_t take_off_motion(bool_t reset)
 	  step_t++;
 	  break;
 	case 2://set dynamic wp_takeoff when z <DISTANCE_ABOVE_GROUNG,avoid airframe dump
-	  if ( !above_ground )//stateGetPositionEnu_f()->z < DISTANCE_ABOVE_GROUNG ) 
+	  if ( stateGetPositionEnu_f()->z < DISTANCE_ABOVE_GROUNG )   //!above_ground )//
 	  { 
 	    wp_ToL=*stateGetPositionEnu_i();  
 		NavGotoWaypoint_wp(wp_ToL);
@@ -85,7 +85,7 @@ bool_t take_off_motion(bool_t reset)
 	  NavGotoWaypoint_wp(wp_ToL);
 	  //NavVerticalClimbMode(0.5);
 	  NavVerticalAltitudeMode(Height(2.000000), 0.);
-	  if( (stateGetPositionEnu_f()->z  >1.8)&&(stateGetSpeedEnu_f()->z < 0.2))
+	  if( (stateGetPositionEnu_f()->z  >1.8)&&(fabs(stateGetSpeedEnu_f()->z) < 0.2))
 	  {
 	  	//NavVerticalAltitudeMode(Height(1.200000), 0.);
 	  	step_t = 0;   //reset
@@ -111,7 +111,7 @@ bool_t land_motion(bool_t reset)
 	  }
 	  break;
 	case 1:
-	  if(stateGetPositionEnu_f()->z >0.700000) {   
+	  if(stateGetPositionEnu_f()->z >0.800000) {   
 	    //NavGotoWaypoint_wp(wp_ToL);
 	    NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
 	    NavVerticalClimbMode(-0.5 ); 

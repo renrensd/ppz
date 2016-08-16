@@ -101,8 +101,9 @@ void send_heart_beat_A2G_msg(void)
    if(i==20)  i=1;
   */
    
-   int8_t  battery_remain = (int8_t)((bat_info.vcc12-42500)/80);   //current use high byte
-   int8_t  pesticides_remain = (int8_t)(ops_info.res_cap>>8)&0xFF;
+   int8_t  battery_remain = (int8_t)((bat_info.vcc12-42000)/60);   //current use high byte
+   Bound(battery_remain, 0, 100);
+   int8_t  pesticides_remain = (int8_t)(ops_info.res_cap&0x00FF);
 
    uint32_t error_code = em_code&0xFFFFF7FF;   //remove gcs lost error
 

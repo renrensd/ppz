@@ -80,7 +80,7 @@ struct EnuCoor_i nav_circle_center;
 int32_t nav_circle_radius, nav_circle_qdr, nav_circle_radians;
 
 int32_t nav_leg_progress;
-uint32_t nav_leg_length;
+int32_t nav_leg_length;
 
 bool_t nav_survey_active;
 
@@ -395,9 +395,9 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   uint32_t leg_length2 = Max((wp_diff.x * wp_diff.x + wp_diff.y * wp_diff.y)>>16, 1);   //leg_length2 is route length square(real)
   int32_t leg_progress2 = (pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y)>>16;        //leg_progress2 is route_len * (shadow of cur_star len)
   nav_leg_length = int32_sqrt(leg_length2);                                             //nav_leg_length is real length of route
-  nav_leg_progress = leg_progress2 / nav_leg_length;                                    //nav_leg_progress is shadow length of flighted line
+  nav_leg_progress = (float)(leg_progress2 / nav_leg_length);                                    //nav_leg_progress is shadow length of flighted line
  
-#if 1  //use cornering calibrate
+#if 0  //use cornering calibrate
   /** caculate corrective wp to ajust progress length ,by WHP**/
   //get dot product point   
   int16_t s = (int16_t)( ((double)(leg_progress2))/((double)(leg_length2))*1000 );
@@ -434,9 +434,10 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 
   dist2_to_wp = get_dist2_to_point(wp_end);
 	#if 0//PERIODIC_TELEMETRY
-	 uint16_t a = (uint16_t)progress;
+	RunOnceEvery(32, {
      xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-     DOWNLINK_SEND_ROUTE_LEN(DefaultChannel, DefaultDevice, &a, &corner_len2);
+     DOWNLINK_SEND_ROUTE_LEN(DefaultChannel, DefaultDevice, &nav_leg_progress, &progress_pos.x, &progress_pos.y);}
+	 );
 	#endif
 }
 
@@ -753,11 +754,16 @@ bool_t nav_set_heading_current(void)
 /** check heading deviation, less than 3deg(0.06rad) return TRUE*/
 bool_t nav_check_heading(void)
 {
-	int32_t psi=stateGetNedToBodyEulers_i()->psi;
-	int32_t heading_sp=nav_heading;
+	int32_t psi = stateGetNedToBodyEulers_i()->psi;
+	int32_t heading_sp = nav_heading;
 	INT32_COURSE_NORMALIZE(psi);
 	INT32_COURSE_NORMALIZE(heading_sp);
-	if( abs(heading_sp - psi) < ANGLE_BFP_OF_REAL(0.3) ) return TRUE;
+	int32_t diff_angle = abs(heading_sp - psi);
+	if(diff_angle > INT32_ANGLE_PI)
+	{
+		diff_angle = INT32_ANGLE_2_PI - diff_angle;
+	}
+	if( diff_angle < ANGLE_BFP_OF_REAL(0.3) ) return TRUE;
 	else return FALSE;
 }
 

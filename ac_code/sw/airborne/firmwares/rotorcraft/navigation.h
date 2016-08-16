@@ -64,7 +64,7 @@ extern float nav_radius;
 extern float nav_climb_vspeed, nav_descend_vspeed;
 
 extern int32_t nav_leg_progress;
-extern uint32_t nav_leg_length;
+extern int32_t nav_leg_length;
 
 extern bool_t nav_survey_active;
 
@@ -129,11 +129,14 @@ extern void auto_nav_fp(void);
 #define NavCopyWaypoint(_wp1, _wp2) ({ waypoint_copy(_wp1, _wp2); FALSE; })
 #define NavCopyWaypointPositionOnly(_wp1, _wp2) ({ waypoint_position_copy(_wp1, _wp2); FALSE; })
 
-#define HOVER_STEADY_SPEED_H  0.25
-#define HOVER_STEADY_ACCEL_H  0.4
+#define HOVER_STEADY_SPEED_H  0.20
+#define HOVER_STEADY_ACCEL_H  0.3
+#define HOVER_STEADY_ATT  3.0
 #define NavGetHoverSteady() (  fabs(stateGetHorizontalSpeedNorm_f()) < (HOVER_STEADY_SPEED_H)  \
 	                           && fabs(stateGetAccelNed_f()->x) < (HOVER_STEADY_ACCEL_H)       \
-	                           && fabs(stateGetAccelNed_f()->y) < (HOVER_STEADY_ACCEL_H)        )
+	                           && fabs(stateGetAccelNed_f()->y) < (HOVER_STEADY_ACCEL_H)       \
+	                           && fabs(stateGetNedToBodyEulers_f()->phi) < (HOVER_STEADY_ATT)  \
+	                           && fabs(stateGetNedToBodyEulers_f()->theta) < (HOVER_STEADY_ATT) )
 
 /** Normalize a degree angle between 0 and 359 */
 #define NormCourse(x) { \

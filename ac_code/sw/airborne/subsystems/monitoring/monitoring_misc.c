@@ -53,7 +53,7 @@
 #define MAX_GROUND_INS_Z  0.6
 
 #define MAX_FLIGHT_TIME 510   //13min
-#define BAT_LIMIT_VOL  425   //unit:0.1v
+#define BAT_LIMIT_VOL  420   //unit:0.1v
 
 #define LESS_RES_CAP 5  //5%
 
@@ -224,17 +224,17 @@ void ops_flight_check(void)
 		em[OPS_LOST].active = FALSE;
 		em[OPS_LOST].finished = FALSE;
 	}
-/*	
+	
 	if(ops_info.res_cap <LESS_RES_CAP )  //no pesticide and open spray
 	{
 		set_except_mission(OPS_EMPTY,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,1);	
 	}
 	else
 	{   
-		em[OPS_EMPTY].active = FALSE;
-		em[OPS_EMPTY].finished = FALSE;
+		//em[OPS_EMPTY].active = FALSE;
+		//em[OPS_EMPTY].finished = FALSE;
 	}
-*/
+
 }
 
 /***********************************************************************

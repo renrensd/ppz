@@ -26,9 +26,8 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "math.h"
-
-#include "subsystems/ops/ops_app_if.h"
 #ifdef OPS_OPTION
+#include "subsystems/ops/ops_app_if.h"
 #include "subsystems/ops/ops_msg_if.h"   
 #endif
 #include "subsystems/monitoring/monitoring.h" 
@@ -214,9 +213,9 @@ static void rc_motion_orientation_parse(uint8_t cmd, int8_t *speed_grade)
 ***********************************************************************/
 uint8_t rc_motion_cmd_execution( uint8_t cmd )
 {   
-	static int8_t fb_grade=0;
-	uint8_t error_code=0;
-	rc_motion_cmd=cmd;
+	static int8_t fb_grade = 0;
+	uint8_t error_code = 0;
+	rc_motion_cmd = cmd;
 	
 	/*check error before motion execution*/	
     error_code = rc_motion_cmd_verify(rc_motion_cmd);

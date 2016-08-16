@@ -490,8 +490,8 @@ int8_t command_delete_all_task(void)
 {
 	int8_t response =0;
 	
-	if( (autopilot_in_flight && GCS_CMD_PAUSE!=gcs_task_cmd)
-		 ||(!autopilot_in_flight && GCS_CMD_NONE!=gcs_task_cmd) )
+	if( (autopilot_in_flight && GCS_CMD_PAUSE!=gcs_task_cmd) )
+		 //||(!autopilot_in_flight && GCS_CMD_NONE!=gcs_task_cmd) )
 	{
 		response = 1;
 		return response;

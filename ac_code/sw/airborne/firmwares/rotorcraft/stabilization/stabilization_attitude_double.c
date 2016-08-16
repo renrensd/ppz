@@ -246,7 +246,7 @@ void stabilization_attitude_run(bool_t  in_flight)
 		Bound(stabilization_att_sum_err.theta, 
 			-MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_PITCH], MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_PITCH]);
 		Bound(stabilization_att_sum_err.psi,   
-		   -MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_YAW], MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_YAW]);
+		    -MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_YAW], MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_YAW]);
 	}
 
 	stabilization_cmd[COMMAND_ROLL]  = (int32_t)( (stabilization_att_fb_cmd[COMMAND_ROLL] + stabilization_att_sum_err.phi) * scaler);

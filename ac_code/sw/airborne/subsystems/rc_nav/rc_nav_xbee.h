@@ -75,8 +75,8 @@ enum manual_mission
   }
 
 //horizontal control functions
-#define FB_Accel 1.2
-#define FB_Max_Speed 6.0
+#define FB_Accel 1.0
+#define FB_Max_Speed 5.0
 #define RL_DRIFT_SPEED 0.4
 #define RL_SPEED 1.0
 

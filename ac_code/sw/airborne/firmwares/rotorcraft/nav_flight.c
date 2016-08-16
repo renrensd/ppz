@@ -356,10 +356,10 @@ void nav_flight(void)
 
 			if( !land_motion(FALSE) )   //doing landing
 			{
-				if(nav_gcs_mode == flight_mode)
-				{
+				//if(nav_gcs_mode == flight_mode)
+				//{
 					task_init();  /*reset task*/
-				}
+				//}
 				flight_step = 1;  /*land motion finished,jump to ready state*/
 			}
 			break;

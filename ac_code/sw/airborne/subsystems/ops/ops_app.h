@@ -25,7 +25,7 @@
 
 /**** Definition of constants ****/
 #define OPS_DEFAULT_FLOW_MIN 	250
-#define OPS_DEFAULT_FLOW_M2 	75
+#define OPS_DEFAULT_FLOW_M2 	100
 #define OPS_DEFAULT_DROP_CM2 	50
 #define OPS_DEFAULT_ATOM 		100
 #define OPS_DEFAULT_SPRAY_CHAL 	0x0f   // 4 channel

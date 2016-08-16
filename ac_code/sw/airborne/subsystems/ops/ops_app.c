@@ -165,7 +165,7 @@ void ops_heart_beat_handler(uint8_t *param)
 	tm_kill_timer(TIMER_OPS_HB_POLL);
 	ops_update_aircraft_vel();    //get ac flight speed
 	ops_msg_heart_beat();
-	ops_info.res_cap = (*param << 8) | (*(param+1));
+	ops_info.res_cap = (*(param+1) << 8 | *param);
 	ops_info.work_state = *(param+2);
 	ops_info.spray_state = *(param+3);
 	ops_info.con_flag = OPS_CONNECTED;

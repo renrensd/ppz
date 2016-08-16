@@ -172,9 +172,10 @@
      <field name="val2" type="uint16"/>
    </message>
 
-   <message name="TEST_FORMAT" id="19">
-     <field name="val1" type="double"/>
-     <field name="val2" type="float"/>
+   <message name="ROUTE_LEN" id="19">
+     <field name="carrot_len" type="int32"></field>
+     <field name="len_x" type="int32" />
+     <field name="len_y" type="int32" />
    </message>
 
    <message name="DEBUG_CMD" id="20">

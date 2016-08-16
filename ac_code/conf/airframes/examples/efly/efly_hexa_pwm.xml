@@ -36,10 +36,11 @@
 
     <subsystem name="telemetry" type="xbee_api"/>
     <subsystem name="stabilization" type="int_quat"/>
-    <subsystem name="gps" type="ublox"/>
-    <subsystem name="imu" type="adiv1">
+    <subsystem name="gps" type="nmea"/>
+    <subsystem name="imu" type="mpu9250_spi"/>
+    <!--subsystem name="imu" type="adiv1">
       <define name="IMU_ADIV1_OPTION" value="1"/>
-   </subsystem>
+   </subsystem-->
     <subsystem name="ahrs" type="float_mlkf"/>
     <subsystem name="ins" type="extended"/>
 
@@ -115,51 +116,40 @@
 
     <!-- replace this with your own calibration -->
 			<!-- mpu9250  -->
-    <!--define name="GYRO_P_NEUTRAL" value="0"/>
+    <define name="GYRO_P_NEUTRAL" value="0"/>
     <define name="GYRO_Q_NEUTRAL" value="0"/>
     <define name="GYRO_R_NEUTRAL" value="0"/>
     <define name="GYRO_P_SENS" value="2.17953" integer="16"/>
     <define name="GYRO_Q_SENS" value="2.17953" integer="16"/>
-    <define name="GYRO_R_SENS" value="2.17953" integer="16"/-->
+    <define name="GYRO_R_SENS" value="2.17953" integer="16"/>
 
-<!--define name="MAG_X_NEUTRAL" value="23"/>
-<define name="MAG_Y_NEUTRAL" value="76"/>
-<define name="MAG_Z_NEUTRAL" value="-109"/>
-<define name="MAG_X_SENS" value="4.91592717536" integer="16"/>
-<define name="MAG_Y_SENS" value="4.91292625841" integer="16"/>
-<define name="MAG_Z_SENS" value="5.17716834836" integer="16"/-->
+
+
+<define name="MAG_X_NEUTRAL" value="26"/>
+<define name="MAG_Y_NEUTRAL" value="83"/>
+<define name="MAG_Z_NEUTRAL" value="-37"/>
+<define name="MAG_X_SENS" value="3.7028803396" integer="16"/>
+<define name="MAG_Y_SENS" value="3.65181442238" integer="16"/>
+<define name="MAG_Z_SENS" value="3.88318839942" integer="16"/>
+
+<!--define name= "MAG_X_CURRENT_COEF" value="0.000634016748462"/>
+<define name= "MAG_Y_CURRENT_COEF" value="0.000479835842178"/>
+<define name= "MAG_Z_CURRENT_COEF" value="-0.00149528776453"/-->
 
 
     			<!-- adiv1  -->
-    <define name="GYRO_P_NEUTRAL" value="0"/>
+    <!--define name="GYRO_P_NEUTRAL" value="0"/>
     <define name="GYRO_Q_NEUTRAL" value="0"/>
     <define name="GYRO_R_NEUTRAL" value="0"/>
     <define name="GYRO_P_SENS" value="0.8936085770210967" integer="16"/>
     <define name="GYRO_Q_SENS" value="0.8936085770210967" integer="16"/>
     <define name="GYRO_R_SENS" value="0.8936085770210967" integer="16"/>
-
-    			<!-- new -->
-    <!--define name="ACCEL_X_NEUTRAL" value="-22"/>
+    <define name="ACCEL_X_NEUTRAL" value="-22"/>
     <define name="ACCEL_Y_NEUTRAL" value="5"/>
     <define name="ACCEL_Z_NEUTRAL" value="54"/>
     <define name="ACCEL_X_SENS" value="18.607993757" integer="16"/>
     <define name="ACCEL_Y_SENS" value="18.6167621349" integer="16"/>
     <define name="ACCEL_Z_SENS" value="19.5513952481" integer="16"/-->
-
-    			<!-- old -->
-    <define name="ACCEL_X_NEUTRAL" value="-3"/>
-    <define name="ACCEL_Y_NEUTRAL" value="2"/>
-    <define name="ACCEL_Z_NEUTRAL" value="55"/>
-    <define name="ACCEL_X_SENS" value="18.6979474323" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="18.6344862906" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="19.8058356963" integer="16"/>
-
-    <define name="MAG_X_NEUTRAL" value="20"/>
-    <define name="MAG_Y_NEUTRAL" value="48"/>
-    <define name="MAG_Z_NEUTRAL" value="-120"/>
-    <define name="MAG_X_SENS" value="3.6116166671" integer="16"/>
-    <define name="MAG_Y_SENS" value="3.67873565902" integer="16"/>
-    <define name="MAG_Z_SENS" value="3.80835103248" integer="16"/>
 
 
     <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
@@ -295,7 +285,7 @@
     <define name="USE_SPEED_REF" value="1"/> <!-- using RC to control horizontal setpoint -->
     <define name="MAX_BANK" value="27" unit="deg"/>  <!-- using horizontal angle of PID caculated desire -->
     <define name="REF_MAX_ACCEL" value="1.2"/> <!-- max reference horizontal acceleration in m/s2 -->
-    <define name="REF_MAX_SPEED" value="2.0"/> <!-- max reference horizontal speed in m/s -->
+    <define name="REF_MAX_SPEED" value="5.0"/> <!-- max reference horizontal speed in m/s -->
     <!--define name="RC_SPEED_DEAD_BAND" value="200000"/-->
     <!--define name="PGAIN" value="30"/>
     <define name="DGAIN" value="170"/>
