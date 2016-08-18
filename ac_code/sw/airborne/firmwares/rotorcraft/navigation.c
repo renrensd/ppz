@@ -328,7 +328,7 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
 	int8_t sign_radius = radius > 0 ? 1 : -1;
 	int32_t abs_radius = abs(radius);
 	int32_t carrot_angle = (((CARROT_DIST/4) << INT32_ANGLE_FRAC) / abs_radius); 
-	Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI/ 4);
+	Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI*3/11);
 	int32_t heading_ccw = (1+sign_radius)*INT32_ANGLE_PI_2 - sp_heading;
 	
     // carrot_angle to guidance circle forward
