@@ -101,7 +101,7 @@ struct MCU_FAULT_INFO mcu_fault_info __attribute__ ((section(".bkpram"), aligned
 volatile uint16_t mcu_watchdog_flag __attribute__ ((section(".bkpram"), zero_init));
 #endif	/* WDG_OPTION */
 
-volatile uint8_t mcu_pw_is_first_on;
+struct MCU_INFO mcu_info;
 
 void WEAK board_init(void)
 {
@@ -242,15 +242,9 @@ void mcu_init(void)
 #ifdef CALIBRATION_OPTION
   sd_fatfs_init();
   #ifdef FAULT_OPTION
-  if(mcu_pw_is_first_on == FALSE)
+  if(mcu_info.pw_is_first_on == FALSE)
   {
   	mcu_write_file_fault();
-	if( (mcu_get_reset_type() == MCU_RESET_BY_WWDG)
-	    ||(mcu_get_reset_type() == MCU_RESET_BY_SW)
-	  )
-	{
-		while(1);
-	}
   }
   #endif	/* FAULT_OPTION */
 #endif	/* CALIBRATION_OPTION */
@@ -372,32 +366,25 @@ void mcu_check_reset_source(void)
     uint32_t rst_source;
 	
 	rst_source = RCC_CSR;
+	mcu_info.reset_src = rst_source;
 	mcu_fault_info.reset_src = rst_source;
 	
-    if( ((rst_source & RCC_CSR_WWDGRSTF) == RCC_CSR_WWDGRSTF)
-		|| ((rst_source & RCC_CSR_SFTRSTF) == RCC_CSR_SFTRSTF)
-	  )
-    {
-		mcu_pw_is_first_on = FALSE;
-	}
-	else if( ((rst_source & RCC_CSR_PORRSTF) == RCC_CSR_PORRSTF)
-		     || ((rst_source & RCC_CSR_PINRSTF) == RCC_CSR_PINRSTF)
-		     || ((rst_source & RCC_CSR_LPWRRSTF) == RCC_CSR_LPWRRSTF)
-		   )
+	if( (rst_source & RCC_CSR_PORRSTF) == RCC_CSR_PORRSTF )
     {
 		memset(&mcu_fault_info,0,sizeof(mcu_fault_info));
 #ifdef WDG_OPTION
 		mcu_watchdog_flag = 0;
 #endif
-		mcu_pw_is_first_on = TRUE;
+		mcu_info.pw_is_first_on = TRUE;
+	}
+	else
+	{
+		mcu_info.pw_is_first_on = FALSE;
 	}
 
 	RCC_CSR |= RCC_CSR_RMVF;
-	
 }
 
-
-#ifdef FAULT_OPTION
 /*****************************************************************************
 *  Name        : mcu_set_reset_type
 *  Description : 
@@ -460,9 +447,6 @@ void hard_fault_handler(void)
 	mcu_fault_info_handle(0x08);
 	while(1);
 }
-#endif
-
-
 
 #ifdef WDG_OPTION
 /***********************************************************************
@@ -520,6 +504,7 @@ void mcu_write_file_fault(void)
     sd_write_file_fault("<--- mcu_fault_info_start --->", 0, 1);
 	sd_write_file_fault("mcu_reset_source", mcu_fault_info.reset_src, 0);
 	sd_write_file_fault("mcu_reset_type", mcu_fault_info.reset_type, 0);
+	sd_write_file_fault("mcu_reset_time", sys_time.nb_sec, 0);
 #ifdef WDG_OPTION
 	sd_write_file_fault("mcu_watchdog_flag", mcu_watchdog_flag, 0);
 #endif
@@ -536,7 +521,7 @@ void mcu_write_file_fault(void)
 
 	sd_write_file_fault("<--- mcu_fault_info_end --->", 0, 2);
 }
-#endif
+#endif	/* FAULT_OPTION */
 
 #endif /* NPS_SIMU */
 

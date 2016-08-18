@@ -28,6 +28,7 @@
 
 #include <stdint.h>
 #include "math.h"
+#include "mcu.h"
 #include "firmwares/rotorcraft/autopilot.h"
 
 #include "mcu_periph/uart.h"
@@ -179,6 +180,12 @@ static void send_alive(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ALIVE(trans, dev, AC_ID, 16, MD5SUM);
+}
+
+static void send_mcu_fault(struct transport_tx *trans, struct link_device *dev)
+{
+  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+  pprz_msg_send_MCU_FAULT(trans, dev, AC_ID, &mcu_info.reset_src);
 }
 
 static void send_attitude(struct transport_tx *trans, struct link_device *dev)
@@ -354,6 +361,7 @@ void autopilot_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP, send_fp);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_CMD, send_rotorcraft_cmd);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DL_VALUE, send_dl_value);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MCU_FAULT, send_mcu_fault);
 #ifdef ACTUATORS
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
 #endif

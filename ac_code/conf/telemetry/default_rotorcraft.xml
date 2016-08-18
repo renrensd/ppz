@@ -33,6 +33,7 @@
       <!--message name="STAB_ATTITUDE_FLOAT"          period="1.0"/-->
       <message name="INS_Z"                  period="1.0"/>
       <message name="GUIDANCE_H_REF_INT"     period="0.5"/>
+      <message name="MCU_FAULT"             period="1.0"/>
     </mode>
 
     <mode name="data">
