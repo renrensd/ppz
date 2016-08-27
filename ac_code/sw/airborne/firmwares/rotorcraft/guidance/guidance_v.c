@@ -629,7 +629,7 @@ here is the anti_windup block   ends*/
 static void dynamic_pid_check(void)  //1
 {  
 #ifdef USE_GPS_NMEA
-	if(!gps.stable)
+	if(!gps.p_stable)
 	{
 		guidance_v_kp = 100;
 		guidance_v_kd = 145;

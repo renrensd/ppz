@@ -361,9 +361,9 @@ static void gps_stable_monitor(void)
   if(gps_moni_counter==600)  //about 1min
   { 
   	if(gps_unsta_counter >10)
-	{ gps.stable=FALSE; }
+	{ gps.p_stable=FALSE; }
 	else
-	{ gps.stable=TRUE; }
+	{ gps.p_stable=TRUE; }
     //reset
 	gps_moni_counter=0;
 	gps_unsta_counter=0;  

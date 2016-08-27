@@ -1418,6 +1418,8 @@
     <field name="pdop"    type="uint16"/>
     <field name="numsv"   type="uint8"/>
     <field name="fix"     type="uint8" values="NONE|NA|2D|3D|DGPS|RTK"/>
+    <field name="heading" type="float" />
+    <field name="slo_tatus" type="uint8" values="unvalid|valid"/>
   </message>
 
   <message name="AHRS_EULER_INT" id="156">

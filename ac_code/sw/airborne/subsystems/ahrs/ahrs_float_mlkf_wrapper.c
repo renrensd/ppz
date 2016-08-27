@@ -106,19 +106,32 @@ static abi_event mag_ev;
 static abi_event aligner_ev;
 static abi_event body_to_imu_ev;
 static abi_event geo_mag_ev;
+/*cpz-gps-heading*/
+static abi_event gps_heading_ev;
 
 
+#define USE_AUTO_AHRS_FREQ TRUE
 static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
                     uint32_t stamp, struct Int32Rates *gyro)
 {
   ahrs_mlkf_last_stamp = stamp;
-#if USE_AUTO_AHRS_FREQ || !defined(AHRS_PROPAGATE_FREQUENCY)
+#if USE_AUTO_AHRS_FREQ    // || !defined(AHRS_PROPAGATE_FREQUENCY)
   PRINT_CONFIG_MSG("Calculating dt for AHRS_MLKF propagation.")
   /* timestamp in usec when last callback was received */
   static uint32_t last_stamp = 0;
 
   if (last_stamp > 0 && ahrs_mlkf.is_aligned) {
-    float dt = (float)(stamp - last_stamp) * 1e-6;
+  	int32_t deta_t = stamp - last_stamp;
+	if(deta_t < 0)
+	{
+		deta_t +=0xFFFFFFFF;
+	}
+	if(deta_t > 3000)
+	{
+		deta_t = 3000;
+	}		
+    float dt = (float)(deta_t) * 1e-6;
+	
     ahrs_mlkf_propagate(gyro, dt);
     set_body_state_from_quat();
   }
@@ -154,6 +167,21 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
   }
 }
 
+/*cpz-GPS_heading*/
+#ifdef USE_GPS_HEADING
+static void gps_heading_cb(uint8_t sender_id __attribute__((unused)),
+                           uint32_t stamp __attribute__((unused)),
+                           struct GpsState *gps_heading_s)
+{
+  if (ahrs_mlkf.is_aligned) {
+    ahrs_mlkf_update_gps(gps_heading_s);
+    set_body_state_from_quat();
+  }
+}
+#endif
+/*cpz-GPS_heading*/
+
+
 static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
                        uint32_t stamp __attribute__((unused)),
                        struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
@@ -161,6 +189,8 @@ static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
 {
   if (!ahrs_mlkf.is_aligned) {
     /* set initial body orientation in state interface if alignment was successful */
+    /*now we use mag data for aligned,need use gps heading instead later:TODOM*/
+	
     if (ahrs_mlkf_align(lp_gyro, lp_accel, lp_mag)) {
       set_body_state_from_quat();
     }
@@ -218,7 +248,11 @@ void ahrs_mlkf_register(void)
    */
   AbiBindMsgIMU_GYRO_INT32(AHRS_MLKF_IMU_ID, &gyro_ev, gyro_cb);
   AbiBindMsgIMU_ACCEL_INT32(AHRS_MLKF_IMU_ID, &accel_ev, accel_cb);
+  #ifndef USE_GPS_HEADING
   AbiBindMsgIMU_MAG_INT32(AHRS_MLKF_MAG_ID, &mag_ev, mag_cb);
+  #else
+  AbiBindMsgGPS(ABI_BROADCAST, &gps_heading_ev, gps_heading_cb);  /*cpz-gps-heading*/
+  #endif
   AbiBindMsgIMU_LOWPASSED(ABI_BROADCAST, &aligner_ev, aligner_cb);
   AbiBindMsgBODY_TO_IMU_QUAT(ABI_BROADCAST, &body_to_imu_ev, body_to_imu_cb);
   AbiBindMsgGEO_MAG(ABI_BROADCAST, &geo_mag_ev, geo_mag_cb);

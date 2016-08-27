@@ -286,12 +286,19 @@ void nav_circle(struct EnuCoor_i *wp_center, int32_t radius)
     if (trigo_diff > 0) { // do not rewind if the change in angle is in the opposite sense than nav_radius
       nav_circle_radians_no_rewind += trigo_diff;
     }
-	
+/*
+	int32_t diff_qdr = nav_circle_qdr - last_qdr;
+	INT32_ANGLE_NORMALIZE(diff_qdr);
+	if( diff_qdr * sign_radius > 0 )
+	{
+	    nav_circle_qdr = last_qdr;
+	}	
+*/
     // absolute radius
     int32_t abs_radius = abs(radius);
     // carrot_angle2
     int32_t carrot_angle = (((CARROT_DIST/3) << INT32_ANGLE_FRAC) / abs_radius); 
-    Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI/ 5);
+    Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI/ 4);
     carrot_angle = nav_circle_qdr - sign_radius * carrot_angle;
     int32_t s_carrot, c_carrot;
     PPRZ_ITRIG_SIN(s_carrot, carrot_angle);

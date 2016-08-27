@@ -92,7 +92,7 @@ ifndef NPS_OPTION
 #
 # add libstm32
 #
-include $(PAPARAZZI_SRC)/sw/ext/libstm32/libstm32.makefile
+ include $(PAPARAZZI_SRC)/sw/ext/libstm32/libstm32.makefile
 
 #
 # OPS_SYSTEM

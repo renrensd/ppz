@@ -38,6 +38,12 @@
 #include "math/pprz_simple_matrix.h"
 #include "generated/airframe.h"
 
+//*****cpz-gps
+#include <math.h>
+#define GPS_PI	3.14159265358979f
+//*****cpz-gps
+
+
 //#include <stdio.h>
 
 #define AHRS_PROPAGATE_LOW_PASS_RATES
@@ -457,6 +463,39 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
   ahrs_mlkf.gyro_bias.r  += K[5][0] * e.x + K[5][1] * e.y + K[5][2] * e.z;
 
 }
+
+
+//******************CPZ-GPS_heading_update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)
+#ifdef USE_GPS_HEADING
+void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s)
+{
+  ahrs_mlkf_update_gps_heading(gps_heading_s);
+}
+
+#define MAG_OFFSET_ANGLE 2.7
+void ahrs_mlkf_update_gps_heading(struct GpsState *gps_heading_s)
+{
+  if(gps_heading_s->h_stable)  //4 signed gps heading useful
+  {
+	  struct FloatVect3 imu_h;
+	  float gps_psi_rad;
+	  gps_psi_rad = (gps_heading_s->heading - MAG_OFFSET_ANGLE)/180.0*GPS_PI;
+	  imu_h.x = -cosf(gps_psi_rad);
+	  imu_h.y = sinf(gps_psi_rad);
+	  imu_h.z = 0.0;
+
+	  struct FloatVect3 i_meas;
+	  float_quat_vmult(&i_meas, &ahrs_mlkf.ltp_to_body_quat, &imu_h);
+	  
+	  update_state_heading(&ahrs_mlkf.mag_h, &i_meas, &ahrs_mlkf.mag_noise);  
+	  reset_state();
+  }
+}
+#endif
+//******************CPZ-GPS_heading
+
+
+
 /**
  * Incorporate errors to reference and zeros state
  */

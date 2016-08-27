@@ -99,9 +99,9 @@ uint8_t imu_ground_check(void)
 
 void imu_ground_reset(void)   //use for restart ground check
 {
-	imu_moni.accel_ground_check=FALSE;
-    imu_moni.gyro_ground_check=FALSE;
-	imu_moni.mag_ground_check=FALSE;
+	imu_moni.accel_ground_check = FALSE;
+    imu_moni.gyro_ground_check = FALSE;
+	imu_moni.mag_ground_check = FALSE;
 }
 
 void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
@@ -133,7 +133,7 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 		em[IMU_CRITICAL].active =FALSE;
 		em[IMU_CRITICAL].finished =FALSE;
 		//set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
-		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, FALSE,0, FALSE,FALSE,2);
+		//set_except_mission(IMU_MAG_EMI,TRUE,FALSE, FALSE,0, FALSE,FALSE,2);
 		//TODOM:after RTK GPS course add,need modify
 		#if TEST_MSG
 		 fs_imu=2;
@@ -333,7 +333,7 @@ static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
 	  data_fix_check(gyro->r, gyro_last.r, &imu_moni.gyro_fix_counter.z, DATA_FIX_MAX)  ) 
   {  //fix data
       imu_moni.imu_error[0] |=0x01;  //fix data
-      imu_moni.imu_status=0;  //set imu fail
+      imu_moni.imu_status = 0;  //set imu fail
       #if TEST_MSG
 	  fix_imu=1;
 	  #endif
@@ -551,5 +551,68 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
   
 }
 
-
+#define MAX_GYRO_OFFSET 200
+#define NUM_GYRO_OFFSET_CAL 2000
+static struct Int32Rates gyro_offset;
+bool_t gyro_offset_caculate(struct Imu *_imu)
+{
+	static uint16_t cal_count = 0;
+	static uint8_t noise_count = 0;
+	if(cal_count < NUM_GYRO_OFFSET_CAL)
+	{
+		if( abs(_imu->gyro_unscaled.p) > MAX_GYRO_OFFSET
+			|| abs(_imu->gyro_unscaled.q) > MAX_GYRO_OFFSET
+			|| abs(_imu->gyro_unscaled.r) > MAX_GYRO_OFFSET )
+		{
+			noise_count++;
+			if(noise_count > 3)  //noise from sensors,reset
+			{
+				cal_count = 0;
+				RATES_ASSIGN(gyro_offset, 0, 0, 0);	
+			}
+		}
+		else
+		{  
+			noise_count = 0;
+			cal_count++;
+			gyro_offset.p += _imu->gyro_unscaled.p;
+			gyro_offset.q += _imu->gyro_unscaled.q;
+			gyro_offset.r += _imu->gyro_unscaled.r;
+		}
+	}
+	if(cal_count == NUM_GYRO_OFFSET_CAL)
+	{
+		struct Int32Rates gyro_offset_temp;
+		gyro_offset_temp.p = gyro_offset.p/(NUM_GYRO_OFFSET_CAL);
+		gyro_offset_temp.q = gyro_offset.q/(NUM_GYRO_OFFSET_CAL);
+		gyro_offset_temp.r = gyro_offset.r/(NUM_GYRO_OFFSET_CAL);
+		if( abs(gyro_offset_temp.p) > MAX_GYRO_OFFSET
+			|| abs(gyro_offset_temp.q) > MAX_GYRO_OFFSET
+			|| abs(gyro_offset_temp.r) > MAX_GYRO_OFFSET )
+		{
+			imu_moni.imu_error[0] |=0x08; //out of range
+			imu_moni.imu_status = 0;
+			#if TEST_MSG
+		    g_range_imu=1;
+		    #endif
+			return TRUE;
+		}
+		else
+		{
+			RATES_COPY(_imu->gyro_neutral,gyro_offset_temp);
+			return TRUE;
+		}
+	}
+	if( get_sys_time_float() > 20.0 )
+	{
+		imu_moni.imu_error[0] |= 0x04; //noise error
+		imu_moni.imu_status = 0;
+		#if TEST_MSG
+		g_noise_imu=1;
+		#endif
+		return TRUE;
+	}
+	
+	return FALSE;
+}
 /**************** END OF FILE *****************************************/

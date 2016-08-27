@@ -282,7 +282,7 @@ void ground_monitoring(void)
 			break;
 			
 		case GPS_CHECK:
-			if( GpsFixValid() && gps.stable ) 
+			if( GpsFixValid() && gps.p_stable && gps.h_stable) 
 			{
 				ground_check_step++;  //next step
 				monitoring_fail_code = PASS;
@@ -355,9 +355,9 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 	RunOnceEvery( MONITORING_FREQUENCY*2, ops_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY, rc_communication_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY, gcs_communication_flight_check() );
-	RunOnceEvery( MONITORING_FREQUENCY, lift_flight_check() );
-	RunOnceEvery( MONITORING_FREQUENCY, task_running_check() );   
-	RunOnceEvery( MONITORING_FREQUENCY, mode_convert_check() );   
+	RunOnceEvery( MONITORING_FREQUENCY/2, lift_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY/2, task_running_check() );   
+	RunOnceEvery( MONITORING_FREQUENCY/2, mode_convert_check() );   
 	if(0)  //land,turn to ground monitoring
 	{
 		imu_ground_reset();

@@ -22,6 +22,7 @@
 
 #include "std.h"
 #include "math/pprz_algebra_int.h"
+#include "subsystems/imu.h"
 
 /**** Definition of constants ****/
 
@@ -67,6 +68,7 @@ extern uint8_t imu_ground_check(void);
 extern void imu_ground_reset(void);
 extern void imu_flight_check(void);
 extern void imu_frequence_check(void);
+extern bool_t gyro_offset_caculate(struct Imu *_imu);
 
 
 

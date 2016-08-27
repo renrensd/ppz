@@ -35,6 +35,13 @@
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_orientation_conversion.h"
 
+//*********cpz-gps-heading
+
+#include "subsystems/gps.h"
+
+//*********cpz-gps-heading
+
+
 enum AhrsMlkfStatus {
   AHRS_MLKF_UNINIT,
   AHRS_MLKF_RUNNING
@@ -73,5 +80,17 @@ extern void ahrs_mlkf_update_accel(struct Int32Vect3 *accel);
 extern void ahrs_mlkf_update_mag(struct Int32Vect3 *mag);
 extern void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag);
 extern void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag);
+
+//*********cpz-gps-heading
+#ifdef USE_GPS_HEADING
+extern void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s);
+
+extern void ahrs_mlkf_update_gps_heading(struct GpsState *gps_heading_s);
+#endif
+
+
+
+//*********cpz-gps-heading
+
 
 #endif /* AHRS_FLOAT_MLKF_H */

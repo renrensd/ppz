@@ -500,7 +500,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
   }
 #endif
 
-  if (!ins_int.ltp_initialized && gps.stable)
+  if (!ins_int.ltp_initialized && gps.p_stable)
   {
     ins_reset_local_origin();
   }
@@ -542,7 +542,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
   }
 
 #if INS_USE_GPS_ALT
-  if(gps.stable)//gps_nmea.gps_qual==52)
+  if(gps.p_stable)//gps_nmea.gps_qual==52)
   {
   	ins_int.update_radar_agl = FALSE;
     vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS*0.15);

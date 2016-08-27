@@ -103,8 +103,8 @@ void rc_setpoint_speed_parse(float speed_fb,float speed_rl)
 {  
    //float psi= stateGetNedToBodyEulers_f()->psi; //yaw angle,replace with nav_heading
    float psi= ANGLE_FLOAT_OF_BFP(nav_heading);
-   float s_psi = sinf(psi);
-   float c_psi = cosf(psi);
+   const float s_psi = sinf(psi);
+   const float c_psi = cosf(psi);
    
    float speed_x=c_psi * speed_fb - s_psi * speed_rl;
    float speed_y=s_psi * speed_fb + c_psi * speed_rl;
@@ -125,6 +125,15 @@ void rc_setpoint_speed_parse(float speed_fb,float speed_rl)
 ***********************************************************************/
 static uint8_t rc_motion_cmd_verify(uint8_t cmd)
 {
+	#ifdef DEBUG_RC
+	/*on ground,execute stop spray*/
+	if( cmd==K_HOLD && !autopilot_in_flight)
+	{
+		#ifdef OPS_OPTION
+		 ops_stop_spraying(); 
+		#endif
+	}
+	#endif
 	uint8_t error_code =0;
 	if(flight_mode!=nav_rc_mode)
 	{//error,not in manual mode
@@ -386,7 +395,9 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 	   #endif
 		   
 		   case  RC_ADD_SPRAY:
+		   	#ifndef DEBUG_RC
 		   	   if(flight_mode==nav_rc_mode) 
+			#endif
 		   	   {
 			   	   rc_set_info.spray_grade++;
 				   Bound(rc_set_info.spray_grade, 0, 5);
@@ -397,7 +408,9 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		   	   }
 		   	   break;
 		   case  RC_REDUCE_SPRAY:
+		   	#ifndef DEBUG_RC
 		   	   if(flight_mode==nav_rc_mode) 
+			#endif
 		   	   {
 			   	   if(rc_set_info.spray_grade)  
 			   	   {				   	

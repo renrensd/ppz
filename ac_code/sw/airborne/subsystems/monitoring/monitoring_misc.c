@@ -53,13 +53,14 @@
 #define MAX_GROUND_INS_Z  0.6
 
 #define MAX_FLIGHT_TIME 510   //13min
-#define BAT_LIMIT_VOL  420   //unit:0.1v
+#define BAT_LIMIT_VOL  423   //unit:0.1v
 
 #define LESS_RES_CAP 5  //5%
 
 static uint8_t ahrs_ground_check(void);
 static uint8_t ins_ground_check(void);
 static bool_t yaw_command_monitor(void);
+static bool_t danger_att_detect(void);
 
 
 
@@ -171,7 +172,7 @@ void gps_flight_check(void)
 {  
     if( GpsFixValid() )
 	{
-		if( gps.stable )
+		if( gps.p_stable )
         {   //could be recovered
 			em[GPS_ACC].active =0;
 			em[GPS_ACC].finished =0;
@@ -204,6 +205,17 @@ void gps_flight_check(void)
 		gps_flight=2;
 		#endif
 	}
+   #ifdef USE_GPS_HEADING
+	if(!gps.h_stable)
+	{
+		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0x10, FALSE,TRUE,3);
+	}
+	else
+	{
+		em[IMU_MAG_EMI].active = 0;
+		em[IMU_MAG_EMI].finished = 0;
+	}
+   #endif	
 	
 }
 
@@ -296,8 +308,14 @@ void lift_flight_check(void)
 	{
 		set_except_mission(LIFT_POWER,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	//land direct
 	}
-	
+
+	/*keep 2s att > 45deg, lock motors direct !!!*/
+	if( danger_att_detect() )
+	{
+		NavKillThrottle();  //crash motion
+	}
 }
+
 
 static bool_t yaw_command_monitor(void)
 {
@@ -305,8 +323,9 @@ static bool_t yaw_command_monitor(void)
 	if( abs(stabilization_cmd[COMMAND_YAW]) > MAX_ERROR_YAW_COMMAND )
 	{
 		counter++;
-		if(counter > 3)
+		if(counter > 5)
 		{
+			counter = 6;
 			return TRUE;
 		}
 	}
@@ -315,6 +334,27 @@ static bool_t yaw_command_monitor(void)
 		counter = 0;
 	}
 	return FALSE;
+}
+
+#define MAX_FLIGHT_ATT  0.8  //about 10deg
+static bool_t danger_att_detect(void)
+{
+	static uint8_t counter = 0;
+	if( fabs(stateGetNedToBodyEulers_f()->phi) > MAX_FLIGHT_ATT
+		 ||fabs(stateGetNedToBodyEulers_f()->theta) > MAX_FLIGHT_ATT )
+	{
+		counter++;
+		if(counter > 4)
+		{
+			counter = 5;
+			return TRUE;
+		}
+	}
+	else
+	{
+		counter = 0;
+	}
+	return FALSE;	
 }
 
 void task_running_check(void)

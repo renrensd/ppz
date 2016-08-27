@@ -166,7 +166,7 @@ uint8_t flight_demo(void)
  */
 void nav_flight(void)
 { 
-#if 1
+ #ifndef DEBUG_RC
   if ( autopilot_mode != AP_MODE_NAV) 
   {
   	  nav_mode_enter();
@@ -178,7 +178,8 @@ void nav_flight(void)
   {
   	  return;  /*stop run*/
   }
-#endif
+ #endif
+ 
   /*caculate distance to takeoff waypoint*/
   RunOnceEvery( NAV_FREQ,
       { if(flight_state==cruising)  distance2_to_takeoff = get_dist2_to_point(&wp_take_off); } );

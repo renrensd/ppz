@@ -288,21 +288,21 @@ struct EnuCoor_i save_task_scene(void)
 ***********************************************************************/
 bool_t gcs_hover_enter(void)
 {
-	static bool_t steady_flag = FALSE;
+	static uint8_t steady_flag = 0;
 	if( last_task_cmd != gcs_task_cmd)
 	{  
 		struct EnuCoor_i hover_wp;
 		hover_wp = save_task_scene();
 		task_nav_hover(hover_wp);
-		steady_flag = FALSE;
+		steady_flag = 0;
 		return TRUE;
 	}
 	
-	if( !steady_flag )
+	if( steady_flag <= 2 )
 	{
 		if( NavGetHoverSteady() )
 		{
-			steady_flag = TRUE;
+			steady_flag++;
 		}
 		return TRUE;
 	}

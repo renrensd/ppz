@@ -115,7 +115,9 @@ static void send_gps_int(struct transport_tx *trans, struct link_device *dev)
                         &gps.tow,
                         &gps.pdop,
                         &gps.num_sv,
-                        &gps.fix);
+                        &gps.fix,
+                        &gps.heading,
+                        &gps.h_stable);
   // send SVINFO for available satellites that have new data
   send_svinfo_available(trans, dev);
 }
@@ -146,8 +148,8 @@ void gps_init(void)
   gps.week = 0;
   gps.tow = 0;
   gps.cacc = 0;
-  gps.stable = FALSE;
-
+  gps.p_stable = FALSE;
+  gps.h_stable = FALSE;
   gps.last_3dfix_ticks = 0;
   gps.last_3dfix_time = 0;
   gps.last_msg_ticks = 0;
@@ -179,16 +181,19 @@ void gps_periodic_check(void)
     gps.fix = GPS_FIX_NONE;
   }
 
-  /*ublox or nmea get gps.stable, use for monitoring*/
+  /*ublox or nmea get gps.p_stable, use for monitoring*/
  #ifndef USE_GPS_NMEA
   else if(gps.pacc < 200) {
-  	gps.stable = TRUE;
+  	gps.p_stable = TRUE;
   }
   else if(gps.pacc > 500) { 
-    gps.stable = FALSE;
+    gps.p_stable = FALSE;
   }
  #else
-  get_gps_nmea_stable();
+  get_gps_pos_stable();
+  #ifdef USE_GPS_HEADING
+  get_gps_heading_stable();
+  #endif
  #endif
 }
 

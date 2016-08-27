@@ -83,7 +83,7 @@ PRINT_CONFIG_VAR(GUIDANCE_V_ADAPT_MAX_HOVER_THROTTLE)
  *  MAX_CMD and MIN_CMD must be between 0 and 1 with MIN_CMD < MAX_CMD
  */
 #ifndef GUIDANCE_V_ADAPT_MAX_CMD
-#define GUIDANCE_V_ADAPT_MAX_CMD 0.9
+#define GUIDANCE_V_ADAPT_MAX_CMD  0.8  //0.9,modify 0826
 #endif
 #ifndef GUIDANCE_V_ADAPT_MIN_CMD
 #define GUIDANCE_V_ADAPT_MIN_CMD 0.1
@@ -144,8 +144,7 @@ void gv_adapt_run(int32_t zdd_meas, int32_t thrust_applied, int32_t zd_ref)
   gv_adapt_P =  gv_adapt_P + GV_ADAPT_SYS_NOISE;
 
   /* Compute our measurement. If zdd_meas is in the range +/-5g, meas is less than 30 bits */
-  const int32_t g_m_zdd = ((int32_t)BFP_OF_REAL(9.81,
-                           INT32_ACCEL_FRAC) - zdd_meas) << (GV_ADAPT_X_FRAC - INT32_ACCEL_FRAC);
+  const int32_t g_m_zdd = ( (int32_t)BFP_OF_REAL(9.81,  INT32_ACCEL_FRAC) - zdd_meas) << (GV_ADAPT_X_FRAC - INT32_ACCEL_FRAC);
   if (g_m_zdd > 0) {
     gv_adapt_Xmeas = (g_m_zdd + (thrust_applied >> 1)) / thrust_applied;
   } else {

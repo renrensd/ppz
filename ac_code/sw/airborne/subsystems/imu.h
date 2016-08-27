@@ -60,6 +60,11 @@ struct Imu {
    */
   bool_t b2i_set_current;
 };
+//extern struct MPU9250_DATA MPU9250_OFFSER;
+
+extern uint8_t acc_cutoff_fre;
+extern uint8_t gyro_cutoff_fre;
+
 
 /** global IMU state */
 extern struct Imu imu;

@@ -16,7 +16,7 @@
     <target name="nps" board="pc">
       <subsystem name="fdm" type="jsbsim"/>
       <!--define name="NPS_SIMU"/-->
-      <!--use nps simulation,need define NPS_SIMU;shut down autoflight_xbee(navigation.c change to use auto_nav)/ops subsystems/timer.c;recommand ins use gps_passthrough-->
+      <!--use nps simulation,need open rotorcraft.makefile NPS_OPTION-->
     </target>
     <define name="USE_MISSION"/>
     <!--define name="WITHOUT_RADIO"/-->   <!--not use radio_control-->
@@ -37,6 +37,7 @@
     <subsystem name="telemetry" type="xbee_api"/>
     <subsystem name="stabilization" type="int_quat"/>
     <subsystem name="gps" type="nmea"/>
+       <!--define name="USE_GPS_HEADING"/-->
     <subsystem name="imu" type="mpu9250_spi"/>
     <!--subsystem name="imu" type="adiv1">
       <define name="IMU_ADIV1_OPTION" value="1"/>

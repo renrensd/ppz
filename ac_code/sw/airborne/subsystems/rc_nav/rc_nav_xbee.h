@@ -10,6 +10,9 @@
 #include "firmwares/rotorcraft/navigation.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 
+//#define DEBUG_RC
+
+
 //rc_vtol_cmd
 #define LOCKED 0
 #define TAKE_OFF 1

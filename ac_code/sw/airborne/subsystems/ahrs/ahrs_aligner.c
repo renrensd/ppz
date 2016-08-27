@@ -118,18 +118,23 @@ void ahrs_aligner_run(void)
   RunOnceEvery(50, {LED_TOGGLE(AHRS_ALIGNER_LED);});
 #endif
 
-  if (samples_idx >= SAMPLES_NB) {
+  if (samples_idx >= SAMPLES_NB) 
+  {
     int32_t avg_ref_sensor = accel_sum.z;
-    if (avg_ref_sensor >= 0) {
+    if (avg_ref_sensor >= 0) 
+	{
       avg_ref_sensor += SAMPLES_NB / 2;
-    } else {
+    } 
+	else 
+	{
       avg_ref_sensor -= SAMPLES_NB / 2;
     }
     avg_ref_sensor /= SAMPLES_NB;
 
     ahrs_aligner.noise = 0;
     int i;
-    for (i = 0; i < SAMPLES_NB; i++) {
+    for (i = 0; i < SAMPLES_NB; i++) 
+	{
       int32_t diff = ref_sensor_samples[i] - avg_ref_sensor;
       ahrs_aligner.noise += abs(diff);
     }
@@ -143,13 +148,17 @@ void ahrs_aligner_run(void)
     INT_VECT3_ZERO(mag_sum);
     samples_idx = 0;
 
-    if (ahrs_aligner.noise < LOW_NOISE_THRESHOLD) {
+    if (ahrs_aligner.noise < LOW_NOISE_THRESHOLD) 
+	{
       ahrs_aligner.low_noise_cnt++;
-    } else if (ahrs_aligner.low_noise_cnt > 0) {
+    } 
+	else if (ahrs_aligner.low_noise_cnt > 0) 
+	{
       ahrs_aligner.low_noise_cnt--;
     }
 
-    if (ahrs_aligner.low_noise_cnt > LOW_NOISE_TIME) {
+    if (ahrs_aligner.low_noise_cnt > LOW_NOISE_TIME) 
+	{
       ahrs_aligner.status = AHRS_ALIGNER_LOCKED;
 #ifdef AHRS_ALIGNER_LED
       LED_ON(AHRS_ALIGNER_LED);

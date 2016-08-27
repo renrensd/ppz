@@ -51,6 +51,11 @@ struct GpsNmea {
   int msg_len;
   uint8_t status;             ///< line parser status
   uint8_t gps_qual;           ///< RTK FIX(0x04) OR RTK FLOAT(0x05) OR SINGLE(0x01)
+
+  float heading;
+  float pitch;
+  uint8_t sol_tatus;
+
 };
 
 extern struct GpsNmea gps_nmea;
@@ -70,7 +75,8 @@ extern uint8_t nmea_calc_crc(const char *buff, int buff_sz);
 extern void nmea_parse_prop_init(void);
 extern void nmea_parse_prop_msg(void);
 extern void gps_nmea_msg(void);
-extern void get_gps_nmea_stable(void);
+extern void get_gps_pos_stable(void);
+extern void get_gps_heading_stable(void);
 
 static inline void GpsEvent(void)
 {

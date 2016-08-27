@@ -69,6 +69,10 @@ static void nmea_parse_GSA(void);
 static void nmea_parse_RMC(void);
 static void nmea_parse_GGA(void);
 static void nmea_parse_GSV(void);
+#ifdef USE_GPS_HEADING
+static void nmea_parse_TRA(void);
+#endif
+
 #if USE_XYZA
 uint32_t CRC32Value(int32_t i);
 uint32_t CalculateXYZACRC32(uint16_t ulCount,unsigned char *ucBuffer);
@@ -193,6 +197,13 @@ void nmea_parse_msg(void)
     NMEA_PRINT("GSV: \"%s\" \n\r", gps_nmea.msg_buf);
     nmea_parse_GSV();
   } 
+  #ifdef USE_GPS_HEADING
+    else if (gps_nmea.msg_len > 5 && !strncmp(&gps_nmea.msg_buf[2] , "TRA", 3)) {
+    gps_nmea.msg_buf[gps_nmea.msg_len] = 0;
+    NMEA_PRINT("TRA: \"%s\" \n\r", gps_nmea.msg_buf);
+    nmea_parse_TRA();
+  } 
+  #endif
   #if USE_XYZA  //add BESTXYZA data to get ecef information
     else if (gps_nmea.msg_len > 5 && !strncmp(&gps_nmea.msg_buf[4] , "XYZA", 4)) {   
     gps_nmea.msg_buf[gps_nmea.msg_len] = 0;
@@ -399,6 +410,55 @@ static void nmea_parse_GSA(void)
   nmea_read_until(&i);
 
 }
+
+/**
+ * Parse TRA NMEA messages.
+ * GPS HEADING and PITCH.
+ * Msg stored in gps_nmea.msg_buf.
+ */
+#ifdef USE_GPS_HEADING
+
+#define GPS_HEADING_OFFSET  90.0
+#define Course360(x) { \
+    if(x < 0.0) x += 360.0; \
+    else if(x >= 360.0) x -= 360.0; \
+  }
+static void nmea_parse_TRA(void)
+{
+  int i = 6;     // current position in the message, start after: GPTRA,
+
+  // attempt to reject empty packets right away
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') {
+    //NMEA_PRINT("p_TRA() - skipping empty message\n\r");
+    return;
+  }
+
+  // ignored
+  //nmea_read_until(&i);
+	//i++;
+  // get heading
+  nmea_read_until(&i);
+  gps_nmea.heading = (float)strtod(&gps_nmea.msg_buf[i],NULL);
+  if(gps_nmea.heading < 0.0 || gps_nmea.heading > 360.0)
+  {
+  	   gps_nmea.sol_tatus = 0;
+  	   return;
+  }
+  gps.heading = gps_nmea.heading + GPS_HEADING_OFFSET;
+  Course360(gps.heading);  
+  
+  NMEA_PRINT("p_TRA() - gps_nmea.heading=%f\n\r", gps_nmea.heading);
+  nmea_read_until(&i);
+  // get pitch
+  gps_nmea.pitch= (float)strtod(&gps_nmea.msg_buf[i], NULL);
+  NMEA_PRINT("p_TRA() - gps_nmea.pitch=%f\n\r", gps_nmea.pitch);
+  nmea_read_until(&i);
+  nmea_read_until(&i);
+  // get status
+  gps_nmea.sol_tatus= (float)strtod(&gps_nmea.msg_buf[i], NULL);
+  NMEA_PRINT("p_TRA() - gps_nmea.pitch=%f\n\r", gps_nmea.sol_tatus);
+}
+#endif
 
 /**
  * Parse RMC NMEA messages.
@@ -687,12 +747,12 @@ static void nmea_parse_XYZ(void)
 #endif
 
 /*run 20hz,use 2s time no fix pos set unstable*/
-void get_gps_nmea_stable(void)
+void get_gps_pos_stable(void)
 {
 	static uint8_t counter_nmea_qual = 0;
 	if(gps_nmea.gps_qual != 52) //not fix pos
 	{
-		gps.stable = FALSE;
+		gps.p_stable = FALSE;
 		counter_nmea_qual = 0;
 	}
 	else
@@ -702,8 +762,29 @@ void get_gps_nmea_stable(void)
 
 	if(counter_nmea_qual > 40)
 	{
-		gps.stable = TRUE;
+		gps.p_stable = TRUE;
 		counter_nmea_qual = 41;  /*avoid overflow*/
+	}	
+}
+
+/*run 20hz,use 2s time no fix heading set unstable*/
+void get_gps_heading_stable(void)
+{
+	static uint8_t counter_heading = 0;
+	if(gps_nmea.sol_tatus!= 4) //not fix pos
+	{
+		gps.h_stable = FALSE;
+		counter_heading = 0;
+	}
+	else
+	{
+		counter_heading++;
+	}
+
+	if(counter_heading > 40)
+	{
+		gps.h_stable = TRUE;
+		counter_heading = 41;  /*avoid overflow*/
 	}	
 }
 /*
