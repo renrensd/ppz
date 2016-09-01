@@ -658,7 +658,7 @@ void autopilot_check_in_flight(bool_t motors_on)
       if (stabilization_cmd[COMMAND_THRUST] >3000 && stateGetPositionEnu_f()->z >DISTANCE_ABOVE_GROUNG)
 	  {
         above_ground_counter++;
-        if (above_ground_counter > (1*AUTOPILOT_IN_FLIGHT_TIME) )   //continue 1s
+        if (autopilot_in_flight_counter > (1*AUTOPILOT_IN_FLIGHT_TIME) )   //continue 1s
 		{
           above_ground = TRUE;
 		  above_ground_counter = 0;
