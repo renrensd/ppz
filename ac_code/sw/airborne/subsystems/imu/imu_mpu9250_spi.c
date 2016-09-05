@@ -124,6 +124,11 @@ PRINT_CONFIG_VAR(IMU_MPU9250_Z_SIGN)
 #define IMU_MPU9250_READ_MAG FALSE
 #endif	/* HMC5983_OPTION */
 
+#ifdef QMC5883_OPTION
+#define QMC5883_I2C_DEV i2c2
+#define IMU_MPU9250_READ_MAG FALSE
+#endif	/* QMC5883_OPTION */
+
 struct ImuMpu9250 imu_mpu9250;
 
 void mpu_wait_slave4_ready(void);
@@ -181,6 +186,11 @@ void imu_impl_init(void)
   hmc58xx_init(&imu_mpu9250.mag_hmc, &(HMC5983_I2C_DEV), HMC58XX_ADDR);
   imu_mpu9250.mag_hmc.type = HMC_TYPE_5883;
 #endif /* HMC5983_OPTION */
+
+	#ifdef QMC5883_OPTION
+  	/* initialize mag and set default options */
+  	qmc5883_init(&imu_mpu9250.mag_qmc, &(QMC5883_I2C_DEV), QMC5883_ADDR);
+	#endif /* HMC5983_OPTION */
 }
 
 void imu_periodic(void)
@@ -190,6 +200,11 @@ void imu_periodic(void)
 #ifdef HMC5983_OPTION
    // Read HMC58XX at 50Hz (main loop for rotorcraft: 512Hz)
   RunOnceEvery(2, hmc58xx_periodic(&imu_mpu9250.mag_hmc));
+#endif /* HMC5983_OPTION */
+
+#ifdef QMC5883_OPTION
+   // Read HMC58XX at 50Hz (main loop for rotorcraft: 512Hz)
+  RunOnceEvery(2, qmc5883_periodic(&imu_mpu9250.mag_qmc));
 #endif /* HMC5983_OPTION */
 }
 
@@ -242,6 +257,29 @@ void imu_mpu9250_event(void)
 	    imu.mag_unscaled.y = (IMU_MPU9250_Y_SIGN) * imu_mpu9250.mag_hmc.data.vect.y;
 	    imu.mag_unscaled.z = (IMU_MPU9250_Z_SIGN) * imu_mpu9250.mag_hmc.data.vect.z;
 	    imu_mpu9250.mag_hmc.data_available = FALSE;
+	    imu_mpu9250.mag_valid = TRUE;
+		#ifdef CALIBRATION_OPTION
+		cali_magraw_to_txt(imu.mag_unscaled.x, imu.mag_unscaled.y, imu.mag_unscaled.z);
+		#endif	/* CALIBRATION_OPTION */
+	}
+
+	if (imu_mpu9250.mag_valid) 
+	{
+	    imu_mpu9250.mag_valid = FALSE;
+	    imu_scale_mag(&imu);
+	    AbiSendMsgIMU_MAG_INT32(IMU_ADISENS_ID, now_ts, &imu.mag);
+  	}
+#endif /* HMC5983_OPTION */
+
+#ifdef QMC5883_OPTION
+	qmc5883_event(&imu_mpu9250.mag_qmc);
+	if (imu_mpu9250.mag_qmc.data_available) 
+	{
+	    // VECT3_COPY(imu.mag_unscaled, imu_mpu9250.mag_qmc.data.vect);
+	    imu.mag_unscaled.x = (IMU_MPU9250_X_SIGN) * imu_mpu9250.mag_qmc.data.vect.x;
+	    imu.mag_unscaled.y = (IMU_MPU9250_Y_SIGN) * imu_mpu9250.mag_qmc.data.vect.y;
+	    imu.mag_unscaled.z = (IMU_MPU9250_Z_SIGN) * imu_mpu9250.mag_qmc.data.vect.z;
+	    imu_mpu9250.mag_qmc.data_available = FALSE;
 	    imu_mpu9250.mag_valid = TRUE;
 		#ifdef CALIBRATION_OPTION
 		cali_magraw_to_txt(imu.mag_unscaled.x, imu.mag_unscaled.y, imu.mag_unscaled.z);

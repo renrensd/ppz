@@ -36,6 +36,9 @@
 #ifdef HMC5983_OPTION
 #include "peripherals/hmc58xx.h"
 #endif	/* HMC5983_OPTION */
+#ifdef QMC5883_OPTION
+#include "peripherals/qmc5883.h"
+#endif	/* QMC5883_OPTION */
 
 
 /** default gyro sensitivy and neutral from the datasheet
@@ -60,18 +63,6 @@
  * MPU with 8g has 4096 LSB/g
  * sens = 9.81 [m/s^2] / 4096 [LSB/g] * 2^INT32_ACCEL_FRAC = 2.4525
  */
-#if !defined IMU_ACCEL_X_SENS & !defined IMU_ACCEL_Y_SENS & !defined IMU_ACCEL_Z_SENS
-// FIXME
-#define IMU_ACCEL_X_SENS 2.4525
-#define IMU_ACCEL_X_SENS_NUM 981
-#define IMU_ACCEL_X_SENS_DEN 400
-#define IMU_ACCEL_Y_SENS 2.4525
-#define IMU_ACCEL_Y_SENS_NUM 981
-#define IMU_ACCEL_Y_SENS_DEN 400
-#define IMU_ACCEL_Z_SENS 2.4525
-#define IMU_ACCEL_Z_SENS_NUM 981
-#define IMU_ACCEL_Z_SENS_DEN 400
-#endif
 
 
 struct ImuMpu9250 {
@@ -83,6 +74,10 @@ struct ImuMpu9250 {
   volatile bool_t slave4_ready;
 #ifdef HMC5983_OPTION
   struct Hmc58xx mag_hmc;
+  volatile uint8_t mag_valid;
+#endif
+#ifdef QMC5883_OPTION
+  struct Qmc5883 mag_qmc;
   volatile uint8_t mag_valid;
 #endif
 };

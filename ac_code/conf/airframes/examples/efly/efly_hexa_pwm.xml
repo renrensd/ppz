@@ -34,7 +34,7 @@
       <define name="SERVO_HZ" value="400"/>
     </subsystem>
 
-    <subsystem name="telemetry" type="xbee_api"/>
+    <subsystem name="telemetry" type="transparent"/>
     <subsystem name="stabilization" type="float_double"/>
     <subsystem name="gps" type="nmea"/>
        <!--define name="USE_GPS_HEADING"/-->
@@ -124,14 +124,19 @@
     <define name="GYRO_Q_SENS" value="2.17953" integer="16"/>
     <define name="GYRO_R_SENS" value="2.17953" integer="16"/>
 
+    <define name="ACCEL_X_NEUTRAL" value="7"/>
+    <define name="ACCEL_Y_NEUTRAL" value="0"/>
+    <define name="ACCEL_Z_NEUTRAL" value="191"/>
+    <define name="ACCEL_X_SENS" value="2.4545978487" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.45176066351" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.44353415821" integer="16"/>
 
-
-<define name="MAG_X_NEUTRAL" value="26"/>
-<define name="MAG_Y_NEUTRAL" value="83"/>
-<define name="MAG_Z_NEUTRAL" value="-37"/>
-<define name="MAG_X_SENS" value="3.7028803396" integer="16"/>
-<define name="MAG_Y_SENS" value="3.65181442238" integer="16"/>
-<define name="MAG_Z_SENS" value="3.88318839942" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="-55"/>
+    <define name="MAG_Y_NEUTRAL" value="-102"/>
+    <define name="MAG_Z_NEUTRAL" value="123"/>
+    <define name="MAG_X_SENS" value="0.463248728893" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.472130353985" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.469877337298" integer="16"/>
 
 <!--define name= "MAG_X_CURRENT_COEF" value="0.000634016748462"/>
 <define name= "MAG_Y_CURRENT_COEF" value="0.000479835842178"/>
