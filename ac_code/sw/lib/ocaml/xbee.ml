@@ -136,7 +136,7 @@ let api_tx64 = fun ?(frame_id = 0) dest data ->
     s.[6] <- Char.chr 0x40;
     s.[7] <- Char.chr 0xf1;
     s.[8] <- Char.chr 0xeb;
-    s.[9] <- Char.chr 0x12;
+    s.[9] <- Char.chr 0x1e;
     s.[10] <- Char.chr 0xff;
     s.[11] <- Char.chr 0xfe;
     s.[12] <- Char.chr 0x0;

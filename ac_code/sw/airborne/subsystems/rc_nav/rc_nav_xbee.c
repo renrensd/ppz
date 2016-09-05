@@ -398,12 +398,15 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		   	#ifndef DEBUG_RC
 		   	   if(flight_mode==nav_rc_mode) 
 			#endif
-		   	   {
-			   	   rc_set_info.spray_grade++;
-				   Bound(rc_set_info.spray_grade, 0, 5);
-				   rc_update_ops_config_param(rc_set_info.spray_grade);
-			   	  #ifdef OPS_OPTION
-                   ops_start_spraying();  //make sure ops is opened
+		   	   {  
+			   	   if( get_spray_switch_state() )  /*only ops is opened grade add*/
+			   	   {
+				   		rc_set_info.spray_grade++;
+						Bound(rc_set_info.spray_grade, 0, 5);
+						rc_update_ops_config_param(rc_set_info.spray_grade);
+			   	   	}
+			   	   #ifdef OPS_OPTION
+                  ops_start_spraying();  //make sure ops is opened
 			      #endif 
 		   	   }
 		   	   break;
@@ -413,10 +416,13 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 			#endif
 		   	   {
 			   	   if(rc_set_info.spray_grade)  
-			   	   {				   	
-				   	   rc_set_info.spray_grade--;
-					   //Bound(rc_set_info.spray_grade, 0, 5);
-					   rc_update_ops_config_param(rc_set_info.spray_grade);
+			   	   {	
+				   		if( get_spray_switch_state() )  /*only ops is opened grade add*/
+				   		{
+					   	   rc_set_info.spray_grade--;
+						   //Bound(rc_set_info.spray_grade, 0, 5);
+						   rc_update_ops_config_param(rc_set_info.spray_grade);
+				   		}
 					  #ifdef OPS_OPTION
 					   if(!rc_set_info.spray_grade)
 					   {

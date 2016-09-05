@@ -41,6 +41,14 @@ struct OPS_INFO
 	uint8_t init_status;
 	uint8_t con_flag;	//the flag that aircraft connected to ops.
 	uint8_t ops_debug;
+	//#ifdef OPS_BAT_OPTION
+	uint16_t  o_bat_mv;
+	uint16_t  o_bat_ma;
+	uint16_t  o_bat_cap;
+	uint16_t  o_bat_rep;
+	uint16_t  o_bat_tem;	
+	//#endif
+	uint8_t  sys_error;
 };
 
 struct OPS_CONFIG_PARAM

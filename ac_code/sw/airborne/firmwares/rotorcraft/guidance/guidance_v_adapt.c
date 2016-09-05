@@ -95,6 +95,9 @@ int32_t gv_adapt_X;
 int32_t gv_adapt_P;
 int32_t gv_adapt_Xmeas;
 
+float gv_adapt_noise;
+float gv_adapt_acc;
+
 /* System  noises */
 #ifndef GV_ADAPT_SYS_NOISE_F
 #define GV_ADAPT_SYS_NOISE_F 0.00005
@@ -116,6 +119,9 @@ void gv_adapt_init(void)
 {
   gv_adapt_X = gv_adapt_X0;
   gv_adapt_P = gv_adapt_P0;
+
+  gv_adapt_noise = 1.0;
+  gv_adapt_acc = 0.5;
 }
 
 #define K_FRAC 12
@@ -130,8 +136,10 @@ void gv_adapt_run(int32_t zdd_meas, int32_t thrust_applied, int32_t zd_ref)
 
   static const int32_t gv_adapt_min_cmd = GUIDANCE_V_ADAPT_MIN_CMD * MAX_PPRZ;
   static const int32_t gv_adapt_max_cmd = GUIDANCE_V_ADAPT_MAX_CMD * MAX_PPRZ;
-  static const int32_t gv_adapt_max_accel = ACCEL_BFP_OF_REAL(GUIDANCE_V_ADAPT_MAX_ACCEL);
+  //static const int32_t gv_adapt_max_accel = ACCEL_BFP_OF_REAL(GUIDANCE_V_ADAPT_MAX_ACCEL);
 
+  
+  const int32_t gv_adapt_max_accel = ACCEL_BFP_OF_REAL(gv_adapt_acc);
   /* Update only if accel and commands are in a valid range */
   /* This also ensures we don't divide by zero */
   if (thrust_applied < gv_adapt_min_cmd || thrust_applied > gv_adapt_max_cmd
@@ -157,8 +165,9 @@ void gv_adapt_run(int32_t zdd_meas, int32_t thrust_applied, int32_t zd_ref)
   /* Covariance Error  E = P + R  */
   int32_t ref = zd_ref >> (INT32_SPEED_FRAC - GV_ADAPT_P_FRAC);
   if (zd_ref < 0) { ref = -ref; }
-  int32_t E = gv_adapt_P + GV_ADAPT_MEAS_NOISE_HOVER + ref * GV_ADAPT_MEAS_NOISE_OF_ZD;
-
+ // int32_t E = gv_adapt_P + GV_ADAPT_MEAS_NOISE_HOVER + ref * GV_ADAPT_MEAS_NOISE_OF_ZD;
+ 
+  int32_t E = gv_adapt_P + BFP_OF_REAL(50.0*gv_adapt_noise, GV_ADAPT_P_FRAC) + (int32_t)(100*gv_adapt_noise)*ref;
   /* Kalman gain  K = P / (P + R) = P / E  */
   int32_t K = (gv_adapt_P << K_FRAC) / E;
 

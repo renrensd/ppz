@@ -298,7 +298,7 @@ void nav_circle(struct EnuCoor_i *wp_center, int32_t radius)
     int32_t abs_radius = abs(radius);
     // carrot_angle2
     int32_t carrot_angle = (((CARROT_DIST/3) << INT32_ANGLE_FRAC) / abs_radius); 
-    Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI/ 4);
+    Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI/ 5);
     carrot_angle = nav_circle_qdr - sign_radius * carrot_angle;
     int32_t s_carrot, c_carrot;
     PPRZ_ITRIG_SIN(s_carrot, carrot_angle);
@@ -325,18 +325,28 @@ void nav_circle(struct EnuCoor_i *wp_center, int32_t radius)
 
 bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_heading)
 {
-	bool_t leave_flag = FALSE;
+    static bool_t leave_flag = TRUE;
     struct Int32Vect2 pos_diff;
+    int8_t sign_radius = radius > 0 ? 1 : -1;
+    int32_t abs_radius = abs(radius);
     VECT2_DIFF(pos_diff, *stateGetPositionEnu_i(), wp_center); /*vect radial direction*/
 
     // compute qdr(orientation toward center)
+    int32_t last_nav_circle_qdr = nav_circle_qdr;
     nav_circle_qdr = int32_atan2(pos_diff.y, pos_diff.x);
+    if(!leave_flag)
+    {
+	int32_t diff_qdr = nav_circle_qdr - last_nav_circle_qdr;
+	INT32_ANGLE_NORMALIZE(diff_qdr);
+	if( diff_qdr * sign_radius > 0 )
+	{
+	    nav_circle_qdr = last_nav_circle_qdr;
+	}
+    }
 
-	int8_t sign_radius = radius > 0 ? 1 : -1;
-	int32_t abs_radius = abs(radius);
-	int32_t carrot_angle = (((CARROT_DIST/4) << INT32_ANGLE_FRAC) / abs_radius); 
-	Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI*3/11);
-	int32_t heading_ccw = (1+sign_radius)*INT32_ANGLE_PI_2 - sp_heading;
+    int32_t carrot_angle = (((CARROT_DIST/4) << INT32_ANGLE_FRAC) / abs_radius); 
+    Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI*3/11);
+    int32_t heading_ccw = (1+sign_radius)*INT32_ANGLE_PI_2 - sp_heading;
 	
     // carrot_angle to guidance circle forward
     carrot_angle = nav_circle_qdr - sign_radius * carrot_angle; /*CCW angle,0 is east*/  
@@ -345,7 +355,8 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
 	INT32_COURSE_NORMALIZE(heading_ccw);
 	int32_t deta_angle = heading_ccw-carrot_angle;
 	INT32_ANGLE_NORMALIZE(deta_angle);
-	
+
+	leave_flag = FALSE;  //set default false
 	if(sign_radius == 1)
 	{
 		if( deta_angle > 0 && deta_angle < INT32_ANGLE_PI_2)
@@ -427,7 +438,7 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   last_regulate_ratio = regulate_ratio;
 #endif  
 
-  int32_t progress = Max( ( (CARROT_DIST/regulate_ratio) >>INT32_POS_FRAC), 0 );     //TODOM: int32_t progress = Max((CARROT_DIST >> INT32_POS_FRAC), 0);
+  int32_t progress = 8;//Max( ( (CARROT_DIST/regulate_ratio) >>INT32_POS_FRAC), 0 );     //TODOM: int32_t progress = Max((CARROT_DIST >> INT32_POS_FRAC), 0);
   nav_leg_progress += progress;                 //carrot length   
   int32_t prog_2 = nav_leg_length;
   Bound(nav_leg_progress, 0, prog_2);

@@ -110,7 +110,7 @@ void battery_flight_check(void)
 	//if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
 	if( electrical.vsupply && electrical.vsupply < BAT_LIMIT_VOL )
 	{   //hover 10s,back home
-	    flag_trigger=1;   //record error trigger
+	    flag_trigger = 1;   //record error trigger
 	    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
 		//need give special alter to RC and GCS
         #if TEST_MSG

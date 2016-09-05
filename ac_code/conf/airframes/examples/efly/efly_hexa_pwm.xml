@@ -35,7 +35,7 @@
     </subsystem>
 
     <subsystem name="telemetry" type="xbee_api"/>
-    <subsystem name="stabilization" type="int_quat"/>
+    <subsystem name="stabilization" type="float_double"/>
     <subsystem name="gps" type="nmea"/>
        <!--define name="USE_GPS_HEADING"/-->
     <subsystem name="imu" type="mpu9250_spi"/>
@@ -230,7 +230,7 @@
     <define name="REF_MAX_RDOT" value="RadOfDeg(360.)"/>
 
     <!-- feedback -->
-    <define name="PHI_PGAIN" value="1500"/>
+    <!--define name="PHI_PGAIN" value="1500"/>
     <define name="PHI_DGAIN" value="600"/>
     <define name="PHI_IGAIN" value="200"/>
 
@@ -245,11 +245,37 @@
     <define name="PHI_DGAIN_D" value="0"/>
     <define name="THETA_DGAIN_D" value="0"/>
     <define name="PSI_DGAIN_D" value="0"/>
-
-    <!-- feedforward -->
-    <define name="PHI_DDGAIN" value="300"/>
+    
+    <define name="PHI_DGAIN_D" value="0"/>
+    <define name="THETA_DGAIN_D" value="0"/>
+    <define name="PSI_DGAIN_D" value="0"/-->
+    
+        <!-- feedforward -->
+    <!--define name="PHI_DDGAIN" value="300"/>
     <define name="THETA_DDGAIN" value="300"/>
-    <define name="PSI_DDGAIN" value="0"/>
+    <define name="PSI_DDGAIN" value="0"/-->
+    
+    
+    
+    <define name="PHI_PGAIN" value="4"/>
+    <define name="PHIRATE_IGAIN" value="800.0"/>
+    <define name="PHIRATE_PGAIN" value="1200.0"/>
+    <define name="PHIRATE_DGAIN" value="45.0"/>
+    <define name="PHIRATE_FFGAIN" value="45.0"/>
+
+    <define name="THETA_PGAIN" value="4"/>
+    <define name="THETARATE_IGAIN" value="800.0"/>
+    <define name="THETARATE_PGAIN" value="1200"/>
+    <define name="THETARATE_DGAIN" value="45.0"/>
+    <define name="THETARATE_FFGAIN" value="45.0"/>
+
+    <define name="PSI_PGAIN" value="15.0"/>
+    <define name="PSIRATE_IGAIN" value="700.0"/>
+    <define name="PSIRATE_PGAIN" value="1200"/>
+    <define name="PSIRATE_DGAIN" value="50"/>
+    <define name="PSIRATE_FFGAIN" value="50"/>
+
+
 
 
   </section>
@@ -284,8 +310,8 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <define name="USE_REF" value="1"/>
     <define name="USE_SPEED_REF" value="1"/> <!-- using RC to control horizontal setpoint -->
-    <define name="MAX_BANK" value="27" unit="deg"/>  <!-- using horizontal angle of PID caculated desire -->
-    <define name="REF_MAX_ACCEL" value="1.2"/> <!-- max reference horizontal acceleration in m/s2 -->
+    <define name="MAX_BANK" value="25" unit="deg"/>  <!-- using horizontal angle of PID caculated desire -->
+    <define name="REF_MAX_ACCEL" value="1.0"/> <!-- max reference horizontal acceleration in m/s2 -->
     <define name="REF_MAX_SPEED" value="5.0"/> <!-- max reference horizontal speed in m/s -->
     <!--define name="RC_SPEED_DEAD_BAND" value="200000"/-->
     <!--define name="PGAIN" value="30"/>

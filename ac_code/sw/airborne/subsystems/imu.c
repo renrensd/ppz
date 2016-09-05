@@ -42,7 +42,7 @@
 #endif
 #endif
 
-//#define USE_ATT_BF TRUE
+#define USE_ATT_BF TRUE
 
 static bool_t gyro_offset_success;
 uint8_t acc_cutoff_fre, gyro_cutoff_fre;
@@ -301,11 +301,12 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
                   IMU_GYRO_Q_SENS_NUM) / IMU_GYRO_Q_SENS_DEN;
   _imu->gyro.r = ((_imu->gyro_unscaled.r - _imu->gyro_neutral.r) * IMU_GYRO_R_SIGN *
                   IMU_GYRO_R_SENS_NUM) / IMU_GYRO_R_SENS_DEN;
-
+#ifndef NPS_SIMU
   if(!gyro_offset_success)
   {
   	  gyro_offset_success = gyro_offset_caculate(_imu);
   }
+#endif
 
 //-----gyro-acc-LowPass-Butterworth-----//
 #if USE_ATT_BF

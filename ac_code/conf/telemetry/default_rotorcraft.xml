@@ -9,13 +9,13 @@
       <!--message name="ROTORCRAFT_CMD"         period="0.5"/-->
       <message name="DL_VALUE"               period="0.5"/>
       <message name="ROTORCRAFT_STATUS"      period="1.5"/>
-      <message name="ROTORCRAFT_FP"          period="0.1"/>
+      <message name="ROTORCRAFT_FP"          period="1.0"/>
       <message name="ALIVE"                  period="1.0"/>
       <message name="INS_REF"                period="5.0"/>
       <message name="ROTORCRAFT_NAV_STATUS"  period="2.0"/>
       <message name="WP_MOVED"               period="3.0"/>
       <message name="GPS_INT"                period="1.0"/>
-      <message name="INS"                    period="0.5"/>
+      <message name="INS"                    period="1.0"/>
       <!--message name="I2C_ERRORS"          period="2.0"/>
       <message name="UART_ERRORS"            period="3.1"/>
       <message name="SUPERBITRF"             period="3"/>
@@ -26,14 +26,14 @@
       <message name="SURVEY"                 period="2.5"/>
       <message name="OPTIC_FLOW_EST"         period="0.25"/>
       <message name="BMP_STATUS"             period="0.25"/-->
-      <message name="VERT_LOOP"              period="1.0"/>
+      <message name="VERT_LOOP"              period="0.5"/>
       <message name="HOVER_LOOP"             period="0.5"/>
       <!--message name="PX4FLOW"             period="1.0"/-->
       <!--message name="MOTOR_MIXING"           period="1.0"/-->
       <!--message name="STAB_ATTITUDE_FLOAT"          period="1.0"/-->
-      <message name="INS_Z"                  period="1.0"/>
-      <message name="GUIDANCE_H_REF_INT"     period="0.5"/>
-      <message name="MCU_FAULT"             period="1.0"/>
+      <!--message name="INS_Z"                  period="1.0"/>
+      <message name="GUIDANCE_H_REF_INT"     period="0.5"/-->
+      <message name="MCU_FAULT"             period="5.0"/>
     </mode>
 
     <mode name="data">
@@ -158,6 +158,10 @@
     <mode name="aligner">
       <message name="ALIVE"             period="0.9"/>
       <message name="FILTER_ALIGNER"    period="0.02"/>
+    </mode>
+
+    <mode name="low_data">
+      <message name="ALIVE"             period="2"/>
     </mode>
 
     <mode name="tune_hover">

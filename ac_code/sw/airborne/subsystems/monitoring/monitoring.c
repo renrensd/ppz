@@ -282,7 +282,12 @@ void ground_monitoring(void)
 			break;
 			
 		case GPS_CHECK:
-			if( GpsFixValid() && gps.p_stable && gps.h_stable) 
+			if( GpsFixValid() 
+			   && gps.p_stable 
+			  #ifdef USE_GPS_HEADING
+			   && gps.h_stable
+			  #endif 
+			                           ) 
 			{
 				ground_check_step++;  //next step
 				monitoring_fail_code = PASS;

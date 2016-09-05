@@ -168,8 +168,17 @@ void ops_heart_beat_handler(uint8_t *param)
 	ops_info.res_cap = (*(param+1) << 8 | *param);
 	ops_info.work_state = *(param+2);
 	ops_info.spray_state = *(param+3);
+	
+	#ifdef OPS_BAT_OPTION
+	ops_info.o_bat_mv = (*(param+5) << 8 | *(param+4));
+	ops_info.o_bat_ma = (*(param+7) << 8 | *(param+6));
+	ops_info.o_bat_cap = (*(param+9) << 8 | *(param+8));
+	ops_info.o_bat_rep = (*(param+11) << 8 | *(param+10));
+	ops_info.o_bat_tem = (*(param+13) << 8 | *(param+12));
+	ops_info.sys_error = *(param+18);
+	#endif
 	ops_info.con_flag = OPS_CONNECTED;
-
+   
 	if(ops_info.init_status == OPS_CONF_NOT_CONNECT)
 	{
 		ops_info.init_status = OPS_CONF_PARAM;

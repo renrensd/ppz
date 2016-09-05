@@ -16,6 +16,8 @@
       <dl_setting var="guidance_v_nominal_throttle" min="0.2" step="0.01" max="0.8" module="guidance/guidance_v" shortname="nominal_throttle" param="GUIDANCE_V_NOMINAL_HOVER_THROTTLE" persistent="true"/>
       <dl_setting var="guidance_v_adapt_throttle_enabled" min="0" step="1" max="1" module="guidance/guidance_v" shortname="adapt_throttle" param="GUIDANCE_V_ADAPT_THROTTLE_ENABLED" values="FALSE|TRUE" persistent="true"/>
       <dl_setting var="guidance_v_z_sp" min="-5" step="0.5" max="3" module="guidance/guidance_v" shortname="sp" unit="2e-8m" alt_unit="m" alt_unit_coef="0.00390625"/>
+      <dl_setting var="gv_adapt_noise" min="0.5" step="0.05" max="5"   module="guidance/guidance_v_adapt" shortname="adapt_noise" />
+      <dl_setting var="gv_adapt_acc"    min="0.2" step="0.1" max="5"     module="guidance/guidance_v_adapt" shortname="adapt_acc" />
     </dl_settings>
 
   <!--dl_settings name="Direction  Value">

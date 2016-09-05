@@ -48,6 +48,8 @@ extern int32_t gv_adapt_P;
 
 /** Measurement */
 extern int32_t gv_adapt_Xmeas;
+extern float gv_adapt_noise;
+extern float gv_adapt_acc;
 
 
 extern void gv_adapt_init(void);

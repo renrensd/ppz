@@ -352,7 +352,7 @@ void xbee_init(void)
 
 #ifdef GCS_V1_OPTION
   xbee_con_info.rc_con_available = TRUE;   //set TRUE only for heartbeat communication
-  uint8_t rc_add[]= {0x00, 0x13, 0xA2, 0x00, 0x40, 0xF5, 0x4A, 0xE9};
+  uint8_t rc_add[]= {0x00, 0x13, 0xA2, 0x00, 0x40, 0xF1, 0xEB, 0x1B};
   for (uint8_t i = 0; i < 8; i++) 
   {
 	  xbee_con_info.rc_addr[0][i] = rc_add[i];

@@ -107,15 +107,16 @@ static abi_event aligner_ev;
 static abi_event body_to_imu_ev;
 static abi_event geo_mag_ev;
 /*cpz-gps-heading*/
+#ifdef USE_GPS_HEADING
 static abi_event gps_heading_ev;
+#endif
 
-
-#define USE_AUTO_AHRS_FREQ TRUE
+//#define USE_AUTO_AHRS_FREQ TRUE
 static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
                     uint32_t stamp, struct Int32Rates *gyro)
 {
   ahrs_mlkf_last_stamp = stamp;
-#if USE_AUTO_AHRS_FREQ    // || !defined(AHRS_PROPAGATE_FREQUENCY)
+#if USE_AUTO_AHRS_FREQ  || !defined(AHRS_PROPAGATE_FREQUENCY)
   PRINT_CONFIG_MSG("Calculating dt for AHRS_MLKF propagation.")
   /* timestamp in usec when last callback was received */
   static uint32_t last_stamp = 0;

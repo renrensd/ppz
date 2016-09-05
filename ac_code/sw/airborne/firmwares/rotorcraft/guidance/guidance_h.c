@@ -614,7 +614,7 @@ void guidance_h_run(bool_t  in_flight)
                                                guidance_h.sp.heading);
 #endif
       }
-	 #if 1 //TODOM:use intergrater limit in take off,see above ground signal
+	 #if 0 //TODOM:use intergrater limit in take off,see above ground signal
 	  stabilization_attitude_run(above_ground);	  
 	 #else
       stabilization_attitude_run(in_flight);
@@ -687,7 +687,7 @@ static void guidance_h_traj_run(bool_t in_flight)
   /* maximum bank angle: default 20 deg, max 40 deg*/
   //static const int32_t traj_max_bank = Min(BFP_OF_REAL(GUIDANCE_H_MAX_BANK, INT32_ANGLE_FRAC),
   //                                     BFP_OF_REAL(RadOfDeg(40), INT32_ANGLE_FRAC));
-  static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(30), INT32_ANGLE_FRAC);
+  static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(25), INT32_ANGLE_FRAC);
   static const int32_t total_limit_bank = BFP_OF_REAL(RadOfDeg(3), INT32_ANGLE_FRAC);	//add by whp.
 
   static int32_t flag_of_int_inner_x = 1;

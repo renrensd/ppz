@@ -16,6 +16,7 @@
 #include "uplink_ac.h"
 #include "subsystems/datalink/xbee.h"
 #include "subsystems/monitoring/monitoring.h"
+#include "subsystems/electrical.h"
 
 //#include "subsystems/datalink/downlink.h"
 //#include "uplink_ac.h"
@@ -101,7 +102,7 @@ void send_heart_beat_A2G_msg(void)
    if(i==20)  i=1;
   */
    
-   int8_t  battery_remain = (int8_t)((bat_info.vcc12-42000)/60);   //current use high byte
+   int8_t  battery_remain = (int8_t)((electrical.vsupply-420)*100/60);//(int8_t)((bat_info.vcc12-42000)/60);   //current use high byte
    Bound(battery_remain, 0, 100);
    int8_t  pesticides_remain = (int8_t)(ops_info.res_cap&0x00FF);
 

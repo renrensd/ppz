@@ -15,6 +15,7 @@
   <makefile target="ap">
     <file name="bat_manager.c"/>
     <define name="USE_I2C2" value="true" />
+    <define name="BAT_MANAGER_OPTION" />
   </makefile>
 </module>
 

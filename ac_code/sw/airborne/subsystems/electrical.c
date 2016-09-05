@@ -39,6 +39,10 @@
 #include "modules/energy/bat_manager.h"
 #endif
 
+#ifdef OPS_BAT_OPTION
+#include "subsystems/ops/ops_app_if.h" 
+#endif
+
 #ifdef MILLIAMP_PER_PERCENT
 #warning "deprecated MILLIAMP_PER_PERCENT --> Please use MILLIAMP_AT_FULL_THROTTLE"
 #endif
@@ -194,7 +198,13 @@ void electrical_periodic(void)
 	#ifdef BAT_MANAGER_OPTION
 		electrical.vsupply = bat_info.vcc12 / 100;
 		electrical.energy = bat_info.remaining;
-	#endif	/* BAT_MANAGER_OPTION */
+	/* BAT_MANAGER_OPTION */
+	#else 
+	  #ifdef OPS_BAT_OPTION
+	   	electrical.vsupply = ops_info.o_bat_mv  / 100;
+		electrical.energy = ops_info.o_bat_rep;
+	  #endif
+	#endif	
 
 	#ifdef ADC_CHANNEL_CURRENT
 		#ifndef SITL

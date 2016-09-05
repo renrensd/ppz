@@ -495,7 +495,6 @@ int8_t command_delete_all_task(void)
 	{
 		response = 1;
 		return response;
-
 	}
 	nb_pending_wp = 0;	
 	from_wp_useful = FALSE;

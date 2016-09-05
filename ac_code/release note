@@ -32,7 +32,9 @@
 22.update to 08.05
 23.fix some bugs for boluo demo test
 
-24.add gps_heading with monitoring (0826)
+24.add gps_heading with monitoring base on no3
+25.add get bat_info from ops used OPS_BAT_OPTION(untest)
+   add double attitude control loop, finished test(0905)
 
 
 

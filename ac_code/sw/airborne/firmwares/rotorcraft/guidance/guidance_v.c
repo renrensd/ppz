@@ -605,7 +605,7 @@ here is the anti_windup block   ends*/
   /* bound the nominal command to 0.9*MAX_PPRZ */
   Bound(guidance_v_ff_cmd, 0, 8640);
 
-  dynamic_pid_check(); //check inner pid loop var
+  //dynamic_pid_check(); //check inner pid loop var
 /*output by outer loop */
   c_z = guidance_v_zd_ref+ ((guidance_v_kp* err_z)*20)+guidance_v_ki*(guidance_v_z_sum_err>>10)+((guidance_v_kd*err_zd)>>8);
   //bound outter loop

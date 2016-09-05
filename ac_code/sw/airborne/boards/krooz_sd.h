@@ -339,7 +339,8 @@
 #define ECS_PWM_EN_GPIO 	GPIOE,GPIO4 //0-enable,1-disable.
 
 /* bat manager option */
-#define BAT_MANAGER_OPTION
+//#define BAT_MANAGER_OPTION   move to bat_manager.xml
+//#define OPS_BAT_OPTION  //get batter information from ops system
 
 /* ops system option*/
 #define OPS_OPTION
