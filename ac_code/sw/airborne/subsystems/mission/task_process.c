@@ -40,6 +40,7 @@ enum Gcs_Task_Cmd last_task_cmd;
 Task_Error task_error_state;
 
 bool_t from_wp_useful;
+bool_t hover_flag;
 //static bool_t spray_switch_flag;     /*task running spray flag*/
 static bool_t spray_caculate_flag;
 
@@ -83,6 +84,7 @@ void task_process_init(void)
 	last_task_cmd = GCS_CMD_NONE;
 	task_error_state = TASK_NORMAL;
 	from_wp_useful = FALSE;
+	hover_flag = FALSE;
 //	spray_switch_flag = FALSE;
 	spray_caculate_flag = FALSE;
 	from_wp.wp_en.z = 0;  /*z not useful*/
@@ -427,12 +429,23 @@ bool_t run_normal_task(void)
 			
 		case TERMINATION:
 		{
-			VECT2_COPY(home_wp_enu, wp_home);		
-			if( !task_nav_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH) ) 
+			if( hover_flag )   /*use from_wp_useful as hover steady state*/
 			{
-				wp_state = 1;
-				task_nav_hover(home_wp_enu);
-				return TRUE;  /*task is finished, next to do land*/
+				task_nav_hover(from_wp.wp_en);
+				if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
+				{
+					hover_flag = FALSE;
+					VECT2_COPY(home_wp_enu, wp_home);	
+				}
+			}
+			else
+			{			
+				if( !task_nav_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH) ) 
+				{
+					wp_state = 1;
+					task_nav_hover(home_wp_enu);
+					return TRUE;  /*task is finished, next to do land*/
+				}
 			}
 			break;
 		}
@@ -508,6 +521,7 @@ bool_t task_wp_empty_handle(void)
 		VECT2_COPY(from_wp.wp_en, next_wp.wp_en);
 		from_wp.action = next_wp.action;
 		from_wp.wp_id = next_wp.wp_id;
+		hover_flag = TRUE;
 		send_current_task(1);
 		return TRUE;
 	}
