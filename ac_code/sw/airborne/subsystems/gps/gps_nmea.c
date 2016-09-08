@@ -263,14 +263,13 @@ void nmea_parse_char(uint8_t c)
 		   #if USE_XYZA
 			else if(2==header_type)
 			{
-				char crc_char[8] = { gps_nmea.msg_buf[gps_nmea.msg_len-8], 
-					                 gps_nmea.msg_buf[gps_nmea.msg_len-7],
-					                 gps_nmea.msg_buf[gps_nmea.msg_len-6],
-					                 gps_nmea.msg_buf[gps_nmea.msg_len-5],
-					                 gps_nmea.msg_buf[gps_nmea.msg_len-4],
-					                 gps_nmea.msg_buf[gps_nmea.msg_len-3],
-					                 gps_nmea.msg_buf[gps_nmea.msg_len-2],
-					                 gps_nmea.msg_buf[gps_nmea.msg_len-1]  };
+				char crc_char[9];
+				for(uint8_t i=0; i<8; i++)
+				{
+					crc_char[i] = gps_nmea.msg_buf[gps_nmea.msg_len-8+i];
+				}
+				crc_char[8] = 0x2C;  /*set last char "," for get exact data*/
+
 				crc_sum = (uint32_t)(strtoul(crc_char, NULL,16));
 				cal = CalculateXYZACRC32((unsigned long)(gps_nmea.msg_len-9), (unsigned char*)gps_nmea.msg_buf);
 			}
@@ -279,7 +278,7 @@ void nmea_parse_char(uint8_t c)
 			if(cal==crc_sum)
 			{
 				gps_nmea.status = GOT_END;
-                gps_nmea.msg_available = TRUE;
+		                gps_nmea.msg_available = TRUE;
 				break;
 			}			
 

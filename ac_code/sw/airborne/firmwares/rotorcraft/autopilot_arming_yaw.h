@@ -83,7 +83,7 @@ static inline void autopilot_arming_set(bool_t motors_on)
 static inline void autopilot_arming_check_motors_on(void)
 {
   /* only allow switching motor if not in KILL mode */
-  if (autopilot_mode != AP_MODE_KILL) {
+  if (autopilot_mode == AP_MODE_ATTITUDE_DIRECT) {
 
     switch (autopilot_check_motor_status) {
       case STATUS_INITIALISE_RC: // Wait until RC is initialised (it being centered is a good pointer to this)

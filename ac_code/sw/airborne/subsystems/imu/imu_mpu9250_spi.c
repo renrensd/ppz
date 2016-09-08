@@ -246,7 +246,11 @@ void imu_mpu9250_event(void)
 #endif
 
     imu_mpu9250.mpu.data_available = FALSE;
-
+    imu_scale_gyro(&imu);
+    imu_scale_accel(&imu);
+    AbiSendMsgIMU_GYRO_INT32(IMU_MPU9250_ID, now_ts, &imu.gyro);
+    AbiSendMsgIMU_ACCEL_INT32(IMU_MPU9250_ID, now_ts, &imu.accel);
+  }
 #ifdef HMC5983_OPTION
 	/* HMC58XX event task */
 	hmc58xx_event(&imu_mpu9250.mag_hmc);
@@ -293,12 +297,6 @@ void imu_mpu9250_event(void)
 	    AbiSendMsgIMU_MAG_INT32(IMU_ADISENS_ID, now_ts, &imu.mag);
   	}
 #endif /* HMC5983_OPTION */
-
-    imu_scale_gyro(&imu);
-    imu_scale_accel(&imu);
-    AbiSendMsgIMU_GYRO_INT32(IMU_MPU9250_ID, now_ts, &imu.gyro);
-    AbiSendMsgIMU_ACCEL_INT32(IMU_MPU9250_ID, now_ts, &imu.accel);
-  }
 
 }
 

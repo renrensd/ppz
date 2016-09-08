@@ -56,7 +56,7 @@
 
 /* QMC5883 default conf */
 #define QMC5883_DEFAULT_MODE	0x01
-#define QMC5883_DEFAULT_ODR		(0x10<<2)	//100Hz
+#define QMC5883_DEFAULT_ODR		(0x03<<2)	//200Hz
 #define QMC5883_DEFAULT_RNG		(0x00<<4)	//2G
 #define QMC5883_DEFAULT_OSR		(0x01<<6)	//256
 #endif // QMC5883_REGS_H
