@@ -52,6 +52,8 @@ struct AhrsMlkf {
   struct FloatQuat   ltp_to_body_quat; ///< Rotation from LocalTangentPlane to body frame as unit quaternion
   struct FloatRates  imu_rate;         ///< Rotational velocity in IMU frame
   struct FloatRates  gyro_bias;
+  struct FloatRates  gyro_bias_ini;
+  struct Int32Vect3  lp_accel_ini;
 
   struct FloatVect3  mag_h;
 
@@ -66,6 +68,8 @@ struct AhrsMlkf {
 
   enum AhrsMlkfStatus status;
   bool_t is_aligned;
+  bool_t gps_h_stable;
+  int32_t gps_h_stable_test;
 };
 
 extern struct AhrsMlkf ahrs_mlkf;

@@ -86,6 +86,18 @@ struct HorizontalGuidanceGains {
   int32_t a;
 };
 
+struct HorizontalGuidanceGains_f {
+  float p;
+  float d;
+  float i;
+  float in_p;
+  float in_i;
+  float in_d;
+};
+
+
+
+
 struct HorizontalGuidance {
   uint8_t mode;
   /* configuration options */
@@ -93,12 +105,22 @@ struct HorizontalGuidance {
   bool_t approx_force_by_thrust;
   /* gains */
   struct HorizontalGuidanceGains gains;
+  struct HorizontalGuidanceGains_f gains_f;
 
   struct HorizontalGuidanceSetpoint sp; ///< setpoints
   struct HorizontalGuidanceReference ref; ///< reference calculated from setpoints
 
   struct Int32Eulers rc_sp;    ///< with #INT32_ANGLE_FRAC
 };
+
+struct position_float 
+{
+	float x;
+	float y;
+}; 
+
+
+
 extern int32_t rc_turn_rate;                        ///< with #INT32_RATE_FRAC
 
 extern float hh;

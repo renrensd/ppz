@@ -30,6 +30,7 @@ typedef enum Gcs_Run_State
 	GCS_RUN_HOME,
 	GCS_RUN_RELAND,
 	GCS_RUN_LANDING,
+	GCS_RUN_LOCK,
 	GCS_RUN_ERROR
 } Gcs_State;
 

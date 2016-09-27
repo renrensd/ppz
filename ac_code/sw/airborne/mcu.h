@@ -64,15 +64,13 @@ void mcu_set_reset_type(uint8_t type);
 void mcu_usagefault_test(void);
 uint8_t mcu_get_reset_type(void);
 
-#endif	/* FAULT_OPTION */
-
 struct MCU_INFO
 {
 	bool_t pw_is_first_on;	/* TRUE:mcu is first power on. */
 	uint32_t reset_src;		/* MCU reset source,store RCC_CSR. */
 };
 extern struct MCU_INFO mcu_info;
-
+#endif	/* FAULT_OPTION */
 
 #ifdef WDG_OPTION
 typedef enum

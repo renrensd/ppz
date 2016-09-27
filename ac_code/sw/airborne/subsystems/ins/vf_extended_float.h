@@ -41,6 +41,7 @@ struct VffExtended {
 
   float zdotdot;     ///< z-acceleration in m/s^2 (NED, z-down)
   float z_meas;      ///< last z measurement in m
+  float zdot_meas;   ///< last zdot measurement in m/s
   float z_meas_baro; ///< last z measurement from baro in m
 
   float P[VFF_STATE_SIZE][VFF_STATE_SIZE];  ///< covariance matrix
@@ -56,6 +57,8 @@ extern void vff_update_z(float z_meas);
 extern void vff_update_offset(float offset);
 extern void vff_update_baro_conf(float z_meas, float conf);
 extern void vff_update_z_conf(float z_meas, float conf);
+extern void vff_update_zd_conf(float zd_meas, float conf);
+
 //extern void vff_update_vz_conf(float vz_meas, float conf);
 extern void vff_realign(float z_meas);
 

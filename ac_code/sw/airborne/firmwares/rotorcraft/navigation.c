@@ -73,6 +73,8 @@ bool_t too_far_from_home;
 bool_t exception_flag[10] = {0}; //exception flags that can be used in the flight plan
 
 float dist2_to_wp;
+bool_t route_brake_flag;
+float  route_brake_accel;
 
 uint8_t horizontal_mode;
 struct EnuCoor_i nav_segment_start, nav_segment_end;
@@ -204,6 +206,8 @@ void nav_init(void)
   too_far_from_home = FALSE;
   dist2_to_home = 0;
   dist2_to_wp = 0;
+  route_brake_flag = FALSE;
+  route_brake_accel = 0.0;
   flight_limit_height =FLIGHT_LIMIT_HEIGHT;
 
 #if PERIODIC_TELEMETRY
@@ -451,6 +455,14 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   horizontal_mode = HORIZONTAL_MODE_ROUTE;
 
   dist2_to_wp = get_dist2_to_point(wp_end);
+  if( dist2_to_wp < ((float)(progress*progress)) )
+  {
+  	route_brake_flag = TRUE;
+  }
+  else
+  {
+  	route_brake_flag = FALSE;
+  }
 	#if 0//PERIODIC_TELEMETRY
 	RunOnceEvery(32, {
      xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
@@ -781,7 +793,7 @@ bool_t nav_check_heading(void)
 	{
 		diff_angle = INT32_ANGLE_2_PI - diff_angle;
 	}
-	if( diff_angle < ANGLE_BFP_OF_REAL(0.3) ) return TRUE;
+	if( diff_angle < ANGLE_BFP_OF_REAL(0.10) ) return TRUE;
 	else return FALSE;
 }
 

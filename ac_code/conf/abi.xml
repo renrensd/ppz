@@ -5,7 +5,9 @@
   <msg_class name="airborne">
 
     <message name="BARO_ABS" id="0">
+      <field name="stamp" type="uint32_t" unit="us"/>
       <field name="pressure" type="float" unit="Pa"/>
+      <field name="temperature" type="float" unit="deg Celcius"/>
     </message>
 
     <message name="BARO_DIFF" id="1">

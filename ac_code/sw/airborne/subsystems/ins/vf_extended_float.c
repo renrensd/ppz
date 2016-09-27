@@ -57,7 +57,7 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 
 /** process noise covariance Q */
 #ifndef VFF_EXTENDED_ACCEL_NOISE
-#define VFF_EXTENDED_ACCEL_NOISE  10.0
+#define VFF_EXTENDED_ACCEL_NOISE  0.1
 #endif
 
 #define Qbiasbias 1e-7
@@ -69,6 +69,8 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 struct VffExtended vff;
 
 Butterworth2LowPass acc_z_filter;
+
+static void update_speed_conf(float zd_meas, float conf);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -102,7 +104,7 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
     vff.P[i][i] = VFF_EXTENDED_INIT_PXX;
   }
 
-  init_butterworth_2_low_pass(&acc_z_filter, 0.0106, (1. / 512), 0.);    //tau = 0.1592/cutoff_fre
+  //init_butterworth_2_low_pass(&acc_z_filter, 0.0106, (1. / 512), 0.);    //tau = 0.1592/cutoff_fre
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
@@ -135,7 +137,7 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
 void vff_propagate(float accel, float dt)
 {
   /*accel first pass buterworth filter*/
-  accel = update_butterworth_2_low_pass(&acc_z_filter, accel);
+  //accel = update_butterworth_2_low_pass(&acc_z_filter, accel);
   
   /* update state */
   vff.zdotdot = accel + 9.81 - vff.bias;
@@ -296,6 +298,70 @@ void vff_update_z_conf(float z_meas, float conf)
 {
   update_alt_conf(z_meas, conf);
 }
+
+/****????  ???????????**************************************************/
+void vff_update_zd_conf(float zd_meas, float conf)
+{
+  update_speed_conf(zd_meas, conf);
+}
+/**
+ * Update sensor "without" offset (gps, sonar)
+ * H = [0 1 0 0];
+ * // state residual
+ * y = rangemeter - H * Xm;
+ * // covariance residual
+ * S = H*Pm*H' + R;
+ * // kalman gain
+ * K = Pm*H'*inv(S);
+ * // update state
+ * Xp = Xm + K*y;
+ * // update covariance
+ * Pp = Pm - K*H*Pm;
+ */
+static void update_speed_conf(float zd_meas, float conf)
+{
+  vff.zdot_meas = zd_meas;
+
+  const float yd = zd_meas - vff.zdot;
+  const float S = vff.P[1][1] + conf;
+  const float K0 = vff.P[0][1] * 1 / S;
+  const float K1 = vff.P[1][1] * 1 / S;
+  const float K2 = vff.P[2][1] * 1 / S;
+  const float K3 = vff.P[3][1] * 1 / S;
+
+  vff.z       = vff.z       + K0 * yd;
+  vff.zdot    = vff.zdot    + K1 * yd;
+  vff.bias    = vff.bias    + K2 * yd;
+  vff.offset  = vff.offset  + K3 * yd;
+
+  const float P0 = vff.P[1][0];
+  const float P1 = vff.P[1][1];
+  const float P2 = vff.P[1][2];
+  const float P3 = vff.P[1][3];
+
+  vff.P[0][0] -= K0 * P0;
+  vff.P[0][1] -= K0 * P1;
+  vff.P[0][2] -= K0 * P2;
+  vff.P[0][3] -= K0 * P3;
+  vff.P[1][0] -= K1 * P0;
+  vff.P[1][1] -= K1 * P1;
+  vff.P[1][2] -= K1 * P2;
+  vff.P[1][3] -= K1 * P3;
+  vff.P[2][0] -= K2 * P0;
+  vff.P[2][1] -= K2 * P1;
+  vff.P[2][2] -= K2 * P2;
+  vff.P[2][3] -= K2 * P3;
+  vff.P[3][0] -= K3 * P0;
+  vff.P[3][1] -= K3 * P1;
+  vff.P[3][2] -= K3 * P2;
+  vff.P[3][3] -= K3 * P3;
+}
+
+/******************************************/
+
+
+
+
 
 /**
  * Update sensor offset (baro).

@@ -32,9 +32,18 @@
 22.update to 08.05
 23.fix some bugs for boluo demo test
 
-24.add gps_heading with monitoring base on no3
-25.add get bat_info from ops used OPS_BAT_OPTION(untest)
+24.add gps_heading with monitoring base on no2
+25.add get bat_info from ops used OPS_BAT_OPTION
    add double attitude control loop, finished test(0905)
+   add spray/lock function with android GCS, fix back home steady bug
+
+26.add new height control 0910, AC:no3(interface need add)
+27.add new horizontal control, debuging 
+28.modify height control, use old horizontal control
+29.update gcs communication
+
+30.to 0926:GCS function run normal, add brake untested(no5)
+
 
 
 

@@ -33,7 +33,7 @@
     <field name="spray_wide"   type="uint16" unit="cm"/>
     <field name="spray_height" type="uint16" unit="cm"/>
     <field name="max_flight_height"   type="uint16" unit="cm"/> 
-    <field name="spray_concentration"   type="uint8" unit="ml/m2"/>
+    <field name="spray_concentration"   type="uint16" unit="ml/1000m2"/>
     <field name="atomization_grade" type="uint8"/>              
     <field name="max_flight_speed"   type="uint16" unit="cm/s"/>
     <field name="spray_flight_speed"   type="uint16" unit="cm/s"/>
@@ -166,6 +166,7 @@
                  response  0=success, others=error_code
     </description>
     <field name="command_id" type="uint8"/>
+    <field name="command_value" type="uint8"/>
     <field name="response"     type="int8"/>    
   </message>
 
@@ -245,7 +246,7 @@
   
   <!--GCS_cmd:-->
   <message name="SET_CONFIG" id="1">  <!--edit 160612-->
-    <description>link="G2A" 0:all info; 1:spray_height,cm(uint16); 2:spray_wide(uint16),cm; 3:spray_concentration(uint8),ml/m2; 
+    <description>link="G2A" 0:all info; 1:spray_height,cm(uint16); 2:spray_wide(uint16),cm; 3:spray_concentration(uint16),ml/1000m2; 
       4:spray_speed(uint16),cm/s; 5:max_flight_speed(uint16),cm/s; 6:max_flight_height(uint16),cm; 7:atomization_grade(uint8), 1-2-3...
                  aircraft will ack "AIRCRAFT_INFO_STATE" message
     </description>
@@ -254,7 +255,7 @@
   </message>  
 
   <message name="SET_COMMAND" id="2">
-    <description>link="G2A" id:1=gcs_cmd  value: start=1; pause=2; continual=3; back_home=4; reserve_land=5; direct_land=6
+    <description>link="G2A" id:1=gcs_cmd  value: start=1; pause=2; continual=3; back_home=4; reserve_land=5; direct_land=6; lock_motors=7
                                2=request "AIRCRAFT_INFO_STATE" message, value=null  aircraft will ack with "SET_COMMAND_ACK_STATE" message
                                3=delete all task(if AC in_flight,gived gcs_cmd=pause before delete)
     </description>

@@ -332,7 +332,7 @@ void WEAK imu_scale_accel(struct Imu *_imu)
                    IMU_ACCEL_Z_SENS_NUM) / IMU_ACCEL_Z_SENS_DEN;
 //-----gyro-acc-LowPass-Butterworth-----//
 #if USE_ATT_BF
-    LPF2pSetCutoffFreq(512.0, acc_cutoff_fre);
+    LPF2pSetCutoffFreq_IMU(512.0, acc_cutoff_fre);
 
 	_imu->accel.x=(int32_t)(LPF2pApply_IMU((float)(_imu->accel.x),&accel_x_delay_element_11,&accel_x_delay_element_21));
 	_imu->accel.y=(int32_t)(LPF2pApply_IMU((float)(_imu->accel.y),&accel_y_delay_element_11,&accel_y_delay_element_21));

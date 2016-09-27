@@ -70,10 +70,37 @@ struct InsInt {
   bool_t update_radar_agl; ///< use sonar to update agl if available
 #endif
 
+  //cmpl
+  float za_acc;
+  float zv_gps;
+  float zp_baro;
+
+  float za_est;
+  float zv_est;
+  float zp_est;
+
+  float za_corr_k;
+  float zv_corr_k;
+  float zp_corr_k;
+
+  float za_corr;
+  float zp_corr;
+  float zv_inc;
+  float zp_base;
+};
+
+struct _s_move_filter
+{
+	unsigned short win_size;
+	unsigned short data_index;
+	float *data;
+	float sum;
+	float out;
 };
 
 /** global INS state */
 extern struct InsInt ins_int;
+extern float gps_noise_debug;
 
 extern void ins_int_init(void);
 extern void ins_int_propagate(struct Int32Vect3 *accel, float dt);

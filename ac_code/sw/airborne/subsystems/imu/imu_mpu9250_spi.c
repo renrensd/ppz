@@ -125,7 +125,7 @@ PRINT_CONFIG_VAR(IMU_MPU9250_Z_SIGN)
 #endif	/* HMC5983_OPTION */
 
 #ifdef QMC5883_OPTION
-#define QMC5883_I2C_DEV i2c2
+#define QMC5883_I2C_DEV i2c1
 #define IMU_MPU9250_READ_MAG FALSE
 #endif	/* QMC5883_OPTION */
 
@@ -280,9 +280,13 @@ void imu_mpu9250_event(void)
 	if (imu_mpu9250.mag_qmc.data_available) 
 	{
 	    // VECT3_COPY(imu.mag_unscaled, imu_mpu9250.mag_qmc.data.vect);
-	    imu.mag_unscaled.x = (IMU_MPU9250_X_SIGN) * imu_mpu9250.mag_qmc.data.vect.x;
-	    imu.mag_unscaled.y = (IMU_MPU9250_Y_SIGN) * imu_mpu9250.mag_qmc.data.vect.y;
-	    imu.mag_unscaled.z = (IMU_MPU9250_Z_SIGN) * imu_mpu9250.mag_qmc.data.vect.z;
+//	    imu.mag_unscaled.x = (IMU_MPU9250_X_SIGN) * imu_mpu9250.mag_qmc.data.vect.x;
+//	    imu.mag_unscaled.y = (IMU_MPU9250_Y_SIGN) * imu_mpu9250.mag_qmc.data.vect.y;
+//	    imu.mag_unscaled.z = (IMU_MPU9250_Z_SIGN) * imu_mpu9250.mag_qmc.data.vect.z;
+	  imu.mag_unscaled.x = +imu_mpu9250.mag_qmc.data.vect.y;
+	  imu.mag_unscaled.y = +imu_mpu9250.mag_qmc.data.vect.x;
+	  imu.mag_unscaled.z = +imu_mpu9250.mag_qmc.data.vect.z;
+
 	    imu_mpu9250.mag_qmc.data_available = FALSE;
 	    imu_mpu9250.mag_valid = TRUE;
 		#ifdef CALIBRATION_OPTION

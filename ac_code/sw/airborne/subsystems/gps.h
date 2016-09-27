@@ -66,6 +66,7 @@ struct SVinfo {
 /** data structure for GPS information */
 struct GpsState {
   struct EcefCoor_i ecef_pos;    ///< position in ECEF in cm
+  struct EcefCoor_i ecef_pos_sd; ///< position stander diviation, 10000*m
   struct LlaCoor_i lla_pos;      ///< position in LLA (lat,lon: deg*1e7; alt: mm over ellipsoid)
   struct UtmCoor_i utm_pos;      ///< position in UTM (north,east: cm; alt: mm over ellipsoid)
   int32_t hmsl;                  ///< height above mean sea level in mm

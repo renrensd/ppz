@@ -70,13 +70,20 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 		case CONFIG_ALL:
 			if(length==12)
 			{
-				ac_config_info.spray_height = ((float)((uint16_t)(*((uint8_t*)pt_value)|*((uint8_t*)pt_value+1)<<8)))/100.0;
-				ac_config_info.spray_wide = ((float)((uint16_t)(*((uint8_t*)pt_value+2)|*((uint8_t*)pt_value+3)<<8)))/100.0;
-				ac_config_info.spray_concentration = (uint8_t)(*((uint8_t*)pt_value+4));
-				ac_config_info.spray_speed = ((float)((uint16_t)(*((uint8_t*)pt_value+5)|*((uint8_t*)pt_value+6)<<8)))/100.0;
-				ac_config_info.max_flight_speed = ((float)((uint16_t)(*((uint8_t*)pt_value+7)|*((uint8_t*)pt_value+8)<<8)))/100.0;
-				ac_config_info.max_flight_height = ((float)((uint16_t)(*((uint8_t*)pt_value+9)|*((uint8_t*)pt_value+10)<<8)))/100.0;
-				ac_config_info.atomization_grade = (uint8_t)(*((uint8_t*)pt_value+11));
+				uint8_t i = 0;
+				ac_config_info.spray_height = ((float)((uint16_t)(*((uint8_t*)pt_value+i)|*((uint8_t*)pt_value+i+1)<<8)))/100.0;
+				i+=2;
+				ac_config_info.spray_wide = ((float)((uint16_t)(*((uint8_t*)pt_value+i)|*((uint8_t*)pt_value+i+1)<<8)))/100.0;
+				i+=2;
+				ac_config_info.spray_concentration = (uint16_t)(*((uint8_t*)pt_value+i)|*((uint8_t*)pt_value+i+1)<<8);
+				i+=2;
+				ac_config_info.spray_speed = ((float)((uint16_t)(*((uint8_t*)pt_value+i)|*((uint8_t*)pt_value+i+1)<<8)))/100.0;
+				i+=2;
+				ac_config_info.max_flight_speed = ((float)((uint16_t)(*((uint8_t*)pt_value+i)|*((uint8_t*)pt_value+i+1)<<8)))/100.0;
+				i+=2;
+				ac_config_info.max_flight_height = ((float)((uint16_t)(*((uint8_t*)pt_value+i)|*((uint8_t*)pt_value+i+1)<<8)))/100.0;
+				i+=2;
+				ac_config_info.atomization_grade = (uint8_t)(*((uint8_t*)pt_value+i));
 
 				ops_update_config_param(ac_config_info.spray_concentration, PARAM_FLOW_DENSITY);
 			}
@@ -147,7 +154,7 @@ void send_aircraft_info_state(void)
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
-	char     sn_and_sv[30]="EFA113";	 //fix info
+	char     sn_and_sv[30]="EFA115";	 //fix info
 	
 	xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_AIRCRAFT_INFO_STATE(DefaultChannel, DefaultDevice, 

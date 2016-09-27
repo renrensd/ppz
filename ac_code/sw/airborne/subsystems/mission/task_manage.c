@@ -144,6 +144,12 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			gcs_cmd_interrupt = TRUE;
 			break;
 
+		case GCS_CMD_LOCK:
+			//TODOM add lock motors, danger!!!
+			gcs_task_cmd = GCS_CMD_LOCK;
+			gcs_cmd_interrupt = TRUE;
+			break;
+
 		default:
 			response = 1;  /*parse error*/
 			break;

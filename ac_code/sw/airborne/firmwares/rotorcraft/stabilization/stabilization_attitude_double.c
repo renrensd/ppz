@@ -201,8 +201,8 @@ void stabilization_attitude_run(bool_t  in_flight)
 #if USE_ATT_REF
   static const float _dt = (1./PERIODIC_FREQUENCY);
   attitude_ref_euler_float_update(&att_ref_euler_f, &stab_att_sp_euler, _dt);
-  //att_ref_euler_f.euler.phi = stab_att_sp_euler.phi;
-  //att_ref_euler_f.euler.theta = stab_att_sp_euler.theta;
+  att_ref_euler_f.euler.phi = stab_att_sp_euler.phi;
+  att_ref_euler_f.euler.theta = stab_att_sp_euler.theta;
 #else
   EULERS_COPY(att_ref_euler_f.euler, stab_att_sp_euler);
   FLOAT_RATES_ZERO(att_ref_euler_f.rate);
@@ -313,4 +313,9 @@ void stabilization_attitude_run(bool_t  in_flight)
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
+  #if 0
+  stabilization_cmd[COMMAND_ROLL] = 0;
+  stabilization_cmd[COMMAND_PITCH] = 0;
+  stabilization_cmd[COMMAND_YAW] = 0;
+  #endif
 }

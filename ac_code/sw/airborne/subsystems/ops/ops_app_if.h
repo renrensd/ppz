@@ -46,7 +46,8 @@ struct OPS_INFO
 	uint16_t  o_bat_ma;
 	uint16_t  o_bat_cap;
 	uint16_t  o_bat_rep;
-	uint16_t  o_bat_tem;	
+	uint16_t  o_bat_tem;
+	int8_t    o_bat_rep_percent;
 	//#endif
 	uint8_t  sys_error;
 };

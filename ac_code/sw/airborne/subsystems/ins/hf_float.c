@@ -76,10 +76,10 @@
 
 //TODO: proper measurement noise
 #ifdef USE_GPS_NMEA
- #define HFF_R_POS   1.0
- #define HFF_R_POS_MIN   0.8
- #define HFF_R_SPEED    0.4
- #define HFF_R_SPEED_MIN   0.3
+ #define HFF_R_POS   0.001
+ #define HFF_R_POS_MIN   0.0005
+ #define HFF_R_SPEED    0.005
+ #define HFF_R_SPEED_MIN   0.001
  #define HFF_UPDATE_SPEED  TRUE
 #endif
 
@@ -538,6 +538,20 @@ void b2_hff_propagate(void)
   } else {
     b2_hff_ps_counter++;
   }
+}
+
+void b2_hff_update_gps_r(float pos_r)
+{
+	if( pos_r < HFF_R_POS )
+	{
+		Rgps_pos = HFF_R_POS;
+		Rgps_vel = HFF_R_SPEED;
+	}
+	else
+	{
+		Rgps_pos = pos_r;
+		Rgps_vel = 10.0*pos_r;
+	}
 }
 
 void b2_hff_update_gps(struct FloatVect2 *pos_ned, struct FloatVect2 *speed_ned)

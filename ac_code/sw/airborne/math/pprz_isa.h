@@ -101,6 +101,18 @@ static inline float pprz_isa_height_of_pressure(float pressure, float ref_p)
   }
 }
 
+static inline float pprz_isa_height_of_pressure_temp(float pressure, float ref_p, float temper)
+{
+  if (pressure > 0. && ref_p > 0.)
+  {
+  	//float temp=bb_ms5611.data.temperature*0.01+273.15f;
+	float scaling=pressure/ref_p;
+	return (153.8462f * temper * (1.0f - expf(0.190259f * logf(scaling))));
+    //return (PPRZ_ISA_M_OF_P_CONST * logf(ref_p / pressure));
+  } else {
+    return 0.;
+  }
+}
 /**
  * Get pressure in Pa from absolute altitude (using simplified equation).
  *

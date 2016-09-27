@@ -132,4 +132,26 @@ static inline void ahrs_float_get_quat_from_accel_mag(struct FloatQuat *q, struc
   float_quat_comp_norm_shortest(q, &q_m, &q_a);
 }
 
+static inline void ahrs_float_get_quat_from_accel_gps_heading(struct FloatQuat *q, struct Int32Vect3 *accel,
+		struct GpsState *gps)
+{
+
+  /* the quaternion representing roll and pitch from acc measurement */
+  struct FloatQuat q_a;
+  struct FloatQuat q_gps_h;
+
+	//
+  float h_theta = gps->heading * 3.1415926f / 180.0f / 2.0f;
+  q_gps_h.qx = 0.0;
+  q_gps_h.qy = 0.0;
+  q_gps_h.qz = sinf(h_theta);
+  q_gps_h.qi = cosf(h_theta);
+	float_quat_normalize(&q_gps_h);
+
+  // q_ltp2imu = q_a * q_m
+  // and wrap and normalize
+	ahrs_float_get_quat_from_accel(&q_a, accel);
+  float_quat_comp_norm_shortest(q, &q_gps_h, &q_a);
+}
+
 #endif /* AHRS_FLOAT_UTILS_H */

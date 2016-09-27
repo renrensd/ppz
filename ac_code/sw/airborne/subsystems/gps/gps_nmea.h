@@ -31,6 +31,7 @@
 #define GPS_NMEA_H
 
 #include "mcu_periph/uart.h"
+#include "filters/median_filter.h"
 
 #define USE_XYZA 1
 
@@ -48,14 +49,18 @@ struct GpsNmea {
   bool_t have_gsv;            ///< flag set to TRUE if GPGSV message received
   uint8_t gps_nb_ovrn;        ///< number if incomplete nmea-messages
   char msg_buf[NMEA_MAXLEN];  ///< buffer for storing one nmea-line
-  int msg_len;
+  
   uint8_t status;             ///< line parser status
   uint8_t gps_qual;           ///< RTK FIX(0x04) OR RTK FLOAT(0x05) OR SINGLE(0x01)
-
+  
+  uint8_t sol_tatus;          ///< gps heading status
+  uint32_t msg_len;
   float heading;
   float pitch;
-  uint8_t sol_tatus;
 
+  //median filter
+  struct MedianFilter3Int ecef_pos_filter;
+  struct MedianFilter3Int ecef_vel_filter;
 };
 
 extern struct GpsNmea gps_nmea;

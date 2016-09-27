@@ -225,8 +225,12 @@
   </message>
 
   <message name="DEBUG_GPS" id="26">
-    <field name="ned_z" type="int32"/>
+    <field name="ned_z" type="int32" unit="m" alt_unit_coef="0.01"/>
+    <field name="ned_z_speed" type="int32" alt_unit_coef="0.01"/>
     <field name="qual"  type="uint8"/>
+    <field name="sd_x"  type="int32" unit="m" alt_unit_coef="0.0001"/>
+    <field name="sd_y"  type="int32" unit="m" alt_unit_coef="0.0001"/>
+    <field name="sd_z"  type="int32" unit="m" alt_unit_coef="0.0001"/>
   </message>
 
   <message name="SURVEY" id="27">
@@ -284,9 +288,22 @@
     <field name="cpu_load" type="uint8" unit="%"/>
   </message>
 
-  <message name="MOTOR" id="34">
+  <!--message name="MOTOR" id="34">
     <field name="rpm" type="uint16" unit="Hz"/>
     <field name="current" type="int32" unit="mA"/>
+  </message-->
+  
+  <message name="ACC_CALI" id="34">
+    <field name="acc_norm" type="float" unit="g"/>
+    <field name="acc_norm_filter" type="float" unit="g"/>
+    <field name="acc_gain_x" type="float" unit="g"/>
+    <field name="acc_gain_y" type="float" unit="g"/>
+    <field name="acc_gain_z" type="float" unit="g"/>
+    <field name="acc_offset_x" type="float" unit="g"/>
+    <field name="acc_offset_y" type="float" unit="g"/>
+    <field name="acc_offset_z" type="float" unit="g"/>
+    <field name="is_body_static" type="uint8" unit="bool"/>
+    <field name="acc_cali_state" type="uint8" unit="STATE"/>
   </message>
 
   <message name="WP_MOVED" id="35">
@@ -506,9 +523,9 @@
   <message name="AC_CONFIG_INFO" id="60">
     <field name="spray_height" type="float" unit="m"/>
     <field name="spray_wide" type="float" unit="m"/>
-    <field name="concentration" type="uint8" unit="mL/m2"/>
+    <field name="concentration" type="uint16" unit="mL/1000m2"/>
     <field name="spray_speed" type="float" unit="m/s"/>
-    <field name="max_flight_speed"  type="float" unit="m/"/>
+    <field name="max_flight_speed"  type="float" unit="m/s"/>
     <field name="max_flight_height" type="float" unit="m"/>
   </message>
 
@@ -1289,8 +1306,11 @@
     <field name="ff_cmd"    type="int32"/>
     <field name="fb_cmd"    type="int32"/>
     <field name="delta_t"   type="int32"/>
-    <field name="outer_cmd" type="int32"/>
-    <field name="x2"        type="float"/>
+    <field name="desired_speed" type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
+    <field name="vdd_i"        type="int32"/>
+    <field name="rc_zd_sp"  type="int32" alt_unit="m/s2"  alt_unit_coef="0.0000019"/>
+    <field name="acc_z_flt"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+    <field name="desired_pos"  type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
   </message>
 
 
@@ -1305,13 +1325,17 @@
     <field name="est_ydd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009765"/>
     <field name="err_x"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
     <field name="err_y"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
-    <field name="err_xd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
-    <field name="err_yd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
-    <field name="err_sum_x" type="int32"/>
-    <field name="err_sum_y" type="int32"/>
+    <field name="err_xd"    type="float" alt_unit="m/s"  />
+    <field name="err_yd"    type="float" alt_unit="m/s"  />
+    <field name="i_tex" type="float"/>
+    <field name="i_tey" type="float"/>
     <field name="cmd_x"     type="int32"/>
     <field name="cmd_y"     type="int32"/>
     <field name="cmd_heading" type="int32"/>
+    <field name="dspex" type="float"/>
+    <field name="dspey" type="float"/>
+    <field name="ii_tex" type="float"/>
+    <field name="ii_tey" type="float"/>
   </message>
 
   <message name="ROTORCRAFT_FP" id="147">
@@ -1833,6 +1857,10 @@
       <field name="ins_xdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
       <field name="ins_ydd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
       <field name="ins_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+      <field name="zp_baro"   type="float" alt_unit="m"/>
+      <field name="zp_est"    type="float" alt_unit="m"/>
+      <field name="zv_est"    type="float" alt_unit="m/s"/>
+      <field name="za_est"    type="float" alt_unit="m/s2"/>
     </message>
 
     <message name="GPS_ERROR" id="199">

@@ -391,7 +391,7 @@ void dl_parse_msg(void)
 		   uint8_t pt_value = DL_SET_COMMAND_command_value(dl_buffer);
 		   int8_t response = (int8_t)(DlSetCommand(id, pt_value));
 		   xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-		   DOWNLINK_SEND_SET_COMMAND_ACK_STATE(DefaultChannel, DefaultDevice, &id, &response);
+		   DOWNLINK_SEND_SET_COMMAND_ACK_STATE(DefaultChannel, DefaultDevice, &id, &pt_value, &response);
 		   break;
 		}
 		

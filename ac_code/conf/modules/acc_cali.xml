@@ -1,0 +1,27 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="acc_cali" dir="acc_cali">
+  <doc>
+    <description>
+      Calibration of accelerometer
+    </description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings name="acc_cali">
+        <dl_setting min="0" max="1" step="1" values="OFF|ON" var="acc_cali.enable" module="acc_cali/acc_cali" shortname="Enable"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="acc_cali.h"/>
+    <file name="my_math.h"/>
+  </header>
+  <init fun="acc_cali_init()"/>
+  <periodic fun="acc_cali_periodic()" freq="50"/>
+  <event fun="acc_cali_event()"/>
+  <makefile target="ap|nps">
+    <file name="acc_cali.c"/>
+    <file name="my_math.c"/>
+  </makefile>
+</module>

@@ -24,7 +24,7 @@
 #ifndef MEDIAN_H
 #define MEDIAN_H
 
-#define MEDIAN_DATASIZE 5
+#define MEDIAN_DATASIZE 3
 
 #include "std.h"
 #include "math/pprz_algebra_int.h"
@@ -34,11 +34,11 @@ struct MedianFilterInt {
   int8_t dataIndex;
 };
 
-inline void init_median_filter(struct MedianFilterInt *filter);
-inline int32_t update_median_filter(struct MedianFilterInt *filter, int32_t new_data);
-inline int32_t get_median_filter(struct MedianFilterInt *filter);
+static inline void init_median_filter(struct MedianFilterInt *filter);
+static inline int32_t update_median_filter(struct MedianFilterInt *filter, int32_t new_data);
+static inline int32_t get_median_filter(struct MedianFilterInt *filter);
 
-inline void init_median_filter(struct MedianFilterInt *filter)
+static inline void init_median_filter(struct MedianFilterInt *filter)
 {
   int i;
   for (i = 0; i < MEDIAN_DATASIZE; i++) {
@@ -48,7 +48,7 @@ inline void init_median_filter(struct MedianFilterInt *filter)
   filter->dataIndex = 0;
 }
 
-inline int32_t update_median_filter(struct MedianFilterInt *filter, int32_t new_data)
+static inline int32_t update_median_filter(struct MedianFilterInt *filter, int32_t new_data)
 {
   int temp, i, j; // used to sort array
 
@@ -76,7 +76,7 @@ inline int32_t update_median_filter(struct MedianFilterInt *filter, int32_t new_
   return filter->sortData[(MEDIAN_DATASIZE) >> 1]; // return data value in middle of sorted array
 }
 
-inline int32_t get_median_filter(struct MedianFilterInt *filter)
+static inline int32_t get_median_filter(struct MedianFilterInt *filter)
 {
   return filter->sortData[(MEDIAN_DATASIZE) >> 1];
 }

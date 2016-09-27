@@ -176,6 +176,11 @@ void ops_heart_beat_handler(uint8_t *param)
 	ops_info.o_bat_rep = (*(param+11) << 8 | *(param+10));
 	ops_info.o_bat_tem = (*(param+13) << 8 | *(param+12));
 	ops_info.sys_error = *(param+18);
+	if(ops_info.o_bat_cap <20000)
+	{
+		ops_info.o_bat_cap = 20000;
+	}
+	ops_info.o_bat_rep_percent = ops_info.o_bat_rep*100/ops_info.o_bat_cap;
 	#endif
 	ops_info.con_flag = OPS_CONNECTED;
    

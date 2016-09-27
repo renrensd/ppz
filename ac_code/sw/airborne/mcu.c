@@ -99,9 +99,9 @@ struct MCU_FAULT_INFO mcu_fault_info __attribute__ ((section(".bkpram"), aligned
 
 #ifdef WDG_OPTION
 volatile uint16_t mcu_watchdog_flag __attribute__ ((section(".bkpram"), zero_init));
-#endif	/* WDG_OPTION */
 
 struct MCU_INFO mcu_info;
+#endif	/* WDG_OPTION */
 
 void WEAK board_init(void)
 {

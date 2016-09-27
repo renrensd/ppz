@@ -159,7 +159,9 @@ bool_t ahrs_mlkf_align(struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
   /* used averaged gyro as initial value for bias */
   struct Int32Rates bias0;
   RATES_COPY(bias0, *lp_gyro);
-  RATES_FLOAT_OF_BFP(ahrs_mlkf.gyro_bias, bias0);
+  VECT3_COPY(ahrs_mlkf.lp_accel_ini, *lp_accel);
+  RATES_ASSIGN(ahrs_mlkf.gyro_bias,0,0,0);
+  RATES_FLOAT_OF_BFP(ahrs_mlkf.gyro_bias_ini, bias0);
 
   ahrs_mlkf.is_aligned = TRUE;
 
@@ -194,11 +196,14 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
 /*mag update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)*/
 void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 {
+	if (!ahrs_mlkf.gps_h_stable)
+	{
 #if AHRS_MAG_UPDATE_ALL_AXES
-  ahrs_mlkf_update_mag_full(mag);
+		ahrs_mlkf_update_mag_full(mag);
 #else
-  ahrs_mlkf_update_mag_2d(mag);
+		ahrs_mlkf_update_mag_2d(mag);
 #endif
+	}
 }
 
 
@@ -241,6 +246,7 @@ static inline void propagate_ref(struct Int32Rates *gyro, float dt)
   /* converts gyro to floating point */
   struct FloatRates gyro_float;
   RATES_FLOAT_OF_BFP(gyro_float, *gyro);
+  RATES_SUB(gyro_float, ahrs_mlkf.gyro_bias_ini);
   
  #ifdef AHRS_GYRO_BW_FILTER
   struct Int32Rates gyro_filtered;
@@ -469,7 +475,39 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 #ifdef USE_GPS_HEADING
 void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s)
 {
-  ahrs_mlkf_update_gps_heading(gps_heading_s);
+	static bool_t h_stable_first_time = FALSE;
+	static bool_t gps_h_stable_prev = FALSE;
+
+	ahrs_mlkf.gps_h_stable = gps_heading_s->h_stable;
+	if(ahrs_mlkf.gps_h_stable_test != 0)
+	{
+		if(ahrs_mlkf.gps_h_stable_test == 1)
+		{
+			ahrs_mlkf.gps_h_stable = TRUE;
+		}
+		else
+		{
+			ahrs_mlkf.gps_h_stable = FALSE;
+		}
+	}
+
+	if (ahrs_mlkf.gps_h_stable)
+	{
+		ahrs_mlkf_update_gps_heading(gps_heading_s);
+
+		if(h_stable_first_time == FALSE)
+		{
+			if(gps_h_stable_prev != gps_heading_s->h_stable)
+			{
+				if(gps_heading_s->h_stable == TRUE)
+				{
+					h_stable_first_time = TRUE;
+					ahrs_float_get_quat_from_accel_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, &ahrs_mlkf.lp_accel_ini, gps_heading_s);
+				}
+			}
+			gps_h_stable_prev = gps_heading_s->h_stable;
+		}
+	}
 }
 
 #define MAG_OFFSET_ANGLE 2.7

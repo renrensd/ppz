@@ -28,7 +28,7 @@ enum Flight_State
 
 struct config_info
 {                          
-	uint8_t spray_concentration;  //unit=ml/m2
+	uint16_t spray_concentration;  //unit=ml/m2
 	uint8_t atomization_grade;  //grade 1/2/3...
 	float spray_height;     //unit=m
 	float spray_wide;       //unit=m

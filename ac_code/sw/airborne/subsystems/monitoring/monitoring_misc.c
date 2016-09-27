@@ -53,7 +53,8 @@
 #define MAX_GROUND_INS_Z  0.6
 
 #define MAX_FLIGHT_TIME 510   //13min
-#define BAT_LIMIT_VOL  423   //unit:0.1v
+#define BAT_LIMIT_VOL  420   //unit:0.1v
+#define BAT_LIMIT_CAP  15  //unit:percent
 
 #define LESS_RES_CAP 5  //5%
 
@@ -106,9 +107,10 @@ void battery_flight_check(void)
 {	
 	bool_t flag_trigger = 0;
 
-#if 1
+if(electrical.vsupply)
+{
 	//if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
-	if( electrical.vsupply && electrical.vsupply < BAT_LIMIT_VOL )
+	if( (electrical.vsupply < BAT_LIMIT_VOL) || (ops_info.o_bat_rep_percent < BAT_LIMIT_CAP) )
 	{   //hover 10s,back home
 	    flag_trigger = 1;   //record error trigger
 	    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
@@ -117,17 +119,19 @@ void battery_flight_check(void)
 		bat_flight=1;
 		#endif
 	}
-#else
+}
+else
+{
 	if( autopilot_flight_time >MAX_FLIGHT_TIME)
 	{   //hover 10s,back home
 	    flag_trigger = 1;   //record error trigger
 	    set_except_mission(BAT_LOW,TRUE,FALSE, FALSE,0, TRUE,FALSE,2);	
 		//need give special alter to RC and GCS
-                  #if TEST_MSG
+        #if TEST_MSG
 		bat_flight=1;
 		#endif
 	}
-#endif
+}
 
    /*
 	if( electrical.bat_critical )
@@ -312,7 +316,7 @@ void lift_flight_check(void)
 	/*keep 2s att > 45deg, lock motors direct !!!*/
 	if( danger_att_detect() )
 	{
-		NavKillThrottle();  //crash motion
+		//NavKillThrottle();  //crash motion
 	}
 }
 

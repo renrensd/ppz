@@ -33,6 +33,7 @@
 #include "subsystems/gps.h"
 #include "subsystems/abi.h"
 #include "led.h"
+#include "filters/median_filter.h"
 
 #if GPS_USE_LATLONG
 /* currently needed to get nav_utm_zone0 */
@@ -115,6 +116,17 @@ uint32_t CalculateXYZACRC32(uint16_t ulCount,unsigned char *ucBuffer)
 }
 #endif
 
+static void gps_nmea_data_filter_ini(void)
+{
+	InitMedianFilterVect3Int(gps_nmea.ecef_pos_filter);
+	InitMedianFilterVect3Int(gps_nmea.ecef_vel_filter);
+}
+static void gps_nmea_data_filter_update(struct GpsState *gps)
+{
+	UpdateMedianFilterVect3Int(gps_nmea.ecef_pos_filter, gps->ecef_pos);
+	UpdateMedianFilterVect3Int(gps_nmea.ecef_vel_filter, gps->ecef_vel);
+}
+
 void gps_impl_init(void)
 {
   gps.nb_channels = GPS_NB_CHANNELS;
@@ -129,6 +141,8 @@ void gps_impl_init(void)
   gps_nmea.msg_len = 0;
   nmea_parse_prop_init();
   nmea_configure();
+
+  gps_nmea_data_filter_ini();
 }
 
 void gps_nmea_msg(void)
@@ -150,6 +164,10 @@ void gps_nmea_msg(void)
 			gps.last_3dfix_ticks = sys_time.nb_sec_rem;
 			gps.last_3dfix_time = sys_time.nb_sec;
 		}
+	 	//median filter
+	 	#if USE_XYZA
+	 	//gps_nmea_data_filter_update(&gps);
+		#endif
 		AbiSendMsgGPS(GPS_NMEA_ID, now_ts, &gps);
   }
   gps_nmea.msg_available = FALSE;
@@ -722,19 +740,25 @@ static void nmea_parse_XYZ(void)
 	return;
   }
   gps_nmea.pos_xyz_available = TRUE;
+  nmea_read_until(&i);  
+  gps.ecef_pos.x = (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   nmea_read_until(&i);
+  gps.ecef_pos.y = (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+  nmea_read_until(&i);
+  gps.ecef_pos.z = (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   
-  gps.ecef_pos.x= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   nmea_read_until(&i);
-  gps.ecef_pos.y= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+  gps.ecef_pos_sd.x = (int32_t)(strtof(&gps_nmea.msg_buf[i], NULL)*10000);
   nmea_read_until(&i);
-  gps.ecef_pos.z= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
-
-  //get ecef_speed
-  for(uint8_t m=0;m<6;m++)
+  gps.ecef_pos_sd.y = (int32_t)(strtof(&gps_nmea.msg_buf[i], NULL)*10000);
+  nmea_read_until(&i);
+  gps.ecef_pos_sd.z = (int32_t)(strtof(&gps_nmea.msg_buf[i], NULL)*10000);
+  
+  for(uint8_t m=0;m<3;m++)
   {
   	nmea_read_until(&i);
   }
+  //get ecef_speed
   gps.ecef_vel.x= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   nmea_read_until(&i);
   gps.ecef_vel.y= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);

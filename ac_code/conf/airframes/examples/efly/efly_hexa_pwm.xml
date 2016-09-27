@@ -34,10 +34,11 @@
       <define name="SERVO_HZ" value="400"/>
     </subsystem>
 
-    <subsystem name="telemetry" type="transparent"/>
+    <subsystem name="telemetry" type="xbee_api"/>
     <subsystem name="stabilization" type="float_double"/>
     <subsystem name="gps" type="nmea"/>
-       <!--define name="USE_GPS_HEADING"/-->
+       <define name="USE_GPS_HEADING"/>
+       <define name="GPS_INSTALL_BIAS"/>
     <subsystem name="imu" type="mpu9250_spi"/>
     <!--subsystem name="imu" type="adiv1">
       <define name="IMU_ADIV1_OPTION" value="1"/>
@@ -66,13 +67,14 @@
     <!--load name="gps_ubx_ucenter.xml"/-->
     <load name="send_imu_mag_current.xml"/>
     <load name="agl_dist.xml"/>
+    <!--load name="acc_cali.xml"/-->
     <!--load name="sonar_uart_MB12xx.xml"/-->
     <!--load name="sonar_i2c_mb1242.xml"/-->
     <!--load name="sonar_uart_US100.xml"/-->
     <!--load name="nav_survey_poly_osam.xml"/-->
     <!--load name="laser_r2100.xml"/-->
     <load name="radar_nra24.xml"/>
-    <load name="bat_manager.xml"/>
+    <!--load name="bat_manager.xml"/-->
     <load name="logger_file.xml"/>
     <!--load name="nav_survey_rectangle_rotorcraft.xml"/-->    
     <!--load name="geo_mag.xml"/>
@@ -124,23 +126,35 @@
     <define name="GYRO_Q_SENS" value="2.17953" integer="16"/>
     <define name="GYRO_R_SENS" value="2.17953" integer="16"/>
 
-    <define name="ACCEL_X_NEUTRAL" value="7"/>
-    <define name="ACCEL_Y_NEUTRAL" value="0"/>
-    <define name="ACCEL_Z_NEUTRAL" value="191"/>
-    <define name="ACCEL_X_SENS" value="2.4545978487" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="2.45176066351" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.44353415821" integer="16"/>
+	<!--no5 imu-->
+<define name="ACCEL_X_NEUTRAL" value="4"/>
+<define name="ACCEL_Y_NEUTRAL" value="-28"/>
+<define name="ACCEL_Z_NEUTRAL" value="273"/>
+<define name="ACCEL_X_SENS" value="2.452163" integer="16"/>
+<define name="ACCEL_Y_SENS" value="2.450681" integer="16"/>
+<define name="ACCEL_Z_SENS" value="2.44507" integer="16"/>
 
-    <define name="MAG_X_NEUTRAL" value="-55"/>
-    <define name="MAG_Y_NEUTRAL" value="-102"/>
-    <define name="MAG_Z_NEUTRAL" value="123"/>
-    <define name="MAG_X_SENS" value="0.463248728893" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.472130353985" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.469877337298" integer="16"/>
+<define name="MAG_X_NEUTRAL" value="-52"/>
+<define name="MAG_Y_NEUTRAL" value="119"/>
+<define name="MAG_Z_NEUTRAL" value="-138"/>
+<define name="MAG_X_SENS" value="3.79011020169" integer="16"/>
+<define name="MAG_Y_SENS" value="3.73119633296" integer="16"/>
+<define name="MAG_Z_SENS" value="3.84801419123" integer="16"/>
 
-<!--define name= "MAG_X_CURRENT_COEF" value="0.000634016748462"/>
-<define name= "MAG_Y_CURRENT_COEF" value="0.000479835842178"/>
-<define name= "MAG_Z_CURRENT_COEF" value="-0.00149528776453"/-->
+	<!--no4 imu-->
+<!--define name="ACCEL_X_NEUTRAL" value="65"/>
+<define name="ACCEL_Y_NEUTRAL" value="8"/>
+<define name="ACCEL_Z_NEUTRAL" value="-89"/>
+<define name="ACCEL_X_SENS" value="2.45834" integer="16"/>
+<define name="ACCEL_Y_SENS" value="2.461177" integer="16"/>
+<define name="ACCEL_Z_SENS" value="2.421396" integer="16"/>
+
+<define name="MAG_X_NEUTRAL" value="-306"/>
+<define name="MAG_Y_NEUTRAL" value="373"/>
+<define name="MAG_Z_NEUTRAL" value="-108"/>
+<define name="MAG_X_SENS" value="0.369153705189" integer="16"/>
+<define name="MAG_Y_SENS" value="0.356257078681" integer="16"/>
+<define name="MAG_Z_SENS" value="0.370801921336" integer="16"/-->
 
 
     			<!-- adiv1  -->
@@ -231,7 +245,7 @@
 
     <define name="REF_OMEGA_R" value="150" unit="deg/s"/>
     <define name="REF_ZETA_R" value="0.85"/>
-    <define name="REF_MAX_R" value="50." unit="deg/s"/>
+    <define name="REF_MAX_R" value="30." unit="deg/s"/>
     <define name="REF_MAX_RDOT" value="RadOfDeg(360.)"/>
 
     <!-- feedback -->
@@ -291,18 +305,15 @@
     <define name="REF_MIN_ZD" value="-1.0"/>        <!-- max descent speed in m/s -->
     <define name="REF_MAX_ZD" value="1.0"/>         <!-- max climb speed in m/s -->
     <define name="ADAPT_NOISE_FACTOR" value="0.7"/>
-    <!--define name="HOVER_KP" value="105"/>
-    <define name="HOVER_KD" value="180"/>
-    <define name="HOVER_KI" value="195"/>
-    <define name="INSIDE_KP" value="70"/>
-    <define name="INSIDE_KD" value="20"/>
-    <define name="INSIDE_KI" value="10"/-->
-    <define name="HOVER_KP" value="288"/>
-    <define name="HOVER_KD" value="280"/>
-    <define name="HOVER_KI" value="195"/>
-    <define name="INSIDE_KP" value="77"/>
-    <define name="INSIDE_KD" value="77"/>
-    <define name="INSIDE_KI" value="49"/>
+    <define name="HOVER_KP" value="130"/>
+    <define name="HOVER_KD" value="0"/>
+    <define name="HOVER_KI" value="0"/>
+    <define name="INSIDE_KP" value="100"/>
+    <define name="INSIDE_KD" value="500"/>
+    <define name="INSIDE_KI" value="20"/>
+    <define name="II_KP" value="0"/>
+    <define name="II_KD" value="0"/>
+    <define name="II_KI" value="0"/>
     <define name="TD_H"  value="1050"/>
     <define name="TD_H0"  value="1024800"/>
     <define name="TD_R" value="100"/>
@@ -316,7 +327,7 @@
     <define name="USE_REF" value="1"/>
     <define name="USE_SPEED_REF" value="1"/> <!-- using RC to control horizontal setpoint -->
     <define name="MAX_BANK" value="25" unit="deg"/>  <!-- using horizontal angle of PID caculated desire -->
-    <define name="REF_MAX_ACCEL" value="1.0"/> <!-- max reference horizontal acceleration in m/s2 -->
+    <define name="REF_MAX_ACCEL" value="1.2"/> <!-- max reference horizontal acceleration in m/s2 -->
     <define name="REF_MAX_SPEED" value="5.0"/> <!-- max reference horizontal speed in m/s -->
     <!--define name="RC_SPEED_DEAD_BAND" value="200000"/-->
     <!--define name="PGAIN" value="30"/>
@@ -327,11 +338,17 @@
     <define name="PGAIN" value="45"/>
     <define name="DGAIN" value="265"/>
     <define name="IGAIN" value="85"/>
-    <define name="VGAIN" value="170"/>
+    <define name="VGAIN" value="200"/>
     <define name="AGAIN" value="100"/>
     <define name="TD_H" value="1024"/>
     <define name="TD_H0" value="102458"/>
     <define name="TD_R" value="300"/>
+    <define name="FPGAIN" value="0.5"/>
+    <define name="FIGAIN" value="0"/>
+    <define name="FDGAIN" value="0.6"/>
+    <define name="FIPGAIN" value="100.0"/>
+    <define name="FIIGAIN" value="30.0"/>
+    <define name="FIDGAIN" value="13.0"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">

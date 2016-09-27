@@ -59,7 +59,7 @@ static void spray_continual_init(void)
 	E ****************** C(next line wp)                     
 	*/
 /**********************************************************/
-bool_t spray_convert_caculate(void)
+uint8_t spray_convert_caculate(void)
 {
 	if( SPRAY_LINE==from_wp.action 
 		&& SPRAY_CONVERT==next_wp.action
@@ -112,16 +112,16 @@ bool_t spray_convert_caculate(void)
 		}
 		else if( deta_orientation == 0 )
 		{
-			return FALSE;  /*line reclosing*/
+			return SPRAY_CONVERT_FAIL;  /*line reclosing*/
 		}
 
 		/*caculate orientation of next spray line*/
 		spray_convert_info.heading_sp = int32_atan2( (wp_e.y-2*wp_c.y), (wp_e.x-2*wp_c.x) );
 		spray_convert_info.heading_sp = INT32_ANGLE_PI_2 - spray_convert_info.heading_sp;
-		return TRUE;
+		return SPRAY_CONVERT_SUCCESS;
 		
 	}
-	return FALSE;
+	return SPRAY_CONVERT_CONTINUAL;
 }
 
 //TIMER(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG,        spray_break_continual_msg,            TIMER_TASK_GCS)

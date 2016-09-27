@@ -42,6 +42,34 @@
 #define GUIDANCE_V_MODE_FLIP      7
 #define GUIDANCE_V_MODE_GUIDED    8
 
+enum _e_v_pid_loop_mode
+{
+	ACC = 0,
+	ACC_SPEED,
+	ACC_SPEED_POS
+};
+
+struct _s_guidance_v
+{
+	enum _e_v_pid_loop_mode pid_loop_mode;
+	enum _e_v_pid_loop_mode pid_loop_mode_now;
+	bool_t thr_in_deadband;
+	bool_t thr_in_deadband_prev;
+	int32_t z_sp;
+	int32_t AccelNed_i_z_filter;
+	float NED_z_acc;
+	float NED_z_speed;
+	float NED_z_pos;
+	float acc_filter_fc;
+	float speed_filter_fc;
+	float accd_filter_fc;
+	float acc_filter_coef;
+	float speed_filter_coef;
+	float accd_filter_coef;
+};
+
+extern struct _s_guidance_v guid_v;
+
 extern uint8_t guidance_v_mode;
 
 /** altitude setpoint in meters (input).
@@ -104,6 +132,9 @@ extern int32_t guidance_v_ki; ///< vertical control I-gain
 extern int32_t guidance_vi_kp; ///< vertical inside control P-gain
 extern int32_t guidance_vi_kd; ///< vertical inside control D-gain
 extern int32_t guidance_vi_ki; ///< vertical inside control I-gain
+extern int32_t guidance_vii_kp;//nei huan pid can shu 
+extern int32_t guidance_vii_kd;
+extern int32_t guidance_vii_ki;
 extern float vh;
 extern float vh0;
 extern float r_vert;

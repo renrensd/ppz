@@ -251,6 +251,11 @@ Gcs_State gcs_task_run(void)
 				spray_break_and_continual();
 			}
 			break;
+
+		case GCS_CMD_LOCK:
+			gcs_state = GCS_RUN_LOCK;
+			//NavKillThrottle();  //crash motion
+			break;
 			
 		default:
 			gcs_state = GCS_RUN_ERROR;
@@ -353,7 +358,6 @@ bool_t run_normal_task(void)
 		{
 			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH) ) 
 			{
-				/*no more task_wp to run*/
 				if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
 				{
 					task_nav_hover(next_wp.wp_en);
@@ -429,7 +433,7 @@ bool_t run_normal_task(void)
 			
 		case TERMINATION:
 		{
-			if( hover_flag )   /*use from_wp_useful as hover steady state*/
+			if( hover_flag )  
 			{
 				task_nav_hover(from_wp.wp_en);
 				if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
@@ -486,16 +490,23 @@ void spray_work_run(void)
 	/*convert info pre_caculate*/
 	if( SPRAY_LINE==from_wp.action && FALSE==spray_caculate_flag)
 	{
-		if( spray_convert_caculate() )
+		uint8_t spray_convert_state = spray_convert_caculate();
+		switch(spray_convert_state)
 		{
-			spray_convert_info.useful = TRUE;
-		}
-		else
-		{
-			spray_convert_info.useful = FALSE;
-		}
-		spray_caculate_flag = TRUE;
-		
+			case SPRAY_CONVERT_SUCCESS:
+				spray_convert_info.useful = TRUE;
+				spray_caculate_flag = TRUE;
+				break;
+				
+			case SPRAY_CONVERT_CONTINUAL:
+				spray_convert_info.useful = FALSE;
+				break;
+				
+			case SPRAY_CONVERT_FAIL:
+				spray_convert_info.useful = FALSE;
+				spray_caculate_flag = TRUE;
+				break;
+		}		
 		#if PERIODIC_TELEMETRY
 	    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
         DOWNLINK_SEND_SPRAY_CONVERT_INFO(DefaultChannel, DefaultDevice, 
