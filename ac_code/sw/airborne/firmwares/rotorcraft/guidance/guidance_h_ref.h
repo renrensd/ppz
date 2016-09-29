@@ -108,6 +108,7 @@ struct GuidanceHRef {
   int32_t c_route_ref;
 };
 
+extern float brake_accel;
 extern struct GuidanceHRef gh_ref;
 
 extern void gh_ref_init(void);

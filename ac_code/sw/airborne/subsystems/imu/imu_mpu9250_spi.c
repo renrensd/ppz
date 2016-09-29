@@ -257,9 +257,9 @@ void imu_mpu9250_event(void)
 	if (imu_mpu9250.mag_hmc.data_available) 
 	{
 	    // VECT3_COPY(imu.mag_unscaled, imu_mpu9250.mag_hmc.data.vect);
-	    imu.mag_unscaled.x = (IMU_MPU9250_X_SIGN) * imu_mpu9250.mag_hmc.data.vect.x;
-	    imu.mag_unscaled.y = (IMU_MPU9250_Y_SIGN) * imu_mpu9250.mag_hmc.data.vect.y;
-	    imu.mag_unscaled.z = (IMU_MPU9250_Z_SIGN) * imu_mpu9250.mag_hmc.data.vect.z;
+	    imu.mag_unscaled.x = +imu_mpu9250.mag_hmc.data.vect.y;
+	    imu.mag_unscaled.y = +imu_mpu9250.mag_hmc.data.vect.x;
+	    imu.mag_unscaled.z = +imu_mpu9250.mag_hmc.data.vect.z;
 	    imu_mpu9250.mag_hmc.data_available = FALSE;
 	    imu_mpu9250.mag_valid = TRUE;
 		#ifdef CALIBRATION_OPTION

@@ -201,8 +201,9 @@ void electrical_periodic(void)
 	/* BAT_MANAGER_OPTION */
 	#else 
 	  #ifdef OPS_BAT_OPTION
-	   	electrical.vsupply = ops_info.o_bat_mv  / 100;
-		electrical.energy = ops_info.o_bat_rep;
+	   	electrical.vsupply = ops_info.o_bat_mv / 100;
+	    electrical.current = (int32_t)ops_info.o_bat_ma;
+		electrical.rep_cap = ops_info.o_bat_rep;
 	  #endif
 	#endif	
 

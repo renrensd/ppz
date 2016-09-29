@@ -185,7 +185,7 @@
 #define ADC_1_GPIO_PIN GPIO4
 #endif
 
-#define ADC_CHANNEL_CURRENT ADC_1
+//#define ADC_CHANNEL_CURRENT ADC_1
 
 
 /* by default activate onboard baro */

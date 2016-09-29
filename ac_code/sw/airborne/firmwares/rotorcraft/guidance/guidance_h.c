@@ -1043,8 +1043,8 @@ static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool_t in_flig
     // negative pitch is forward
     int64_t rc_x = -radio_control.values[RADIO_PITCH];
     int64_t rc_y = radio_control.values[RADIO_ROLL];
-    DeadBand(rc_x, MAX_PPRZ / 20);
-    DeadBand(rc_y, MAX_PPRZ / 20);
+    DeadBand(rc_x, MAX_PPRZ / 10);
+    DeadBand(rc_y, MAX_PPRZ / 10);
 
     // convert input from MAX_PPRZ range to SPEED_BFP
     int32_t max_speed = SPEED_BFP_OF_REAL(GUIDANCE_H_REF_MAX_SPEED);

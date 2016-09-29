@@ -198,6 +198,7 @@ static void gh_compute_route_ref(struct Int32Vect2 *ref_vector)
   gh_ref.s_route_ref = abs(gh_ref.s_route_ref);
 }
 
+float brake_accel;
 static void gh_compute_ref_max(struct Int32Vect2 *ref_vector)
 {
   /* Bound ref to max speed/accel along route reference angle.
@@ -216,11 +217,11 @@ static void gh_compute_ref_max(struct Int32Vect2 *ref_vector)
 	if(route_brake_flag && horizontal_mode == HORIZONTAL_MODE_ROUTE )
 	{
 		brake_counter++;
-		float brake_accel = (gh_ref.max_speed*gh_ref.max_speed - 0.25)/8.0 ;  //default 8m brake distance with 0.5m/s end_speed
-		Bound(brake_accel, 0.0, 6.0);
-		int32_t brake_delta_speed = BFP_OF_REAL(brake_accel, GH_MAX_SPEED_REF_FRAC)*brake_counter/512;
+		float brake_accel_modify = (gh_ref.max_speed*gh_ref.max_speed - 1.0)/20.0 +0.15 ;  //default 10m brake distance with 1m/s end_speed
+		Bound(brake_accel_modify, 0.0, 6.0);
+		int32_t brake_delta_speed = BFP_OF_REAL(brake_accel_modify, GH_MAX_SPEED_REF_FRAC)*brake_counter/512;
 		int32_t ref_max_speed = gh_ref.max_speed_int - brake_delta_speed;
-		Bound(ref_max_speed, 0, gh_ref.max_speed_int );
+		Bound(ref_max_speed,  BFP_OF_REAL(1.0, GH_MAX_SPEED_REF_FRAC), gh_ref.max_speed_int );
 		gh_ref.max_vel.x = INT_MULT_RSHIFT(ref_max_speed, gh_ref.c_route_ref, INT32_TRIG_FRAC);
 		gh_ref.max_vel.y = INT_MULT_RSHIFT(ref_max_speed, gh_ref.s_route_ref, INT32_TRIG_FRAC);
 	}

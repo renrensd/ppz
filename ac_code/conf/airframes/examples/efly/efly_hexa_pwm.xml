@@ -134,12 +134,12 @@
 <define name="ACCEL_Y_SENS" value="2.450681" integer="16"/>
 <define name="ACCEL_Z_SENS" value="2.44507" integer="16"/>
 
-<define name="MAG_X_NEUTRAL" value="-52"/>
-<define name="MAG_Y_NEUTRAL" value="119"/>
-<define name="MAG_Z_NEUTRAL" value="-138"/>
-<define name="MAG_X_SENS" value="3.79011020169" integer="16"/>
-<define name="MAG_Y_SENS" value="3.73119633296" integer="16"/>
-<define name="MAG_Z_SENS" value="3.84801419123" integer="16"/>
+<define name="MAG_X_NEUTRAL" value="-76"/>
+<define name="MAG_Y_NEUTRAL" value="4"/>
+<define name="MAG_Z_NEUTRAL" value="-12"/>
+<define name="MAG_X_SENS" value="3.69826614671" integer="16"/>
+<define name="MAG_Y_SENS" value="3.80730572919" integer="16"/>
+<define name="MAG_Z_SENS" value="3.67696122247" integer="16"/>
 
 	<!--no4 imu-->
 <!--define name="ACCEL_X_NEUTRAL" value="65"/>
@@ -308,8 +308,8 @@
     <define name="HOVER_KP" value="130"/>
     <define name="HOVER_KD" value="0"/>
     <define name="HOVER_KI" value="0"/>
-    <define name="INSIDE_KP" value="100"/>
-    <define name="INSIDE_KD" value="500"/>
+    <define name="INSIDE_KP" value="150"/>
+    <define name="INSIDE_KD" value="600"/>
     <define name="INSIDE_KI" value="20"/>
     <define name="II_KP" value="0"/>
     <define name="II_KD" value="0"/>

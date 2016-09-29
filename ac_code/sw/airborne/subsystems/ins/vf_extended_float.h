@@ -48,6 +48,7 @@ struct VffExtended {
 };
 
 extern struct VffExtended vff;
+extern float acc_noise_debug;
 
 extern void vff_init_zero(void);
 extern void vff_init(float z, float zdot, float accel_bias, float baro_offset);

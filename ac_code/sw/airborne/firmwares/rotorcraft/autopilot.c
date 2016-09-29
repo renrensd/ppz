@@ -49,6 +49,8 @@
 #include "subsystems/monitoring/monitoring.h" 
 #include "generated/settings.h"
 
+#include "subsystems/ops/ops_msg_if.h"
+
 #if USE_MOTOR_MIXING
 #include "subsystems/actuators/motor_mixing.h"
 #endif
@@ -207,15 +209,18 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
 #else
   uint8_t fix = 0;
 #endif
+  uint8_t spray_state = get_spray_switch_state();
   uint16_t time_sec = sys_time.nb_sec;
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_STATUS(trans, dev, AC_ID,
-                                  &imu_nb_err, &_motor_nb_err,
+                                  //&imu_nb_err, 
+                                  &_motor_nb_err,
                                   &radio_control.status, &radio_control.frame_rate,
+                                  &spray_state,
                                   &fix, &autopilot_mode,
                                   &autopilot_in_flight, &autopilot_motors_on,
                                   &guidance_h.mode, &guidance_v_mode,
-                                  &electrical.vsupply, &electrical.current,
+                                  &electrical.vsupply, &electrical.current, &electrical.rep_cap,
 								  &time_sec);
 }
 

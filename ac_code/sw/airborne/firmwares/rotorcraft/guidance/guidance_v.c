@@ -149,6 +149,7 @@ int32_t c_z_pre = 0; //qian yi shi ke
 int32_t c_az = 0; //su du huan shuchu ,jia su du huan gei ding shuru
 int32_t c_az_pre = 0; //qian yi shi ke
 int32_t num_to_acc = 400; // 2000/num_to_acc=(+-)5m/m2
+int32_t v_pre = 0;
 int32_t vd_pre = 0; //su du huan weifen lvbo
 int32_t vdd_pre = 0; //jiasudu huan weifen lvbo
 int32_t vdd_i = 0; //jiasudu huan jifen huanjie for display only
@@ -623,7 +624,7 @@ static void run_hover_loop(bool_t in_flight)
 
 	int32_t err_z  = guidance_v_z_ref - stateGetPositionNed_i()->z;
 	//int32_t err_z  = guidance_v_z_sp - stateGetPositionNed_i()->z
-	//               + (guidance_v_rc_zd_sp>>(INT32_SPEED_FRAC-INT32_POS_FRAC));//wai huan weizhi wucha
+	//               + (guidance_v_rc_zd_sp>>(INT32_SPEED_FRAC-INT32_POS_FRAC));
 	//int32_t err_z = guid_v.z_sp - stateGetPositionNed_i()->z;
 
 	Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
@@ -642,7 +643,7 @@ static void run_hover_loop(bool_t in_flight)
 	{
 		/*here is the anti_windup block */
 #if USE_ANTI_WIND_UP  //use sum wind up
-		if ((abs(c_z) >= 4 * 1024 * 512) || (abs(guidance_v_fb_cmd) >= 2000))
+		if ((abs(c_z) >= 2 * 1024 * 512) || (abs(guidance_v_fb_cmd) >= 2000))
 		{
 			wind_up_flag = 0;
 		}
@@ -695,13 +696,16 @@ static void run_hover_loop(bool_t in_flight)
 	guid_v.acc_filter_coef = 2.0f * 3.14f * 0.002f * guid_v.acc_filter_fc;
 	guid_v.speed_filter_coef = 2.0f * 3.14f * 0.002f * guid_v.speed_filter_fc;
 	guid_v.accd_filter_coef = 2.0f * 3.14f * 0.002f * guid_v.accd_filter_fc;
+	
+	int32_t speed_now = stateGetSpeedNed_i()->z;
+	v_pre = v_pre + (int32_t) ((float) (speed_now - v_pre) * guid_v.speed_filter_coef);
 
 	c_z = guidance_v_kp * (err_z << (INT32_SPEED_FRAC - INT32_POS_FRAC - 8))
-			- ((guidance_v_kd * stateGetSpeedNed_i()->z) >> 5)
+			- ((guidance_v_kd * v_pre) >> 5)
 			+ guidance_v_ki*(guidance_v_z_sum_err>>10);
 	BoundAbs(c_z, 2 * 1024 * 512);
 
-	err_vz = c_z - stateGetSpeedNed_i()->z;
+	err_vz = c_z - v_pre;
 	vd_temp = (c_z - c_z_pre) * time_inv - ((stateGetAccelNed_i()->z) << 9); //dang qian su du huan wei fen
 	c_z_pre = c_z;
 	vd_pre = vd_pre	+ (int32_t) ((float) (vd_temp - vd_pre) * guid_v.acc_filter_coef);
@@ -709,16 +713,6 @@ static void run_hover_loop(bool_t in_flight)
 	BoundAbs(guidance_v_zd_sum_err, (1<<30));
 	inside_isum = ((guidance_v_zd_sum_err * guidance_vi_ki) >> 12);
 	BoundAbs(inside_isum, 2000);
-	
-	static int32_t inside_isum_prev = 0;
-	if((inside_isum_prev < -300) && (inside_isum > 300))
-	{
-		inside_isum_prev = inside_isum;
-	}
-	inside_isum_prev = inside_isum;
-	//test
-
-
 
 	c_az = ((err_vz * guidance_vi_kp) >> 16) 
 			+ ((vd_pre * guidance_vi_kd) >> 22)
@@ -749,7 +743,7 @@ static void run_hover_loop(bool_t in_flight)
 		if (guid_v.pid_loop_mode_now == ACC_SPEED_POS)
 		{
 			c_z = guidance_v_kp * (err_z << (INT32_SPEED_FRAC - INT32_POS_FRAC - 8))
-					- ((guidance_v_kd * stateGetSpeedNed_i()->z) >> 5)
+					- ((guidance_v_kd * v_pre) >> 5)
 					+ guidance_v_ki*(guidance_v_z_sum_err>>10);
 			BoundAbs(c_z, 4 * 1024 * 512);
 		}
@@ -757,7 +751,7 @@ static void run_hover_loop(bool_t in_flight)
 		{
 			c_z = guidance_v_rc_zd_sp;
 		}
-		err_vz = c_z - stateGetSpeedNed_i()->z;
+		err_vz = c_z - v_pre;
 		//vd_temp = - ((stateGetAccelNed_i()->z) << 9); //dang qian su du huan wei fen
 		vd_temp = (c_z - c_z_pre) * time_inv - ((stateGetAccelNed_i()->z) << 9); //dang qian su du huan wei fen
 		c_z_pre = c_z;

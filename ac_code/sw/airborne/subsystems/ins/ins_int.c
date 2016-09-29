@@ -186,6 +186,8 @@ static void radar24_cb(uint8_t sender_id, float distance);
 
 struct InsInt ins_int;
 
+float gps_noise_debug;
+
 #if USE_FLOW
 static abi_event flow_ev;  //add for flow
 static void flow_cb(uint8_t sender_id, struct Px4_flow_Data *flow_data);
@@ -274,7 +276,7 @@ void ins_int_init(void)
   AbiBindMsgAGL(INS_SONAR_ID, &sonar_ev, sonar_cb);
 #endif
 #if USE_RADAR24
-    ins_int.update_radar_agl = TRUE;   //initial use radar until gps stable
+    ins_int.update_radar_agl = FALSE; 
     AbiBindMsgRADAR_24(AGL_NRA_24_ID,&radar24_ev,radar24_cb);
 #endif
 
@@ -300,6 +302,7 @@ void ins_int_init(void)
   ins_int.za_corr_k = 0.5f;
   ins_int.zv_corr_k = 2.0f;
   ins_int.zp_corr_k = 4.0f;
+  gps_noise_debug = 0.0004;
 }
 
 void ins_reset_local_origin(void)
@@ -608,6 +611,19 @@ void ins_int_update_gps(struct GpsState *gps_s)
   int32_quat_vmult(&b2g_n, &q_b2n, &b2g_b);
   /* subtract body2gps translation in ltp from gps position */
   VECT3_SUB(gps_pos_cm_ned, b2g_n);
+
+  /*filter rate information*/
+  static int32_t ins_body_rate_z;
+  int32_t ins_body_rate_z_now;
+  ins_body_rate_z_now =  stateGetBodyRates_i()->r;  
+  ins_body_rate_z =  (ins_body_rate_z*3 + ins_body_rate_z_now)/4;
+  struct Int32Vect3 delta_speed_b, delta_speed_n;
+  delta_speed_b.x = (ins_body_rate_z * (-b2g_b.y)) >>INT32_RATE_FRAC;
+  delta_speed_b.y = 0;
+  delta_speed_b.z = 0;
+  int32_quat_vmult(&delta_speed_n, &q_b2n, &delta_speed_b);
+  VECT3_SUB(gps_speed_cm_s_ned, delta_speed_n);
+  
 #endif
 
 /*airframe height*/
@@ -617,7 +633,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
   if(gps.p_stable)//gps_nmea.gps_qual==52)
   {
   	ins_int.update_radar_agl = FALSE;
-  	vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, 0.0004);
+  	vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, gps_noise_debug);
     //vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
 	//vff_update_zd_conf(((float)gps_speed_cm_s_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
   }
@@ -647,10 +663,10 @@ void ins_int_update_gps(struct GpsState *gps_s)
 
  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  //DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice, &gps_pos_cm_ned.z, &gps_speed_cm_s_ned.z, &gps_nmea.gps_qual,
-  //	                                                     &gps_pos_sd.x, &gps_pos_sd.y, &gps_pos_sd.z);
-  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice, &gps_pos_cm_ned.x, &gps_pos_cm_ned.y, &gps_nmea.gps_qual,
-  	                                                     &gps_speed_cm_s_ned.x, &gps_speed_cm_s_ned.y, &gps_speed_cm_s_ned.z);
+  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice, &gps_pos_cm_ned.z, &gps_speed_cm_s_ned.z, &gps_nmea.gps_qual,
+  	                                                     &gps_pos_sd.x, &gps_pos_sd.y, &gps_pos_sd.z);
+  //DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice, &gps_pos_cm_ned.x, &gps_pos_cm_ned.y, &gps_nmea.gps_qual,
+  //	                                                     &gps_speed_cm_s_ned.x, &gps_speed_cm_s_ned.y, &gps_speed_cm_s_ned.z);
  #endif
 #endif
 

@@ -52,7 +52,7 @@
 #define MAX_GROUND_INS_A  0.5
 #define MAX_GROUND_INS_Z  0.6
 
-#define MAX_FLIGHT_TIME 510   //13min
+#define MAX_FLIGHT_TIME 780   //13min
 #define BAT_LIMIT_VOL  420   //unit:0.1v
 #define BAT_LIMIT_CAP  15  //unit:percent
 

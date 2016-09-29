@@ -804,10 +804,11 @@ void get_gps_heading_stable(void)
 		counter_heading++;
 	}
 
-	if(counter_heading > 40)
+	if( ((counter_heading>100)&&(get_sys_time_float()<300.0))
+		||((counter_heading>40)&&(get_sys_time_float()>300.0)) )
 	{
 		gps.h_stable = TRUE;
-		counter_heading = 41;  /*avoid overflow*/
+		counter_heading = 101;  /*avoid overflow*/
 	}	
 }
 /*

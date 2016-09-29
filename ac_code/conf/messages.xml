@@ -226,7 +226,7 @@
 
   <message name="DEBUG_GPS" id="26">
     <field name="ned_z" type="int32" unit="m" alt_unit_coef="0.01"/>
-    <field name="ned_z_speed" type="int32" alt_unit_coef="0.01"/>
+    <field name="ned_z_speed" type="int32" unit="m/s" alt_unit_coef="0.01"/>
     <field name="qual"  type="uint8"/>
     <field name="sd_x"  type="int32" unit="m" alt_unit_coef="0.0001"/>
     <field name="sd_y"  type="int32" unit="m" alt_unit_coef="0.0001"/>
@@ -2120,10 +2120,11 @@
   </message>
 
   <message name="ROTORCRAFT_STATUS" id="231">
-    <field name="link_imu_nb_err" type="uint32"/>
+    <!--field name="link_imu_nb_err" type="uint32"/-->
     <field name="motor_nb_err"  type="uint8"/>
     <field name="rc_status"    type="uint8" values="OK|LOST|REALLY_LOST"/>
     <field name="frame_rate"   type="uint8" unit="Hz"/>
+    <field name="spray_state"  type="uint8" values="STOP|OPEN"/>
     <field name="gps_status"   type="uint8" values="NO_FIX|NA|2D|3D|DGPS|RTK"/>
     <field name="ap_mode"      type="uint8" values="KILL|FAILSAFE|HOME|RATE_DIRECT|ATTITUDE_DIRECT|RATE_RC_CLIMB|ATTITUDE_RC_CLIMB|ATTITUDE_CLIMB|RATE_Z_HOLD|ATTITUDE_Z_HOLD|HOVER_DIRECT|HOVER_CLIMB|HOVER_Z_HOLD|NAV|RC_DIRECT|CARE_FREE|FORWARD|MODULE|FLIP|GUIDED"/>
     <field name="ap_in_flight" type="uint8" values="ON_GROUND|IN_FLIGHT"/>
@@ -2132,6 +2133,7 @@
     <field name="ap_v_mode"    type="uint8" values="KILL|RC_DIRECT|RC_CLIMB|CLIMB|HOVER|NAV|MODULE|FLIP|GUIDED"/>
     <field name="vsupply"      type="uint16" unit="decivolt"/>
     <field name="current"      type="int32" unit="mA"/>
+    <field name="rep_cap"      type="uint16" unit="mAh"/>
     <field name="cpu_time"     type="uint16" unit="s"/>
   </message>
 

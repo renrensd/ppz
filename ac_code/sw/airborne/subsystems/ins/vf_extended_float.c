@@ -67,6 +67,7 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 #define R_OFFSET 1.
 
 struct VffExtended vff;
+float acc_noise_debug;
 
 Butterworth2LowPass acc_z_filter;
 
@@ -103,8 +104,9 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
     }
     vff.P[i][i] = VFF_EXTENDED_INIT_PXX;
   }
+  acc_noise_debug = 0.1;
 
-  //init_butterworth_2_low_pass(&acc_z_filter, 0.0106, (1. / 512), 0.);    //tau = 0.1592/cutoff_fre
+  init_butterworth_2_low_pass(&acc_z_filter, 0.01592, (1. / 512), 0.);    //tau = 0.1592/cutoff_fre
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
@@ -137,7 +139,7 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
 void vff_propagate(float accel, float dt)
 {
   /*accel first pass buterworth filter*/
-  //accel = update_butterworth_2_low_pass(&acc_z_filter, accel);
+  accel = update_butterworth_2_low_pass(&acc_z_filter, accel);
   
   /* update state */
   vff.zdotdot = accel + 9.81 - vff.bias;
@@ -155,11 +157,11 @@ void vff_propagate(float accel, float dt)
   const float FPF22 = vff.P[2][2];
   const float FPF33 = vff.P[3][3];
 
-  vff.P[0][0] = FPF00 + VFF_EXTENDED_ACCEL_NOISE * dt * dt / 2.;
+  vff.P[0][0] = FPF00 + acc_noise_debug * dt * dt / 2.;
   vff.P[0][1] = FPF01;
   vff.P[0][2] = FPF02;
   vff.P[1][0] = FPF10;
-  vff.P[1][1] = FPF11 + VFF_EXTENDED_ACCEL_NOISE * dt;
+  vff.P[1][1] = FPF11 + acc_noise_debug * dt;
   vff.P[1][2] = FPF12;
   vff.P[2][0] = FPF20;
   vff.P[2][1] = FPF21;

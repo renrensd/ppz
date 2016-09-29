@@ -83,6 +83,7 @@ extern float failsafe_mode_dist2; ///< maximum squared distance to home wp befor
 
 extern float dist2_to_wp;       ///< squared distance to next waypoint
 extern bool_t route_brake_flag;
+extern float brake_distance2;
 
 extern float nav_circle_radians_no_rewind; /* Cumulated, add by whp */
 

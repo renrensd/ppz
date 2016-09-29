@@ -75,6 +75,7 @@ bool_t exception_flag[10] = {0}; //exception flags that can be used in the fligh
 float dist2_to_wp;
 bool_t route_brake_flag;
 float  route_brake_accel;
+uint8_t set_angle;
 
 uint8_t horizontal_mode;
 struct EnuCoor_i nav_segment_start, nav_segment_end;
@@ -208,6 +209,7 @@ void nav_init(void)
   dist2_to_wp = 0;
   route_brake_flag = FALSE;
   route_brake_accel = 0.0;
+  set_angle = 50;
   flight_limit_height =FLIGHT_LIMIT_HEIGHT;
 
 #if PERIODIC_TELEMETRY
@@ -350,6 +352,8 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
 
     int32_t carrot_angle = (((CARROT_DIST/4) << INT32_ANGLE_FRAC) / abs_radius); 
     Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI*3/11);
+	//int32_t carrot_angle = INT32_RAD_OF_DEG(set_angle);
+	
     int32_t heading_ccw = (1+sign_radius)*INT32_ANGLE_PI_2 - sp_heading;
 	
     // carrot_angle to guidance circle forward
@@ -401,6 +405,7 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
    return leave_flag;
 }
 
+float brake_distance2;
 void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 {
   static uint8_t last_regulate_ratio = 2;
@@ -455,7 +460,7 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   horizontal_mode = HORIZONTAL_MODE_ROUTE;
 
   dist2_to_wp = get_dist2_to_point(wp_end);
-  if( dist2_to_wp < ((float)(progress*progress)) )
+  if( dist2_to_wp < 100 )  //default 10m brake distance
   {
   	route_brake_flag = TRUE;
   }
