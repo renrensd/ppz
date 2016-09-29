@@ -108,7 +108,10 @@ void nps_autopilot_run_step(double time)
 
   if (nps_sensors_baro_available()) {
     float pressure = (float) sensors.baro.value;
-    AbiSendMsgBARO_ABS(BARO_SIM_SENDER_ID, pressure);
+    //AbiSendMsgBARO_ABS(BARO_SIM_SENDER_ID, pressure);
+    uint32_t sample_time = get_sys_time_usec();
+	float temper = 30.0f;
+    AbiSendMsgBARO_ABS(BARO_SIM_SENDER_ID, sample_time, pressure, temper);
     main_event();
   }
 

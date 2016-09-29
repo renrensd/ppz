@@ -183,13 +183,13 @@ static void send_alive(struct transport_tx *trans, struct link_device *dev)
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ALIVE(trans, dev, AC_ID, 16, MD5SUM);
 }
-
+#ifndef NPS_SIMU
 static void send_mcu_fault(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_MCU_FAULT(trans, dev, AC_ID, &mcu_info.reset_src);
 }
-
+#endif
 static void send_attitude(struct transport_tx *trans, struct link_device *dev)
 {
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
@@ -366,7 +366,9 @@ void autopilot_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP, send_fp);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_CMD, send_rotorcraft_cmd);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DL_VALUE, send_dl_value);
+  #ifndef NPS_SIMU
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MCU_FAULT, send_mcu_fault);
+  #endif
 #ifdef ACTUATORS
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
 #endif
