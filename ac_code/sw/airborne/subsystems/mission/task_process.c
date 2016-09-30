@@ -472,7 +472,7 @@ bool_t run_normal_task(void)
 void spray_work_run(void)
 {
 	/*spray switch control*/
-	if( SPRAY_LINE==from_wp.action && !get_spray_switch_state())  //FALSE==spray_switch_flag )
+	if( SPRAY_LINE==from_wp.action && !get_spray_switch_state() && get_nav_route_mediacy() ) 
 	{
 	   #ifdef OPS_OPTION
 		ops_start_spraying(); 
