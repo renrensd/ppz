@@ -1,0 +1,12 @@
+input2ivy.cmo : /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/pprz.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/fp_proc.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/expr_syntax.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/defivybus.cmi
+input2ivy.cmx : /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/pprz.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/fp_proc.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/expr_syntax.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/defivybus.cmx

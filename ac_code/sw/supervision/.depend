@@ -1,0 +1,34 @@
+paparazzicenter.cmo : pc_control_panel.cmo pc_common.cmo pc_aircraft.cmo \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/gtk_tools.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmi
+paparazzicenter.cmx : pc_control_panel.cmx pc_common.cmx pc_aircraft.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/gtk_tools.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmx
+pc_aircraft.cmo : pc_control_panel.cmo pc_common.cmo \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/os_calls.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/gtk_tools.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/gen_common.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmi
+pc_aircraft.cmx : pc_control_panel.cmx pc_common.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/os_calls.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/gtk_tools.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/gen_common.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmx
+pc_common.cmo : \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmi
+pc_common.cmx : \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmx
+pc_control_panel.cmo : pc_common.cmo \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/gtk_tools.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmi \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmi
+pc_control_panel.cmx : pc_common.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/gtk_tools.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/extXml.cmx \
+    /home/lijie/work/codes/ef01_ac/ac_code/sw/lib/ocaml/env.cmx
