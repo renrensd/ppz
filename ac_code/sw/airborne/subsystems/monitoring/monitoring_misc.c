@@ -61,7 +61,7 @@
 static uint8_t ahrs_ground_check(void);
 static uint8_t ins_ground_check(void);
 static bool_t yaw_command_monitor(void);
-static bool_t danger_att_detect(void);
+static bool_t lift_lost_detect(void);
 
 
 
@@ -289,12 +289,14 @@ void gcs_communication_flight_check(void)
 	{
 		em[GCS_COM_LOST].active = FALSE;
 		em[GCS_COM_LOST].finished = FALSE;
-	}
-	
+	}	
 }
+
 
 #define MAX_ERROR_Z_THRUST  8000
 #define MAX_ERROR_YAW_COMMAND 5000
+
+#define MAX_ERROR_ATT (1.05)  //60deg
 
 void lift_flight_check(void)
 {
@@ -313,52 +315,11 @@ void lift_flight_check(void)
 		set_except_mission(LIFT_POWER,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	//land direct
 	}
 
-	/*keep 2s att > 45deg, lock motors direct !!!*/
-	if( danger_att_detect() )
+	/*keep 1s att > 60deg, lock motors direct !!!*/
+	if( lift_lost_detect() )
 	{
-		//NavKillThrottle();  //crash motion
+		//;  //AP_MODE will set kill,lock motors
 	}
-}
-
-
-static bool_t yaw_command_monitor(void)
-{
-	static uint8_t counter = 0;
-	if( abs(stabilization_cmd[COMMAND_YAW]) > MAX_ERROR_YAW_COMMAND )
-	{
-		counter++;
-		if(counter > 5)
-		{
-			counter = 6;
-			return TRUE;
-		}
-	}
-	else
-	{
-		counter = 0;
-	}
-	return FALSE;
-}
-
-#define MAX_FLIGHT_ATT  0.8  //about 10deg
-static bool_t danger_att_detect(void)
-{
-	static uint8_t counter = 0;
-	if( fabs(stateGetNedToBodyEulers_f()->phi) > MAX_FLIGHT_ATT
-		 ||fabs(stateGetNedToBodyEulers_f()->theta) > MAX_FLIGHT_ATT )
-	{
-		counter++;
-		if(counter > 4)
-		{
-			counter = 5;
-			return TRUE;
-		}
-	}
-	else
-	{
-		counter = 0;
-	}
-	return FALSE;	
 }
 
 void task_running_check(void)
@@ -436,15 +397,47 @@ static uint8_t ins_ground_check(void)
 	else return 1;
 }
 
-#define MAX_ERROR_ATT 60.0
-bool_t out_of_control_detect(void)
+static bool_t lift_lost_detect(void)
 {
+	static uint8_t counter = 0;
 	if( autopilot_in_flight)
 	{
 		if( fabs(stateGetNedToBodyEulers_f()->phi)>MAX_ERROR_ATT || fabs(stateGetNedToBodyEulers_f()->theta)>MAX_ERROR_ATT )
 		{
+			counter++;
+			if(counter > 2)
+			{
+				return TRUE;
+			}
+		}
+		else 
+		{
+			counter = 0;
+		}
+	}
+	else
+	{
+		counter = 0;
+	}
+	return FALSE;
+}
+
+
+static bool_t yaw_command_monitor(void)
+{
+	static uint8_t counter = 0;
+	if( abs(stabilization_cmd[COMMAND_YAW]) > MAX_ERROR_YAW_COMMAND )
+	{
+		counter++;
+		if(counter > 5)
+		{
+			counter = 6;
 			return TRUE;
 		}
+	}
+	else
+	{
+		counter = 0;
 	}
 	return FALSE;
 }
