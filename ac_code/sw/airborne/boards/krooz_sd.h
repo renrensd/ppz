@@ -4,7 +4,7 @@
 #define BOARD_KROOZ
 
 /* KroozSD has a 25MHz external clock and 168MHz internal. */
-#define EXT_CLK 24000000
+#define EXT_CLK 25000000
 #define AHB_CLK 168000000
 
 /*
