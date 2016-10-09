@@ -21,6 +21,8 @@
 #ifndef _TIMER_CLASS_H_
 #define _TIMER_CLASS_H_
 #include "types.h" 
+#include "subsystems/datalink/datalink.h"
+
 /**** Definition of constants ****/
 
 

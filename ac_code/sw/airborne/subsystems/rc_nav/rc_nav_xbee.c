@@ -26,12 +26,22 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "math.h"
+#include "subsystems/datalink/datalink.h"
+
 #ifdef OPS_OPTION
 #include "subsystems/ops/ops_app_if.h"
 #include "subsystems/ops/ops_msg_if.h"   
 #endif
 #include "subsystems/monitoring/monitoring.h" 
+
+#if DATALINK == XBEE
 #include "subsystems/datalink/xbee.h"
+#endif	/* DATALINK==XBEE */
+
+#if DATALINK == TRANSPTA
+#include "subsystems/datalink/transpta.h"
+#endif	/* TRANSPTA */
+
 #include "subsystems/mission/task_spray_misc.h"
 #ifdef CALIBRATION_OPTION
 #include "firmwares/rotorcraft/autopilot.h"
@@ -591,8 +601,4 @@ void rc_set_connect(void)
 {
 	rc_count=0;  //reset rc_count,use for check rc_lost
 	rc_lost=FALSE;
-	#ifdef GCS_V1_OPTION
-	//xbee_con_info.rc_con_available = TRUE;
-	#endif	/* GCS_V1_OPTION */
-
 }

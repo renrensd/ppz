@@ -23,7 +23,7 @@
 /**
  * @file peripherals/qmc5883.c
  *
- * Driver for Honeywell HMC5843 and HMC5883 magnetometers.
+ * Driver for QMC5883 magnetometers.
  */
 
 #ifndef QMC5883_H
@@ -46,10 +46,17 @@ struct Qmc5883Config {
 
 /** config status states */
 enum Qmc5883ConfStatus {
-  HMC_CONF_UNINIT,
-  HMC_CONF_FBR,
-  HMC_CONF_CTL,
-  HMC_CONF_DONE
+  QMC_CONF_UNINIT,
+  QMC_CONF_FBR,
+  QMC_CONF_CTL,
+  QMC_CONF_DONE
+};
+
+/** read status states */
+enum Qmc5883ReadStatus
+{
+  QMC_READ_STATUS,
+  QMC_READ_DATA
 };
 
 struct Qmc5883 {
@@ -57,6 +64,7 @@ struct Qmc5883 {
   struct i2c_transaction i2c_trans;
   bool_t initialized;                 ///< config done flag
   enum Qmc5883ConfStatus init_status; ///< init status
+  enum Qmc5883ReadStatus read_status;
   volatile bool_t data_available;     ///< data ready flag
   union {
     struct Int16Vect3 vect;           ///< data vector in mag coordinate system
@@ -72,7 +80,10 @@ struct Qmc5883 {
 // Functions
 extern void qmc5883_init(struct Qmc5883 *hmc, struct i2c_periph *i2c_p, uint8_t addr);
 extern void qmc5883_start_configure(struct Qmc5883 *hmc);
-extern void qmc5883_read(struct Qmc5883 *hmc);
+extern void qmc5883_read_data(struct Qmc5883 *hmc);
+extern void qmc5883_read_status(struct Qmc5883 *hmc);
 extern void qmc5883_event(struct Qmc5883 *hmc);
+extern void qmc5883_periodic(struct Qmc5883 *hmc);
+
 
 #endif /* QMC5883_H */

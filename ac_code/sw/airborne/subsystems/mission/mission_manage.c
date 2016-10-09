@@ -110,7 +110,7 @@ void send_current_mission(void)
 	uint8_t mission_id=mission.current_idx;
 	uint8_t mission_status=mission.elements[mission.current_idx].status;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);   //to gcs
-	DOWNLINK_SEND_CURRENT_MISSION_STATE(DefaultChannel, DefaultDevice,
+	DOWNLINK_SEND_CURRENT_MISSION_STATE(SecondChannel, SecondDevice,
 		                                &system_time,
 		                                &path_idx,
 		                                &mission_id,

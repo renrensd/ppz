@@ -18,10 +18,12 @@ $(TARGET).srcs += $(SRC_LIBSTM32)/misc.c
 $(TARGET).srcs += $(SRC_LIBSTM32)/stm32f4xx_syscfg.c
 $(TARGET).srcs += $(SRC_LIBSTM32)/stm32f4xx_wwdg.c
 $(TARGET).srcs += $(SRC_LIBSTM32)/stm32f4xx_dbgmcu.c
+$(TARGET).srcs += $(SRC_LIBSTM32)/stm32f4xx_can.c
 
 $(TARGET).srcs += $(PATH_LIBSTM32)/system_stm32f4xx.c $(PATH_LIBSTM32)/stm32f4xx_it.c $(PATH_LIBSTM32)/sdio_sd.c
 
 $(TARGET).srcs += $(PATH_FATFS)/ff.c $(PATH_FATFS)/diskio.c $(PATH_FATFS)/option/ccsbcs.c
 $(TARGET).srcs += $(PATH_LIBSTM32)/calibration.c
 $(TARGET).srcs += $(PATH_LIBSTM32)/wdg.c
+$(TARGET).srcs += $(PATH_LIBSTM32)/can_drv.c
 

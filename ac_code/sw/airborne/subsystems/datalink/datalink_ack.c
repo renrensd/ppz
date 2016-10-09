@@ -47,7 +47,7 @@ void send_heart_beat_A2R_msg(void)
 		spray_flag = 0;
 	}
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
-	DOWNLINK_SEND_HEART_BEAT_AC_RC_STATE(DefaultChannel, DefaultDevice,
+	DOWNLINK_SEND_HEART_BEAT_AC_RC_STATE(SecondChannel, SecondDevice,
 		                                 &system_time, 
 		                                 &ac_state,
 		                                 &flight_mode,
@@ -157,7 +157,7 @@ void send_aircraft_info_state(void)
 	char     sn_and_sv[30]="EFA115";	 //fix info
 	
 	xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-	DOWNLINK_SEND_AIRCRAFT_INFO_STATE(DefaultChannel, DefaultDevice, 
+	DOWNLINK_SEND_AIRCRAFT_INFO_STATE(SecondChannel, SecondDevice, 
 		                              &ac_engine_type, 
 		                              &max_vayage, 
 		                              &battery_capacity, 

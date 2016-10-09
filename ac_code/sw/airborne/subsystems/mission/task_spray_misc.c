@@ -19,10 +19,11 @@
 *=====================================================================*/
 #include "subsystems/mission/task_spray_misc.h"
 #include "subsystems/datalink/downlink.h"
+#include "uplink_ac.h"
 #include "subsystems/ops/ops_app_if.h"
-
 #include "modules/system/timer_if.h"
-
+#include "modules/system/timer_class.h"
+#include "modules/system/timer_def.h"
 
 
 Spray_Convert_Info spray_convert_info;
@@ -150,7 +151,7 @@ void spray_break_continual_msg(void)
 	int32_t pos_break_lon = (int32_t)( (int64_t)(spray_continual_info.break_pos_lla.lon) * 174533/1000000 ); 
 	int32_t pos_break_lat = (int32_t)( (int64_t)(spray_continual_info.break_pos_lla.lat) * 174533/1000000 ); 
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
-	DOWNLINK_SEND_EMERGENCY_RECORD_STATE(DefaultChannel, DefaultDevice,
+	DOWNLINK_SEND_EMERGENCY_RECORD_STATE(SecondChannel, SecondDevice,
 	                                      &wp_type,
 	                                      &spray_continual_info.break_spray_work,
 	                                      &pos_break_lon,

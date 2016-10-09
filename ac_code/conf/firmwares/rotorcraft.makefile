@@ -55,6 +55,8 @@ $(TARGET).CFLAGS += -DCALIBRATION_OPTION
 $(TARGET).CFLAGS += -DSYS_TIMER_OPTION
 $(TARGET).CFLAGS += -DQMC5883_OPTION
 #$(TARGET).CFLAGS += -DHMC5983_OPTION
+$(TARGET).CFLAGS += -DBBOX_OPTION=1
+$(TARGET).CFLAGS += -DTRANSPTA_OPTION
 endif
 $(TARGET).srcs   += mcu.c
 $(TARGET).srcs   += $(SRC_ARCH)/mcu_arch.c
@@ -94,7 +96,7 @@ ifndef NPS_OPTION
 #
 # add libstm32
 #
- include $(PAPARAZZI_SRC)/sw/ext/libstm32/libstm32.makefile
+include $(PAPARAZZI_SRC)/sw/ext/libstm32/libstm32.makefile
 
 #
 # OPS_SYSTEM
@@ -229,6 +231,9 @@ endif
 # add other subsystems to rotorcraft firmware in airframe file:
 #
 # telemetry
+include $(CFG_ROTORCRAFT)/telemetry_bbox.makefile
+include $(CFG_SHARED)/bbox.makefile
+
 # radio_control
 # actuators
 # imu

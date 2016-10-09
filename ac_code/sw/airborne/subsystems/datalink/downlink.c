@@ -27,7 +27,10 @@
 
 
 #include "subsystems/datalink/downlink.h"
+#include "subsystems/datalink/datalink.h"
+#ifdef GCS_V1_OPTION
 #include "subsystems/datalink/downlink_xbee_periodic.h"
+#endif	/* GCS_V1_OPTION */
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -68,16 +71,25 @@ void downlink_init(void)
   (DefaultDevice).device.nb_ovrn = 0;
   (DefaultDevice).device.nb_bytes = 0;
   (DefaultDevice).device.nb_msgs = 0;
+  #if DATALINK == TRANSPTA
+  (SecondDevice).device.nb_ovrn = 0;
+  (SecondDevice).device.nb_bytes = 0;
+  (SecondDevice).device.nb_msgs = 0;
+  #endif
 
 #if defined DATALINK
 
   datalink_nb_msgs = 0;
 
-#if DATALINK == PPRZ || DATALINK == SUPERBITRF || DATALINK == W5100 || DATALINK == BLUEGIGA
+#if DATALINK == PPRZ || DATALINK == SUPERBITRF || DATALINK == W5100 || DATALINK == BLUEGIGA || DATALINK == TRANSPTA
   pprz_transport_init(&pprz_tp);
 #endif
+
 #if DATALINK == XBEE
   xbee_init();
+#endif
+#if DATALINK == TRANSPTA
+  pta_init();
 #endif
 #if DATALINK == W5100
   w5100_init();
@@ -104,20 +116,27 @@ void downlink_init(void)
 void downlink_periodic(void)
 {
 	#if DATALINK == XBEE
-	
+  	xbee_periodic();	
+	#endif
+
+	#if DATALINK == TRANSPTA
+  	pta_periodic();	
+	#endif
+
 	#ifdef GCS_V1_OPTION
 	downlink_gcs_periodic();
 	downlink_pc_periodic();
-  	xbee_periodic();
-	#endif
-	
 	#endif
 }
 
 void xbee_tx_header(uint8_t ack, uint8_t addr)
 {
 #if DATALINK == XBEE
-	xbee_tx_frame_header(ack,addr);
+	xbee_tx_frame_header(ack, addr);
+#endif
+
+#if DATALINK == TRANSPTA
+	pta_set_tx_frame_addr(ack, addr);
 #endif
 }
 

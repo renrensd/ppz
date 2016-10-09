@@ -41,6 +41,8 @@
 
 #include "std.h"
 #include "dl_protocol.h"
+#include "subsystems/datalink/xbee_msg_def.h"
+
 
 /** Datalink kinds */
 #define PPRZ 1
@@ -48,6 +50,8 @@
 #define SUPERBITRF 3
 #define W5100 4
 #define BLUEGIGA 5
+#define TRANSPTA 6
+
 
 /** Flag provided to control calls to ::dl_parse_msg. NOT used in this module*/
 EXTERN bool_t dl_msg_available;
@@ -97,6 +101,13 @@ static inline void DlCheckAndParse(void)
 
 #define DatalinkEvent() {                       \
     XBeeCheckAndParse(XBEE_UART, xbee_tp);      \
+    DlCheckAndParse();                          \
+  }
+
+#elif defined DATALINK && DATALINK == TRANSPTA
+
+#define DatalinkEvent() {                       \
+    PtaCheckAndParse(PTA_UART, pta_tp);      \
     DlCheckAndParse();                          \
   }
 

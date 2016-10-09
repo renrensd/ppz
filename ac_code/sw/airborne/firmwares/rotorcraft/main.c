@@ -84,11 +84,21 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include "generated/modules.h"
 #include "subsystems/abi.h"
 
+#if DATALINK==XBEE
 #include "subsystems/datalink/xbee.h"
+#endif	/* DATALINK==XBEE */
+
+#if DATALINK == TRANSPTA
+#include "subsystems/datalink/transpta.h"
+#endif	/* TRANSPTA */
 
 #ifdef OPS_OPTION
 #include"subsystems/ops/ops_app_if.h"
 #endif	/* OPS_OPTION */
+
+#ifdef BBOX_OPTION
+#include"subsystems/bbox/bbox_if.h"
+#endif	/* BBOX_OPTION */
 
 #ifdef MONITORING_OPTION
 #include "subsystems/monitoring/monitoring.h"
@@ -246,6 +256,10 @@ STATIC_INLINE void main_init(void)
 #ifdef OPS_OPTION
 	ops_init();
 #endif	/* OPS_OPTION */
+
+#ifdef BBOX_OPTION
+	bbox_init();
+#endif	/* BBOX_OPTION */
 
 #ifdef MONITORING_OPTION
     monitoring_init();
@@ -455,8 +469,6 @@ STATIC_INLINE void failsafe_check(void)
 
 }
 
-
-
 STATIC_INLINE void main_event(void)
 {
 	#ifdef WDG_OPTION
@@ -499,4 +511,9 @@ STATIC_INLINE void main_event(void)
 #endif
 
   modules_event_task();
+
+#ifdef BBOX_OPTION
+	bbox_task();
+#endif	/* BBOX_OPTION */
+
 }

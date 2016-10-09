@@ -663,7 +663,7 @@ static void cali_process(void)
 		{
 			cali_info.mag_state = CALI_MAG_STATE_FINISHED_FAIL;
 			xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
-			DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
+			DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(SecondChannel, SecondDevice, &cali_info.mag_state);
 			return;
 		}
 		err_last = err;
@@ -702,7 +702,7 @@ static void cali_process(void)
 	autopilot_mag_cali_store();
 	cali_info.mag_state = CALI_MAG_STATE_FINISHED_SUCCESS;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
-	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
+	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(SecondChannel, SecondDevice, &cali_info.mag_state);
     //printf("MAG_X_NEUTRAL = %d \n",(int)p0[0]);
     //printf("MAG_Y_NEUTRAL = %d \n",(int)p0[1]);
     //printf("MAG_Z_NEUTRAL = %d \n",(int)p0[2]);
@@ -740,7 +740,7 @@ void cali_mag_begin(void)
 		cali_info.mag_entry_flag = TRUE;
 	}
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
-	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state); 
+	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(SecondChannel, SecondDevice, &cali_info.mag_state); 
 }
 
 /***********************************************************************
@@ -753,7 +753,7 @@ void cali_mag_end(void)
 {
 	cali_info.mag_state = CALI_MAG_STATE_WAIT_FINISHED;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);
-	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(DefaultChannel, DefaultDevice, &cali_info.mag_state);
+	DOWNLINK_SEND_CALIBRATION_AC_RC_STATE(SecondChannel, SecondDevice, &cali_info.mag_state);
 	if(cali_info.mag_entry_flag == TRUE)
 	{
 		cali_info.mag_entry_flag = FALSE;
