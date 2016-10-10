@@ -25,6 +25,7 @@
  * @brief Arch independent mcu ( Micro Controller Unit ) utilities.
  */
 #include <string.h>
+#include <stdio.h>
 #include "mcu.h"
 #include "std.h"
 #ifndef NPS_SIMU
@@ -78,6 +79,12 @@
 #ifdef FAULT_OPTION
 #include <libopencm3/stm32/rcc.h>
 #endif
+
+#ifndef BBOX_OPTION
+#include "bbox_msg_if.h"   
+#include"subsystems/bbox/bbox_if.h"
+#include "subsystems/datalink/can_transport.h"
+#endif	/* BBOX_OPTION */
 
 #endif /* PERIPHERALS_AUTO_INIT */
 
@@ -239,13 +246,14 @@ void mcu_init(void)
   udp_arch_init();
 #endif
 
+#ifdef BBOX_OPTION
+	bbox_init();
+#endif	/* BBOX_OPTION */
+
 #ifdef CALIBRATION_OPTION
   sd_fatfs_init();
   #ifdef FAULT_OPTION
-  if(mcu_info.pw_is_first_on == FALSE)
-  {
-  	mcu_write_file_fault();
-  }
+  mcu_write_file_fault();
   #endif	/* FAULT_OPTION */
 #endif	/* CALIBRATION_OPTION */
 
@@ -506,25 +514,63 @@ void mcu_set_task_wdg_flag(uint16_t task_id)
 ***********************************************************************/
 void mcu_write_file_fault(void)
 {
-    sd_write_file_fault("<--- mcu_fault_info_start --->", 0, 1);
-	sd_write_file_fault("mcu_reset_source", mcu_fault_info.reset_src, 0);
-	sd_write_file_fault("mcu_reset_type", mcu_fault_info.reset_type, 0);
-	sd_write_file_fault("mcu_reset_time", sys_time.nb_sec, 0);
-#ifdef WDG_OPTION
-	sd_write_file_fault("mcu_watchdog_flag", mcu_watchdog_flag, 0);
-#endif
-	sd_write_file_fault("mcu_fault_info.msp", mcu_fault_info.msp, 0);
-	sd_write_file_fault("mcu_fault_info.hfsr", mcu_fault_info.hfsr, 0);
-	sd_write_file_fault("mcu_fault_info.bfar", mcu_fault_info.bfar, 0);
-	sd_write_file_fault("mcu_fault_info.cfsr", mcu_fault_info.cfsr, 0);
-	sd_write_file_fault("mcu_fault_info.mmfar", mcu_fault_info.mmfar, 0);
+	if(mcu_info.pw_is_first_on == FALSE)
+  	{
 	
-	for(uint8_t i=0; i<15; i++)
-	{
-		sd_write_file_fault("mcu_fault_info.msp_data", mcu_fault_info.msp_data[i], 0);
-	}
+	#ifndef BBOX_OPTION
+		sd_write_file_fault("<--- mcu_fault_info_start --->", 0, 1);
+		sd_write_file_fault("mcu_reset_source", mcu_fault_info.reset_src, 0);
+		sd_write_file_fault("mcu_reset_type", mcu_fault_info.reset_type, 0);
+		sd_write_file_fault("mcu_reset_time", sys_time.nb_sec, 0);
+		#ifdef WDG_OPTION
+		sd_write_file_fault("mcu_watchdog_flag", mcu_watchdog_flag, 0);
+		#endif
+		sd_write_file_fault("mcu_fault_info.msp", mcu_fault_info.msp, 0);
+		sd_write_file_fault("mcu_fault_info.hfsr", mcu_fault_info.hfsr, 0);
+		sd_write_file_fault("mcu_fault_info.bfar", mcu_fault_info.bfar, 0);
+		sd_write_file_fault("mcu_fault_info.cfsr", mcu_fault_info.cfsr, 0);
+		sd_write_file_fault("mcu_fault_info.mmfar", mcu_fault_info.mmfar, 0);
+		
+		for(uint8_t i=0; i<15; i++)
+		{
+			sd_write_file_fault("mcu_fault_info.msp_data", mcu_fault_info.msp_data[i], 0);
+		}
 
-	sd_write_file_fault("<--- mcu_fault_info_end --->", 0, 2);
+		sd_write_file_fault("<--- mcu_fault_info_end --->", 0, 2);
+	#else
+		uint8_t len;
+	    char temp_buf[256];
+
+		len = sprintf(temp_buf, "reset_src:%x", mcu_fault_info.reset_src);
+	    bbox_write_file_fault(temp_buf, len);
+		len = sprintf(temp_buf, "type:%x", mcu_fault_info.reset_type);
+	    bbox_write_file_fault(temp_buf, len);
+		len = sprintf(temp_buf, "time:%x", sys_time.nb_sec);
+	    bbox_write_file_fault(temp_buf, len);
+		#ifdef WDG_OPTION
+		len = sprintf(temp_buf, "wdg:%x", mcu_watchdog_flag);
+	    bbox_write_file_fault(temp_buf, len);
+		#endif
+		bbox_send_polling();
+		len = sprintf(temp_buf, "msp:%x", mcu_fault_info.msp);
+	    bbox_write_file_fault(temp_buf, len);
+		len = sprintf(temp_buf, "hfsr:%x", mcu_fault_info.hfsr);
+	    bbox_write_file_fault(temp_buf, len);
+		len = sprintf(temp_buf, "bfar:%x", mcu_fault_info.bfar);
+	    bbox_write_file_fault(temp_buf, len);
+		len = sprintf(temp_buf, "cfsr:%x", mcu_fault_info.cfsr);
+	    bbox_write_file_fault(temp_buf, len);
+		len = sprintf(temp_buf, "mmfar:%x", mcu_fault_info.mmfar);
+	    bbox_write_file_fault(temp_buf, len);
+		bbox_send_polling();
+		for(uint8_t i=0; i<13; i++)
+		{
+			len = sprintf(temp_buf, "msp:%x", mcu_fault_info.msp_data[i]);
+	    	bbox_write_file_fault(temp_buf, len);
+		}
+		bbox_send_polling();
+	#endif	/* BBOX_OPTION */
+	}
 }
 #endif	/* FAULT_OPTION */
 

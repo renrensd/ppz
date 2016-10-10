@@ -29,8 +29,8 @@
 
 
 struct can_transport can_tp;
-uint32_t can_t1,can_t2,can_tt,can_tta[300];
-uint8_t can_tt_index = 0;
+//uint32_t can_t1,can_t2,can_tt,can_tta[300];
+//uint8_t can_tt_index = 0;
 
 static void can_increment_buf(uint16_t *buf_idx, uint16_t len);
 static void put_1byte(struct can_transport *trans, struct link_device *dev, const uint8_t byte);
@@ -66,7 +66,7 @@ static void can_transport_send_msg(struct can_transport *p, uint8_t len);
 
 static void put_1byte(struct can_transport *trans, struct link_device *dev, const uint8_t byte)
 {
-	if(bbox_info.con_flag == TRUE)
+	if(bbox_info.start_log == TRUE)
   	{
 	  	dev->put_byte(dev->periph, byte);
   	}
@@ -93,7 +93,7 @@ static void put_named_byte(struct can_transport *trans, struct link_device *dev,
 
 static uint8_t size_of(struct can_transport *trans, uint8_t len)
 { 
-  	if(bbox_info.con_flag == TRUE)
+  	if(bbox_info.start_log == TRUE)
   	{
 		trans->tx_frame_len = len + 12;
 		return (len + 12);
@@ -106,9 +106,9 @@ static uint8_t size_of(struct can_transport *trans, uint8_t len)
 
 static void start_message(struct can_transport *trans, struct link_device *dev, uint8_t payload_len)
 {
-   	if(bbox_info.con_flag == TRUE)
+   	if(bbox_info.start_log == TRUE)
 	{
-		can_t1 = get_sys_time_usec();
+		//can_t1 = get_sys_time_usec();
 		dev->nb_msgs++;
 		dev->put_byte(dev->periph, (uint8_t)trans->tx_frame_len);
 		dev->put_byte(dev->periph, CAN_VAL_STX);
@@ -127,10 +127,13 @@ static void start_message(struct can_transport *trans, struct link_device *dev, 
 
 static void end_message(struct can_transport *trans, struct link_device *dev)
 {
-  	if(bbox_info.con_flag == TRUE)
+  	if(bbox_info.start_log == TRUE)
   	{
-	  	dev->put_byte(dev->periph, trans->cs_tx);
-		trans->tx_frame_counter++;
+		//if( can_check_free_space(p, 1) )
+		{
+			dev->put_byte(dev->periph, trans->cs_tx);
+			trans->tx_frame_counter++;
+		}
   	}
 }
 
@@ -203,6 +206,10 @@ void can_put_byte(struct can_transport *p, uint8_t byte)
 		p->cs_tx ^= byte;
 	  	can_increment_buf(&p->tx_insert_idx, 1);
 	}
+	else
+	{
+		//p->device.nb_ovrn++;	//TODOM:
+	}
 }
 
 /***********************************************************************
@@ -249,8 +256,8 @@ static void can_transport_tx_proc(struct can_transport *p)
 			can_transport_send_msg(p, p->tx_rem_len);
 			p->tx_rem_len = 0;
 
-			can_t2 = get_sys_time_usec();
-			can_tta[can_tt_index++] = can_t2 - can_t1;
+			//can_t2 = get_sys_time_usec();
+			//can_tta[can_tt_index++] = can_t2 - can_t1;
 		 }
 		 else
 		 {

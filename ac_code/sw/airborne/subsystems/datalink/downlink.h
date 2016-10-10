@@ -91,7 +91,7 @@
 #endif
 
 
-#if 1//def BBOX_OPTION
+#if 0//def BBOX_OPTION
 #define DefaultChannel can_tp	//pprz_tp\can_tp\pta_tp.
 #define DefaultDevice can_tp	//uart2\can_tp.
 #else

@@ -257,10 +257,6 @@ STATIC_INLINE void main_init(void)
 	ops_init();
 #endif	/* OPS_OPTION */
 
-#ifdef BBOX_OPTION
-	bbox_init();
-#endif	/* BBOX_OPTION */
-
 #ifdef MONITORING_OPTION
     monitoring_init();
 #endif

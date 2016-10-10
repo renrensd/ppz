@@ -58,7 +58,7 @@ typedef enum
 }MCU_RESET_TYPE;
 
 void mcu_fault_info_handle(uint16_t msp_offset);
-void mcu_write_file_fault(void);
+extern void mcu_write_file_fault(void);
 void mcu_check_reset_source(void);
 void mcu_set_reset_type(uint8_t type);
 void mcu_usagefault_test(void);

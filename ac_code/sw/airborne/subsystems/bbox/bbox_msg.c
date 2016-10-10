@@ -21,6 +21,8 @@
 /**** System include files ****/
 #include "../../../include/std.h"
 /*---Public include files---------------------------------------------*/
+#include "mcu.h"
+
 #include "modules/system/timer_if.h"
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
@@ -63,12 +65,18 @@ void bbox_msg_heart_beat(void)
 *******************************************************************************/
 void bbox_msg_log_start(void)
 {
-	uint8_t arg[4];
+	uint8_t arg[9];
    	arg[0] = BBOX_LOG_DATA_SERVICE;
 	arg[1] = 0x00;
 	arg[2] = 0x00;	//start log.
+	arg[3] = 16;	//year
+	arg[4] = 9;		//month
+	arg[5] = 27;	//day
+	arg[6] = 12;	//hour
+	arg[7] = 01;	//minute
+	arg[8] = 16;	//secondsd
 	
-   	bbox_can_msg_send(3, &arg[0]);
+   	bbox_can_msg_send(9, &arg[0]);
 }
 
 /*******************************************************************************
@@ -87,6 +95,26 @@ void bbox_msg_log_end(void)
    	bbox_can_msg_send(3, &arg[0]);
 }
 
+/*******************************************************************************
+**  FUNCTION      : bbox_write_file_fault                                         
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void bbox_write_file_fault(char *buf, uint8_t len)
+{
+	uint8_t arg[256];
+	uint8_t i;
+   	arg[0] = BBOX_FAULT_DATA_SERVICE;
+	arg[1] = 0x01;
+	for(i=0; i<len; i++)
+	{
+		arg[2+i] = *buf++;
+	}
+	
+   	bbox_can_msg_send(len+2, &arg[0]);
+}
+
 /***********************************************************************
 *  Name        : bbox_msg_handle
 *  Description :      
@@ -101,13 +129,32 @@ void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len)
 	if(can_id == CANID_BBOX)
 	{
 		bbox_info.con_flag = TRUE;
-		
+		tm_create_timer(TIMER_BBOX_HEART_BEAT_TIMEOUT, (4000 MSECONDS), TIMER_ONE_SHOT, 0);
 		switch(frame[2])
 		{
 			case BBOX_MANAGE_SERVICE:
 				bbox_msg_heart_beat();
-				tm_create_timer(TIMER_BBOX_HEART_BEAT_TIMEOUT, (3000 MSECONDS), TIMER_ONE_SHOT, 0);
-				bbox_msg_log_start();
+				if(bbox_info.first_con == FALSE)
+				{
+					bbox_info.first_con = TRUE;
+					#ifdef FAULT_OPTION
+					mcu_write_file_fault();
+					#endif	/* FAULT_OPTION */
+					bbox_msg_log_start();
+				}
+				break;
+			case BBOX_LOG_DATA_SERVICE:
+				if(frame[3] == 0x00)
+				{
+					if(frame[4] == BBOX_POSITIVE_RESULT)
+					{
+						if(frame[5] == 0x00)	//start log response ok.
+						{
+							bbox_info.start_log = TRUE;
+						}
+					}
+				}
+				
 				break;
 
 			default:
@@ -152,29 +199,36 @@ void bbox_can_send_frame(struct can_transport *p, uint8_t nArgs, uint8_t const *
 {
 	uint8_t i;
 	
-	can_put_byte(p, nArgs + CAN_FRAME_MSG_EXTRA_LEN);	//first put frame total length to tx fifo.
-	can_put_byte(p, CAN_VAL_STX);
-	can_put_byte(p, CAN_VAL_FIX1);
-	p->cs_tx = 0;
-	can_put_byte(p, 0x00);	//MSB frame length set to 0.
-	can_put_byte(p, (uint8_t)(nArgs + CAN_FRAME_EXTRA_LEN));
-	can_put_byte(p, p->trans_tx.tx_seq++);
-	can_put_byte(p, (uint8_t)(p->tx_canid >> 8));
-	can_put_byte(p, (uint8_t)(p->tx_canid & 0xFF));
-	
-	uint32_t ts = get_sys_time_usec() / 100;
-	can_put_byte(p, (uint8_t)(ts&0xFF));
-	can_put_byte(p, (uint8_t)(ts>>8 & 0xFF));
-	can_put_byte(p, (uint8_t)(ts>>16 & 0xFF));
-	can_put_byte(p, (uint8_t)(ts>>24 & 0xFF));
-	
-	for(i=0; i<nArgs; i++)
+	if( p->device.check_free_space(p, nArgs + CAN_FRAME_MSG_EXTRA_LEN + 1) )
 	{
-		 can_put_byte(p, pArg[i]);
-	}
+		can_put_byte(p, nArgs + CAN_FRAME_MSG_EXTRA_LEN);	//first put frame total length to tx fifo.
+		can_put_byte(p, CAN_VAL_STX);
+		can_put_byte(p, CAN_VAL_FIX1);
+		p->cs_tx = 0;
+		can_put_byte(p, 0x00);	//MSB frame length set to 0.
+		can_put_byte(p, (uint8_t)(nArgs + CAN_FRAME_EXTRA_LEN));
+		can_put_byte(p, p->trans_tx.tx_seq++);
+		can_put_byte(p, (uint8_t)(p->tx_canid >> 8));
+		can_put_byte(p, (uint8_t)(p->tx_canid & 0xFF));
+		
+		uint32_t ts = get_sys_time_usec() / 100;
+		can_put_byte(p, (uint8_t)(ts&0xFF));
+		can_put_byte(p, (uint8_t)(ts>>8 & 0xFF));
+		can_put_byte(p, (uint8_t)(ts>>16 & 0xFF));
+		can_put_byte(p, (uint8_t)(ts>>24 & 0xFF));
+		
+		for(i=0; i<nArgs; i++)
+		{
+			 can_put_byte(p, pArg[i]);
+		}
 
-	can_put_byte(p, p->cs_tx);
-	p->tx_frame_counter++;	//successfully put one frame data to tx fifo.
+		can_put_byte(p, p->cs_tx);
+		p->tx_frame_counter++;	//successfully put one frame data to tx fifo.
+	}
+	else
+	{
+		p->device.nb_ovrn++;
+	}
 }
 /**************** END OF FILE *****************************************/
 

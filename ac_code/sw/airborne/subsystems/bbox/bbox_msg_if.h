@@ -33,6 +33,10 @@
 
 /**** Declaration of functions ****/
 extern void bbox_msg_heart_beat(void);
+extern void bbox_msg_log_start(void);
+extern void bbox_msg_log_end(void);
+extern void bbox_write_file_fault(char *buf, uint8_t len);
+
 extern void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len);
 
 #endif /*_BBOX_MSG_IF_H_*/

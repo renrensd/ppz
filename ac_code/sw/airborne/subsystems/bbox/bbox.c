@@ -61,6 +61,9 @@ void bbox_task(void)
 void bbox_init(void)
 {
 	bbox_can_init();
+	bbox_info.first_con = FALSE;
+	bbox_info.con_flag = TRUE;
+	bbox_info.start_log = FALSE;
 	//tm_create_timer(TIMER_CAN_TEST_MSG, (40 MSECONDS), TIMER_PERIODIC,0);
 }
 
