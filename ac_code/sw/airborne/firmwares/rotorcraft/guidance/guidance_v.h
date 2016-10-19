@@ -32,6 +32,8 @@
 #include "firmwares/rotorcraft/guidance/guidance_v_ref.h"
 #include "firmwares/rotorcraft/guidance/guidance_v_adapt.h"
 
+#include "controllers/pid.h"
+
 #define GUIDANCE_V_MODE_KILL      0
 #define GUIDANCE_V_MODE_RC_DIRECT 1
 #define GUIDANCE_V_MODE_RC_CLIMB  2
@@ -62,10 +64,16 @@ struct _s_guidance_v
 	float NED_z_pos;
 	float acc_filter_fc;
 	float speed_filter_fc;
-	float accd_filter_fc;
 	float acc_filter_coef;
 	float speed_filter_coef;
-	float accd_filter_coef;
+	struct _s_pid acc_z_pid;
+	struct _s_pid speed_z_pid;
+	struct _s_pid pos_z_pid;
+	float rc_speed_z;
+	float rc_acc_z;
+	float ref_pos_z;
+	float ref_speed_z;
+	float ref_acc_z;
 };
 
 extern struct _s_guidance_v guid_v;
