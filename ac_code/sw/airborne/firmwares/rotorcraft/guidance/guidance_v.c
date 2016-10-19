@@ -239,6 +239,7 @@ static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
 
 static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
 {
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_TUNE_VERT(trans, dev, AC_ID,
 			&guidance_v_z_sp,
 			&(stateGetPositionNed_i()->z),
