@@ -450,6 +450,9 @@ void guidance_v_run(bool_t in_flight)
 		gv_adapt_init();
 	}
 
+	//TEST_CASE
+	guidance_v_mode = GUIDANCE_V_MODE_HOVER;
+
 	switch (guidance_v_mode)
 	{
 
@@ -663,8 +666,9 @@ static void run_hover_loop(bool_t in_flight)
 	guid_v.acc_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.acc_filter_fc;
 	guid_v.speed_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.speed_filter_fc;
 
-	guid_v.NED_z_acc = pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_acc, stateGetAccelNed_f()->z);
-	guid_v.NED_z_speed = pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_speed, stateGetSpeedNed_f()->z);
+	guid_v.NED_z_acc = pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_acc, ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
+	guid_v.NED_z_speed = pid_simple_filter(guid_v.speed_filter_coef, guid_v.NED_z_speed, SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z));
+	guid_v.NED_z_pos = POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
 
 	guid_v.rc_speed_z = SPEED_FLOAT_OF_BFP(guidance_v_rc_zd_sp);
 	guid_v.rc_acc_z = guid_v.rc_speed_z;
@@ -682,7 +686,7 @@ static void run_hover_loop(bool_t in_flight)
 	}
 	else
 	{
-		guid_v.pid_loop_mode_now = ACC_SPEED;
+		guid_v.pid_loop_mode_now = guid_v.pid_loop_mode;
 	}
 
 	if ((guid_v.pid_loop_mode_now == ACC_SPEED)
