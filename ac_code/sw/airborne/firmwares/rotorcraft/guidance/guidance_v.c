@@ -224,8 +224,6 @@ void Tracking_differntiator(float signal)
 
 static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
 {
-	int32_t pos_deta_test = (guidance_v_rc_zd_sp)>>(INT32_SPEED_FRAC-INT32_POS_FRAC);
-	int32_t pos_desired = pos_deta_test + guidance_v_z_sp;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_VERT_LOOP(trans, dev, AC_ID,
 			&guid_v.NED_z_acc,
@@ -236,8 +234,7 @@ static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
 			&guid_v.ref_pos_z,
 			&guid_v.acc_z_pid.out,
 			&guid_v.speed_z_pid.out,
-			&guid_v.pos_z_pid.out
-		);
+			&guid_v.pos_z_pid.out);
 }
 
 static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
