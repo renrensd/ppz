@@ -34,7 +34,8 @@
       <define name="SERVO_HZ" value="400"/>
     </subsystem>
 
-    <subsystem name="telemetry" type="xbee_api"/>
+    <!--subsystem name="telemetry" type="xbee_api"/-->
+    <subsystem name="telemetry" type="transparent_usb"/>
     <subsystem name="stabilization" type="float_double"/>
     <subsystem name="gps" type="nmea"/>
        <define name="USE_GPS_HEADING"/>
