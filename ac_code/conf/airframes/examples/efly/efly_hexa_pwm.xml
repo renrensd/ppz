@@ -37,10 +37,14 @@
     <subsystem name="telemetry" type="xbee_api"/>
     <!--subsystem name="telemetry" type="transparent_usb"/-->
     <subsystem name="stabilization" type="float_double"/>
-    <subsystem name="gps" type="nmea"/>
+    <subsystem name="gps" type="nmea">
        <define name="USE_GPS_HEADING"/>
        <define name="GPS_INSTALL_BIAS"/>
-    <subsystem name="imu" type="mpu9250_spi"/>
+    </subsystem>
+    <subsystem name="imu" type="mpu9250_spi">
+    	<define name="GYRO_FILTER_FC" value="25"/>
+    	<define name="ACC_FILTER_FC" value="10"/>
+    </subsystem>
     <!--subsystem name="imu" type="adiv1">
       <define name="IMU_ADIV1_OPTION" value="1"/>
    </subsystem-->
@@ -64,7 +68,7 @@
     <!--define name="USE_ADC_2" value="1"/-->
   </firmware>
 
-  <modules main_freq="500">
+  <modules main_freq="512">
     <!--load name="gps_ubx_ucenter.xml"/-->
     <load name="send_imu_mag_current.xml"/>
     <load name="agl_dist.xml"/>

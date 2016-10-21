@@ -62,6 +62,7 @@ struct InsInt {
   float qfe;
   bool_t baro_initialized;
   bool_t baro_valid;
+  float R_baro;
 
 #if 1 //USE_SONAR
   bool_t update_on_agl; ///< use sonar to update agl if available
