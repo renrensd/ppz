@@ -68,7 +68,7 @@
     <!--load name="gps_ubx_ucenter.xml"/-->
     <load name="send_imu_mag_current.xml"/>
     <load name="agl_dist.xml"/>
-    <!--load name="acc_cali.xml"/-->
+    <load name="acc_cali.xml"/>
     <!--load name="sonar_uart_MB12xx.xml"/-->
     <!--load name="sonar_i2c_mb1242.xml"/-->
     <!--load name="sonar_uart_US100.xml"/-->
@@ -128,12 +128,12 @@
     <define name="GYRO_R_SENS" value="2.17953" integer="16"/>
 
 	<!--no5 imu-->
-<define name="ACCEL_X_NEUTRAL" value="4"/>
-<define name="ACCEL_Y_NEUTRAL" value="-28"/>
-<define name="ACCEL_Z_NEUTRAL" value="273"/>
-<define name="ACCEL_X_SENS" value="2.452163" integer="16"/>
-<define name="ACCEL_Y_SENS" value="2.450681" integer="16"/>
-<define name="ACCEL_Z_SENS" value="2.44507" integer="16"/>
+<define name="ACCEL_X_NEUTRAL" value="-1"/>
+<define name="ACCEL_Y_NEUTRAL" value="-7"/>
+<define name="ACCEL_Z_NEUTRAL" value="67"/>
+<define name="ACCEL_X_SENS" value="2.46287" integer="16"/>
+<define name="ACCEL_Y_SENS" value="2.453918" integer="16"/>
+<define name="ACCEL_Z_SENS" value="2.429503" integer="16"/>
 
 <define name="MAG_X_NEUTRAL" value="-76"/>
 <define name="MAG_Y_NEUTRAL" value="4"/>
