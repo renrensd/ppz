@@ -128,7 +128,9 @@ void imu_init(void)
 {
   gyro_offset_success = TRUE;  //unuse offset
   imu_cutoff_fre = 25;
+#if USE_ATT_BF
   LPF2pSetCutoffFreq_IMU(512.0, imu_cutoff_fre);
+#endif
   
 #ifdef IMU_POWER_GPIO
   gpio_setup_output(IMU_POWER_GPIO);

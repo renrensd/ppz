@@ -33,8 +33,8 @@ TIMER(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG,      spray_break_continual_msg,      
 TIMER(TIMER_XBEE_HEARTBEAT_MSG,                 xbee_msg_aircraft_ready_broadcast,      TIMER_TASK_TELEMETRY)
 #endif
 #ifdef BBOX_OPTION
-TIMER(TIMER_CAN_TEST_MSG,      can_transport_test_msg,              TIMER_TASK_EVENT)
-TIMER(TIMER_BBOX_HEART_BEAT_TIMEOUT,      bbox_heart_beat_timeout_handler,              TIMER_TASK_EVENT)
+TIMER(TIMER_CAN_NEW_LOG,      					bbox_can_log_start,              		TIMER_TASK_EVENT)
+TIMER(TIMER_BBOX_HEART_BEAT_TIMEOUT,      		bbox_heart_beat_timeout_handler,      	TIMER_TASK_EVENT)
 
 #endif
 END_TIMERS

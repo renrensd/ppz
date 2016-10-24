@@ -239,6 +239,46 @@
     <field name="s3" type="int8[]"/>
     <field name="f3" type="float[]"/>
   </message-->
+
+  <message name="UPGRADE_RESPONSE" id="221">
+    <description>link="A2G"
+    Request upgrade response.
+    type: AC=1, OPS=2, BBOX=3
+    state: OK=0, BUSY=2,3,4.
+    </description>
+    <field name="type" type="uint8"/>
+    <field name="state" type="uint8"/>
+  </message>
+
+  <message name="UPGRADE_STATUS" id="222">
+    <description>link="A2G"
+    AC upgrade status ready ok.
+    type: AC=1, OPS=2, BBOX=3
+    </description>
+    <field name="type" type="uint8"/>
+  </message>
+
+  <message name="REQUESET_FIRMWARE" id="224">
+    <description>link="A2G"
+    AC request fireware data:
+    type: AC=1, OPS=2, BBOX=3
+    frame: Current_frame=1, Next_frame=2
+    </description>
+    <field name="type" type="uint8"/>
+    <field name="frame" type="uint8"/>
+  </message>
+
+  <message name="UPGRADE_RESULT" id="225">
+    <description>link="A2G"
+    AC upgrade success or fail.
+    type: AC=1, OPS=2, BBOX=3
+    status: Success=0, Fail=1
+    </description>
+    <field name="type" type="uint8"/>
+    <field name="status" type="uint8"/>
+  </message>
+
+  
  </msg_class>
 
 
@@ -349,7 +389,49 @@
                  response  0=success, others=error_code
     </description>
     <field name="response" type="uint8"/>
-  </message> 
+  </message>
+
+  <message name="REQUEST_UPGRADE" id="221">
+    <description>link="G2A"
+    Request upgrade AC firmware.
+    type: AC=1, OPS=2, BBOX=3
+    </description>
+    <field name="type" type="uint8"/>
+  </message>
+
+  <message name="QUERY_UPGRADE_STATUS" id="222">
+    <description>link="G2A"
+    Query module firmware upgrade status:
+    type: AC=1, OPS=2, BBOX=3
+    </description>
+    <field name="type" type="uint8"/>
+  </message>
+
+  <message name="GCS_READY_OK" id="223">
+    <description>link="G2A"
+    GCS upgrade ready ok:
+    type: AC=1, OPS=2, BBOX=3
+    </description>
+    <field name="type" type="uint8"/>
+  </message>
+
+  <message name="GCS_SEND_FIRMWARE" id="224">
+    <description>link="G2A"
+    Send a frame data:
+    type: AC=1, OPS=2, BBOX=3
+    data: default a frame firmware data length is 140.
+    </description>
+    <field name="type" type="uint8"/>
+    <field name="data" type="uint8[]"/>
+  </message>
+
+  <message name="END_UPGRADE" id="225">
+    <description>link="G2A"
+    GCS end firmware upgrade:
+    type: AC=1, OPS=2, BBOX=3
+    </description>
+    <field name="type" type="uint8"/>
+  </message>
 
  </msg_class>
 

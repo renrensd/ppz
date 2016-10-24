@@ -64,12 +64,12 @@ void bbox_init(void)
 	bbox_info.first_con = FALSE;
 	bbox_info.con_flag = TRUE;
 	bbox_info.start_log = FALSE;
-	//tm_create_timer(TIMER_CAN_TEST_MSG, (40 MSECONDS), TIMER_PERIODIC,0);
+	tm_create_timer(TIMER_CAN_NEW_LOG, (600 SECONDS), TIMER_PERIODIC,0);
 }
 
-void can_transport_test_msg(void)
+void bbox_can_log_start(void)
 {
-	DOWNLINK_SEND_PONG(can_tp, can_tp);
+	bbox_msg_log_start();
 }
 
 /**************** END OF FILE *****************************************/

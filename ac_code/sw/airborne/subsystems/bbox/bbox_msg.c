@@ -66,15 +66,16 @@ void bbox_msg_heart_beat(void)
 void bbox_msg_log_start(void)
 {
 	uint8_t arg[9];
+	uint32_t ts = sys_time.nb_sec;
    	arg[0] = BBOX_LOG_DATA_SERVICE;
 	arg[1] = 0x00;
 	arg[2] = 0x00;	//start log.
 	arg[3] = 16;	//year
 	arg[4] = 9;		//month
 	arg[5] = 27;	//day
-	arg[6] = 12;	//hour
-	arg[7] = 01;	//minute
-	arg[8] = 16;	//secondsd
+	arg[6] = (uint8_t)(ts / 3600);	//hour
+	arg[7] = (uint8_t)(ts % 3600 / 60);	//minute
+	arg[8] = (uint8_t)(ts % 3600 % 60);	//second
 	
    	bbox_can_msg_send(9, &arg[0]);
 }
