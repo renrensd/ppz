@@ -131,6 +131,8 @@ void ahrs_mlkf_init(void)
   init_butterworth_2_low_pass(&filter_q, 0.00885, (1. / 512), 0.);
   init_butterworth_2_low_pass(&filter_r, 0.00885, (1. / 512), 0.);
 #endif
+
+  ahrs_mlkf.gps_h_stable_test = 2;
 }
 
 void ahrs_mlkf_set_body_to_imu(struct OrientationReps *body_to_imu)
