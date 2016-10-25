@@ -445,13 +445,14 @@ void autopilot_periodic(void)
    * downwards velocity setpoints.
    */
   // TEST_CASE
-  autopilot_mode = 1;
+  //autopilot_mode = 1;
   if (autopilot_mode == AP_MODE_KILL) {
     SetCommands(commands_failsafe);
   } 
   else {
     guidance_v_run(autopilot_in_flight);
     guidance_h_run(autopilot_in_flight);
+
     SetRotorcraftCommands(stabilization_cmd, autopilot_in_flight, autopilot_motors_on);
   }
   

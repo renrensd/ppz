@@ -449,7 +449,7 @@ void guidance_v_run(bool_t in_flight)
 	}
 
 	//TEST_CASE
-	guidance_v_mode = GUIDANCE_V_MODE_HOVER;
+	//guidance_v_mode = GUIDANCE_V_MODE_HOVER;
 
 	switch (guidance_v_mode)
 	{
