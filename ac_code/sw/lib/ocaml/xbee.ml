@@ -129,26 +129,17 @@ let api_tx64 = fun ?(frame_id = 0) dest data ->
   s.[0] <- api_tx64_id;
   s.[1] <- Char.chr frame_id;
   if !mode868 then begin
- (*   s.[2] <- Char.chr 0x00;
-    s.[3] <- Char.chr 0x13;
-    s.[4] <- Char.chr 0xa2;
-    s.[5] <- Char.chr 0x00;
-    s.[6] <- Char.chr 0x40;
-    s.[7] <- Char.chr 0xb4;
-    s.[8] <- Char.chr 0x7f;
-    s.[9] <- Char.chr 0x42;*)
-		
     s.[2] <- Char.chr 0x00;
     s.[3] <- Char.chr 0x13;
-    s.[4] <- Char.chr 0xa2;
+    s.[4] <- Char.chr 0xA2;
     s.[5] <- Char.chr 0x00;
     s.[6] <- Char.chr 0x40;
-    s.[7] <- Char.chr 0xd6;
-    s.[8] <- Char.chr 0xcf;
-    s.[9] <- Char.chr 0x07;
-    s.[10] <- Char.chr 0xff;
-    s.[11] <- Char.chr 0xfe;
-    s.[12] <- Char.chr 0x0;
+    s.[7] <- Char.chr 0xB9;
+    s.[8] <- Char.chr 0x59;
+    s.[9] <- Char.chr 0xAB;
+    s.[10] <- Char.chr 0xFF;
+    s.[11] <- Char.chr 0xFE;
+    s.[12] <- Char.chr 0x00;
   end;
   write_int64 s 2 dest;
   s.[10+optional868] <- Char.chr 0;
