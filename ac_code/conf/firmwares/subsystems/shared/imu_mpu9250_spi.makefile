@@ -19,8 +19,8 @@ IMU_MPU9250_SRCS   += $(SRC_SUBSYSTEMS)/imu/imu_mpu9250_spi.c
 IMU_MPU9250_SRCS   += peripherals/mpu9250.c
 IMU_MPU9250_SRCS   += peripherals/mpu9250_spi.c
 
-#IMU_MPU9250_SRCS   += peripherals/qmc5883.c
-IMU_MPU9250_SRCS   += peripherals/hmc58xx.c
+IMU_MPU9250_SRCS   += peripherals/qmc5883.c
+#IMU_MPU9250_SRCS   += peripherals/hmc58xx.c
 
 # set default SPI device and slave index
 ifeq ($(ARCH), lpc21)
