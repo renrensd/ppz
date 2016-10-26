@@ -36,14 +36,8 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 #define ACC_STATIC_VALUE_THRESHOLD	(0.05f)
 #define ACC_CALI_GRAB_TIME	(PERIODIC_FREQUENCY)
 #define IS_WITHIN_OPEN_RANGE(value,min,max)	( (((value) < (max)) && ((value) > (min))) ? 1:0 )
-
-#if IMU_MPU9250_ACCEL_RANGE == MPU9250_ACCEL_RANGE_8G
-	#define IMU_ACCEL_SENS_SCALE_FACTOR (4096)
-#elif IMU_MPU9250_ACCEL_RANGE == MPU9250_ACCEL_RANGE_16G
-	#define IMU_ACCEL_SENS_SCALE_FACTOR (2048)
-#else
-	#error "NO RANGE SETTING!"
-#endif
+// TODO: efly_hexa_pwm.xml definition "IMU_MPU9250_ACCEL_RANGE" is not valid here
+#define IMU_ACCEL_SENS_SCALE_FACTOR (2048)
 
 	uint16_t i,j;
 	uint8_t grab_enable;
