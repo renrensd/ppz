@@ -45,12 +45,12 @@
 
 <!DOCTYPE radio SYSTEM "radio.dtd">
 <radio name="cockpitSX (easy)" data_min="950" data_max="2100" sync_min ="5000" sync_max ="15000" pulse_type="POSITIVE">
- <channel ctl="A" function="ROLL"     min="2024" neutral="1516" max="1016" average="0"/> <!-- CH1 -->
- <channel ctl="B" function="PITCH"    min="2024" neutral="1510" max="1016" average="0"/>	 <!-- CH2 -->
- <channel ctl="C" function="THROTTLE" min="1016" neutral="1016" max="2024" average="0"/> <!-- CH3 -->
- <channel ctl="D" function="YAW"      min="2024" neutral="1516" max="1016" average="0"/> <!-- CH4 -->
- <channel ctl="E" function="MODE"    min="1016" neutral="1516" max="2024" average="0"/> <!-- CH5 -->
- <channel ctl="F" function="RADIO_KILL_SWITCH"    min="2024" neutral="1400" max="1016" average="0"/> <!-- CH6 -->
+ <channel ctl="A" function="ROLL"     min="1195" neutral="1520" max="1880" average="0"/> <!-- CH1 -->
+ <channel ctl="B" function="PITCH"    min="1880" neutral="1520" max="1195" average="0"/>	 <!-- CH2 -->
+ <channel ctl="C" function="THROTTLE" min="1195" neutral="1195" max="1880" average="0"/> <!-- CH3 -->
+ <channel ctl="D" function="YAW"      min="1195" neutral="1520" max="1880" average="0"/> <!-- CH4 -->
+ <channel ctl="E" function="MODE"    min="1880" neutral="1520" max="1195" average="0"/> <!-- CH5 -->
+ <channel ctl="F" function="RADIO_KILL_SWITCH"    min="1195" neutral="1520" max="1880" average="0"/> <!-- CH6 -->
  <channel ctl="G" function="GAIN1"     min="2024" neutral="1516" max="1016" average="1"/> <!-- CH7     -->
  <channel ctl="H" function="AUX2"    min="2024" neutral="2024" max="1016" average="1"/> <!-- CH8 -->
 </radio>
