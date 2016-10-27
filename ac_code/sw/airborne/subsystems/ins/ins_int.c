@@ -268,7 +268,7 @@ void ins_int_init(void)
   AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
   ins_int.baro_initialized = FALSE;
   ins_int.baro_valid =FALSE;
-  ins_int.R_baro = 10.0f;
+  ins_int.R_baro = 1000.0f;
 #endif
 
 #if USE_SONAR
