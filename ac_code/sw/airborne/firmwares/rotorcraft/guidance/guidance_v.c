@@ -36,6 +36,7 @@
 #include"subsystems/gps.h"
 
 #include "math/pprz_algebra_int.h"
+#include "controllers/pid.h"
 
 /* error if some gains are negative */
 #if (GUIDANCE_V_HOVER_KP < 0) ||                   \
@@ -266,6 +267,9 @@ void guidance_v_init(void)
 	vh0 = GUIDANCE_V_TD_H0;
 	r_vert = GUIDANCE_V_TD_R;
 
+	guid_v.acc_z_pid.Kp = 0.1f;
+	guid_v.acc_z_pid.Ki = 0.2f;
+
 	guidance_v_z_sum_err = 0;
 
 	guidance_v_nominal_throttle = GUIDANCE_V_NOMINAL_HOVER_THROTTLE;
@@ -286,7 +290,7 @@ void guidance_v_init(void)
 static guidance_v_get_temp_v_z_sp(void)
 {
 	guid_v.z_sp = stateGetPositionNed_i()->z;
-	guid_v.ref_pos_z = stateGetPositionNed_f()->z;
+	guid_v.ref_pos_z = - POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
 }
 
 static void guidance_v_controller_ini(void)
@@ -664,12 +668,12 @@ static void run_hover_loop(bool_t in_flight)
 	guid_v.acc_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.acc_filter_fc;
 	guid_v.speed_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.speed_filter_fc;
 
-	guid_v.NED_z_acc = pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_acc, ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
-	guid_v.NED_z_speed = pid_simple_filter(guid_v.speed_filter_coef, guid_v.NED_z_speed, SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z));
-	guid_v.NED_z_pos = POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
+	guid_v.NED_z_acc = - pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_acc, ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
+	guid_v.NED_z_speed = - pid_simple_filter(guid_v.speed_filter_coef, guid_v.NED_z_speed, SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z));
+	guid_v.NED_z_pos = - POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
 
-	guid_v.rc_speed_z = SPEED_FLOAT_OF_BFP(guidance_v_rc_zd_sp);
-	guid_v.rc_acc_z = guid_v.rc_speed_z;
+	guid_v.rc_speed_z = - SPEED_FLOAT_OF_BFP(guidance_v_rc_zd_sp);
+	guid_v.rc_acc_z = 3 * guid_v.rc_speed_z;
 
 	if (guid_v.pid_loop_mode == ACC_SPEED_POS)
 	{
@@ -708,7 +712,7 @@ static void run_hover_loop(bool_t in_flight)
 	}
 	pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
 
-	guidance_v_delta_t = - guid_v.acc_z_pid.out * (0.8f * (float)MAX_PPRZ);
+	guidance_v_delta_t = guid_v.acc_z_pid.out * (0.8f * (float)MAX_PPRZ);
 	/* bound the result */
 	Bound(guidance_v_delta_t, 0, MAX_PPRZ);
 
