@@ -22,6 +22,7 @@
     <!--define name="WITHOUT_RADIO"/-->   <!--not use radio_control-->
     <define name="RADIO_KILL_SWITCH" value="1"/>    
     <define name="USE_FLIGHT_HEIGHT_LIMIT"/>
+	<!--define name="ESC_CALIBRATION"/-->
 
     <!--define name="MILLIAMP_AT_FULL_THROTTLE" value="80000"/-->
 
@@ -285,19 +286,19 @@
     <define name="PHIRATE_IGAIN" value="800.0"/>
     <define name="PHIRATE_PGAIN" value="1200.0"/>
     <define name="PHIRATE_DGAIN" value="45.0"/>
-    <define name="PHIRATE_FFGAIN" value="45.0"/>
+    <define name="PHIRATE_FFGAIN" value="0.0"/>
 
     <define name="THETA_PGAIN" value="4"/>
     <define name="THETARATE_IGAIN" value="800.0"/>
     <define name="THETARATE_PGAIN" value="1200"/>
     <define name="THETARATE_DGAIN" value="45.0"/>
-    <define name="THETARATE_FFGAIN" value="45.0"/>
+    <define name="THETARATE_FFGAIN" value="0.0"/>
 
     <define name="PSI_PGAIN" value="15.0"/>
     <define name="PSIRATE_IGAIN" value="700.0"/>
     <define name="PSIRATE_PGAIN" value="1200"/>
     <define name="PSIRATE_DGAIN" value="50"/>
-    <define name="PSIRATE_FFGAIN" value="50"/>
+    <define name="PSIRATE_FFGAIN" value="0"/>
 
 
 
@@ -364,8 +365,10 @@
 
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/>
-    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <!--define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/-->
+    <!--define name="MODE_AUTO2" value="AP_MODE_NAV"/-->
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/> 
+    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_Z_HOLD"/>
   </section>
 
   <section name="BAT">
