@@ -45,7 +45,6 @@ struct MotorMixing {
 extern struct MotorMixing motor_mixing;
 
 extern void motor_mixing_init(void);
-void motor_mixing_esc_calibration(bool_t motors_on, pprz_t in_cmd[]);
 extern void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[]);
 extern void motor_mixing_run_spinup(uint32_t counter, uint32_t max_counter);
 

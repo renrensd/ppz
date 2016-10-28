@@ -357,14 +357,10 @@ STATIC_INLINE void main_periodic(void)
   /* run control loops */
   autopilot_periodic();
   /* set actuators     */
-#ifdef ESC_CALIBRATION
-  motor_mixing_esc_calibration(autopilot_motors_on, commands);
+#ifndef INTER_MCU_AP
+	SetActuatorsFromCommands(commands, autopilot_mode);
 #else
-	#ifndef INTER_MCU_AP
-		SetActuatorsFromCommands(commands, autopilot_mode);
-	#else
-		intermcu_set_actuators(commands, autopilot_mode);
-	#endif
+	intermcu_set_actuators(commands, autopilot_mode);
 #endif
   if (autopilot_in_flight) {
     RunOnceEvery(PERIODIC_FREQUENCY, autopilot_flight_time++);
