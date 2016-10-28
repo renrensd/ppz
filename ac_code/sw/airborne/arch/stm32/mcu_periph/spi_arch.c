@@ -814,8 +814,8 @@ void spi2_arch_init(void)
   gpio_setup_pin_af(SPI2_GPIO_PORT_MOSI, SPI2_GPIO_MOSI, SPI2_GPIO_AF, TRUE);
   gpio_setup_pin_af(SPI2_GPIO_PORT_SCK, SPI2_GPIO_SCK, SPI2_GPIO_AF, TRUE);
 
-  gpio_set_output_options(SPI2_GPIO_PORT_MOSI, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, SPI2_GPIO_MOSI);
-  gpio_set_output_options(SPI2_GPIO_PORT_SCK, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, SPI2_GPIO_SCK);
+  gpio_set_output_options(SPI2_GPIO_PORT_MOSI, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, SPI2_GPIO_MOSI);
+  gpio_set_output_options(SPI2_GPIO_PORT_SCK, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, SPI2_GPIO_SCK);
 #endif
 
   // reset SPI

@@ -81,10 +81,14 @@
 #endif
 
 #ifndef BBOX_OPTION
-#include "bbox_msg_if.h"   
+#include "subsystems/bbox/bbox_msg_if.h"   
 #include"subsystems/bbox/bbox_if.h"
 #include "subsystems/datalink/can_transport.h"
 #endif	/* BBOX_OPTION */
+
+#ifndef FRAM_OPTION
+#include "subsystems/fram/fram_if.h"
+#endif	/* FRAM_OPTION */
 
 #endif /* PERIPHERALS_AUTO_INIT */
 
@@ -119,7 +123,8 @@ void WEAK board_init(void)
 	gpio_setup_output(OPS_PWR_EN_GPIO);
   	gpio_set(OPS_PWR_EN_GPIO);
 	
-    //gpio_setup_input_pulldown(DEBUG_GPIO);
+    //gpio_setup_output(DEBUG_GPIO);
+  	//gpio_clear(DEBUG_GPIO);
   #endif
 }
 

@@ -108,6 +108,10 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include "wdg.h"
 #endif
 
+#ifndef FRAM_OPTION
+#include "subsystems/fram/fram_if.h"
+#endif	/* FRAM_OPTION */
+
 /* if PRINT_CONFIG is defined, print some config options */
 PRINT_CONFIG_VAR(PERIODIC_FREQUENCY)
 
@@ -192,6 +196,11 @@ int main(void)
 STATIC_INLINE void main_init(void)
 {
   mcu_init();
+
+#ifdef FRAM_OPTION
+  fram_init();
+#endif
+ 
 
 #if defined(PPRZ_TRIG_INT_COMPR_FLASH)
   pprz_trig_int_init();
