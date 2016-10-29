@@ -33,6 +33,7 @@
 #include "firmwares/rotorcraft/guidance/guidance_v_adapt.h"
 
 #include "controllers/pid.h"
+#include "filters/low_pass_filter.h"
 
 #define GUIDANCE_V_MODE_KILL      0
 #define GUIDANCE_V_MODE_RC_DIRECT 1
@@ -74,6 +75,7 @@ struct _s_guidance_v
 	float ref_pos_z;
 	float ref_speed_z;
 	float ref_acc_z;
+	Butterworth2LowPass_int NED_z_acc_filter;
 };
 
 extern struct _s_guidance_v guid_v;

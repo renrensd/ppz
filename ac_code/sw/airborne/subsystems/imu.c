@@ -120,16 +120,11 @@ static void send_mag(struct transport_tx *trans, struct link_device *dev)
 
 struct Imu imu;
 
-float imu_butterworth_2_get_tau(float fc)
-{
-	return 1.0f/(2.0f * 3.1415926f * fc);
-}
-
 void imu_init(void)
 {
   gyro_offset_success = TRUE;  //unuse offset
-  imu.gyro_filter_fc = GYRO_FILTER_FC;
-  imu.acc_filter_fc = ACC_FILTER_FC;
+  imu.gyro_filter_fc = 25;
+  imu.acc_filter_fc = 10;
   init_butterworth_2_low_pass_int(&(imu.gyro_x_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.gyro_y_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.gyro_z_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);

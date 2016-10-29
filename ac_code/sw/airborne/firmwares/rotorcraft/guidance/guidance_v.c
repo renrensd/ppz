@@ -267,9 +267,6 @@ void guidance_v_init(void)
 	vh0 = GUIDANCE_V_TD_H0;
 	r_vert = GUIDANCE_V_TD_R;
 
-	guid_v.acc_z_pid.Kp = 0.1f;
-	guid_v.acc_z_pid.Ki = 0.2f;
-
 	guidance_v_z_sum_err = 0;
 
 	guidance_v_nominal_throttle = GUIDANCE_V_NOMINAL_HOVER_THROTTLE;
@@ -297,7 +294,7 @@ static void guidance_v_controller_ini(void)
 {
 	guid_v.acc_filter_fc = 10;
 	guid_v.speed_filter_fc = 10;
-	guid_v.pid_loop_mode = ACC;
+	guid_v.pid_loop_mode = ACC_SPEED_POS;
 
 	pid_ini(&guid_v.acc_z_pid, 512);
 	pid_ini(&guid_v.speed_z_pid, 512);
@@ -309,6 +306,12 @@ static void guidance_v_controller_ini(void)
 	pid_set_Ui_range(&guid_v.speed_z_pid, -5, 5);
 	pid_set_out_range(&guid_v.pos_z_pid, -3, 3);
 	pid_set_Ui_range(&guid_v.pos_z_pid, -3, 3);
+
+	guid_v.acc_z_pid.Kp = 0.02f;
+	guid_v.acc_z_pid.Ki = 0.3f;
+	guid_v.speed_z_pid.Kp = 5.0f;
+	guid_v.pos_z_pid.Kp = 2.0f;
+	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, butterworth_2_get_tau(guid_v.acc_filter_fc), 1.0f/512.0f, 0);
 }
 
 void guidance_v_read_rc(void)
@@ -668,12 +671,15 @@ static void run_hover_loop(bool_t in_flight)
 	guid_v.acc_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.acc_filter_fc;
 	guid_v.speed_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.speed_filter_fc;
 
-	guid_v.NED_z_acc = - pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_acc, ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
-	guid_v.NED_z_speed = - pid_simple_filter(guid_v.speed_filter_coef, guid_v.NED_z_speed, SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z));
+	guid_v.NED_z_acc = - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z);
+	//guid_v.NED_z_acc = update_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
+	//guid_v.NED_z_acc = pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_acc, - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
+	guid_v.NED_z_speed = - SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z);
+	//guid_v.NED_z_speed = pid_simple_filter(guid_v.speed_filter_coef, guid_v.NED_z_speed, - SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z));
 	guid_v.NED_z_pos = - POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
 
 	guid_v.rc_speed_z = - SPEED_FLOAT_OF_BFP(guidance_v_rc_zd_sp);
-	guid_v.rc_acc_z = 3 * guid_v.rc_speed_z;
+	guid_v.rc_acc_z = 3.0f * guid_v.rc_speed_z;
 
 	if (guid_v.pid_loop_mode == ACC_SPEED_POS)
 	{
