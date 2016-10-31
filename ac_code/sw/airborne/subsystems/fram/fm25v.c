@@ -75,7 +75,6 @@ void fm25v_init(struct FM25V_SPI *fm, struct spi_periph *spi_p, const uint8_t sl
 	/* Update the status and start with enabling writing */
 	fm->status = FM25V_STATE_IDLE;
 	fm->valid = FALSE;
-	//fm25v_write_en(fm);
 	fm25v_read_id(fm);
 }
 
@@ -90,11 +89,7 @@ void fm25v_spi_cb(struct FM25V_SPI *fm)
 	switch(fm->status)
 	{
 		case FM25V_STATE_READ_ID:
-			if(fm->spi_t.status == SPITransFailed)
-			{
-				fm->error_cnt++;
-			}
-			else if( (fm->input_buf[7] == FM25V_DEV_ID_7) && (fm->input_buf[8] == FM25V_DEV_ID_8) )
+			if( (fm->input_buf[7] == FM25V_DEV_ID_7) && (fm->input_buf[8] == FM25V_DEV_ID_8) )
 			{
 				fm->valid = TRUE;
 			}
@@ -121,11 +116,7 @@ void fm25v_spi_cb(struct FM25V_SPI *fm)
 			        spi_submit(fm->spi_p, &fm->spi_t);
 			        break;
 				case 1:
-					if(fm->spi_t.status == SPITransFailed)
-					{
-						fm->error_cnt++;
-					}
-					
+					fm->writing_flag = FALSE;
 					fm->status = FM25V_STATE_IDLE;
 					break;
 		        
@@ -137,14 +128,12 @@ void fm25v_spi_cb(struct FM25V_SPI *fm)
 	      	break;
 
 		case FM25V_STATE_READ_BYTES:
-			if(fm->spi_t.status == SPITransFailed)
-			{
-				fm->error_cnt++;
-			}
-			fm->reading_flag = FALSE;
-			// Reset the buffer pointer and goto idle
-      		fm->spi_t.input_buf = fm->input_buf;
+      		for(uint16_t idx=0; idx < fm->spi_t.input_length-3; idx++)
+      		{
+      			fm->input_temp_buf[idx] = fm->input_buf[idx+3];
+      		}
       		fm->status = FM25V_STATE_IDLE;
+			fm->reading_flag = FALSE;
 			break;
 		default:
 			break;
@@ -176,18 +165,20 @@ void fm25v_read_id(struct FM25V_SPI *fm)
 *  Name        : fm25v_write
 *  Description : 
 *  Parameter   : void  
-*  Returns     : None
+*  Returns     : 0-Success, other-Fail
 *****************************************************************************/
-void fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len)
+uint8_t fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len)
 {
 	if(fm->status != FM25V_STATE_IDLE) 
 	{
-		return;
+		fm->error_cnt++;
+		return 2;
 	}
 
 	if(len > FM25V_BUF_SIZE)
 	{
-		return;
+		fm->error_cnt++;
+		return 3;
 	}
 
 	// Set the transfer buffer
@@ -202,7 +193,21 @@ void fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len
 	fm->output_buf[0] = FM25V_WREN;
 	fm->spi_t.output_length = 1;
 	fm->spi_t.input_length = 0;
+	fm->writing_flag = TRUE;
 	spi_submit(fm->spi_p, &fm->spi_t);
+
+	uint16_t fm_timeout = 0;
+	while( fm->writing_flag && (++fm_timeout < FM25V_TIMEOUT_VAL) );
+	
+	if(fm->writing_flag == TRUE)
+	{
+		fm->error_cnt++;
+		return 1;	//Fail
+	}
+	else
+	{
+		return 0;	//Success
+	}
 }
 
 //uint16_t fm_t1,fm_t2,fm_tt;
@@ -210,25 +215,24 @@ void fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len
 *  Name        : fm25v_read
 *  Description : 
 *  Parameter   : void  
-*  Returns     : None
+*  Returns     : 0-Success, other-Fail.
 *****************************************************************************/
-void fm25v_read(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len)
+uint8_t fm25v_read(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len)
 {
-	uint16_t i;
-	uint16_t fm_timeout = 0;
-
-
 	if(fm->status != FM25V_STATE_IDLE) 
 	{
-		return;
+		fm->error_cnt++;
+		return 2;
 	}
 
 	if(len > FM25V_BUF_SIZE)
 	{
-		return;
+		fm->error_cnt++;
+		return 3;
 	}
 
-	fm->spi_t.input_buf = buf;
+	fm->input_temp_buf = buf;
+	fm->spi_t.input_buf = fm->input_buf;
 	fm->status = FM25V_STATE_READ_BYTES;
 	fm->status_idx = 0;
 	fm->output_buf[0] = FM25V_READ;
@@ -241,8 +245,18 @@ void fm25v_read(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len)
 	spi_submit(fm->spi_p, &fm->spi_t);
 	//gpio_set(DEBUG_GPIO);
 	//fm_t1 = get_sys_time_usec();
-	fm_timeout = 0;
-	while( fm->reading_flag && (++fm_timeout < 60000) );
+	uint16_t fm_timeout = 0;
+	while( fm->reading_flag && (++fm_timeout < FM25V_TIMEOUT_VAL) );
+	
+	if(fm->reading_flag == TRUE)
+	{
+		fm->error_cnt++;
+		return 1;	//Fail
+	}
+	else
+	{
+		return 0;	//Success
+	}
 	//fm_tt = get_sys_time_usec() - fm_t1;
 	//gpio_clear(DEBUG_GPIO);
 }

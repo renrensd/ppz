@@ -37,6 +37,7 @@
 #define FM25V_DEV_ID_9	0x00
 
 #define FM25V_BUF_SIZE	1020
+#define FM25V_TIMEOUT_VAL	10000
 
 
 enum FM25V_STATUS
@@ -60,12 +61,14 @@ struct FM25V_SPI
 	uint16_t flash_addr;                      /**< The flash address to write at */
 
 	uint8_t *transfer_buf;                    /**< The transfer buffer */
+	uint8_t *input_temp_buf;
 	uint16_t transfer_idx;                     /**< The transfer idx is used for counting input/output bytes */
 	uint16_t transfer_length;                  /**< The transfer buffer length */
 
 	bool_t valid;
 	uint16_t error_cnt;
 	bool_t reading_flag;						/* wait read data,1-reading data,0-read finished. */
+	bool_t writing_flag;						/* wait write data,1-writing data,0-write finished. */
 };
 /**** Definition of macros ****/
 
@@ -79,8 +82,8 @@ struct FM25V_SPI
 /**** Declaration of functions ****/
 extern void fm25v_spi_cb(struct FM25V_SPI *fm);
 extern void fm25v_init(struct FM25V_SPI *fm, struct spi_periph *spi_p, const uint8_t slave_idx, SPICallback spi_cb);
-extern void fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len);
-extern void fm25v_read(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len);
+extern uint8_t fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len);
+extern uint8_t fm25v_read(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len);
 
 #endif /* _FM25V_H_ */
 

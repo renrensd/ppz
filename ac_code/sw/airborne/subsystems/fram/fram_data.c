@@ -54,7 +54,7 @@ const uint8_t cl_software_update_flag_array[] =
 //  0xAA,0x55,0xA5,0x5A   //need update
 };
 
-const uint8_t cl_eeprom_init_flag_array[] = 
+const uint8_t cl_fram_init_flag_array[] = 
 {
     //0x55,0xAA,0x5A,0xA5//need init the whole eeprom
     0xFF,0xFF,0xFF,0xFF

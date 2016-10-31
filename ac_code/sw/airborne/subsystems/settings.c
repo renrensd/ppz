@@ -58,7 +58,7 @@ void settings_init(void)
 {
 #if USE_PERSISTENT_SETTINGS
   #ifdef FRAM_OPTION
-  if(fram_ac_param_read((void *)&pers_settings, sizeof(struct PersistentSettings)) == 0) 
+  if( fram_ac_param_read((void *)&pers_settings, sizeof(struct PersistentSettings)) != 0) 
   {
     return;  // return -1 ?
   }
@@ -92,7 +92,7 @@ int32_t settings_store(void)
     persistent_settings_store();
 
 	#ifdef FRAM_OPTION
-	if(fram_ac_param_write((void *)&pers_settings, sizeof(struct PersistentSettings))) 
+	if( fram_ac_param_write((void *)&pers_settings, sizeof(struct PersistentSettings)) == 0) 
 	{
       /* persistent write was successful */
       settings_store_flag = TRUE;

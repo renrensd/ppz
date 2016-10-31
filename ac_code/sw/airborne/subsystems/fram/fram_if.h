@@ -40,12 +40,15 @@ extern void fram_init(void);
 extern void fram_write_test(uint8_t val);
 extern void fram_read_test(uint8_t val);
 
-extern void fram_id_write(uint8_t id, uint8_t *write_buffer);
-extern void fram_write(uint8_t id, uint16_t item, uint8_t *write_buffer);
-extern void fram_read (uint8_t id, uint16_t item, uint8_t *read_buffer);
-extern void fram_id_read (uint8_t id, uint8_t *read_buffer);
+extern uint8_t fram_id_write(uint8_t id, uint8_t *write_buffer);
+extern uint8_t fram_write(uint8_t id, uint16_t item, uint8_t *write_buffer);
+extern uint8_t fram_read (uint8_t id, uint16_t item, uint8_t *read_buffer);
+extern uint8_t fram_id_read (uint8_t id, uint8_t *read_buffer);
 extern uint8_t fram_ac_param_read(uint8_t *read_buffer, uint16_t len);
 extern uint8_t fram_ac_param_write(uint8_t *write_buffer, uint16_t len);
+extern uint8_t fram_write_swdl_mask(void);
+extern uint8_t fram_read_swdl_mask (uint8_t* pBlockData);
+extern bool_t fram_update_is_available(void);
 
 #endif //_FRAM_IF_H_
 
