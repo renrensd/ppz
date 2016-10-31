@@ -58,11 +58,13 @@ typedef enum
 }MCU_RESET_TYPE;
 
 void mcu_fault_info_handle(uint16_t msp_offset);
-void mcu_write_file_fault(void);
+extern void mcu_write_file_fault(void);
 void mcu_check_reset_source(void);
 void mcu_set_reset_type(uint8_t type);
 void mcu_usagefault_test(void);
 uint8_t mcu_get_reset_type(void);
+
+#endif	/* FAULT_OPTION */
 
 struct MCU_INFO
 {
@@ -70,7 +72,7 @@ struct MCU_INFO
 	uint32_t reset_src;		/* MCU reset source,store RCC_CSR. */
 };
 extern struct MCU_INFO mcu_info;
-#endif	/* FAULT_OPTION */
+
 
 #ifdef WDG_OPTION
 typedef enum

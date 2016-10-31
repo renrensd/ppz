@@ -43,7 +43,7 @@
 29.update gcs communication
 
 30.to 0926:GCS function run normal, add brake untested(no5)
-
-
+31.add bbox function.
+32.add transpta protocol for microhard uart.
 
 

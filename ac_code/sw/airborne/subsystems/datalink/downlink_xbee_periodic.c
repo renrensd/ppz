@@ -14,9 +14,15 @@
 #include "subsystems/mission/task_manage.h"
 #include "subsystems/mission/task_process.h"
 #include "uplink_ac.h"
-#include "subsystems/datalink/xbee.h"
-#include "subsystems/monitoring/monitoring.h"
 #include "subsystems/electrical.h"
+
+#if DATALINK == XBEE
+#include "subsystems/datalink/xbee.h"
+#endif	/* XBEE */
+#if DATALINK == TRANSPTA
+#include "subsystems/datalink/transpta.h"
+#endif	/* TRANSPTA */
+#include "subsystems/monitoring/monitoring.h"
 
 //#include "subsystems/datalink/downlink.h"
 //#include "uplink_ac.h"
@@ -32,8 +38,11 @@ void downlink_gcs_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
 {   
 	//RunOnceEvery(TELEMETRY_FREQUENCY/DOWNLINK_GCS_FREQUENCY,downlink_msg_gcs());  
 	RunOnceEvery( TELEMETRY_FREQUENCY/HEART_BEART_A2G_FREQUENCY, 
-	              { if(xbee_con_info.gcs_con_available==FALSE) return;
-				    send_heart_beat_A2G_msg();                         } );
+	              { 
+					#if DATALINK==XBEE
+					if(xbee_con_info.gcs_con_available==FALSE) return;
+					#endif
+				    send_heart_beat_A2G_msg(); } );
 }
 
 void downlink_pc_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
@@ -109,7 +118,7 @@ void send_heart_beat_A2G_msg(void)
    uint32_t error_code = em_code&0xFFFFF7FF;   //remove gcs lost error
 
    xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);	 //ack processing need handle later
-   DOWNLINK_SEND_HEART_BEAT_AC_GCS_STATE(DefaultChannel, DefaultDevice, 
+   DOWNLINK_SEND_HEART_BEAT_AC_GCS_STATE(SecondChannel, SecondDevice, 
    	                                     &system_time, 
    	                                     &link_gcs_quality, 
    	                                     &link_rc_quality, 
@@ -170,6 +179,6 @@ void send_DATA_TEST()
 	int8_t   s3[3]={10,-20,100};
 	float    f3[3]={10.555,-20.001,100.11111};
 	xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-	DOWNLINK_SEND_DATA_TEST(DefaultChannel, DefaultDevice, &u8, &s8, &u16, &s16, &u32, &s32, &f, s3, f3);
+	DOWNLINK_SEND_DATA_TEST(SecondChannel, SecondDevice, &u8, &s8, &u16, &s16, &u32, &s32, &f, s3, f3);
 }
 #endif

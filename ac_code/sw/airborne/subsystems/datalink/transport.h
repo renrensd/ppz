@@ -30,17 +30,20 @@
 #include "mcu_periph/link_device.h"
 #include "std.h"
 
-#ifndef TRANSPORT_PAYLOAD_LEN
-#define TRANSPORT_PAYLOAD_LEN 256
-#endif
+#define TRANSPORT_PAYLOAD_LEN 250
 
 /** Generic reception transport header
  */
-struct transport_rx {
-  uint8_t payload[TRANSPORT_PAYLOAD_LEN]; ///< payload buffer
+struct transport_rx 
+{
+  uint8_t payload[TRANSPORT_PAYLOAD_LEN+6]; ///< payload buffer
   volatile uint8_t payload_len;           ///< payload buffer length
+  volatile uint16_t len;
   volatile bool_t msg_received;           ///< message received flag
   uint8_t ovrn, error;                    ///< overrun and error flags
+  uint8_t rx_seq;	//rx frame sequence
+  uint8_t last_rx_seq;
+
 };
 
 /** Data type
@@ -86,7 +89,8 @@ typedef void (*count_bytes_t)(void *, struct link_device *, uint8_t);
 
 /** Generic transmission transport header
  */
-struct transport_tx {
+struct transport_tx 
+{
   size_of_t size_of;                              ///< get size of payload with transport header and trailer
   check_available_space_t check_available_space;  ///< check if transmit buffer is not full
   put_bytes_t put_bytes;                          ///< send bytes

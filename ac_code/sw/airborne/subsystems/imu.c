@@ -45,7 +45,7 @@
 #define USE_ATT_BF TRUE
 
 static bool_t gyro_offset_success;
-uint8_t acc_cutoff_fre, gyro_cutoff_fre;
+uint8_t imu_cutoff_fre;
 
 
 #if PERIODIC_TELEMETRY
@@ -127,8 +127,10 @@ struct Imu imu;
 void imu_init(void)
 {
   gyro_offset_success = TRUE;  //unuse offset
-  gyro_cutoff_fre = 25;
-  acc_cutoff_fre = 25;
+  imu_cutoff_fre = 25;
+#if USE_ATT_BF
+  LPF2pSetCutoffFreq_IMU(512.0, imu_cutoff_fre);
+#endif
   
 #ifdef IMU_POWER_GPIO
   gpio_setup_output(IMU_POWER_GPIO);
@@ -310,7 +312,7 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
 
 //-----gyro-acc-LowPass-Butterworth-----//
 #if USE_ATT_BF
-	LPF2pSetCutoffFreq_IMU(512.0, gyro_cutoff_fre);
+	//LPF2pSetCutoffFreq_IMU(512.0, gyro_cutoff_fre);
 
 	_imu->gyro.p=(int32_t)(LPF2pApply_IMU((float)(_imu->gyro.p),&gyro_p_delay_element_11,&gyro_p_delay_element_21));
 	_imu->gyro.q=(int32_t)(LPF2pApply_IMU((float)(_imu->gyro.q),&gyro_q_delay_element_11,&gyro_q_delay_element_21));
@@ -332,7 +334,7 @@ void WEAK imu_scale_accel(struct Imu *_imu)
                    IMU_ACCEL_Z_SENS_NUM) / IMU_ACCEL_Z_SENS_DEN;
 //-----gyro-acc-LowPass-Butterworth-----//
 #if USE_ATT_BF
-    LPF2pSetCutoffFreq_IMU(512.0, acc_cutoff_fre);
+    //LPF2pSetCutoffFreq_IMU(512.0, acc_cutoff_fre);
 
 	_imu->accel.x=(int32_t)(LPF2pApply_IMU((float)(_imu->accel.x),&accel_x_delay_element_11,&accel_x_delay_element_21));
 	_imu->accel.y=(int32_t)(LPF2pApply_IMU((float)(_imu->accel.y),&accel_y_delay_element_11,&accel_y_delay_element_21));

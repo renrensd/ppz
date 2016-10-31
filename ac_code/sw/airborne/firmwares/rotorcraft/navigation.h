@@ -111,6 +111,7 @@ extern bool_t nav_set_heading_along(struct EnuCoor_i *wp_from,struct EnuCoor_i *
 extern bool_t nav_check_heading(void);
 extern void record_current_waypoint(struct EnuCoor_i *wp);
 extern bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_heading);
+extern bool_t get_nav_route_mediacy(void);
 
 extern void auto_nav_fp(void);
 

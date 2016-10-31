@@ -472,7 +472,7 @@ bool_t run_normal_task(void)
 void spray_work_run(void)
 {
 	/*spray switch control*/
-	if( SPRAY_LINE==from_wp.action && !get_spray_switch_state())  //FALSE==spray_switch_flag )
+	if( SPRAY_LINE==from_wp.action && !get_spray_switch_state() && get_nav_route_mediacy() ) 
 	{
 	   #ifdef OPS_OPTION
 		ops_start_spraying(); 
@@ -663,7 +663,7 @@ void send_task_info_pc(void)
 	uint8_t wp_state = j%2+1;
 	uint16_t system_time = sys_time.nb_sec;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
-	DOWNLINK_SEND_CURRENT_TASK_STATE(DefaultChannel, DefaultDevice,
+	DOWNLINK_SEND_CURRENT_TASK_STATE(SecondChannel, SecondDevice,
 	   	                              &system_time,
 	   	                              &task_wp[j].wp_id,
 	   	                              &task_wp[j].action,	
@@ -687,7 +687,7 @@ void send_current_task_state(uint8_t wp_state)
 		nb_unexecuted_wp = nb_pending_wp + 1;
 	}
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
-	DOWNLINK_SEND_CURRENT_TASK_STATE(DefaultChannel, DefaultDevice,
+	DOWNLINK_SEND_CURRENT_TASK_STATE(SecondChannel, SecondDevice,
 	   	                              &system_time,
 	   	                              &from_wp.wp_id,
 	   	                              &from_wp.action,

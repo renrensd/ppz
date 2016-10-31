@@ -41,11 +41,20 @@
 #include "ivy_transport.h"
 
 #else /** SITL */
+#include "subsystems/datalink/datalink.h"
 
 #include "subsystems/datalink/pprz_transport.h"
 #include "subsystems/datalink/pprzlog_transport.h"
+#ifdef BBOX_OPTION
+#include "subsystems/datalink/can_transport.h"
+#endif	/* BBOX_OPTION */
+#if DATALINK == XBEE
 #include "subsystems/datalink/xbee.h"
+#endif	/* XBEE */
 #include "subsystems/datalink/w5100.h"
+#if DATALINK == TRANSPTA
+#include "subsystems/datalink/transpta.h"
+#endif	/* TRANSPTA */
 #if DATALINK == BLUEGIGA
 #include "subsystems/datalink/bluegiga.h"
 #endif
@@ -81,13 +90,22 @@
 #include"uplink_rc.h"
 #endif
 
-#ifndef DefaultChannel
-#define DefaultChannel DOWNLINK_TRANSPORT
-#endif
 
-#ifndef DefaultDevice
-#define DefaultDevice DOWNLINK_DEVICE
-#endif
+#if 0//def BBOX_OPTION
+#define DefaultChannel can_tp	//pprz_tp\can_tp\pta_tp.
+#define DefaultDevice can_tp	//uart2\can_tp.
+#else
+#define DefaultChannel DOWNLINK_TRANSPORT	//pprz_tp\can_tp\pta_tp.
+#define DefaultDevice DOWNLINK_DEVICE	//uart2\can_tp.
+#endif	/* BBOX_OPTION */
+
+#if DATALINK==TRANSPTA
+#define SecondChannel DOWNLINK_TRANSPORT_PTA
+#define SecondDevice DOWNLINK_DEVICE_PTA
+#else
+#define SecondChannel DOWNLINK_TRANSPORT
+#define SecondDevice DOWNLINK_DEVICE
+#endif	/* TRANSPTA */
 
 // Init function
 extern void downlink_init(void);

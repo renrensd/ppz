@@ -19,7 +19,7 @@
 *=====================================================================*/
 #ifndef _OPS_APP_H_
 #define _OPS_APP_H 
-#include "ops_app_if.h" 
+
 #include BOARD_CONFIG
 
 

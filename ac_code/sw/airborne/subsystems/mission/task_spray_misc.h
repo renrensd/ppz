@@ -49,7 +49,6 @@ extern void task_spray_misc_init(void);
 extern uint8_t spray_convert_caculate(void);
 extern bool_t spray_break_and_continual(void);
 extern void spray_bac_msg_stop(void);
-extern void spray_break_continual_msg(void);
 
 
 #endif /*_TASK_SPARY_MISC_H_*/

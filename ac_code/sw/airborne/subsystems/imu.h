@@ -62,8 +62,7 @@ struct Imu {
 };
 //extern struct MPU9250_DATA MPU9250_OFFSER;
 
-extern uint8_t acc_cutoff_fre;
-extern uint8_t gyro_cutoff_fre;
+extern uint8_t imu_cutoff_fre;
 
 
 /** global IMU state */
