@@ -30,6 +30,7 @@
 
 #include "generated/airframe.h"
 #include "subsystems/radio_control.h"
+#include "firmwares/rotorcraft/autopilot.h"
 
 #define AUTOPILOT_THROTTLE_THRESHOLD      (MAX_PPRZ / 20)
 #define AUTOPILOT_YAW_THRESHOLD           (MAX_PPRZ * 19 / 20)
@@ -60,10 +61,34 @@ static inline bool_t rc_attitude_sticks_centered(void)
 #ifdef RADIO_KILL_SWITCH
 static inline bool_t kill_switch_is_on(void)
 {
-  if (radio_control.values[RADIO_RADIO_KILL_SWITCH] < 0) {   //must be RADIO_RADIO_KILL_SWITCH,RADIO_KILL_SWITCH is defined true in airframe
-    return TRUE;
-  } else {
-    return FALSE;
+  static uint8_t counter = 0;
+  
+  if(radio_control.link_status != RC_LINK_LOST
+  	 && radio_control.status != RC_REALLY_LOST)
+  {
+	  if( radio_control.values[RADIO_RADIO_KILL_SWITCH] < 0) 
+	  {   //must be RADIO_RADIO_KILL_SWITCH,RADIO_KILL_SWITCH is defined true in airframe
+	    counter++;
+		if( counter > 20)
+		{
+			counter = 20;
+			return TRUE;
+		}
+	    return FALSE;
+	  } 
+	  else 
+	  {
+	  	counter = 0;
+	    return FALSE;
+	  }
+  }
+  else  //link lost,must set kill,except nav
+  {
+  	  if(autopilot_mode == AP_MODE_NAV)
+  	  {
+	  	return FALSE;
+  	  }
+	  return TRUE;
   }
 }
 #else
@@ -72,6 +97,49 @@ static inline bool_t kill_switch_is_on(void)
   return FALSE;
 }
 #endif
+
+#define THRESHOLD_1_PPRZ (MIN_PPRZ / 2)
+#define THRESHOLD_2_PPRZ (MAX_PPRZ / 2)
+static inline uint8_t get_ap_mode_of_radio(void)
+{
+	static uint8_t counter = 0;
+	static uint8_t ap_mode_return = 0;
+	static uint8_t ap_mode_last = 0;
+	uint8_t ap_mode_now;
+	pprz_t values = radio_control.values[RADIO_MODE];
+	if (values > THRESHOLD_2_PPRZ)
+	{
+		ap_mode_now = autopilot_mode_auto2;
+	}
+    else if (values > THRESHOLD_1_PPRZ)
+    {
+		ap_mode_now = MODE_AUTO1;  
+    }
+    else 
+	{
+		ap_mode_now = MODE_MANUAL;  
+    }
+	
+	if(ap_mode_now != ap_mode_return)
+	{
+		if(ap_mode_now == ap_mode_last)
+		{
+			counter++;
+		}
+		else
+		{
+			counter = 0;
+		}
+		if(counter > 10)
+		{
+			counter = 10;
+			ap_mode_return = ap_mode_last;
+		}
+	}
+	ap_mode_last = ap_mode_now;
+
+	return ap_mode_return;
+}
 
 static inline uint8_t percent_from_rc(int channel)
 {

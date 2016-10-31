@@ -218,5 +218,11 @@ extern void delay_us(uint16_t us);
 extern void delay_ms(uint16_t ms);
 extern void i2c_delay(void);
 
+extern uint8_t get_sys_year(void);
+extern uint8_t get_sys_month(void);
+extern uint8_t get_sys_day(void);
+extern uint8_t get_sys_hour(void);
+extern uint8_t get_sys_minute(void);
+extern uint8_t get_sys_second(void);
 
 #endif /* SYS_TIME_H */

@@ -69,7 +69,9 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 struct VffExtended vff;
 float acc_noise_debug;
 
-Butterworth2LowPass acc_z_filter;
+//Butterworth2LowPass acc_z_filter;
+Butterworth2LowPass baro_alt_filter;
+int8_t baro_cutoff_fre = 5;
 
 static void update_speed_conf(float zd_meas, float conf);
 
@@ -106,13 +108,20 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
   }
   acc_noise_debug = 0.1;
 
-  init_butterworth_2_low_pass(&acc_z_filter, 0.01592, (1. / 512), 0.);    //tau = 0.1592/cutoff_fre
+  //init_butterworth_2_low_pass(&acc_z_filter, 0.01592, (1. / 512), 0.);    //tau = 0.1592/cutoff_fre
+  init_butterworth_2_low_pass(&baro_alt_filter, 0.1592, (1. / 13), 0.);   //set 5hz cutoff fre 0.03184
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
 #endif
 }
 
+
+float baro_alt_wb_filter(float alt)
+{
+	//init_butterworth_2_low_pass(&baro_alt_filter, (0.1592/(float)baro_cutoff_fre), (1. / 50), 0.);   //set 2hz cutoff fre
+	return update_butterworth_2_low_pass(&baro_alt_filter, alt);
+}
 
 /**
  * Propagate the filter in time.
@@ -139,7 +148,8 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
 void vff_propagate(float accel, float dt)
 {
   /*accel first pass buterworth filter*/
-  accel = update_butterworth_2_low_pass(&acc_z_filter, accel);
+  //accel = update_butterworth_2_low_pass(&acc_z_filter, accel);
+  vff.z_ltp_meas = accel;
   
   /* update state */
   vff.zdotdot = accel + 9.81 - vff.bias;

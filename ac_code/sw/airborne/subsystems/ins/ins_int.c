@@ -187,6 +187,9 @@ static void radar24_cb(uint8_t sender_id, float distance);
 struct InsInt ins_int;
 
 float gps_noise_debug;
+int32_t ins_body_rate_z; 
+float acc_z_meas;
+float acc_baro_meas;
 
 #if USE_FLOW
 static abi_event flow_ev;  //add for flow
@@ -214,6 +217,7 @@ static void ins_update_from_hff(void);
 static void ins_int_z_cmpl_update(float dt);
 static void ins_int_z_cmpl_corr_gps(struct GpsState *gps_s, float dt);
 static void ins_int_z_cmpl_corr_baro(float height, float dt);
+static void baro_turbulence_check(float zp_error);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -228,7 +232,8 @@ static void send_ins(struct transport_tx *trans, struct link_device *dev)
 										&ins_int.zp_baro,
 										&ins_int.zp_est,
 										&ins_int.zv_est,
-										&ins_int.za_est);
+										//&ins_int.za_est
+										&acc_baro_meas);
 }
 
 static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
@@ -302,7 +307,7 @@ void ins_int_init(void)
   ins_int.za_corr_k = 0.5f;
   ins_int.zv_corr_k = 2.0f;
   ins_int.zp_corr_k = 4.0f;
-  gps_noise_debug = 0.0004;
+  gps_noise_debug = 0.0004f;
 }
 
 void ins_reset_local_origin(void)
@@ -366,7 +371,7 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
   if (ins_int.propagation_cnt < INS_MAX_PROPAGATION_STEPS) 
   {
     vff_propagate(z_accel_meas_float, dt);
-    ins_update_from_vff();
+	ins_update_from_vff();	
   } 
   else 
   {
@@ -392,7 +397,11 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
   if (ins_int.propagation_cnt < 100 * INS_MAX_PROPAGATION_STEPS) {
     ins_int.propagation_cnt++;
   }
-  
+
+  /*get 1hz acc info*/
+  acc_z_meas = acc_z_meas + (z_accel_meas_float-acc_z_meas)*0.01256;   //get 1 hz acc_z
+  /*filter rate information*/
+  ins_body_rate_z = (ins_body_rate_z*9 + stateGetBodyRates_i()->r)/10;
 }
 
 #if USE_BARO_BOARD   //change default using bar
@@ -419,11 +428,27 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 										float temperature)
 {
 	static uint32_t last_stamp = 0;
+	static float alt_pre = 0.0f;
+	static float v_pre = 0.0f;
+	static float a_pre = 0.0f;
 
 	if (last_stamp > 0)
 	{
 		float dt = (float)(stamp - last_stamp) * 1e-6;
-		ins_int_z_cmpl_corr_baro( baro_get_height(pressure, temperature), dt);
+		float alt_now = baro_get_height(pressure, temperature);
+		float alt = baro_alt_wb_filter(alt_now);
+
+		/*get baro_alt accel*/
+		float v = (alt - alt_pre) / dt;
+		alt_pre = alt;
+		v = v_pre + (v-v_pre)*0.01256*10.0;
+		float a = (v - v_pre) / dt;
+		v_pre = v;
+		a = a_pre + (a-a_pre)*0.01256*5.0;
+		a_pre = a;
+		acc_baro_meas = a;
+
+		ins_int_z_cmpl_corr_baro(alt, dt);  //use 5hz cutoff frequence
 	}
 	last_stamp = stamp;
 }
@@ -530,7 +555,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 #ifdef GPS_INSTALL_BIAS
 /*unit :cm, body frame*/
   #define  INS_BODY_TO_GPS_X  0
-  #define  INS_BODY_TO_GPS_Y  33
+  #define  INS_BODY_TO_GPS_Y  27
   #define  INS_BODY_TO_GPS_Z  0
 #endif
 static bool_t gps_pos_inspect(struct NedCoor_i data)
@@ -612,11 +637,6 @@ void ins_int_update_gps(struct GpsState *gps_s)
   /* subtract body2gps translation in ltp from gps position */
   VECT3_SUB(gps_pos_cm_ned, b2g_n);
 
-  /*filter rate information*/
-  static int32_t ins_body_rate_z;
-  int32_t ins_body_rate_z_now;
-  ins_body_rate_z_now =  stateGetBodyRates_i()->r;  
-  ins_body_rate_z =  (ins_body_rate_z*3 + ins_body_rate_z_now)/4;
   struct Int32Vect3 delta_speed_b, delta_speed_n;
   delta_speed_b.x = (ins_body_rate_z * (-b2g_b.y)) >>INT32_RATE_FRAC;
   delta_speed_b.y = 0;
@@ -630,19 +650,11 @@ void ins_int_update_gps(struct GpsState *gps_s)
  gps_pos_cm_ned.z = gps_pos_cm_ned.z - (int32_t)(DISTANCE_B2G*100 + 2);  
 
 #if INS_USE_GPS_ALT
-  if(gps.p_stable)//gps_nmea.gps_qual==52)
+  if(gps.p_stable)
   {
   	ins_int.update_radar_agl = FALSE;
   	vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, gps_noise_debug);
-    //vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
-	//vff_update_zd_conf(((float)gps_speed_cm_s_ned.z) / 100.0, INS_VFF_R_GPS*0.15);
   }
-  /*
-  else
-  {
-  	ins_int.update_radar_agl = TRUE;
-  }
-*/
   else  /*if R <1.0, use the RTK Z info*/
   {
   	float r_unstable =(float)gps_pos_sd.z /10000.0;
@@ -657,7 +669,8 @@ void ins_int_update_gps(struct GpsState *gps_s)
 	}
 	else
 	{
-		/*need use baro*/
+		vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, r_unstable );
+		/*convert to use baro*/
 	}
   }
 
@@ -905,11 +918,29 @@ static void ins_ned_to_state(void)
 }
 
 /** update ins state from vertical filter */
+uint8_t gps_baro_convert = 0;
 static void ins_update_from_vff(void)
 {
-  ins_int.ltp_accel.z = ACCEL_BFP_OF_REAL(vff.zdotdot);
-  ins_int.ltp_speed.z = SPEED_BFP_OF_REAL(vff.zdot);
-  ins_int.ltp_pos.z   = POS_BFP_OF_REAL(vff.z);
+	static bool_t enter_baro_flag = FALSE;
+	static float deta_z = 0.0f;
+	if(!gps_baro_convert)
+	{
+		enter_baro_flag = FALSE;
+		ins_int.ltp_accel.z = ACCEL_BFP_OF_REAL(vff.zdotdot);
+		ins_int.ltp_speed.z = SPEED_BFP_OF_REAL(vff.zdot);
+		ins_int.ltp_pos.z   = POS_BFP_OF_REAL(vff.z);
+	}
+	else
+	{
+		if(!enter_baro_flag)
+		{
+			deta_z = POS_FLOAT_OF_BFP(ins_int.ltp_pos.z) - ins_int.zp_est;
+			enter_baro_flag = TRUE;
+		}
+		ins_int.ltp_accel.z = ACCEL_BFP_OF_REAL(ins_int.za_est);
+		ins_int.ltp_speed.z = SPEED_BFP_OF_REAL(ins_int.zv_est);
+		ins_int.ltp_pos.z   = POS_BFP_OF_REAL(ins_int.zp_est + deta_z);
+	}
 }
 
 #if USE_HFF
@@ -1012,8 +1043,9 @@ void ins_int_register(void)
 
 static void ins_int_z_cmpl_update(float dt)
 {
-	int32_t z = stateGetAccelNed_i()->z;
-	ins_int.za_acc = ACCEL_FLOAT_OF_BFP(z);
+	//int32_t z = stateGetAccelNed_i()->z;
+	//ins_int.za_acc = ACCEL_FLOAT_OF_BFP(z);
+	ins_int.za_acc = vff.z_ltp_meas;    //after butterworth filter 10hz
 	ins_int.za_est = ins_int.za_acc + ins_int.za_corr;
 	ins_int.zv_inc = ins_int.za_est * dt;
 	ins_int.zp_base += (ins_int.zv_est + ins_int.zv_inc * 0.5f) * dt;
@@ -1034,18 +1066,56 @@ static void ins_int_z_cmpl_corr_gps(struct GpsState *gps_s, float dt)
 	ins_int.zv_est += zv_err * ins_int.zv_corr_k * dt;
 }
 
+#define A_ACCEL_DEADBAND  0.8
+#define A_BARO_DEADBAND  0.3
+bool_t baro_alt_stable = TRUE;
 static void ins_int_z_cmpl_corr_baro(float height, float dt)
 {
 	float zp_err;
-
 	ins_int.zp_baro = -height;
 	zp_err = ins_int.zp_baro - ins_int.zp_est;
 
-	ins_int.za_corr += zp_err * ins_int.za_corr_k * dt;
-	ins_int.zv_est += zp_err * ins_int.zv_corr_k * dt;
-	ins_int.zp_corr += zp_err * ins_int.zp_corr_k * dt;
+	baro_turbulence_check(zp_err);
+    if( baro_alt_stable )
+    {
+		ins_int.za_corr += zp_err * ins_int.za_corr_k * dt;
+		ins_int.zv_est += zp_err * ins_int.zv_corr_k * dt;
+		ins_int.zp_corr += zp_err * ins_int.zp_corr_k * dt;
+    }
 }
 
+float a_accel_deadband = 0.5;
+float a_baro_deadband = 0.5;
+uint8_t recover_time = 4;
+static void baro_turbulence_check(float zp_error)
+{
+	static uint16_t baro_sta_counter = 0;
+	if( fabs(acc_z_meas) > a_accel_deadband )
+	{
+		baro_alt_stable = TRUE;
+	}
+	else
+	{
+		if( fabs(acc_baro_meas) > a_baro_deadband )
+		{
+			baro_alt_stable = FALSE;
+			baro_sta_counter = 0;
+		}
+		else
+		{
+			baro_sta_counter++;
+			if(baro_sta_counter > (recover_time*13))    //continual about 6s
+			{
+				baro_alt_stable = TRUE;
+				baro_sta_counter = (recover_time*13);
+			}
+			if( fabs(zp_error) < 0.3 )   //baro_alt recover
+			{
+				baro_alt_stable = TRUE;   
+			}			
+		}
+	}
+}
 
 
 

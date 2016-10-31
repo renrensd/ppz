@@ -50,6 +50,7 @@ static void send_euler(struct transport_tx *trans, struct link_device *dev)
 {
   struct FloatEulers ltp_to_imu_euler;
   float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
+  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_AHRS_EULER(trans, dev, AC_ID,
                            &ltp_to_imu_euler.phi,
                            &ltp_to_imu_euler.theta,
@@ -61,6 +62,7 @@ static void send_bias(struct transport_tx *trans, struct link_device *dev)
 {
   struct Int32Rates gyro_bias;
   RATES_BFP_OF_REAL(gyro_bias, ahrs_mlkf.gyro_bias);
+  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_AHRS_GYRO_BIAS_INT(trans, dev, AC_ID,
                                    &gyro_bias.p, &gyro_bias.q, &gyro_bias.r, &ahrs_mlkf_id);
 }
@@ -250,7 +252,7 @@ void ahrs_mlkf_register(void)
   AbiBindMsgIMU_GYRO_INT32(AHRS_MLKF_IMU_ID, &gyro_ev, gyro_cb);
   AbiBindMsgIMU_ACCEL_INT32(AHRS_MLKF_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgIMU_MAG_INT32(AHRS_MLKF_MAG_ID, &mag_ev, mag_cb);
-  #if USE_GPS_HEADING
+  #ifdef USE_GPS_HEADING
   AbiBindMsgGPS(ABI_BROADCAST, &gps_heading_ev, gps_heading_cb);  /*cpz-gps-heading*/
   #endif
   AbiBindMsgIMU_LOWPASSED(ABI_BROADCAST, &aligner_ev, aligner_cb);

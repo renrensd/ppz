@@ -468,11 +468,21 @@ STATIC_INLINE void failsafe_check(void)
 	      autopilot_motors_on && GpsIsLost()) {
 	    autopilot_set_mode(AP_MODE_FAILSAFE);
 	  }
-    #endif
+    #endif  //end of USE_GPS
 
-  #endif
+  #else
+   if (radio_control.link_status == RC_LINK_LOST || radio_control.status == RC_REALLY_LOST ) 
+   {   //radio lost,will set mode kill
+   	   if( autopilot_mode != AP_MODE_NAV)
+   	   {
+	   	   autopilot_set_mode(AP_MODE_KILL);
+   	   }
+   }
+  #endif //end of ndef USE_MISSION
 
 }
+
+
 
 STATIC_INLINE void main_event(void)
 {

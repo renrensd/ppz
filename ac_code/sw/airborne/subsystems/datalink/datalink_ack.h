@@ -63,6 +63,7 @@ enum Task_Ack_Type
 
 //extern uint8_t rc_set_cmd_pasre(uint8_t cmd);
 extern void send_heart_beat_A2R_msg(void);
+extern void send_heart_beat_A2VR_msg(void);
 extern void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length);
 extern void send_aircraft_info_state(void);
 extern uint8_t DlSetCommand(uint8_t id, uint8_t pt_value);

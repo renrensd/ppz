@@ -138,4 +138,37 @@ void delay_ms(uint16_t ms)
 	}
 }
 
+#include "subsystems/gps.h"
+uint8_t get_sys_year(void)
+{
+	return gps.gps_time.year;
+}
+
+uint8_t get_sys_month(void)
+{
+	return gps.gps_time.month;
+}
+
+uint8_t get_sys_day(void)
+{
+	return gps.gps_time.day;
+}
+
+uint8_t get_sys_hour(void)
+{
+	return gps.gps_time.hour;
+}
+
+uint8_t get_sys_minute(void)
+{
+	return gps.gps_time.minute;
+}
+
+uint8_t get_sys_second(void)
+{
+	return gps.gps_time.second;
+}
+
+
+
 

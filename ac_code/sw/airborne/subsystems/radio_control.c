@@ -26,8 +26,12 @@
  */
 
 #include "subsystems/radio_control.h"
+#include "firmwares/rotorcraft/autopilot_rc_helpers.h"
 
 struct RadioControl radio_control;
+
+bool_t radio_kill_switch = TRUE;
+uint8_t radio_ap_mode = 0;
 
 void radio_control_init(void)
 {
@@ -35,8 +39,10 @@ void radio_control_init(void)
   for (i = 0; i < RADIO_CONTROL_NB_CHANNEL; i++) {
     radio_control.values[i] = 0;
   }
+  radio_control.link_status = RC_LINK_LOST;
   radio_control.status = RC_REALLY_LOST;
   radio_control.time_since_last_frame = RC_REALLY_LOST_TIME;
+  radio_control.link_counter = 0;
   radio_control.radio_ok_cpt = 0;
   radio_control.frame_rate = 0;
   radio_control.frame_cpt = 0;
@@ -52,16 +58,40 @@ void radio_control_periodic_task(void)
     _1Hz = 0;
     radio_control.frame_rate = radio_control.frame_cpt;
     radio_control.frame_cpt = 0;
+	if(radio_control.link_counter > 40 )   //current 1s have 40times upper lost
+	{
+		radio_control.link_status++;
+		if(radio_control.link_status >= RC_LINK_LOST)  //keep 5s will set link_lost
+		{
+			radio_control.link_status = RC_LINK_LOST;
+		}
+	}
+	else
+	{
+		radio_control.link_status = RC_LINK_OK;  //once recover,set link_ok
+	}
+	radio_control.link_counter = 0; //reset
   }
 
-  if (radio_control.time_since_last_frame >= RC_REALLY_LOST_TIME) {
+  if (radio_control.time_since_last_frame >= RC_REALLY_LOST_TIME)
+  {
     radio_control.status = RC_REALLY_LOST;
-  } else {
-    if (radio_control.time_since_last_frame >= RC_LOST_TIME) {
+  } 
+  else 
+  {
+    if (radio_control.time_since_last_frame >= RC_LOST_TIME) 
+	{
       radio_control.status = RC_LOST;
       radio_control.radio_ok_cpt = RC_OK_CPT;
     }
     radio_control.time_since_last_frame++;
+  }
+
+  /*use RADIO_RADIO_KILL_SWITCH channel lost status as lost time counter*/
+  if( (USEC_OF_RC_PPM_TICKS(ppm_pulses[RADIO_GAIN1]) < 1780)
+  	  &&(USEC_OF_RC_PPM_TICKS(ppm_pulses[RADIO_GAIN1]) > 1600) )
+  {
+  	radio_control.link_counter++;
   }
 
 #if defined RADIO_CONTROL_LED
@@ -71,5 +101,10 @@ void radio_control_periodic_task(void)
     LED_OFF(RADIO_CONTROL_LED);
   }
 #endif
+  #ifdef RADIO_KILL_SWITCH
+  radio_kill_switch = kill_switch_is_on();
+  #endif
+  radio_ap_mode = get_ap_mode_of_radio();
+  
 
 }

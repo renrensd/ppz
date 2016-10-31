@@ -80,8 +80,8 @@
 #include <libopencm3/stm32/rcc.h>
 #endif
 
-#ifndef BBOX_OPTION
-#include "subsystems/bbox/bbox_msg_if.h"   
+#if 0 //def BBOX_OPTION
+#include "bbox_msg_if.h"   
 #include"subsystems/bbox/bbox_if.h"
 #include "subsystems/datalink/can_transport.h"
 #endif	/* BBOX_OPTION */
@@ -89,7 +89,6 @@
 #ifndef FRAM_OPTION
 #include "subsystems/fram/fram_if.h"
 #endif	/* FRAM_OPTION */
-
 #endif /* PERIPHERALS_AUTO_INIT */
 
 #ifndef NPS_SIMU
@@ -110,9 +109,9 @@ struct MCU_FAULT_INFO mcu_fault_info __attribute__ ((section(".bkpram"), aligned
 
 #ifdef WDG_OPTION
 volatile uint16_t mcu_watchdog_flag __attribute__ ((section(".bkpram"), zero_init));
-#endif	/* WDG_OPTION */
 
 struct MCU_INFO mcu_info;
+#endif	/* WDG_OPTION */
 
 void WEAK board_init(void)
 {
@@ -123,8 +122,7 @@ void WEAK board_init(void)
 	gpio_setup_output(OPS_PWR_EN_GPIO);
   	gpio_set(OPS_PWR_EN_GPIO);
 	
-    //gpio_setup_output(DEBUG_GPIO);
-  	//gpio_clear(DEBUG_GPIO);
+    //gpio_setup_input_pulldown(DEBUG_GPIO);
   #endif
 }
 

@@ -26,10 +26,23 @@ enum Flight_State
 	//locked=5  landing->ready
 };
 
+enum Rc_Type
+{
+	REAL_RC = 0,
+	VIRTUAL_RC	
+};
+
+enum Spray_Convert_Type
+{
+	CIRCLE_CONVERT = 0,
+	WAYPOINT_CONVERT
+};
+
 struct config_info
-{                          
-	uint16_t spray_concentration;  //unit=ml/m2
+{   
+	enum Spray_Convert_Type spray_convert_type;
 	uint8_t atomization_grade;  //grade 1/2/3...
+	uint16_t spray_concentration;  //unit=ml/m2
 	float spray_height;     //unit=m
 	float spray_wide;       //unit=m
 	float spray_speed;      //recommnad, unit=m/s
@@ -40,6 +53,7 @@ struct config_info
 extern uint8_t flight_mode;
 extern uint16_t flight_status;
 extern enum Flight_State  flight_state;
+extern enum Rc_Type rc_type;
 extern struct EnuCoor_i wp_take_off;
 extern Gcs_State task_state;;   //only for debug
 extern struct config_info ac_config_info;

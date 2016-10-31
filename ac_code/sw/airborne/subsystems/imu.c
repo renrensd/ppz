@@ -42,11 +42,7 @@
 #endif
 #endif
 
-#define USE_ATT_BF TRUE
-
 static bool_t gyro_offset_success;
-uint8_t imu_cutoff_fre;
-
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -124,13 +120,22 @@ static void send_mag(struct transport_tx *trans, struct link_device *dev)
 
 struct Imu imu;
 
+float imu_butterworth_2_get_tau(float fc)
+{
+	return 1.0f/(2.0f * 3.1415926f * fc);
+}
+
 void imu_init(void)
 {
   gyro_offset_success = TRUE;  //unuse offset
-  imu_cutoff_fre = 25;
-#if USE_ATT_BF
-  LPF2pSetCutoffFreq_IMU(512.0, imu_cutoff_fre);
-#endif
+  imu.gyro_filter_fc = GYRO_FILTER_FC;
+  imu.acc_filter_fc = ACC_FILTER_FC;
+  init_butterworth_2_low_pass_int(&(imu.gyro_x_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
+  init_butterworth_2_low_pass_int(&(imu.gyro_y_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
+  init_butterworth_2_low_pass_int(&(imu.gyro_z_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
+  init_butterworth_2_low_pass_int(&(imu.acc_x_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
+  init_butterworth_2_low_pass_int(&(imu.acc_y_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
+  init_butterworth_2_low_pass_int(&(imu.acc_z_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
   
 #ifdef IMU_POWER_GPIO
   gpio_setup_output(IMU_POWER_GPIO);
@@ -231,69 +236,6 @@ void WEAK imu_periodic(void)
 {
 }
 
-//-----gyro-acc-LowPass-Butterworth-----//
-#if USE_ATT_BF
-static float b_imu[3];
-static float a_imu[3];
-uint8_t _LPF_FLAG=1;
-#define M_PI_IMU 3.1415926
-
-
-void LPF2pSetCutoffFreq_IMU(float sample_freq, float cutoff_freq) //
-{
-    float fr =0;  
-    float ohm =0;
-    float c =0;
-	
-    fr= sample_freq/cutoff_freq;
-    ohm=tanf(M_PI_IMU/fr);
-    c=1.0f+2.0f*cosf(M_PI_IMU/4.0f)*ohm + ohm*ohm;
-
-    b_imu[0] = ohm*ohm/c;
-    b_imu[1] = 2.0f*b_imu[0];
-    b_imu[2] = b_imu[0];
-	a_imu[0] =0.0;
-    a_imu[1] = 2.0f*(ohm*ohm-1.0f)/c;
-    a_imu[2] = (1.0f-2.0f*cosf(M_PI_IMU/4.0f)*ohm+ohm*ohm)/c;
-
-}
-
-static float     gyro_p_delay_element_11;        // buffered sample -1
-static float     gyro_p_delay_element_21;        // buffered sample -2
-static float     gyro_q_delay_element_11;        // buffered sample -1
-static float     gyro_q_delay_element_21;        // buffered sample -2
-static float     gyro_r_delay_element_11;        // buffered sample -1
-static float     gyro_r_delay_element_21;        // buffered sample -2
-
-static float     accel_x_delay_element_11;        // buffered sample -1
-static float     accel_x_delay_element_21;        // buffered sample -2
-static float     accel_y_delay_element_11;        // buffered sample -1
-static float     accel_y_delay_element_21;        // buffered sample -2
-static float     accel_z_delay_element_11;        // buffered sample -1
-static float     accel_z_delay_element_21;        // buffered sample -2
-
-
-float LPF2pApply_IMU(float sample,float *_delay_element_11,float *_delay_element_21)  //
-{
-     float delay_element_0 = 0, output=0;
-
-     delay_element_0 = sample - (*_delay_element_11 )* a_imu[1] - (*_delay_element_21) * a_imu[2];
-				
-     //if (isnan(delay_element_0) || isinf(delay_element_0)) {
-						
-	//delay_element_0 = sample;
-	//}
-     output = delay_element_0 * b_imu[0] + (*_delay_element_11) * b_imu[1] + (*_delay_element_21) * b_imu[2];
-				
-     (*_delay_element_21) = (*_delay_element_11);
-     (*_delay_element_11) = delay_element_0;
-     return output;
-}
-#endif
-
-//-----gyro-acc-LowPass-Butterworth-----//
-
-
 void WEAK imu_scale_gyro(struct Imu *_imu)
 {
   RATES_COPY(_imu->gyro_prev, _imu->gyro);
@@ -310,17 +252,9 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
   }
 #endif
 
-//-----gyro-acc-LowPass-Butterworth-----//
-#if USE_ATT_BF
-	//LPF2pSetCutoffFreq_IMU(512.0, gyro_cutoff_fre);
-
-	_imu->gyro.p=(int32_t)(LPF2pApply_IMU((float)(_imu->gyro.p),&gyro_p_delay_element_11,&gyro_p_delay_element_21));
-	_imu->gyro.q=(int32_t)(LPF2pApply_IMU((float)(_imu->gyro.q),&gyro_q_delay_element_11,&gyro_q_delay_element_21));
-    _imu->gyro.r=(int32_t)(LPF2pApply_IMU((float)(_imu->gyro.r),&gyro_r_delay_element_11,&gyro_r_delay_element_21));
-#endif
-//-----gyro-acc-LowPass-Butterworth-----//
-
-
+  _imu->gyro.p = update_butterworth_2_low_pass_int(&(_imu->gyro_x_filter), _imu->gyro.p);
+  _imu->gyro.q = update_butterworth_2_low_pass_int(&(_imu->gyro_y_filter), _imu->gyro.q);
+  _imu->gyro.r = update_butterworth_2_low_pass_int(&(_imu->gyro_z_filter), _imu->gyro.r);
 }
 
 void WEAK imu_scale_accel(struct Imu *_imu)
@@ -332,15 +266,10 @@ void WEAK imu_scale_accel(struct Imu *_imu)
                    IMU_ACCEL_Y_SENS_NUM) / IMU_ACCEL_Y_SENS_DEN;
   _imu->accel.z = ((_imu->accel_unscaled.z - _imu->accel_neutral.z) * IMU_ACCEL_Z_SIGN *
                    IMU_ACCEL_Z_SENS_NUM) / IMU_ACCEL_Z_SENS_DEN;
-//-----gyro-acc-LowPass-Butterworth-----//
-#if USE_ATT_BF
-    //LPF2pSetCutoffFreq_IMU(512.0, acc_cutoff_fre);
 
-	_imu->accel.x=(int32_t)(LPF2pApply_IMU((float)(_imu->accel.x),&accel_x_delay_element_11,&accel_x_delay_element_21));
-	_imu->accel.y=(int32_t)(LPF2pApply_IMU((float)(_imu->accel.y),&accel_y_delay_element_11,&accel_y_delay_element_21));
-    _imu->accel.z=(int32_t)(LPF2pApply_IMU((float)(_imu->accel.z),&accel_z_delay_element_11,&accel_z_delay_element_21));
-#endif
-//-----gyro-acc-LowPass-Butterworth-----//
+   _imu->accel.x = update_butterworth_2_low_pass_int(&(_imu->acc_x_filter), _imu->accel.x);
+   _imu->accel.y = update_butterworth_2_low_pass_int(&(_imu->acc_y_filter), _imu->accel.y);
+   _imu->accel.z = update_butterworth_2_low_pass_int(&(_imu->acc_z_filter), _imu->accel.z);
 }
 
 #if defined IMU_MAG_X_CURRENT_COEF && defined IMU_MAG_Y_CURRENT_COEF && defined IMU_MAG_Z_CURRENT_COEF

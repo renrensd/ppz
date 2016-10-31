@@ -83,7 +83,7 @@
 #define K_CCW        0x89
 #define K_HOVER      0
 
-#define RC_MAX_COUNT  4   //lost_time_out =10/(2hz)=5s
+#define RC_MAX_COUNT  4   //lost_time_out =4/(2hz)=2s
 
 struct rc_set rc_set_info;   //rc mode information
 struct rc_motion rc_motion_info;
@@ -601,4 +601,9 @@ void rc_set_connect(void)
 {
 	rc_count=0;  //reset rc_count,use for check rc_lost
 	rc_lost=FALSE;
+}
+
+void rc_set_rc_type(void)
+{
+	rc_type = REAL_RC;
 }

@@ -74,8 +74,9 @@
       <dl_setting var="nav_radius" MIN="-50" STEP="0.1" MAX="50" module="navigation" unit="m"/>
       <dl_setting var="nav_climb_vspeed" MIN="0" STEP="0.1" MAX="10.0" module="navigation" unit="m/s" param="NAV_CLIMB_VSPEED"/>
       <dl_setting var="nav_descend_vspeed" MIN="-10.0" STEP="0.1" MAX="0.0" module="navigation" unit="m/s" param="NAV_DESCEND_VSPEED"/>
-      <dl_setting var="brake_accel"   MIN="0" STEP="0.1" MAX="10" module="guidance/guidance_h_ref"  shortname="brake_acc"unit="m/s" />
-      <dl_setting var="brake_distance2"   MIN="64" STEP="10" MAX="500" module="navigation"  shortname="brake_distance2"unit="m/s" />
+      <dl_setting var="smooth_brake_accel" MIN="0.5" STEP="0.1" MAX="5.0" module="navigation" />
+      <dl_setting var="pause_brake_accel" MIN="0.5" STEP="0.1" MAX="5.0" module="navigation" />
+      <dl_setting var="set_carrot_angle"  min="30" step="1" max="90" module="navigation" shortname="carrot_angle" />
     </dl_settings>
 
   </dl_settings>

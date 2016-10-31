@@ -41,7 +41,7 @@
 #define GYRO_P_Q_R 8192  //3 //2.0
 #define MAG_X_Y_Z  4096  //2.0
 
-#define DATA_FIX_MAX 20
+#define DATA_FIX_MAX 100
 
 /*---Global-----------------------------------------------------------*/
 struct Imu_Monitor imu_moni;
@@ -100,7 +100,7 @@ uint8_t imu_ground_check(void)
 void imu_ground_reset(void)   //use for restart ground check
 {
 	imu_moni.accel_ground_check = FALSE;
-    imu_moni.gyro_ground_check = FALSE;
+  imu_moni.gyro_ground_check = FALSE;
 	imu_moni.mag_ground_check = FALSE;
 }
 

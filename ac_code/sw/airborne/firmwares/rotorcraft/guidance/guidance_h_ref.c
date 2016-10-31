@@ -27,6 +27,7 @@
 #include "firmwares/rotorcraft/guidance/guidance_h_ref.h"
 #include "generated/airframe.h"
 #include "firmwares/rotorcraft/navigation.h"
+#include "state.h"
 
 struct GuidanceHRef gh_ref;
 
@@ -198,36 +199,73 @@ static void gh_compute_route_ref(struct Int32Vect2 *ref_vector)
   gh_ref.s_route_ref = abs(gh_ref.s_route_ref);
 }
 
-float brake_accel;
 static void gh_compute_ref_max(struct Int32Vect2 *ref_vector)
 {
   /* Bound ref to max speed/accel along route reference angle.
    * If angle can't be computed, simply set both axes to max magnitude/sqrt(2).
    */
-   static uint32_t brake_counter = 0;  //use for intergrate aceel of brake
+  static uint32_t route_brake_counter = 0;  //use for intergrate aceel of brake
+  static uint32_t stop_brake_counter = 0;  //use for intergrate aceel of brake
+  static bool_t enter_speed_record = FALSE;
+  static int32_t max_speed_int = 0;
+  bool_t current_brake_flag = FALSE;
+  
   if (ref_vector->x == 0 && ref_vector->y == 0) {
     gh_ref.max_accel.x = gh_ref.max_accel.y = gh_max_accel * 0.707;
     gh_ref.max_vel.x = gh_ref.max_vel.y = gh_ref.max_speed_int * 0.707;
-  } else {
+  } 
+  else {
     gh_compute_route_ref(ref_vector);
     /* Compute maximum acceleration*/
     gh_ref.max_accel.x = INT_MULT_RSHIFT(gh_max_accel, gh_ref.c_route_ref, INT32_TRIG_FRAC);
     gh_ref.max_accel.y = INT_MULT_RSHIFT(gh_max_accel, gh_ref.s_route_ref, INT32_TRIG_FRAC);
-    /* Compute maximum reference x/y velocity from absolute max_speed */
+	
+    /* Compute maximum reference x/y velocity from absolute max_speed, with route brake */
 	if(route_brake_flag && horizontal_mode == HORIZONTAL_MODE_ROUTE )
 	{
-		brake_counter++;
-		float brake_accel_modify = (gh_ref.max_speed*gh_ref.max_speed - 1.0)/20.0 +0.15 ;  //default 10m brake distance with 1m/s end_speed
+		route_brake_counter++;
+		float brake_accel_modify = (gh_ref.max_speed*gh_ref.max_speed - 1.0)/((float)(ROUTE_BRAKE_DISTANCE)*2.0) + 0.15;  //default 10m brake distance with 1m/s end_speed
 		Bound(brake_accel_modify, 0.0, 6.0);
-		int32_t brake_delta_speed = BFP_OF_REAL(brake_accel_modify, GH_MAX_SPEED_REF_FRAC)*brake_counter/512;
+		int32_t brake_delta_speed = BFP_OF_REAL(brake_accel_modify, GH_MAX_SPEED_REF_FRAC)*route_brake_counter/512;
 		int32_t ref_max_speed = gh_ref.max_speed_int - brake_delta_speed;
 		Bound(ref_max_speed,  BFP_OF_REAL(1.0, GH_MAX_SPEED_REF_FRAC), gh_ref.max_speed_int );
 		gh_ref.max_vel.x = INT_MULT_RSHIFT(ref_max_speed, gh_ref.c_route_ref, INT32_TRIG_FRAC);
 		gh_ref.max_vel.y = INT_MULT_RSHIFT(ref_max_speed, gh_ref.s_route_ref, INT32_TRIG_FRAC);
+		
+		current_brake_flag = TRUE;
 	}
 	else
 	{
-		brake_counter = 0;  //reset counter
+		route_brake_counter = 0;  //reset counter
+	}
+	
+	/* Compute maximum reference x/y velocity from absolute max_speed, with stop brake */
+	if(stop_brake_flag)
+	{
+		if(!enter_speed_record)  //use enter speed as max speed
+		{
+			max_speed_int = BFP_OF_REAL(abs(stateGetHorizontalSpeedNorm_f()), GH_MAX_SPEED_REF_FRAC);
+			enter_speed_record = TRUE;
+		}
+		stop_brake_counter++;
+		float brake_accel_modify = accel_stop_brake;  //need get from navigation!!!
+		Bound(brake_accel_modify, 0.0, 6.0);
+		int32_t brake_delta_speed = BFP_OF_REAL(brake_accel_modify, GH_MAX_SPEED_REF_FRAC)*stop_brake_counter/512;
+		int32_t ref_max_speed = max_speed_int - brake_delta_speed;
+		Bound(ref_max_speed, 0, gh_ref.max_speed_int );
+		gh_ref.max_vel.x = INT_MULT_RSHIFT(ref_max_speed, gh_ref.c_route_ref, INT32_TRIG_FRAC);
+		gh_ref.max_vel.y = INT_MULT_RSHIFT(ref_max_speed, gh_ref.s_route_ref, INT32_TRIG_FRAC);		
+		
+		current_brake_flag = TRUE;
+	}
+	else
+	{
+		stop_brake_counter = 0;  //reset counter
+		enter_speed_record = FALSE;
+	}
+	
+	if(!current_brake_flag)
+	{
 		gh_ref.max_vel.x = INT_MULT_RSHIFT(gh_ref.max_speed_int, gh_ref.c_route_ref, INT32_TRIG_FRAC);
 		gh_ref.max_vel.y = INT_MULT_RSHIFT(gh_ref.max_speed_int, gh_ref.s_route_ref, INT32_TRIG_FRAC);
 	}

@@ -41,25 +41,33 @@ extern void radio_control_impl_init(void);
 /* timeouts - for now assumes 60Hz periodic */
 #define RC_AVG_PERIOD 8  /* TODO remove if IIR filter is used */
 #define RC_LOST_TIME 30  /* 500ms with a 60Hz timer */
-#define RC_REALLY_LOST_TIME 60 /* ~1s */
+#define RC_REALLY_LOST_TIME 120 /* ~2s */
 /* Number of valid frames before going back to RC OK */
 #define RC_OK_CPT 15
 
+/*discript ppm module state*/
 #define RC_OK          0
 #define RC_LOST        1
 #define RC_REALLY_LOST 2
 
+/*discript rc radio link state*/
+#define RC_LINK_OK   0
+#define RC_LINK_LOST 5
+
 struct RadioControl {
+  uint8_t link_status;
   uint8_t status;
   uint8_t time_since_last_frame;
   uint8_t radio_ok_cpt;
   uint8_t frame_rate;
   uint8_t frame_cpt;
+  uint16_t link_counter;
   pprz_t  values[RADIO_CONTROL_NB_CHANNEL];
 };
 
 extern struct RadioControl radio_control;
-
+extern bool_t radio_kill_switch;
+extern uint8_t radio_ap_mode;
 
 extern void radio_control_init(void);
 

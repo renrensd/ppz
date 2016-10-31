@@ -73,6 +73,7 @@ struct AhrsMlkf {
 };
 
 extern struct AhrsMlkf ahrs_mlkf;
+extern float acc_noise_ratio;
 
 extern void ahrs_mlkf_init(void);
 extern void ahrs_mlkf_set_body_to_imu(struct OrientationReps *body_to_imu);

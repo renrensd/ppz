@@ -110,9 +110,9 @@
 #endif
 
 /* low pass filter variables */
-Butterworth2LowPass_int filter_x;
-Butterworth2LowPass_int filter_y;
-Butterworth2LowPass_int filter_z;
+//Butterworth2LowPass_int filter_x;
+//Butterworth2LowPass_int filter_y;
+//Butterworth2LowPass_int filter_z;
 
 /* gps measurement noise */
 float Rgps_pos, Rgps_vel;
@@ -320,9 +320,9 @@ void b2_hff_init(float init_x, float init_xdot, float init_y, float init_ydot)
 #endif
 #endif
 
-  init_butterworth_2_low_pass_int(&filter_x, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
-  init_butterworth_2_low_pass_int(&filter_y, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
-  init_butterworth_2_low_pass_int(&filter_z, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
+  //init_butterworth_2_low_pass_int(&filter_x, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
+  //init_butterworth_2_low_pass_int(&filter_y, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
+  //init_butterworth_2_low_pass_int(&filter_z, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
 }
 
 static void b2_hff_init_x(float init_x, float init_xdot)
@@ -497,9 +497,9 @@ void b2_hff_propagate(void)
   int32_rmat_transp_vmult(&acc_meas_body, body_to_imu_rmat, &imu.accel);
 
   struct Int32Vect3 acc_body_filtered;
-  acc_body_filtered.x = update_butterworth_2_low_pass_int(&filter_x, acc_meas_body.x);
-  acc_body_filtered.y = update_butterworth_2_low_pass_int(&filter_y, acc_meas_body.y);
-  acc_body_filtered.z = update_butterworth_2_low_pass_int(&filter_z, acc_meas_body.z);
+  acc_body_filtered.x = acc_meas_body.x;//update_butterworth_2_low_pass_int(&filter_x, acc_meas_body.x);
+  acc_body_filtered.y = acc_meas_body.y;//update_butterworth_2_low_pass_int(&filter_y, acc_meas_body.y);
+  acc_body_filtered.z = acc_meas_body.z;//update_butterworth_2_low_pass_int(&filter_z, acc_meas_body.z);
 
   /* propagate current state if it is time */
   if (b2_hff_ps_counter == HFF_PRESCALER) {

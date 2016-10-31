@@ -30,6 +30,9 @@
 #ifndef VF_EXTENDED_FLOAT_H
 #define VF_EXTENDED_FLOAT_H
 
+#include "std.h"
+
+
 #define VFF_STATE_SIZE 4
 
 struct VffExtended {
@@ -44,11 +47,14 @@ struct VffExtended {
   float zdot_meas;   ///< last zdot measurement in m/s
   float z_meas_baro; ///< last z measurement from baro in m
 
+  float z_ltp_meas;  ///< accel z of ltp, after butterworth filter
+
   float P[VFF_STATE_SIZE][VFF_STATE_SIZE];  ///< covariance matrix
 };
 
 extern struct VffExtended vff;
 extern float acc_noise_debug;
+extern int8_t baro_cutoff_fre;
 
 extern void vff_init_zero(void);
 extern void vff_init(float z, float zdot, float accel_bias, float baro_offset);
@@ -59,6 +65,7 @@ extern void vff_update_offset(float offset);
 extern void vff_update_baro_conf(float z_meas, float conf);
 extern void vff_update_z_conf(float z_meas, float conf);
 extern void vff_update_zd_conf(float zd_meas, float conf);
+extern float baro_alt_wb_filter(float alt);
 
 //extern void vff_update_vz_conf(float vz_meas, float conf);
 extern void vff_realign(float z_meas);

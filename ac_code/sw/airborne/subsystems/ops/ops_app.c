@@ -175,7 +175,7 @@ void ops_heart_beat_handler(uint8_t *param)
 	ops_info.o_bat_cap = (*(param+9) << 8 | *(param+8));
 	ops_info.o_bat_rep = (*(param+11) << 8 | *(param+10));
 	ops_info.o_bat_tem = (*(param+13) << 8 | *(param+12));
-	ops_info.sys_error = *(param+18);
+	ops_info.sys_error = *(param+22);
 	if(ops_info.o_bat_cap <20000)
 	{
 		ops_info.o_bat_cap = 20000;

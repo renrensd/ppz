@@ -182,6 +182,9 @@ static void send_alive(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ALIVE(trans, dev, AC_ID, 16, MD5SUM);
+  #if OPEN_PC_DATALINK
+  pprz_msg_send_ALIVE(&((DOWNLINK_TRANSPORT).trans_tx), &((DOWNLINK_DEVICE).device), AC_ID, 16, MD5SUM);
+  #endif
 }
 #ifndef NPS_SIMU
 static void send_mcu_fault(struct transport_tx *trans, struct link_device *dev)
@@ -214,14 +217,25 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_STATUS(trans, dev, AC_ID,
                                   //&imu_nb_err, 
-                                  &_motor_nb_err,
+                                  &radio_control.link_status,
                                   &radio_control.status, &radio_control.frame_rate,
                                   &spray_state,
                                   &fix, &autopilot_mode,
                                   &autopilot_in_flight, &autopilot_motors_on,
                                   &guidance_h.mode, &guidance_v_mode,
-                                  &electrical.vsupply, &electrical.current, &electrical.rep_cap,
+                                  &electrical.vsupply, &electrical.current, &electrical.rep_cap, &electrical.temper,
 								  &time_sec);
+  #if OPEN_PC_DATALINK
+  pprz_msg_send_ROTORCRAFT_STATUS(&((DOWNLINK_TRANSPORT).trans_tx), &((DOWNLINK_DEVICE).device), AC_ID,
+                                  &radio_control.link_status,
+                                  &radio_control.status, &radio_control.frame_rate,
+                                  &spray_state,
+                                  &fix, &autopilot_mode,
+                                  &autopilot_in_flight, &autopilot_motors_on,
+                                  &guidance_h.mode, &guidance_v_mode,
+                                  &electrical.vsupply, &electrical.current, &electrical.rep_cap, &electrical.temper,
+								  &time_sec);
+  #endif
 }
 
 static void send_energy(struct transport_tx *trans, struct link_device *dev)
@@ -257,6 +271,24 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
                               &guidance_h.sp.heading,
                               &stabilization_cmd[COMMAND_THRUST],
                               &autopilot_flight_time);
+  #if OPEN_PC_DATALINK
+  pprz_msg_send_ROTORCRAFT_FP(&((DOWNLINK_TRANSPORT).trans_tx), &((DOWNLINK_DEVICE).device), AC_ID,
+                              &(stateGetPositionEnu_i()->x),
+                              &(stateGetPositionEnu_i()->y),
+                              &(stateGetPositionEnu_i()->z),
+                              &(stateGetSpeedEnu_i()->x),
+                              &(stateGetSpeedEnu_i()->y),
+                              &(stateGetSpeedEnu_i()->z),
+                              &(stateGetNedToBodyEulers_i()->phi),
+                              &(stateGetNedToBodyEulers_i()->theta),
+                              &(stateGetNedToBodyEulers_i()->psi),
+                              &guidance_h.sp.pos.y,
+                              &guidance_h.sp.pos.x,
+                              &carrot_up,
+                              &guidance_h.sp.heading,
+                              &stabilization_cmd[COMMAND_THRUST],
+                              &autopilot_flight_time);
+  #endif
 }
 
 static void send_attitude_data(struct transport_tx *trans, struct link_device *dev)
@@ -304,7 +336,11 @@ static void send_actuators(struct transport_tx *trans, struct link_device *dev)
 
 static void send_dl_value(struct transport_tx *trans, struct link_device *dev)
 {
+  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   PeriodicSendDlValue(trans, dev);
+  #if OPEN_PC_DATALINK
+  PeriodicSendDlValue(&((DOWNLINK_TRANSPORT).trans_tx), &((DOWNLINK_DEVICE).device));
+  #endif
 }
 
 static void send_rotorcraft_cmd(struct transport_tx *trans, struct link_device *dev)
@@ -450,6 +486,7 @@ void autopilot_periodic(void)
   else {
     guidance_v_run(autopilot_in_flight);
     guidance_h_run(autopilot_in_flight);
+	/*set 4 channel of sta_cmd, for motor_mix_run*/
     SetRotorcraftCommands(stabilization_cmd, autopilot_in_flight, autopilot_motors_on);
   }
   
@@ -751,24 +788,26 @@ void autopilot_on_rc_frame(void)
 {
 	uint8_t new_autopilot_mode = 0;
 		
-  if (kill_switch_is_on()) 
+  if (radio_kill_switch) //(kill_switch_is_on()) 
   {
     autopilot_set_mode(AP_MODE_KILL);
   } 
   else 
   {
-#if 0 // def RADIO_AUTO_MODE
+  #if 0 // def RADIO_AUTO_MODE
     INFO("Using RADIO_AUTO_MODE to switch between AUTO1 and AUTO2.")
     new_autopilot_mode = ap_mode_of_two_switches();
 	AP_MODE_OF_PPRZ(radio_control.values[RADIO_MODE], new_autopilot_mode);
-#else
+  #else
     //uint8_t new_autopilot_mode = ap_mode_of_3way_switch();
-	AP_MODE_OF_PPRZ(radio_control.values[RADIO_MODE], new_autopilot_mode); //TODOM: whp
-#endif
+	//AP_MODE_OF_PPRZ(radio_control.values[RADIO_MODE], new_autopilot_mode); //TODOM: whp
+	new_autopilot_mode = radio_ap_mode;
+  #endif
     /* don't enter NAV mode if GPS is lost (this also prevents mode oscillations) */
     if (!(new_autopilot_mode == AP_MODE_NAV && GpsIsLost())) {
       /* always allow to switch to manual */
-      if (new_autopilot_mode == MODE_MANUAL) {
+      if (new_autopilot_mode == MODE_MANUAL) 
+	  {
         autopilot_set_mode(new_autopilot_mode);
       }
       /* if in HOME mode, don't allow switching to non-manual modes */

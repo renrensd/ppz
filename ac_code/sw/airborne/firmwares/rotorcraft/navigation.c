@@ -74,8 +74,12 @@ bool_t exception_flag[10] = {0}; //exception flags that can be used in the fligh
 
 float dist2_to_wp;
 bool_t route_brake_flag;
-float  route_brake_accel;
-uint8_t set_angle;
+float  accel_route_brake;
+
+bool_t stop_brake_flag;
+float  accel_stop_brake;
+
+uint8_t set_carrot_angle;
 
 uint8_t horizontal_mode;
 struct EnuCoor_i nav_segment_start, nav_segment_end;
@@ -85,8 +89,8 @@ int32_t nav_circle_radius, nav_circle_qdr, nav_circle_radians;
 int32_t nav_leg_progress;
 int32_t nav_leg_length;
 
-int32_t nav_leg_progress2_from;
-int32_t nav_leg_progress2_end;
+int32_t nav_leg_progress2_from;  // <0:signed AC not reach start waypoint
+int32_t nav_leg_progress2_end;   // <0:sign AC out of end waypoint
 
 bool_t nav_survey_active;
 
@@ -211,8 +215,8 @@ void nav_init(void)
   dist2_to_home = 0;
   dist2_to_wp = 0;
   route_brake_flag = FALSE;
-  route_brake_accel = 0.0;
-  set_angle = 50;
+  accel_route_brake = 0.0;
+  set_carrot_angle = 50;
   flight_limit_height =FLIGHT_LIMIT_HEIGHT;
 
 #if PERIODIC_TELEMETRY
@@ -353,9 +357,10 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
 	}
     }
 
-    int32_t carrot_angle = (((CARROT_DIST/4) << INT32_ANGLE_FRAC) / abs_radius); 
-    Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI*3/11);
-	//int32_t carrot_angle = INT32_RAD_OF_DEG(set_angle);
+    //int32_t carrot_angle = (((CARROT_DIST/4) << INT32_ANGLE_FRAC) / abs_radius); 
+    //Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI*3/11);
+	int32_t carrot_angle = INT32_RAD_OF_DEG_Q12(set_carrot_angle);
+	Bound(carrot_angle, (INT32_ANGLE_PI / 8), INT32_ANGLE_PI_2);
 	
     int32_t heading_ccw = (1+sign_radius)*INT32_ANGLE_PI_2 - sp_heading;
 	
@@ -408,7 +413,6 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
    return leave_flag;
 }
 
-float brake_distance2;
 void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 {
   static uint8_t last_regulate_ratio = 2;
@@ -464,7 +468,7 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   horizontal_mode = HORIZONTAL_MODE_ROUTE;
 
   dist2_to_wp = get_dist2_to_point(wp_end);
-  if( dist2_to_wp < 100 )  //default 10m brake distance
+  if( dist2_to_wp < (ROUTE_BRAKE_DISTANCE*ROUTE_BRAKE_DISTANCE) )  //default 10m brake distance
   {
   	route_brake_flag = TRUE;
   }
@@ -483,7 +487,7 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 //return arrive at wp/true or false,after using approaching_time later
 bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_t approaching_time)  
 {
-  bool_t arive_flag = FALSE; 
+  bool_t arrive_flag = FALSE; 
   int32_t dist_to_point;
   struct Int32Vect2 diff;
   struct EnuCoor_i *pos = stateGetPositionEnu_i();
@@ -512,7 +516,7 @@ bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_
 
   /* return TRUE if we have arrived */
   if (dist_to_point < BFP_OF_REAL(ARRIVED_AT_WAYPOINT, INT32_POS_FRAC / 2)) {
-    arive_flag = TRUE;
+    arrive_flag = TRUE;
   }
 
   /* if coming from a valid waypoint */
@@ -522,6 +526,47 @@ bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_
     VECT2_DIFF(from_diff, *wp, *from);
     INT32_VECT2_RSHIFT(from_diff, from_diff, INT32_POS_FRAC / 2);
 	nav_leg_progress2_end = diff.x * from_diff.x + diff.y * from_diff.y;  // <0:sign AC out of end waypoint
+    if( nav_leg_progress2_end < 0)
+    {
+		arrive_flag = TRUE;
+    }
+  }
+
+  return arrive_flag;
+}
+
+//return arrive at wp/true or false,after using approaching_time later
+bool_t nav_approaching_target(struct EnuCoor_i *wp, struct EnuCoor_i *from, float arrived_distance)  
+{
+  bool_t arive_flag = FALSE; 
+  int32_t dist_to_point;
+  struct Int32Vect2 diff;
+  struct EnuCoor_i *pos = stateGetPositionEnu_i();
+
+  if (arrived_distance == 0.0) 
+  {
+    arrived_distance = 0.15f;  //avoid zero distance
+  }
+
+  VECT2_DIFF(diff, *wp, *pos);
+
+  INT32_VECT2_RSHIFT(diff, diff, INT32_POS_FRAC / 2);
+  dist_to_point = int32_vect2_norm(&diff);
+
+  /* return TRUE if we have arrived */
+  if (dist_to_point < BFP_OF_REAL(arrived_distance, INT32_POS_FRAC / 2)) 
+  {
+    arive_flag = TRUE;
+  }
+
+  /* if coming from a valid waypoint */
+  if (from != NULL) 
+  {
+    /* return TRUE if normal line at the end of the segment is crossed */
+    struct Int32Vect2 from_diff;
+    VECT2_DIFF(from_diff, *wp, *from);
+    INT32_VECT2_RSHIFT(from_diff, from_diff, INT32_POS_FRAC / 2);
+	 nav_leg_progress2_end = diff.x * from_diff.x + diff.y * from_diff.y;  // <0:sign AC out of end waypoint
     if( nav_leg_progress2_end < 0)
     {
 		arive_flag = TRUE;
@@ -807,8 +852,20 @@ bool_t nav_check_heading(void)
 	{
 		diff_angle = INT32_ANGLE_2_PI - diff_angle;
 	}
-	if( diff_angle < ANGLE_BFP_OF_REAL(0.10) ) return TRUE;
+	if( diff_angle < ANGLE_BFP_OF_REAL(0.15) ) return TRUE;
 	else return FALSE;
+}
+
+bool_t nav_check_height(void)
+{
+	if( abs(stateGetPositionNed_i()->z + nav_flight_altitude) < 0.35 )
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }
 
 void record_current_waypoint(struct EnuCoor_i *wp)
@@ -819,4 +876,31 @@ void record_current_waypoint(struct EnuCoor_i *wp)
 bool_t get_nav_route_mediacy(void)
 {
 	return ( (nav_leg_progress2_from > 0) && (nav_leg_progress2_end > 0) );
+}
+
+float smooth_brake_accel = 1.0;
+float pause_brake_accel = 2.0;
+
+void set_stop_brake(uint8_t brake_grade)
+{
+	stop_brake_flag = TRUE;
+	switch ( brake_grade )
+	{
+		case SMOOTH_BRAKE:
+			//accel_stop_brake = SMOOTH_BRAKE_ACCEL;
+			accel_stop_brake = smooth_brake_accel;
+			break;
+		case URGENT_BRAKE:
+			//accel_stop_brake = URGENT_BRAKE_ACCEL;
+			accel_stop_brake = pause_brake_accel;
+			break;
+		default:
+			accel_stop_brake = SMOOTH_BRAKE_ACCEL;
+			break;			
+	}
+}
+
+void release_stop_brake(void)
+{
+	stop_brake_flag = FALSE;
 }

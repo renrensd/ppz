@@ -40,6 +40,8 @@ typedef enum
 {
     TIMER_PERIODIC,    
     TIMER_ONE_SHOT,
+    TIMER_TWO_SHOT,
+    TIMER_THREE_SHOT    
 }TIMER_TYPES;
 
 typedef struct

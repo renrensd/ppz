@@ -66,16 +66,29 @@ void bbox_msg_heart_beat(void)
 void bbox_msg_log_start(void)
 {
 	uint8_t arg[9];
-	uint32_t ts = sys_time.nb_sec;
-   	arg[0] = BBOX_LOG_DATA_SERVICE;
+	arg[0] = BBOX_LOG_DATA_SERVICE;
 	arg[1] = 0x00;
 	arg[2] = 0x00;	//start log.
-	arg[3] = 16;	//year
-	arg[4] = 9;		//month
-	arg[5] = 27;	//day
-	arg[6] = (uint8_t)(ts / 3600);	//hour
-	arg[7] = (uint8_t)(ts % 3600 / 60);	//minute
-	arg[8] = (uint8_t)(ts % 3600 % 60);	//second
+	if( get_sys_year() )
+	{   /*below is UTC time, 8hours delay beijing time*/
+		arg[3] = get_sys_year();	//year
+		arg[4] = get_sys_month();	//month
+		arg[5] = get_sys_day();	    //day
+		arg[6] = get_sys_hour();	//hour
+		arg[7] = get_sys_minute();	//minute
+		arg[8] = get_sys_second();	//second
+	}
+	else
+	{
+		uint32_t ts = sys_time.nb_sec;
+		/*default 160927+cup_time*/
+		arg[3] = 16;	//year
+		arg[4] = 9;		//month
+		arg[5] = 27;	//day
+		arg[6] = (uint8_t)(ts / 3600);	//hour
+		arg[7] = (uint8_t)(ts % 3600 / 60);	//minute
+		arg[8] = (uint8_t)(ts % 3600 % 60);	//second
+	}
 	
    	bbox_can_msg_send(9, &arg[0]);
 }
@@ -142,6 +155,18 @@ void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len)
 					mcu_write_file_fault();
 					#endif	/* FAULT_OPTION */
 					bbox_msg_log_start();
+				}
+				if(bbox_info.start_log == FALSE)
+				{
+					bbox_msg_log_start();
+				}
+				if(!bbox_info.gps_time)
+				{
+					if(get_sys_year())
+					{
+						bbox_msg_log_start();
+						bbox_info.gps_time = TRUE;
+					}
 				}
 				break;
 			case BBOX_LOG_DATA_SERVICE:
