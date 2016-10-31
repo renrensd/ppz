@@ -194,6 +194,9 @@ void motor_mixing_run_spinup(uint32_t counter, uint32_t max_counter)
 void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
 {
   uint8_t i;
+  static uint8_t esc_cali_status = 0;
+  static pprz_t value = MOTOR_MIXING_STOP_MOTOR;
+
 #if !HITL
   if (motors_on) {
 #else
@@ -280,6 +283,30 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
     }
     bound_commands();
     bound_commands_step();
+
+#ifdef ESC_CALIBRATION
+    if(esc_cali_status == 0)
+		{
+			if(in_cmd[COMMAND_THRUST] > (MOTOR_MIXING_MAX_MOTOR/2))
+			{
+				value = MOTOR_MIXING_MAX_MOTOR;
+				esc_cali_status = 1;
+			}
+		}
+		else if(esc_cali_status == 1)
+		{
+			if(in_cmd[COMMAND_THRUST] < (MOTOR_MIXING_MAX_MOTOR/4))
+			{
+				value = MOTOR_MIXING_STOP_MOTOR;
+				esc_cali_status = 2;
+			}
+		}
+		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+		{
+			motor_mixing.commands[i] = value;
+		}
+#endif
+
   } else {
     for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
       motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;

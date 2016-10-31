@@ -50,7 +50,7 @@
  <channel ctl="C" function="THROTTLE" min="1016" neutral="1016" max="2024" average="0"/> <!-- CH3 -->
  <channel ctl="D" function="YAW"      min="2024" neutral="1516" max="1016" average="0"/> <!-- CH4 -->
  <channel ctl="E" function="MODE"    min="1016" neutral="1516" max="2024" average="0"/> <!-- CH5 -->
- <channel ctl="F" function="RADIO_KILL_SWITCH"    min="2024" neutral="1400" max="1016" average="0"/> <!-- CH6 -->
+ <channel ctl="F" function="RADIO_KILL_SWITCH"    min="2024" neutral="1600" max="1016" average="0"/> <!-- CH6 -->
  <channel ctl="G" function="GAIN1"     min="2024" neutral="1516" max="1016" average="1"/> <!-- CH7     -->
  <channel ctl="H" function="AUX2"    min="2024" neutral="2024" max="1016" average="1"/> <!-- CH8 -->
 </radio>

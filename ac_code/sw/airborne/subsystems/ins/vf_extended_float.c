@@ -69,8 +69,6 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 struct VffExtended vff;
 float acc_noise_debug;
 
-Butterworth2LowPass acc_z_filter;
-
 static void update_speed_conf(float zd_meas, float conf);
 
 #if PERIODIC_TELEMETRY
@@ -106,8 +104,6 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
   }
   acc_noise_debug = 0.1;
 
-  init_butterworth_2_low_pass(&acc_z_filter, 0.01592, (1. / 512), 0.);    //tau = 0.1592/cutoff_fre
-
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
 #endif
@@ -138,9 +134,6 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
  */
 void vff_propagate(float accel, float dt)
 {
-  /*accel first pass buterworth filter*/
-  accel = update_butterworth_2_low_pass(&acc_z_filter, accel);
-  
   /* update state */
   vff.zdotdot = accel + 9.81 - vff.bias;
   vff.z = vff.z + dt * vff.zdot;

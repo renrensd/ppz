@@ -31,6 +31,7 @@
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_orientation_conversion.h"
 #include "generated/airframe.h"
+#include "filters/low_pass_filter.h"
 
 /** must be defined by underlying hardware */
 extern void imu_impl_init(void);
@@ -59,11 +60,17 @@ struct Imu {
    * if FALSE, reset to airframe values, if TRUE set current roll/pitch
    */
   bool_t b2i_set_current;
+
+  // filter
+  float gyro_filter_fc;
+  float acc_filter_fc;
+  Butterworth2LowPass_int gyro_x_filter;
+  Butterworth2LowPass_int gyro_y_filter;
+  Butterworth2LowPass_int gyro_z_filter;
+  Butterworth2LowPass_int acc_x_filter;
+  Butterworth2LowPass_int acc_y_filter;
+  Butterworth2LowPass_int acc_z_filter;
 };
-//extern struct MPU9250_DATA MPU9250_OFFSER;
-
-extern uint8_t imu_cutoff_fre;
-
 
 /** global IMU state */
 extern struct Imu imu;

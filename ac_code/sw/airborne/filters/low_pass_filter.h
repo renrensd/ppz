@@ -127,6 +127,11 @@ struct SecondOrderLowPass {
 };
 
 
+static float butterworth_2_get_tau(float fc)
+{
+	return 1.0f/(2.0f * 3.1415926f * fc);
+}
+
 /** Init second order low pass filter.
  *
  * @param filter second order low pass filter structure

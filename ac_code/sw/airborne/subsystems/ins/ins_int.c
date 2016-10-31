@@ -268,6 +268,7 @@ void ins_int_init(void)
   AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
   ins_int.baro_initialized = FALSE;
   ins_int.baro_valid =FALSE;
+  ins_int.R_baro = 1000.0f;
 #endif
 
 #if USE_SONAR
@@ -423,7 +424,22 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 	if (last_stamp > 0)
 	{
 		float dt = (float)(stamp - last_stamp) * 1e-6;
-		ins_int_z_cmpl_corr_baro( baro_get_height(pressure, temperature), dt);
+		ins_int.baro_z = baro_get_height(pressure, temperature);
+		//ins_int_z_cmpl_corr_baro( ins_int.baro_z, dt);
+		//vff_update_baro(-baro_height);
+		if(!ins_int.baro_initialized)
+		{
+			ins_int.baro_initialized = true;
+			vff_realign(0);
+			ins_update_from_vff();
+			ins_ned_to_state();
+		}
+		else
+		{
+			vff_update_baro_conf(-ins_int.baro_z, ins_int.R_baro);
+			ins_ned_to_state();
+			ins_int.propagation_cnt = 0;
+		}
 	}
 	last_stamp = stamp;
 }
@@ -945,7 +961,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
-  ins_int_update_gps(gps_s);
+  //ins_int_update_gps(gps_s);
 
   static uint32_t last_stamp = 0;
 
