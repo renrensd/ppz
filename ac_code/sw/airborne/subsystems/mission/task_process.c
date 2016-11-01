@@ -64,7 +64,8 @@ bool_t task_wp_empty_handle(void);
 
 static inline bool_t task_nav_hover(struct EnuCoor_i hover_wp);
 static inline bool_t task_nav_wp(struct EnuCoor_i first_wp);
-static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type);
+static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type);
+static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp);
 static float set_path_flight_info(uint8_t type);
 
 void send_current_task_state(uint8_t wp_state); 
@@ -221,13 +222,16 @@ Gcs_State gcs_task_run(void)
 				interrupt_wp_scene = *stateGetPositionEnu_i();
 			}
 			else
-			{   
-				release_stop_brake();
-				if( !task_nav_path(interrupt_wp_scene, home_wp_enu, FLIGHT_PATH) ) 
+			{
+				if(task_nav_pre_path(interrupt_wp_scene, home_wp_enu, FLIGHT_PATH))
 				{
-					/*no more task_wp to run, do land motion*/
-					task_nav_hover(home_wp_enu);
-					gcs_state = GCS_RUN_LANDING;
+					release_stop_brake();
+					if( !task_nav_path(interrupt_wp_scene, home_wp_enu) ) 
+					{
+						/*no more task_wp to run, do land motion*/
+						task_nav_hover(home_wp_enu);
+						gcs_state = GCS_RUN_LANDING;
+					}
 				}
 			}
 			break;
@@ -243,12 +247,15 @@ Gcs_State gcs_task_run(void)
 			}
 			else
 			{   
-				release_stop_brake();
-				if( !task_nav_path(interrupt_wp_scene, reland_wp_enu, FLIGHT_PATH) ) 
+				if(task_nav_pre_path(interrupt_wp_scene, reland_wp_enu, FLIGHT_PATH))
 				{
-					/*no more task_wp to run, do land motion*/
-					task_nav_hover(reland_wp_enu);
-					gcs_state = GCS_RUN_LANDING;
+					release_stop_brake();
+					if( !task_nav_path(interrupt_wp_scene, reland_wp_enu) ) 
+					{
+						/*no more task_wp to run, do land motion*/
+						task_nav_hover(reland_wp_enu);
+						gcs_state = GCS_RUN_LANDING;
+					}
 				}
 			}
 			break;
@@ -366,21 +373,24 @@ bool_t run_normal_task(void)
 	{
 		case FLIGHT_LINE:
 		{
-			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH) ) 
+			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH))
 			{
-				if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
+				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
 				{
-					task_nav_hover(next_wp.wp_en);
-				}
-				if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
-				{
-					if( !achieve_next_wp() )  
+					if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
 					{
-						task_wp_empty_handle();
+						task_nav_hover(next_wp.wp_en);
 					}
-					else
+					if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
 					{
-						wp_state = 1;  /*interrupt reaching next_wp msg to gcs*/
+						if( !achieve_next_wp() )  
+						{
+							task_wp_empty_handle();
+						}
+						else
+						{
+							wp_state = 1;  /*interrupt reaching next_wp msg to gcs*/
+						}
 					}
 				}
 			}
@@ -389,17 +399,20 @@ bool_t run_normal_task(void)
 			
 		case SPRAY_LINE:
 		{
-			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, SPRAY_PATH) ) 
-			{	
-				/*no more task_wp to run*/
-				if( !achieve_next_wp() )  
-				{
-					task_wp_empty_handle();
-				}
-				else
-				{
-					wp_state = 1;
-					spray_caculate_flag = FALSE;   /*reset spray caculate flag for two continual spray line*/
+			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, SPRAY_PATH))
+			{
+				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
+				{	
+					/*no more task_wp to run*/
+					if( !achieve_next_wp() )  
+					{
+						task_wp_empty_handle();
+					}
+					else
+					{
+						wp_state = 1;
+						spray_caculate_flag = FALSE;   /*reset spray caculate flag for two continual spray line*/
+					}
 				}
 			}
 			break;
@@ -473,12 +486,15 @@ bool_t run_normal_task(void)
 				}
 			}
 			else
-			{			
-				if( !task_nav_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH) ) 
+			{
+				if(task_nav_pre_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH))
 				{
-					wp_state = 1;
-					task_nav_hover(home_wp_enu);
-					return TRUE;  /*task is finished, next to do land*/
+					if( !task_nav_path(from_wp.wp_en, home_wp_enu) ) 
+					{
+						wp_state = 1;
+						task_nav_hover(home_wp_enu);
+						return TRUE;  /*task is finished, next to do land*/
+					}
 				}
 			}
 			break;
@@ -630,18 +646,11 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 
 /** Navigation function along a segment
 */
-static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type)
+static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type)
 {
   static float flight_height_last = 0.0f;  //use reord last time flight height,once changed it will adjust the height before forword flight
   static bool_t height_align = FALSE;
 
-  //Check proximity and wait for 'duration' seconds in proximity circle if desired 
-  if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) ) 
-  {
-  	   return FALSE;
-  }
-
-  //flight height align
   float flight_height = set_path_flight_info(flight_type); 
   if(flight_height_last != flight_height)
   {
@@ -655,20 +664,29 @@ static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i
   	  {
 	  	  height_align = TRUE;
   	  }
-  }
-	
+  }  
+
   NavVerticalAltitudeMode(flight_height, 0.);
   nav_set_heading_along(&p_start_wp, &p_end_wp);  /*it can caculate once economize CPU*/
-  
-  if( nav_check_heading() && height_align )    //check heading error
+  if( height_align &&  nav_check_heading() )
   {
-	  //Route Between from-to
-	  horizontal_mode = HORIZONTAL_MODE_ROUTE;
-	  nav_route(&p_start_wp, &p_end_wp);
-	  NavVerticalAutoThrottleMode(RadOfDeg(0.0));
-	  //NavVerticalAltitudeMode(flight_height, 0.);
+  	return TRUE;
+  }
+  return FALSE;
+}
+
+static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp)
+{
+  //Check proximity and wait for 'duration' seconds in proximity circle if desired 
+  if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) ) 
+  {
+  	   return FALSE;
   }
   
+  horizontal_mode = HORIZONTAL_MODE_ROUTE;
+  nav_route(&p_start_wp, &p_end_wp);
+  NavVerticalAutoThrottleMode(RadOfDeg(0.0));
+  //NavVerticalAltitudeMode(flight_height, 0.);  
   return TRUE;
   
 }

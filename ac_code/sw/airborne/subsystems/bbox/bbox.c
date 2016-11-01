@@ -64,6 +64,7 @@ void bbox_init(void)
 	bbox_info.first_con = FALSE;
 	bbox_info.con_flag = TRUE;
 	bbox_info.start_log = FALSE;
+	bbox_info.gps_time = FALSE;
 	tm_create_timer(TIMER_CAN_NEW_LOG, (600 SECONDS), TIMER_PERIODIC,0);
 }
 

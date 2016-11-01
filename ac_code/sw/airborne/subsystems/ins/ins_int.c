@@ -555,7 +555,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 #ifdef GPS_INSTALL_BIAS
 /*unit :cm, body frame*/
   #define  INS_BODY_TO_GPS_X  0
-  #define  INS_BODY_TO_GPS_Y  27
+  #define  INS_BODY_TO_GPS_Y  33
   #define  INS_BODY_TO_GPS_Z  0
 #endif
 static bool_t gps_pos_inspect(struct NedCoor_i data)
