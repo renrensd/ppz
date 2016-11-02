@@ -225,9 +225,17 @@
   </message>
 
   <message name="DEBUG_GPS" id="26">
-    <field name="ned_z" type="int32" unit="m" alt_unit_coef="0.01"/>
-    <field name="ned_z_speed" type="int32" unit="m/s" alt_unit_coef="0.01"/>
-    <field name="qual"  type="uint8"/>
+  	<field name="gps_qual"  type="uint8"/>
+  	<field name="sol_tatus"  type="uint8"/>
+  	<field name="gps_heading"  type="float"/>
+    <field name="pos_ned_x" type="int32" unit="cm"/>
+    <field name="pos_ned_y" type="int32" unit="cm"/>
+    <field name="pos_ned_z" type="int32" unit="cm"/>
+    <field name="mlkf_pos_z"  type="float"/>
+    <field name="speed_ned_x" type="int32" unit="cm"/>
+    <field name="speed_ned_y" type="int32" unit="cm"/>
+    <field name="speed_ned_z" type="int32" unit="cm"/>
+    <field name="mlkf_speed_z"  type="float"/>
     <field name="sd_x"  type="int32" unit="m" alt_unit_coef="0.0001"/>
     <field name="sd_y"  type="int32" unit="m" alt_unit_coef="0.0001"/>
     <field name="sd_z"  type="int32" unit="m" alt_unit_coef="0.0001"/>

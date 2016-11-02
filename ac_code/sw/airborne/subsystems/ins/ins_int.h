@@ -70,24 +70,6 @@ struct InsInt {
 #if USE_RADAR24
   bool_t update_radar_agl; ///< use sonar to update agl if available
 #endif
-
-  //cmpl
-  float za_acc;
-  float zv_gps;
-  float zp_baro;
-
-  float za_est;
-  float zv_est;
-  float zp_est;
-
-  float za_corr_k;
-  float zv_corr_k;
-  float zp_corr_k;
-
-  float za_corr;
-  float zp_corr;
-  float zv_inc;
-  float zp_base;
 };
 
 struct _s_move_filter

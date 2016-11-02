@@ -151,15 +151,26 @@ void ppm_arch_init(void)
 
 void tim2_isr(void)
 {
-  if ((TIM2_SR & PPM_CC_IF) != 0) {
-    timer_clear_flag(TIM2, PPM_CC_IF);
+	uint32_t sr = TIM2_SR;
 
-    uint32_t now = timer_get_counter(TIM2) + timer_rollover_cnt;
-    ppm_decode_frame(now);
-  } else if ((TIM2_SR & TIM_SR_UIF) != 0) {
-    timer_rollover_cnt += (1 << 16);
-    timer_clear_flag(TIM2, TIM_SR_UIF);
-  }
+	if ((sr & TIM_SR_UIF) != 0)
+	{
+		timer_rollover_cnt += (1 << 16);
+		timer_clear_flag(TIM2, TIM_SR_UIF);
+	}
+
+	if ((sr & PPM_CC_IF) != 0)
+	{
+		timer_clear_flag(TIM2, PPM_CC_IF);
+//		uint16_t ccr = TIM_CCR1(TIM2);
+		uint16_t cnt = timer_get_counter(TIM2);
+//		uint32_t asdasd = ccr - cnt;
+//		uint32_t now = ccr + timer_rollover_cnt;
+		uint32_t now = cnt + timer_rollover_cnt;
+		//ppm_decode_frame(now);
+		ppm_decode_frame(now);
+	}
+
 }
 
 

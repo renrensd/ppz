@@ -27,8 +27,14 @@
 
 #include "subsystems/radio_control.h"
 #include "subsystems/radio_control/ppm.h"
+#include "filters/median_filter.h"
+#include "filters/low_pass_filter.h"
+#include "controllers/pid.h"
 
 uint16_t ppm_pulses[RADIO_CTL_NB];
+//struct MedianFilterInt ppm_pulses_filter[RADIO_CTL_NB];
+//Butterworth2LowPass_int ppm_pulses_filter2[RADIO_CTL_NB];
+//float ppm_pulses_filter3[RADIO_CTL_NB];
 volatile bool_t ppm_frame_available;
 
 /*
@@ -71,6 +77,12 @@ void radio_control_impl_init(void)
   ppm_cur_pulse = RADIO_CTL_NB;
   ppm_data_valid = FALSE;
 
+  for (int i = 0; i < RADIO_CTL_NB; i++)
+  {
+//  	init_median_filter(&(ppm_pulses_filter[i]));
+//  	init_butterworth_2_low_pass_int(&(ppm_pulses_filter2[i]), 1, 0.02f, 0);
+  }
+
   ppm_arch_init();
 
 #if PERIODIC_TELEMETRY
@@ -105,36 +117,59 @@ void radio_control_impl_event(void (* _received_frame_handler)(void))
  */
 void ppm_decode_frame(uint32_t ppm_time)
 {
-  uint32_t length = ppm_time - ppm_last_pulse_time;
-  ppm_last_pulse_time = ppm_time;
+	uint32_t length;
 
-  if (ppm_cur_pulse == RADIO_CTL_NB) {  
-  	//sync sign is coming
-    if (length > RC_PPM_TICKS_OF_USEC(PPM_SYNC_MIN_LEN) &&
-        length < RC_PPM_TICKS_OF_USEC(PPM_SYNC_MAX_LEN)) {
-      if (ppm_data_valid && RssiValid()) {
-        ppm_frame_available = TRUE;
-        ppm_data_valid = FALSE;
-      }
-      ppm_cur_pulse = 0;
-    } 
-	else {
-      ppm_data_valid = FALSE;
-	  //ppm_frame_available = FALSE;  //add:if RC lost,pulse will lower 1010
-    }
-  } 
-  else {
-    if (length > RC_PPM_TICKS_OF_USEC(PPM_DATA_MIN_LEN) &&
-        length < RC_PPM_TICKS_OF_USEC(PPM_DATA_MAX_LEN)) {
-      ppm_pulses[ppm_cur_pulse] = length;
-      ppm_cur_pulse++;
-      if (ppm_cur_pulse == RADIO_CTL_NB) {
-        ppm_data_valid = TRUE;
-      }
-    } 
-	else {
-      ppm_cur_pulse = RADIO_CTL_NB;
-      ppm_data_valid = FALSE;
-    }
-  }
+	if (ppm_time < ppm_last_pulse_time)
+	{
+		length = (1 << 16) - (ppm_last_pulse_time - ppm_time);
+	}
+	else
+	{
+		length = ppm_time - ppm_last_pulse_time;
+	}
+	ppm_last_pulse_time = ppm_time;
+
+	if (ppm_cur_pulse == RADIO_CTL_NB)
+	{
+		//sync sign is coming
+		if (length > RC_PPM_TICKS_OF_USEC(PPM_SYNC_MIN_LEN)
+				&& length < RC_PPM_TICKS_OF_USEC(PPM_SYNC_MAX_LEN))
+		{
+			if (ppm_data_valid && RssiValid())
+			{
+				ppm_frame_available = TRUE;
+				ppm_data_valid = FALSE;
+			}
+			ppm_cur_pulse = 0;
+		}
+		else
+		{
+			ppm_data_valid = FALSE;
+			//ppm_frame_available = FALSE;  //add:if RC lost,pulse will lower 1010
+		}
+	}
+	else
+	{
+		if (length > RC_PPM_TICKS_OF_USEC(PPM_DATA_MIN_LEN)
+				&& length < RC_PPM_TICKS_OF_USEC(PPM_DATA_MAX_LEN))
+		{
+			ppm_pulses[ppm_cur_pulse] = length;
+//			ppm_pulses[ppm_cur_pulse] = update_median_filter(
+//					&(ppm_pulses_filter[ppm_cur_pulse]), length);
+//			ppm_pulses[ppm_cur_pulse] =
+//					update_butterworth_2_low_pass_int(&(ppm_pulses_filter2[ppm_cur_pulse]), length);
+//			ppm_pulses_filter3[ppm_cur_pulse] = pid_simple_filter(0.05f, ppm_pulses_filter3[ppm_cur_pulse], length);
+//			ppm_pulses[ppm_cur_pulse] = ppm_pulses_filter3[ppm_cur_pulse];
+			ppm_cur_pulse++;
+			if (ppm_cur_pulse == RADIO_CTL_NB)
+			{
+				ppm_data_valid = TRUE;
+			}
+		}
+		else
+		{
+			ppm_cur_pulse = RADIO_CTL_NB;
+			ppm_data_valid = FALSE;
+		}
+	}
 }

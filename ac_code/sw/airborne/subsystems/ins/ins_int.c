@@ -68,7 +68,6 @@
 #include "math/pprz_algebra_int.h"
 
 #include "generated/flight_plan.h"
-
 //float   sonar_distance,sonar_distance_i;
 
 #if USE_BARO_BOARD
@@ -211,10 +210,6 @@ static void ins_update_from_vff(void);
 static void ins_update_from_hff(void);
 #endif
 
-static void ins_int_z_cmpl_update(float dt);
-static void ins_int_z_cmpl_corr_gps(struct GpsState *gps_s, float dt);
-static void ins_int_z_cmpl_corr_baro(float height, float dt);
-
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
@@ -224,11 +219,7 @@ static void send_ins(struct transport_tx *trans, struct link_device *dev)
   pprz_msg_send_INS(trans, dev, AC_ID,
                     &ins_int.ltp_pos.x, &ins_int.ltp_pos.y, &ins_int.ltp_pos.z,
                     &ins_int.ltp_speed.x, &ins_int.ltp_speed.y, &ins_int.ltp_speed.z,
-                    &ins_int.ltp_accel.x, &ins_int.ltp_accel.y, &ins_int.ltp_accel.z,
-										&ins_int.zp_baro,
-										&ins_int.zp_est,
-										&ins_int.zv_est,
-										&ins_int.za_est);
+                    &ins_int.ltp_accel.x, &ins_int.ltp_accel.y, &ins_int.ltp_accel.z);
 }
 
 static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
@@ -300,9 +291,6 @@ void ins_int_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
 #endif
 
-  ins_int.za_corr_k = 0.5f;
-  ins_int.zv_corr_k = 2.0f;
-  ins_int.zp_corr_k = 4.0f;
   gps_noise_debug = 0.0004;
 }
 
@@ -421,11 +409,13 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 {
 	static uint32_t last_stamp = 0;
 
+	//TEST_CASE
+	return;
+
 	if (last_stamp > 0)
 	{
 		float dt = (float)(stamp - last_stamp) * 1e-6;
 		ins_int.baro_z = baro_get_height(pressure, temperature);
-		//ins_int_z_cmpl_corr_baro( ins_int.baro_z, dt);
 		//vff_update_baro(-baro_height);
 		if(!ins_int.baro_initialized)
 		{
@@ -646,6 +636,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
  gps_pos_cm_ned.z = gps_pos_cm_ned.z - (int32_t)(DISTANCE_B2G*100 + 2);  
 
 #if INS_USE_GPS_ALT
+
   if(gps.p_stable)//gps_nmea.gps_qual==52)
   {
   	ins_int.update_radar_agl = FALSE;
@@ -662,27 +653,40 @@ void ins_int_update_gps(struct GpsState *gps_s)
   else  /*if R <1.0, use the RTK Z info*/
   {
   	float r_unstable =(float)gps_pos_sd.z /10000.0;
-	r_unstable = r_unstable * r_unstable;
-	if( r_unstable< 0.001)
-	{
-		r_unstable = 0.001;
-	}
-	if(r_unstable <0.25)
-	{
-		 vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, r_unstable );
-	}
-	else
-	{
-		/*need use baro*/
-	}
+		r_unstable = r_unstable * r_unstable;
+		if( r_unstable< 0.001)
+		{
+			r_unstable = 0.001;
+		}
+		if(r_unstable <0.25)
+		{
+			 vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, r_unstable );
+		}
+		else
+		{
+			/*need use baro*/
+		}
   }
+
+  float heading = gps_s->heading;
 
  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice, &gps_pos_cm_ned.z, &gps_speed_cm_s_ned.z, &gps_nmea.gps_qual,
-  	                                                     &gps_pos_sd.x, &gps_pos_sd.y, &gps_pos_sd.z);
-  //DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice, &gps_pos_cm_ned.x, &gps_pos_cm_ned.y, &gps_nmea.gps_qual,
-  //	                                                     &gps_speed_cm_s_ned.x, &gps_speed_cm_s_ned.y, &gps_speed_cm_s_ned.z);
+  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
+  		&gps_nmea.gps_qual,
+			&gps_nmea.sol_tatus,
+			&heading,
+			&gps_pos_cm_ned.x,
+			&gps_pos_cm_ned.y,
+  		&gps_pos_cm_ned.z,
+			&vff.z,
+  		&gps_speed_cm_s_ned.x,
+			&gps_speed_cm_s_ned.y,
+			&gps_speed_cm_s_ned.z,
+			&vff.zdot,
+			&gps_pos_sd.x,
+			&gps_pos_sd.y,
+			&gps_pos_sd.z);
  #endif
 #endif
 
@@ -952,7 +956,6 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
   if (last_stamp > 0) {
     float dt = (float)(stamp - last_stamp) * 1e-6;
     ins_int_propagate(accel, dt);
-    ins_int_z_cmpl_update(dt);
   }
   last_stamp = stamp;
 }
@@ -961,14 +964,13 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
-  //ins_int_update_gps(gps_s);
+  ins_int_update_gps(gps_s);
 
   static uint32_t last_stamp = 0;
 
 	if (last_stamp > 0)
 	{
 		float dt = (float)(stamp - last_stamp) * 1e-6;
-		//ins_int_z_cmpl_corr_gps(gps_s, dt);
 	}
 	last_stamp = stamp;
 }
@@ -1024,42 +1026,6 @@ void ins_int_register(void)
   #if USE_FLOW
   AbiBindMsgFLOW(ABI_BROADCAST, &flow_ev, flow_cb);
   #endif
-}
-
-static void ins_int_z_cmpl_update(float dt)
-{
-	int32_t z = stateGetAccelNed_i()->z;
-	ins_int.za_acc = ACCEL_FLOAT_OF_BFP(z);
-	ins_int.za_est = ins_int.za_acc + ins_int.za_corr;
-	ins_int.zv_inc = ins_int.za_est * dt;
-	ins_int.zp_base += (ins_int.zv_est + ins_int.zv_inc * 0.5f) * dt;
-	ins_int.zp_est = ins_int.zp_base + ins_int.zp_corr;
-	ins_int.zv_est += ins_int.zv_inc;
-}
-
-static void ins_int_z_cmpl_corr_gps(struct GpsState *gps_s, float dt)
-{
-	float zv_err;
-
-	struct NedCoor_i gps_speed_cm_s_ned;
-	ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_int.ltp_def, &gps_s->ecef_vel);
-
-	ins_int.zv_gps = gps_speed_cm_s_ned.z / 100.0f;
-	zv_err = ins_int.zv_gps - ins_int.zv_est;
-	ins_int.za_corr += zv_err * ins_int.za_corr_k * dt;
-	ins_int.zv_est += zv_err * ins_int.zv_corr_k * dt;
-}
-
-static void ins_int_z_cmpl_corr_baro(float height, float dt)
-{
-	float zp_err;
-
-	ins_int.zp_baro = -height;
-	zp_err = ins_int.zp_baro - ins_int.zp_est;
-
-	ins_int.za_corr += zp_err * ins_int.za_corr_k * dt;
-	ins_int.zv_est += zp_err * ins_int.zv_corr_k * dt;
-	ins_int.zp_corr += zp_err * ins_int.zp_corr_k * dt;
 }
 
 
