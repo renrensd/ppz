@@ -311,7 +311,7 @@ static void guidance_v_controller_ini(void)
 	guid_v.acc_z_pid.Ki = 0.3f;
 	guid_v.speed_z_pid.Kp = 5.0f;
 	guid_v.pos_z_pid.Kp = 2.0f;
-	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, butterworth_2_get_tau(guid_v.acc_filter_fc), 1.0f/512.0f, 0);
+	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc), 1.0f/512.0f, 0);
 }
 
 void guidance_v_read_rc(void)

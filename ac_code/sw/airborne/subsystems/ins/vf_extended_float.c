@@ -374,7 +374,6 @@ static void update_speed_conf(float zd_meas, float conf)
  */
 static void update_offset_conf(float offset, float conf)
 {
-
   const float y = offset - vff.offset;
   const float S = vff.P[3][3] + conf;
   const float K0 = vff.P[0][3] * 1 / S;
@@ -410,16 +409,10 @@ static void update_offset_conf(float offset, float conf)
   vff.P[3][3] -= K3 * P3;
 }
 
-void vff_update_offset(float offset)
+void vff_update_offset_conf(float offset, float conf)
 {
-  update_offset_conf(offset, R_OFFSET);
+  update_offset_conf(offset, conf);
 }
 
 
-void vff_realign(float z_meas)
-{
-  //vff.z = z_meas;
-  //vff.zdot = 0.;
-  //vff.offset = 0.;
-  vff_init(z_meas, 0., 0., 0.);
-}
+

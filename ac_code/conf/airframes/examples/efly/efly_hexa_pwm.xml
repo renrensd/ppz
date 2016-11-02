@@ -26,7 +26,8 @@
 
     <!--define name="MILLIAMP_AT_FULL_THROTTLE" value="80000"/-->
 
-    <define name="DISTANCE_B2G" value="0.3"/>
+    <define name="GPS_B2G_DISTANCE" value="0.3"/>
+    <define name="BARO_B2G_DISTANCE" value="0.3"/>
     <define name="DISTANCE_ABOVE_GROUNG" value="0.45"/>
     <!--define name="USE_PERSISTENT_SETTINGS" value="TRUE"/-->
     <subsystem name="radio_control" type="ppm"/>   

@@ -34,6 +34,7 @@
 #include "std.h"
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_algebra_float.h"
+#include "filters/low_pass_filter.h"
 
 /** Ins implementation state (fixed point) */
 struct InsInt {
@@ -50,7 +51,8 @@ struct InsInt {
   /** request to reset vertical filter.
    * Sets the z-position to zero and resets the the z-reference to current altitude.
    */
-  bool_t vf_reset;
+  bool_t vf_realign;
+  bool_t vf_stable;
 
   /* output LTP NED */
   struct NedCoor_i ltp_pos;
@@ -58,11 +60,14 @@ struct InsInt {
   struct NedCoor_i ltp_accel;
 
   /* baro */
-  float baro_z;  ///< z-position calculated from baro in meters (z-down)
-  float qfe;
+  float baro_z;  ///< z-position calculated from baro in meters (NED)
+  struct FirstOrderLowPass baro_z_filter;
   bool_t baro_initialized;
-  bool_t baro_valid;
+  bool_t baro_valid;// not used !!!
+  bool_t update_use_baro;
   float R_baro;
+  float R_baro_offset;
+  int32_t virtual_p_stable;
 
 #if 1 //USE_SONAR
   bool_t update_on_agl; ///< use sonar to update agl if available
@@ -70,24 +75,6 @@ struct InsInt {
 #if USE_RADAR24
   bool_t update_radar_agl; ///< use sonar to update agl if available
 #endif
-
-  //cmpl
-  float za_acc;
-  float zv_gps;
-  float zp_baro;
-
-  float za_est;
-  float zv_est;
-  float zp_est;
-
-  float za_corr_k;
-  float zv_corr_k;
-  float zp_corr_k;
-
-  float za_corr;
-  float zp_corr;
-  float zv_inc;
-  float zp_base;
 };
 
 struct _s_move_filter

@@ -32,6 +32,11 @@
 
 #define INT32_FILT_FRAC  8
 
+static inline float low_pass_filter_get_tau(float fc)
+{
+	return 1.0f/(2.0f * 3.1415926f * fc);
+}
+
 /** First order low pass filter structure.
  *
  * using bilinear z transform
@@ -125,12 +130,6 @@ struct SecondOrderLowPass {
   float i[2]; ///< input history
   float o[2]; ///< output history
 };
-
-
-static float butterworth_2_get_tau(float fc)
-{
-	return 1.0f/(2.0f * 3.1415926f * fc);
-}
 
 /** Init second order low pass filter.
  *
