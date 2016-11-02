@@ -1383,7 +1383,12 @@
   </message>
 
   <message name="INS_Z" id="151">
+    <field name="gps_qual"    type="uint8"/>
+    <field name="p_stable"    type="uint8"/>
     <field name="baro_z"    type="float" unit="m"/>
+    <field name="baro_z_filter"    type="float" unit="m"/>
+    <field name="gps_z"    type="float" unit="m"/>
+    <field name="ekf_z"    type="float" unit="m"/>
   </message>
 
   <message name="PCAP01_STATUS" id="152">

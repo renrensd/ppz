@@ -225,9 +225,16 @@ static void send_ins(struct transport_tx *trans, struct link_device *dev)
 
 static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
 {
+	float baro_filter = get_first_order_low_pass(&ins_int.baro_z_filter);
+
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_INS_Z(trans, dev, AC_ID,
-                      &ins_int.baro_z);
+  					&ins_int.gps_qual,
+  		  		&ins_int.p_stable,
+  		  		&ins_int.baro_z,
+  					&baro_filter,
+  					&ins_int.gps_z_m,
+  					&vff.z);
 }
 
 static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
@@ -593,16 +600,18 @@ void ins_int_update_gps(struct GpsState *gps_s)
   }
 
 	float baro_filter = get_first_order_low_pass(&ins_int.baro_z_filter);
-	float gps_z_m = gps_pos_cm_ned.z/100.0f;
+	ins_int.gps_z_m = gps_pos_cm_ned.z/100.0f;
+	ins_int.gps_qual = gps_nmea.gps_qual;
+	ins_int.p_stable = gps.p_stable;
 
  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
   		&gps_nmea.gps_qual,
-  		&gps.p_stable,
+  		&ins_int.p_stable,
   		&ins_int.baro_z,
 			&baro_filter,
-			&gps_z_m,
+			&ins_int.gps_z_m,
 			&vff.z);
  #endif
 #endif

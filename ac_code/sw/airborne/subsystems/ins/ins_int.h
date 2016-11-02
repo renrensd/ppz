@@ -69,6 +69,11 @@ struct InsInt {
   float R_baro_offset;
   int32_t virtual_p_stable;
 
+  // gps telemetry
+  uint8_t gps_qual;
+  float gps_z_m;
+  uint8_t p_stable;
+
 #if 1 //USE_SONAR
   bool_t update_on_agl; ///< use sonar to update agl if available
 #endif
