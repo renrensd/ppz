@@ -1,6 +1,5 @@
 #ifndef _XBEE_MSG_DEF_H_
 #define _XBEE_MSG_DEF_H_
-#include "subsystems/datalink/xbee.h"
 
 /**** Definition of constants ****/
 

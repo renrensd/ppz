@@ -27,9 +27,11 @@
       <dl_setting var="guid_v.acc_z_pid.Kp"    min="0" step="0.01" max="5"     module="guidance/guidance_v" shortname="acc_z_Kp" />   
       <dl_setting var="guid_v.acc_z_pid.Ki"    min="0" step="0.01" max="5"     module="guidance/guidance_v" shortname="acc_z_Ki" />
       <dl_setting var="guid_v.speed_z_pid.Kp"    min="0" step="0.01" max="20"     module="guidance/guidance_v" shortname="speed_z_Kp" />
+      <dl_setting var="guid_v.speed_z_pid.Ki"    min="0" step="0.01" max="20"     module="guidance/guidance_v" shortname="speed_z_Ki" />
+      <dl_setting var="guid_v.speed_z_pid.Kd"    min="0" step="0.01" max="20"     module="guidance/guidance_v" shortname="speed_z_Kd" />
       <dl_setting var="guid_v.pos_z_pid.Kp"    min="0" step="0.01" max="5"     module="guidance/guidance_v" shortname="pos_z_Kp" />
-    
-    
+      <dl_setting var="guid_v.pos_z_pid.Ki"    min="0" step="0.01" max="5"     module="guidance/guidance_v" shortname="pos_z_Ki" />
+      <dl_setting var="guid_v.pos_z_pid.Kd"    min="0" step="0.01" max="5"     module="guidance/guidance_v" shortname="pos_z_Kd" /> 
     </dl_settings>
 
   <!--dl_settings name="Direction  Value">

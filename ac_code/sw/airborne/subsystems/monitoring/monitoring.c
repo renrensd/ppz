@@ -369,10 +369,6 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 		height_ground_reset();
 		ground_check_status = FALSE;
 	}
-	if(out_of_control_detect())
-	{
-		ground_check_pass = FALSE;   //AP_MODE will set kill,lock motors
-	}
 }
 
 

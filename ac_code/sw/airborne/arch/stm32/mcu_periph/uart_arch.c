@@ -114,27 +114,27 @@ void uart_periph_set_mode(struct uart_periph *p, bool_t tx_enabled, bool_t rx_en
 
 void uart_put_byte(struct uart_periph *p, uint8_t data)
 {
-	  	uint16_t temp = (p->tx_insert_idx + 1) % UART_TX_BUFFER_SIZE;
+	uint16_t temp = (p->tx_insert_idx + 1) % UART_TX_BUFFER_SIZE;
 
-	  	if (temp == p->tx_extract_idx) {
-	    	return;  // no room
-	  	}
+	if (temp == p->tx_extract_idx) {
+		return;  // no room
+	}
 
-	  	USART_CR1((uint32_t)p->reg_addr) &= ~USART_CR1_TXEIE; // Disable TX interrupt
+	USART_CR1((uint32_t)p->reg_addr) &= ~USART_CR1_TXEIE; // Disable TX interrupt
 
-	  	// check if in process of sending data
-	  	if (p->tx_running) 
-	  	{ // yes, add to queue
-	    	p->tx_buf[p->tx_insert_idx] = data;
-	    	p->tx_insert_idx = temp;
-	  	} 
-		else 
-	  	{ // no, set running flag and write to output register
-	    	p->tx_running = TRUE;
-	    	usart_send((uint32_t)p->reg_addr, data);
-	  	}
+	// check if in process of sending data
+	if (p->tx_running) 
+	{ // yes, add to queue
+		p->tx_buf[p->tx_insert_idx] = data;
+		p->tx_insert_idx = temp;
+	} 
+	else 
+	{ // no, set running flag and write to output register
+		p->tx_running = TRUE;
+		usart_send((uint32_t)p->reg_addr, data);
+	}
 
-	  	USART_CR1((uint32_t)p->reg_addr) |= USART_CR1_TXEIE; // Enable TX interrupt
+	USART_CR1((uint32_t)p->reg_addr) |= USART_CR1_TXEIE; // Enable TX interrupt
 }
 
 static inline void usart_isr(struct uart_periph *p)
@@ -182,7 +182,7 @@ static inline void usart_isr(struct uart_periph *p)
 #ifdef OPS_OPTION
 	if(uart == USART6)
 	{
-		uart_ops_rx_proc();		
+		uart_ops_rx_proc();
 	}
 #endif	/* OPS_OPTION */
   } 

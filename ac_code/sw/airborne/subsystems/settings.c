@@ -38,6 +38,10 @@
 #include "wdg.h"
 #endif
 
+#ifndef FRAM_OPTION
+#include "subsystems/fram/fram_if.h"
+#endif	/* FRAM_OPTION */
+
 struct PersistentSettings pers_settings;
 
 /** flag for setting feedback.
@@ -53,11 +57,23 @@ bool_t settings_clear_flag;
 void settings_init(void)
 {
 #if USE_PERSISTENT_SETTINGS
-  if (persistent_read((void *)&pers_settings, sizeof(struct PersistentSettings))) {
+  #ifdef FRAM_OPTION
+  if( fram_ac_param_read((void *)&pers_settings, sizeof(struct PersistentSettings)) != 0) 
+  {
     return;  // return -1 ?
   }
+  #else
+  if (persistent_read((void *)&pers_settings, sizeof(struct PersistentSettings))) 
+  {
+    return;  // return -1 ?
+  }
+  #endif	/* FRAM_OPTION */
+  
   /* from generated/settings.h */
-  persistent_settings_load();
+  if(guidance_v_kp != 0)
+  {
+  	persistent_settings_load();
+  }
 #endif
 }
 
@@ -74,6 +90,18 @@ int32_t settings_store(void)
 	#endif
     /* from generated/settings.h */
     persistent_settings_store();
+
+	#ifdef FRAM_OPTION
+	if( fram_ac_param_write((void *)&pers_settings, sizeof(struct PersistentSettings)) == 0) 
+	{
+      /* persistent write was successful */
+      settings_store_flag = TRUE;
+	  #ifdef WDG_OPTION
+	  wdg_disable_systick_feed();
+	  #endif
+      return 0;
+    }
+	#else
     if (!persistent_write((void *)&pers_settings, sizeof(struct PersistentSettings))) 
 	{
       /* persistent write was successful */
@@ -83,6 +111,7 @@ int32_t settings_store(void)
 	  #endif
       return 0;
     }
+	#endif	/* FRAM_OPTION */
   }
 #endif
   settings_store_flag = FALSE;
@@ -100,6 +129,10 @@ int32_t settings_clear(void)
   	#ifdef WDG_OPTION
 	wdg_enable_systick_feed();
 	#endif
+
+	#ifdef FRAM_OPTION
+	
+	#else
     if (!persistent_clear()) 
 	{
       /* clearing all persistent settings was successful */
@@ -109,6 +142,7 @@ int32_t settings_clear(void)
 	  #endif
       return 0;
     }
+	#endif	/* FRAM_OPTION */
   }
 #endif
   settings_clear_flag = FALSE;

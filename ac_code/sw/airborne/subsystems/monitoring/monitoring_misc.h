@@ -49,7 +49,6 @@ extern void lift_flight_check(void);
 extern void task_running_check(void);
 extern void mode_convert_check(void);
 extern uint8_t autopilot_ground_check(void);
-extern bool_t out_of_control_detect(void);
 
 
 #endif /*_MONITORING_MISC_H_ */

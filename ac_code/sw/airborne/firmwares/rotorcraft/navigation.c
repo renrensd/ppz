@@ -85,6 +85,9 @@ int32_t nav_circle_radius, nav_circle_qdr, nav_circle_radians;
 int32_t nav_leg_progress;
 int32_t nav_leg_length;
 
+int32_t nav_leg_progress2_from;
+int32_t nav_leg_progress2_end;
+
 bool_t nav_survey_active;
 
 int32_t nav_roll, nav_pitch;
@@ -421,6 +424,7 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 
   uint32_t leg_length2 = Max((wp_diff.x * wp_diff.x + wp_diff.y * wp_diff.y)>>16, 1);   //leg_length2 is route length square(real)
   int32_t leg_progress2 = (pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y)>>16;        //leg_progress2 is route_len * (shadow of cur_star len)
+  nav_leg_progress2_from = leg_progress2;   // <0:signed AC not reach start waypoint
   nav_leg_length = int32_sqrt(leg_length2);                                             //nav_leg_length is real length of route
   nav_leg_progress = (float)(leg_progress2 / nav_leg_length);                                    //nav_leg_progress is shadow length of flighted line
  
@@ -479,6 +483,7 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 //return arrive at wp/true or false,after using approaching_time later
 bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_t approaching_time)  
 {
+  bool_t arive_flag = FALSE; 
   int32_t dist_to_point;
   struct Int32Vect2 diff;
   struct EnuCoor_i *pos = stateGetPositionEnu_i();
@@ -507,7 +512,7 @@ bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_
 
   /* return TRUE if we have arrived */
   if (dist_to_point < BFP_OF_REAL(ARRIVED_AT_WAYPOINT, INT32_POS_FRAC / 2)) {
-    return TRUE;
+    arive_flag = TRUE;
   }
 
   /* if coming from a valid waypoint */
@@ -516,10 +521,14 @@ bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_
     struct Int32Vect2 from_diff;
     VECT2_DIFF(from_diff, *wp, *from);
     INT32_VECT2_RSHIFT(from_diff, from_diff, INT32_POS_FRAC / 2);
-    return (diff.x * from_diff.x + diff.y * from_diff.y < 0);
+	nav_leg_progress2_end = diff.x * from_diff.x + diff.y * from_diff.y;  // <0:sign AC out of end waypoint
+    if( nav_leg_progress2_end < 0)
+    {
+		arive_flag = TRUE;
+    }
   }
 
-  return FALSE;
+  return arive_flag;
 }
 
 /** Check the time spent in a radius of 'ARRIVED_AT_WAYPOINT' around a wp  */
@@ -805,4 +814,9 @@ bool_t nav_check_heading(void)
 void record_current_waypoint(struct EnuCoor_i *wp)
 {
 	VECT3_COPY(*wp,*stateGetPositionEnu_i());
+}
+
+bool_t get_nav_route_mediacy(void)
+{
+	return ( (nav_leg_progress2_from > 0) && (nav_leg_progress2_end > 0) );
 }

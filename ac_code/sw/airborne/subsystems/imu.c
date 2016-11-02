@@ -123,8 +123,9 @@ struct Imu imu;
 void imu_init(void)
 {
   gyro_offset_success = TRUE;  //unuse offset
-  imu.gyro_filter_fc = 25;
-  imu.acc_filter_fc = 10;
+
+  imu.gyro_filter_fc = GYRO_FILTER_FC;
+  imu.acc_filter_fc = ACC_FILTER_FC;
   init_butterworth_2_low_pass_int(&(imu.gyro_x_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.gyro_y_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.gyro_z_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);

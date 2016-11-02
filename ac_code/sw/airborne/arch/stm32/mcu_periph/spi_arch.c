@@ -722,6 +722,7 @@ void spi1_arch_init(void)
   gpio_setup_pin_af(GPIO_BANK_SPI1_SCK, GPIO_SPI1_SCK, 0, TRUE);
 #elif defined STM32F4
   gpio_setup_pin_af(SPI1_GPIO_PORT_MISO, SPI1_GPIO_MISO, SPI1_GPIO_AF, FALSE);
+  gpio_mode_setup(SPI1_GPIO_PORT_MISO, GPIO_MODE_AF, GPIO_PUPD_PULLUP, SPI1_GPIO_MISO);
   gpio_setup_pin_af(SPI1_GPIO_PORT_MOSI, SPI1_GPIO_MOSI, SPI1_GPIO_AF, TRUE);
   gpio_setup_pin_af(SPI1_GPIO_PORT_SCK, SPI1_GPIO_SCK, SPI1_GPIO_AF, TRUE);
 
@@ -813,8 +814,8 @@ void spi2_arch_init(void)
   gpio_setup_pin_af(SPI2_GPIO_PORT_MOSI, SPI2_GPIO_MOSI, SPI2_GPIO_AF, TRUE);
   gpio_setup_pin_af(SPI2_GPIO_PORT_SCK, SPI2_GPIO_SCK, SPI2_GPIO_AF, TRUE);
 
-  gpio_set_output_options(SPI2_GPIO_PORT_MOSI, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, SPI2_GPIO_MOSI);
-  gpio_set_output_options(SPI2_GPIO_PORT_SCK, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, SPI2_GPIO_SCK);
+  gpio_set_output_options(SPI2_GPIO_PORT_MOSI, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, SPI2_GPIO_MOSI);
+  gpio_set_output_options(SPI2_GPIO_PORT_SCK, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, SPI2_GPIO_SCK);
 #endif
 
   // reset SPI

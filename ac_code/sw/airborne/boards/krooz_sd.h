@@ -3,7 +3,7 @@
 
 #define BOARD_KROOZ
 
-/* KroozSD has a 25MHz external clock and 168MHz internal. */
+/* KroozSD has a 24MHz external clock and 168MHz internal. */
 #define EXT_CLK 24000000
 #define AHB_CLK 168000000
 
@@ -142,6 +142,9 @@
 #define SPI_SELECT_SLAVE3_PORT GPIOE	//gyro_xy_cs
 #define SPI_SELECT_SLAVE3_PIN GPIO12
 
+#define SPI_SELECT_SLAVE4_PORT GPIOD	//fm25v01 cs.
+#define SPI_SELECT_SLAVE4_PIN GPIO10
+
 /* I2C mapping */
 #define I2C1_GPIO_PORT GPIOB
 #define I2C1_GPIO_SCL GPIO8
@@ -151,10 +154,10 @@
 #define I2C2_GPIO_SCL GPIO10
 #define I2C2_GPIO_SDA GPIO11
 
-#define I2C3_GPIO_PORT_SCL GPIOA
-#define I2C3_GPIO_PORT_SDA GPIOC
-#define I2C3_GPIO_SCL GPIO8
-#define I2C3_GPIO_SDA GPIO9
+//#define I2C3_GPIO_PORT_SCL GPIOA
+//#define I2C3_GPIO_PORT_SDA GPIOC
+//#define I2C3_GPIO_SCL GPIO8
+//#define I2C3_GPIO_SDA GPIO9
 
 /* Onboard ADCs */
 #define USE_AD_TIM5 1
@@ -359,7 +362,7 @@
 
 /* DEBUG_GPIO_OPTION */
 #define DEBUG_GPIO_OPTION
-#define DEBUG_GPIO 	GPIOE,GPIO8
+#define DEBUG_GPIO 	GPIOA,GPIO3
 
 
 #endif /* CONFIG_KROOZ_SD_H */

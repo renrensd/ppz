@@ -19,7 +19,6 @@
 *=====================================================================*/
 #ifndef _OPS_APP_IF_H_
 #define _OPS_APP_IF_H_ 
-#include "../../modules/system/types.h"
 /**** Definition of constants ****/
 
 #define PARAM_FLOW_SPEED  1
@@ -73,7 +72,6 @@ extern void ops_task(void);
 extern void ops_init(void);
 extern void ops_heart_beat_handler(uint8_t *param);
 extern void ops_update_aircraft_vel(void);
-extern void ops_heart_beat_lose_handler(void);
 extern void ops_update_config_param(uint16_t param, uint8_t param_type);
 extern void rc_update_ops_config_param(uint8_t grade);
 

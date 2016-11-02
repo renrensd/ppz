@@ -18,7 +18,14 @@
 * 
 *=====================================================================*/
 #include "subsystems/mission/gcs_nav_xbee.h"
+#include "subsystems/datalink/datalink.h"
+#if DATALINK == XBEE
 #include "subsystems/datalink/xbee.h"
+#endif
+
+#if DATALINK == TRANSPTA
+#include "subsystems/datalink/transpta.h"
+#endif	/* TRANSPTA */
 
 #define GCS_MAX_COUNT  20   //lost_time_out =12/(2hz)=6s
 
@@ -46,7 +53,7 @@ void gcs_lost_check(void)
 		   	XbeeSetGcsConFalse(); 
 		}
 	}
-	#endif
+	#endif	/* GCS_V1_OPTION */
 }
 
 void gcs_set_connect(void)

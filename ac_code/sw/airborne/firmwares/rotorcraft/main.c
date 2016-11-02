@@ -84,11 +84,21 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include "generated/modules.h"
 #include "subsystems/abi.h"
 
+#if DATALINK==XBEE
 #include "subsystems/datalink/xbee.h"
+#endif	/* DATALINK==XBEE */
+
+#if DATALINK == TRANSPTA
+#include "subsystems/datalink/transpta.h"
+#endif	/* TRANSPTA */
 
 #ifdef OPS_OPTION
 #include"subsystems/ops/ops_app_if.h"
 #endif	/* OPS_OPTION */
+
+#ifdef BBOX_OPTION
+#include"subsystems/bbox/bbox_if.h"
+#endif	/* BBOX_OPTION */
 
 #ifdef MONITORING_OPTION
 #include "subsystems/monitoring/monitoring.h"
@@ -97,6 +107,10 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #ifdef WDG_OPTION
 #include "wdg.h"
 #endif
+
+#ifndef FRAM_OPTION
+#include "subsystems/fram/fram_if.h"
+#endif	/* FRAM_OPTION */
 
 /* if PRINT_CONFIG is defined, print some config options */
 PRINT_CONFIG_VAR(PERIODIC_FREQUENCY)
@@ -182,6 +196,11 @@ int main(void)
 STATIC_INLINE void main_init(void)
 {
   mcu_init();
+
+#ifdef FRAM_OPTION
+  fram_init();
+#endif
+ 
 
 #if defined(PPRZ_TRIG_INT_COMPR_FLASH)
   pprz_trig_int_init();
@@ -453,8 +472,6 @@ STATIC_INLINE void failsafe_check(void)
 
 }
 
-
-
 STATIC_INLINE void main_event(void)
 {
 	#ifdef WDG_OPTION
@@ -497,4 +514,9 @@ STATIC_INLINE void main_event(void)
 #endif
 
   modules_event_task();
+
+#ifdef BBOX_OPTION
+	bbox_task();
+#endif	/* BBOX_OPTION */
+
 }

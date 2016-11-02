@@ -41,6 +41,12 @@
 #include "dl_protocol.h"
 #if DATALINK==XBEE
 #include "subsystems/datalink/xbee.h"
+#endif
+
+#if DATALINK == TRANSPTA
+#include "subsystems/datalink/transpta.h"
+#endif	/* TRANSPTA */
+
 #ifdef GCS_V1_OPTION
 #include "uplink_ac.h"
 #include "uplink_gcs.h"
@@ -52,8 +58,7 @@
 #include "subsystems/mission/gcs_nav_xbee.h"
 #include "subsystems/mission/task_manage.h"
 #include "subsystems/mission/task_spray_misc.h"
-#endif
-#endif
+#endif	/* GCS_V1_OPTION */
 
 #include "mcu_periph/uart.h"
 
@@ -77,8 +82,6 @@
 #include "state.h"
 #include "led.h"
 #ifdef GCS_V1_OPTION
-#include "subsystems/datalink/xbee_msg_def.h"
-
 /*use for corret gen_message.ml generate dynamic array*/
 #define DL_ADD_TASK_waypoints_lon_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+7+DL_ADD_TASK_wp_action_length(_payload))))
 
@@ -131,11 +134,17 @@ void dl_parse_msg(void)
   uint8_t msg_type = TypeOfMsg(dl_buffer);
   uint8_t msg_id = IdOfMsg(dl_buffer);
 
- #if DATALINK==XBEE && defined GCS_V1_OPTION
+ #ifdef GCS_V1_OPTION
   //process RC uplink message 
   if(msg_type == XBEE_TYPE_RC)   
   { //serial_code confirm
+    #if DATALINK==XBEE
   	if(xbee_con_info.rc_con_available != TRUE)  return;
+	#endif	/* DATALINK==XBEE */
+
+	xbee_con_info.rc_con_available = TRUE;
+	rc_set_connect();
+	
 	switch (msg_id) 
 	{  /*
 	    #define DL_RC_MOTION_CMD 1
@@ -163,7 +172,8 @@ void dl_parse_msg(void)
 		   rc_set_connect();
 		   break;
 		}
-		
+
+		#if DATALINK==XBEE
 	    case DL_RC_BIND_STATE: 
 		{ 
 		  /*check rc serial_code*/
@@ -183,10 +193,11 @@ void dl_parse_msg(void)
 		  {
 			  uint8_t ac_serial_code[10]=A2R_SERIAL_CODE;
 			  xbee_tx_header(XBEE_ACK,XBEE_ADDR_RC);		  
-			  DOWNLINK_SEND_BIND_RC(DefaultChannel, DefaultDevice, ac_serial_code);
+			  DOWNLINK_SEND_BIND_RC(SecondChannel, SecondDevice, ac_serial_code);
 		  }
 		  break;
 	    }
+		#endif	/* DATALINK==XBEE */
 		
 		#ifdef CALIBRATION_OPTION
 		case PPRZ_MSG_ID_CALIBRATION_RESULT_RC_ACK_STATE:
@@ -203,9 +214,13 @@ void dl_parse_msg(void)
   
   //process android GCS uplink message 
  if(msg_type == XBEE_TYPE_GCS)   
-  {
-  	if(xbee_con_info.gcs_con_available != TRUE)  return;
+ {
+    #if DATALINK==XBEE
+	if(xbee_con_info.gcs_con_available != TRUE)  return;
+	#endif	/* DATALINK==XBEE */
 
+	gcs_set_connect();
+	
   	switch (msg_id) 
 	{ 
 /*
@@ -266,7 +281,7 @@ void dl_parse_msg(void)
 			}
 			enum Task_Ack_Type task_ack_type = TASK_ADD;
 			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-			DOWNLINK_SEND_TASK_ACK_STATE(DefaultChannel, DefaultDevice, 
+			DOWNLINK_SEND_TASK_ACK_STATE(SecondChannel, SecondDevice, 
 		   	                               &dl_task_info.task_code,
 		   	                               &task_ack_type,
 		   	                               &response);
@@ -304,7 +319,7 @@ void dl_parse_msg(void)
 			}
 			enum Task_Ack_Type task_ack_type = TASK_UPDATE;
 			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-			DOWNLINK_SEND_TASK_ACK_STATE(DefaultChannel, DefaultDevice, 
+			DOWNLINK_SEND_TASK_ACK_STATE(SecondChannel, SecondDevice, 
 		   	                               &dl_task_info.task_code,
 		   	                               &task_ack_type,
 		   	                               &response);
@@ -322,7 +337,7 @@ void dl_parse_msg(void)
 			response = parse_delete_task(wp_start_id, wp_end_id);
 			enum Task_Ack_Type task_ack_type = TASK_DELETE;
 			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-			DOWNLINK_SEND_TASK_ACK_STATE(DefaultChannel, DefaultDevice, 
+			DOWNLINK_SEND_TASK_ACK_STATE(SecondChannel, SecondDevice, 
 		   	                               &task_code,
 		   	                               &task_ack_type,
 		   	                               &response);
@@ -364,7 +379,7 @@ void dl_parse_msg(void)
 				response = 1;
 			}
 			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-			DOWNLINK_SEND_LAND_TASK_ACK_STATE(DefaultChannel, DefaultDevice, 
+			DOWNLINK_SEND_LAND_TASK_ACK_STATE(SecondChannel, SecondDevice, 
 		   	                               &dl_land_info.operation_type,
 		   	                               &response);
 			break;
@@ -391,10 +406,10 @@ void dl_parse_msg(void)
 		   uint8_t pt_value = DL_SET_COMMAND_command_value(dl_buffer);
 		   int8_t response = (int8_t)(DlSetCommand(id, pt_value));
 		   xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-		   DOWNLINK_SEND_SET_COMMAND_ACK_STATE(DefaultChannel, DefaultDevice, &id, &pt_value, &response);
+		   DOWNLINK_SEND_SET_COMMAND_ACK_STATE(SecondChannel, SecondDevice, &id, &pt_value, &response);
 		   break;
 		}
-		
+		#if DATALINK==XBEE
 		case DL_BIND_AIRCRAFT: 
 		{ 
 		  /*check gcs serial_code*/
@@ -419,9 +434,10 @@ void dl_parse_msg(void)
 		  		XbeeSetFailBind();
 		  }
           xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-		  DOWNLINK_SEND_AIRCRAFT_BIND_ACK_STATE(DefaultChannel, DefaultDevice, &code_check);
+		  DOWNLINK_SEND_AIRCRAFT_BIND_ACK_STATE(SecondChannel, SecondDevice, &code_check);
 		  break;
 	   }	
+		#endif	/* DATALINK==XBEE */
 		
 		case DL_EMERGENCY_RECORD_ACK_STATE:
 		{
