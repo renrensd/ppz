@@ -39,7 +39,7 @@
     <mode name="ins">
       <message name="DL_VALUE"               period="0.5"/>
       <message name="ALIVE"                  period="2.1"/>
-      <message name="INS"               period="0.05"/>
+      <message name="INS_Z"                  period=".02"/>
       <!--message name="GUIDANCE_H_REF_INT"    period="0.01"/-->
     </mode>
 
@@ -140,7 +140,6 @@
       <message name="VFF"               period=".05"/>
       <message name="VFF_EXTENDED"      period=".05"/>
       <message name="VERT_LOOP"         period=".05"/>
-      <message name="INS_Z"             period=".05"/>
       <message name="INS"               period=".11"/>
       <message name="INS_REF"           period="5.1"/>
     </mode>
