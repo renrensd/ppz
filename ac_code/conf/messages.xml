@@ -227,14 +227,15 @@
   <message name="DEBUG_GPS" id="26">
     <field name="gps_qual"    type="uint8"/>
     <field name="p_stable"    type="uint8"/>
+    <field name="sol_tatus"    type="uint8"/>
     <field name="gps_heading"    type="float" unit="deg"/>
     <field name="mag_heading"    type="float" unit="deg"/>
-    <field name="gps_pos_cm_x"    type="float" unit="deg"/>
-    <field name="gps_pos_cm_y"    type="float" unit="deg"/>
-    <field name="gps_pos_cm_z"    type="float" unit="deg"/>
-    <field name="gps_pos_sd_x"    type="float" unit="deg"/>
-    <field name="gps_pos_sd_y"    type="float" unit="deg"/>
-    <field name="gps_pos_sd_z"    type="float" unit="deg"/>
+    <field name="gps_pos_cm_x"    type="int32" unit="deg"/>
+    <field name="gps_pos_cm_y"    type="int32" unit="deg"/>
+    <field name="gps_pos_cm_z"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_x"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_y"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_z"    type="int32" unit="deg"/>
   </message>
 
   <message name="SURVEY" id="27">

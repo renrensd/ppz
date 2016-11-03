@@ -67,7 +67,7 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 #define R_OFFSET 1.
 
 struct VffExtended vff;
-float acc_noise_debug;
+float acc_noise_debug = 0.1f;
 
 static void update_speed_conf(float zd_meas, float conf);
 
@@ -102,7 +102,6 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
     }
     vff.P[i][i] = VFF_EXTENDED_INIT_PXX;
   }
-  acc_noise_debug = 0.1;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);

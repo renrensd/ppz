@@ -272,8 +272,9 @@ void ins_int_init(void)
   AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
   ins_int.baro_initialized = FALSE;
   ins_int.R_baro = 1000.0f;
-  ins_int.R_baro_offset = 1.0f;
+  ins_int.R_baro_offset = 10.0f;
   ins_int.ekf_state = INS_EKF_GPS;
+  ins_int.virtual_p_stable = 1;
 #endif
 
 #if USE_SONAR
@@ -464,7 +465,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 #ifdef GPS_INSTALL_BIAS
 /*unit :cm, body frame*/
   #define  INS_BODY_TO_GPS_X  0
-  #define  INS_BODY_TO_GPS_Y  33
+  #define  INS_BODY_TO_GPS_Y  27
   #define  INS_BODY_TO_GPS_Z  0
 #endif
 static bool_t gps_pos_inspect(struct NedCoor_i data)
@@ -566,10 +567,9 @@ void ins_int_update_gps(struct GpsState *gps_s)
 #if INS_USE_GPS_ALT
 
 #define BARO_TO_GPS_TIME	(10)
-  //if(gps.p_stable)
-	if(ins_int.virtual_p_stable)
+  if(gps.p_stable && ins_int.virtual_p_stable)
+	//if(ins_int.virtual_p_stable)
   {
-		ins_int.update_radar_agl = FALSE;
 		if(ins_int.vf_realign)
 		{
 			ins_int.vf_realign = FALSE;
@@ -579,14 +579,18 @@ void ins_int_update_gps(struct GpsState *gps_s)
 
   	if(ins_int.ekf_state == INS_EKF_BARO)
 		{
-  		ins_int.baro_offset_curr = ins_int.gps_body_z - vff.offset;
+  		ins_int.baro_offset_curr = (ins_int.gps_body_z - get_first_order_low_pass(&ins_int.baro_z_filter)) - vff.offset;
   		ins_int.baro_to_gps_count = 0;
   		ins_int.baro_to_gps_offset_step = ins_int.baro_offset_curr / (float)BARO_TO_GPS_TIME;
+  		ins_int.baro_to_gps_z_step = (ins_int.gps_body_z - vff.z) / (float)BARO_TO_GPS_TIME;
   		ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
 		}
   	else if(ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
   	{
   		vff.offset += ins_int.baro_to_gps_offset_step;
+  		vff.z += ins_int.baro_to_gps_z_step;
+  		//vff_update_z_conf(ins_int.gps_body_z, 10.0f);
+  		ins_update_from_vff();
   		if(++ins_int.baro_to_gps_count == BARO_TO_GPS_TIME) // 2s
   		{
   			ins_int.ekf_state = INS_EKF_GPS;
@@ -627,13 +631,14 @@ void ins_int_update_gps(struct GpsState *gps_s)
 	ins_int.gps_speed_z = gps_speed_cm_s_ned.z * 0.01f;
 	struct FloatEulers ltp_to_imu_euler;
 	float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
-	ins_int.mag_heading = ltp_to_imu_euler.psi;
+	ins_int.mag_heading = ltp_to_imu_euler.psi * (180.0f/3.1415926f);
 
  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
   		&ins_int.gps_qual,
 			&ins_int.p_stable,
+			&gps_nmea.sol_tatus,
 			&ins_int.gps_heading,
 			&ins_int.mag_heading,
   		&gps_pos_cm_ned.x,

@@ -78,6 +78,7 @@ struct InsInt {
   float R_baro_offset;
   uint32_t baro_to_gps_count;
   float baro_to_gps_offset_step;
+  float baro_to_gps_z_step;
   int32_t virtual_p_stable;
 
   // gps telemetry

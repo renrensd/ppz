@@ -154,7 +154,7 @@ void send_aircraft_info_state(void)
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
-	char     sn_and_sv[30]="EFA115";	 //fix info
+	char     sn_and_sv[30]="EFA113";	 //fix info
 	
 	xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_AIRCRAFT_INFO_STATE(SecondChannel, SecondDevice, 
