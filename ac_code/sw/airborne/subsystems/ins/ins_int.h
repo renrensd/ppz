@@ -66,21 +66,26 @@ struct InsInt {
   struct NedCoor_i ltp_speed;
   struct NedCoor_i ltp_accel;
 
-  /* baro */
+  // baro gps switch
   enum _e_ins_ekf_status ekf_state;
   float baro_z;  ///< z-position calculated from baro in meters (NED)
+  float gps_body_z;
   float baro_offset_curr;
   struct FirstOrderLowPass baro_z_filter;
   bool_t baro_initialized;
   bool_t baro_valid;// not used !!!
   float R_baro;
   float R_baro_offset;
+  uint32_t baro_to_gps_count;
+  float baro_to_gps_offset_step;
   int32_t virtual_p_stable;
 
   // gps telemetry
   uint8_t gps_qual;
-  float gps_z_m;
   uint8_t p_stable;
+  float gps_heading;
+  float mag_heading;
+  float gps_speed_z;
 
 #if 1 //USE_SONAR
   bool_t update_on_agl; ///< use sonar to update agl if available

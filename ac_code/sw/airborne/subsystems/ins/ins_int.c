@@ -68,6 +68,7 @@
 #include "math/pprz_algebra_int.h"
 
 #include "generated/flight_plan.h"
+#include "subsystems/ahrs/ahrs_float_mlkf.h"
 
 //float   sonar_distance,sonar_distance_i;
 
@@ -233,8 +234,12 @@ static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
   		  		&ins_int.p_stable,
   		  		&ins_int.baro_z,
   					&baro_filter,
-  					&ins_int.gps_z_m,
-  					&vff.z);
+  					&ins_int.gps_body_z,
+  					&vff.z,
+						&ins_int.gps_speed_z,
+						&vff.zdot,
+						&vff.bias,
+						&vff.offset);
 }
 
 static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
@@ -266,10 +271,9 @@ void ins_int_init(void)
 #if USE_BARO_BOARD
   AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
   ins_int.baro_initialized = FALSE;
-  ins_int.update_use_baro = FALSE;
   ins_int.R_baro = 1000.0f;
   ins_int.R_baro_offset = 1.0f;
-  ins_int.ekf_status = INS_EKF_GPS;
+  ins_int.ekf_state = INS_EKF_GPS;
 #endif
 
 #if USE_SONAR
@@ -433,7 +437,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 		else
 		{
 			update_first_order_low_pass(&ins_int.baro_z_filter, ins_int.baro_z);
-			if(ins_int.ekf_status == INS_EKF_BARO)
+			if(ins_int.ekf_state == INS_EKF_BARO)
 			{
 				vff_update_baro_conf(ins_int.baro_z, ins_int.R_baro);
 				ins_update_from_vff();
@@ -557,9 +561,11 @@ void ins_int_update_gps(struct GpsState *gps_s)
 #endif
 
 /*airframe height*/
- gps_pos_cm_ned.z = gps_pos_cm_ned.z - (int32_t)(GPS_B2G_DISTANCE*100);
+  ins_int.gps_body_z = (float)gps_pos_cm_ned.z * 0.01f + (- GPS_B2G_DISTANCE);
 
 #if INS_USE_GPS_ALT
+
+#define BARO_TO_GPS_TIME	(10)
   //if(gps.p_stable)
 	if(ins_int.virtual_p_stable)
   {
@@ -573,20 +579,25 @@ void ins_int_update_gps(struct GpsState *gps_s)
 
   	if(ins_int.ekf_state == INS_EKF_BARO)
 		{
-  		ins_int.baro_offset_curr = vff.z - get_first_order_low_pass(&ins_int.baro_z_filter);
+  		ins_int.baro_offset_curr = ins_int.gps_body_z - vff.offset;
+  		ins_int.baro_to_gps_count = 0;
+  		ins_int.baro_to_gps_offset_step = ins_int.baro_offset_curr / (float)BARO_TO_GPS_TIME;
   		ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
 		}
   	else if(ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
   	{
-
+  		vff.offset += ins_int.baro_to_gps_offset_step;
+  		if(++ins_int.baro_to_gps_count == BARO_TO_GPS_TIME) // 2s
+  		{
+  			ins_int.ekf_state = INS_EKF_GPS;
+  		}
   	}
   	else if(ins_int.ekf_state == INS_EKF_GPS)
   	{
-  		vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, gps_noise_debug);
+  		vff_update_z_conf(ins_int.gps_body_z, gps_noise_debug);
+  		vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
+  		ins_update_from_vff();
   	}
-
-  	vff_update_offset_conf(vff.z - ins_int.baro_z, ins_int.R_baro_offset);
-  	ins_update_from_vff();
   }
   else  /*if R <1.0, use the RTK Z info*/
   {
@@ -610,20 +621,27 @@ void ins_int_update_gps(struct GpsState *gps_s)
 //		}
   }
 
-	float baro_filter = get_first_order_low_pass(&ins_int.baro_z_filter);
-	ins_int.gps_z_m = gps_pos_cm_ned.z/100.0f;
 	ins_int.gps_qual = gps_nmea.gps_qual;
 	ins_int.p_stable = gps.p_stable;
+	ins_int.gps_heading = gps.heading;
+	ins_int.gps_speed_z = gps_speed_cm_s_ned.z * 0.01f;
+	struct FloatEulers ltp_to_imu_euler;
+	float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
+	ins_int.mag_heading = ltp_to_imu_euler.psi;
 
  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
-  		&gps_nmea.gps_qual,
-  		&ins_int.p_stable,
-  		&ins_int.baro_z,
-			&baro_filter,
-			&ins_int.gps_z_m,
-			&vff.z);
+  		&ins_int.gps_qual,
+			&ins_int.p_stable,
+			&ins_int.gps_heading,
+			&ins_int.mag_heading,
+  		&gps_pos_cm_ned.x,
+			&gps_pos_cm_ned.y,
+			&gps_pos_cm_ned.z,
+			&gps_pos_sd.x,
+			&gps_pos_sd.y,
+			&gps_pos_sd.z);
  #endif
 #endif
 
