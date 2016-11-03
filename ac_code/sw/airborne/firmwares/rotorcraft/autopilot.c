@@ -444,8 +444,6 @@ void autopilot_periodic(void)
    * If in FAILSAFE mode, run normal loops with failsafe attitude and
    * downwards velocity setpoints.
    */
-  // TEST_CASE
-  //autopilot_mode = 1;
   if (autopilot_mode == AP_MODE_KILL) {
     SetCommands(commands_failsafe);
   } 

@@ -37,6 +37,7 @@
 
 #include "math/pprz_algebra_int.h"
 #include "controllers/pid.h"
+#include "filters/low_pass_filter.h"
 
 /* error if some gains are negative */
 #if (GUIDANCE_V_HOVER_KP < 0) ||                   \
@@ -292,7 +293,7 @@ static guidance_v_get_temp_v_z_sp(void)
 
 static void guidance_v_controller_ini(void)
 {
-	guid_v.acc_filter_fc = 10;
+	guid_v.acc_filter_fc = 5;
 	guid_v.speed_filter_fc = 10;
 	guid_v.pid_loop_mode = ACC_SPEED_POS;
 
@@ -308,9 +309,10 @@ static void guidance_v_controller_ini(void)
 	pid_set_Ui_range(&guid_v.pos_z_pid, -3, 3);
 
 	guid_v.acc_z_pid.Kp = 0.02f;
-	guid_v.acc_z_pid.Ki = 0.3f;
-	guid_v.speed_z_pid.Kp = 5.0f;
-	guid_v.pos_z_pid.Kp = 2.0f;
+	guid_v.acc_z_pid.Ki = 0.5f;
+	guid_v.speed_z_pid.Kp = 3.0f;
+	guid_v.speed_z_pid.Kd = 0.3f;
+	guid_v.pos_z_pid.Kp = 1.0f;
 	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc), 1.0f/512.0f, 0);
 }
 
@@ -454,9 +456,6 @@ void guidance_v_run(bool_t in_flight)
 		/* reset estimate while not in_flight */
 		gv_adapt_init();
 	}
-
-	//TEST_CASE
-	//guidance_v_mode = GUIDANCE_V_MODE_HOVER;
 
 	switch (guidance_v_mode)
 	{
@@ -672,6 +671,7 @@ static void run_hover_loop(bool_t in_flight)
 	guid_v.speed_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.speed_filter_fc;
 
 	guid_v.NED_z_acc = - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z);
+	update_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, guid_v.NED_z_acc);
 	//guid_v.NED_z_acc = update_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
 	//guid_v.NED_z_acc = pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_acc, - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
 	guid_v.NED_z_speed = - SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z);
@@ -709,7 +709,8 @@ static void run_hover_loop(bool_t in_flight)
 		{
 			guid_v.ref_speed_z = guid_v.rc_speed_z;
 		}
-		pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0, guid_v.NED_z_acc);
+		//pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0, guid_v.NED_z_acc);
+		pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0, get_butterworth_2_low_pass(&guid_v.NED_z_acc_filter));
 		guid_v.ref_acc_z = guid_v.speed_z_pid.out;
 	}
 	else // RC ACC loop

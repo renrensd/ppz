@@ -227,10 +227,15 @@
   <message name="DEBUG_GPS" id="26">
     <field name="gps_qual"    type="uint8"/>
     <field name="p_stable"    type="uint8"/>
-    <field name="baro_z"    type="float" unit="m"/>
-    <field name="baro_z_filter"    type="float" unit="m"/>
-    <field name="gps_z"    type="float" unit="m"/>
-    <field name="ekf_z"    type="float" unit="m"/>
+    <field name="sol_tatus"    type="uint8"/>
+    <field name="gps_heading"    type="float" unit="deg"/>
+    <field name="mag_heading"    type="float" unit="deg"/>
+    <field name="gps_pos_cm_x"    type="int32" unit="deg"/>
+    <field name="gps_pos_cm_y"    type="int32" unit="deg"/>
+    <field name="gps_pos_cm_z"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_x"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_y"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_z"    type="int32" unit="deg"/>
   </message>
 
   <message name="SURVEY" id="27">
@@ -1389,6 +1394,10 @@
     <field name="baro_z_filter"    type="float" unit="m"/>
     <field name="gps_z"    type="float" unit="m"/>
     <field name="ekf_z"    type="float" unit="m"/>
+    <field name="gps_speed_z"    type="float" unit="m"/>
+    <field name="ekf_speed_z"    type="float" unit="m"/>
+    <field name="ekf_acc_bias"    type="float" unit="m"/>
+    <field name="ekf_baro_offset"    type="float" unit="m"/>
   </message>
 
   <message name="PCAP01_STATUS" id="152">
