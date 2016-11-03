@@ -133,35 +133,20 @@
     <define name="GYRO_Q_SENS" value="2.17953" integer="16"/>
     <define name="GYRO_R_SENS" value="2.17953" integer="16"/>
 
-	<!--no5 imu-->
-<define name="ACCEL_X_NEUTRAL" value="-14"/>
-<define name="ACCEL_Y_NEUTRAL" value="-30"/>
-<define name="ACCEL_Z_NEUTRAL" value="-152"/>
-<define name="ACCEL_X_SENS" value="4.980317" integer="16"/>
-<define name="ACCEL_Y_SENS" value="4.934988" integer="16"/>
-<define name="ACCEL_Z_SENS" value="4.866075" integer="16"/>
+	<!--no3 imu-->
+<define name="ACCEL_X_NEUTRAL" value="19"/>
+<define name="ACCEL_Y_NEUTRAL" value="16"/>
+<define name="ACCEL_Z_NEUTRAL" value="53"/>
+<define name="ACCEL_X_SENS" value="4.910085" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.912377" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.860650" integer="16"/>
 
-<define name="MAG_X_NEUTRAL" value="201"/>
-<define name="MAG_Y_NEUTRAL" value="109"/>
-<define name="MAG_Z_NEUTRAL" value="222"/>
-<define name="MAG_X_SENS" value="0.404808976712" integer="16"/>
-<define name="MAG_Y_SENS" value="0.419283700699" integer="16"/>
-<define name="MAG_Z_SENS" value="0.437204427138" integer="16"/>
-
-	<!--no4 imu-->
-<!--define name="ACCEL_X_NEUTRAL" value="65"/>
-<define name="ACCEL_Y_NEUTRAL" value="8"/>
-<define name="ACCEL_Z_NEUTRAL" value="-89"/>
-<define name="ACCEL_X_SENS" value="2.45834" integer="16"/>
-<define name="ACCEL_Y_SENS" value="2.461177" integer="16"/>
-<define name="ACCEL_Z_SENS" value="2.421396" integer="16"/>
-
-<define name="MAG_X_NEUTRAL" value="-306"/>
-<define name="MAG_Y_NEUTRAL" value="373"/>
-<define name="MAG_Z_NEUTRAL" value="-108"/>
-<define name="MAG_X_SENS" value="0.369153705189" integer="16"/>
-<define name="MAG_Y_SENS" value="0.356257078681" integer="16"/>
-<define name="MAG_Z_SENS" value="0.370801921336" integer="16"/-->
+<define name="MAG_X_NEUTRAL" value="81"/>
+<define name="MAG_Y_NEUTRAL" value="97"/>
+<define name="MAG_Z_NEUTRAL" value="194"/>
+<define name="MAG_X_SENS" value="0.353093594808" integer="16"/>
+<define name="MAG_Y_SENS" value="0.351443531742" integer="16"/>
+<define name="MAG_Z_SENS" value="0.328622737985" integer="16"/>
 
 
     			<!-- adiv1  -->
