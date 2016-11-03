@@ -1,7 +1,7 @@
 /***********************************************************************
-*   Copyright (C) Shenzhen Efficien Tech Co., Ltd.				   *
+*   Copyright (C) Shenzhen Efficien Tech Co., Ltd.				       *
 *				  All Rights Reserved.          					   *
-*   Department : R&D SW      									   *
+*   Department : R&D SW      									       *
 *   AUTHOR	   :            										   *
 ************************************************************************
 * Object        : 
@@ -17,17 +17,21 @@
 * Version       Date    Name    Changes and comments
 * 
 *=====================================================================*/
-#ifndef _TYPE_CONV_IF_H_
-#define _TYPE_CONV_IF_H_ 
-#include "std.h"
+#ifndef _ENG_APP_H_
+#define _ENG_APP_H_ 
 
 /**** Definition of constants ****/
-
 
 /**** Definition of types ****/ 
 
 
+
 /**** Definition of macros ****/
+
+#define ROM_OF_ONE_BLOCK_SIZE 0x1000
+#define ROM_OF_BLOCK_NUM	 0x100
+#define ROM_START_ADDRESS	 0x08000000
+#define ROM_TOTAL_SIZE		 0x100000	//ROM_OF_ONE_BLOCK_SIZE * ROM_OF_BLOCK_NUM
 
 
 /**** Declaration of constants ****/
@@ -36,18 +40,10 @@
 /**** Declaration of variables ****/
 
 
-/**** Declaration of functions ****/ 
-uint8_t type_conv_bcd_to_hex(uint8_t bcd);
-uint8_t type_conv_hex_to_bcd(uint8_t hex);
-uint8_t type_conv_hex_to_ascii(uint8_t hex);
-uint8_t type_conv_ascii_to_hex(uint8_t ascii);
-void type_conv_u16_to_u8(uint16_t u16, uint8_t* puint8_t);
-uint16_t type_conv_u8_to_u16(uint8_t *puint8_t);
-void byte_to_hex_string(uint8_t * dst, uint8_t data);
-uint8_t byte_to_string(uint8_t * dst, uint8_t data);
-extern uint8_t byte_to_string2(uint8_t * dst, uint8_t data);
+/**** Declaration of functions ****/
 
-#endif /*_TYPE_CONV_IF_H_*/
+
+#endif /*_ENG_APP_H_*/
 
 /****************************** END OF FILE ***************************/
 

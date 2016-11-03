@@ -19,15 +19,14 @@
 *=====================================================================*/
 
 /**** System include files ****/
-#include "..\..\CONFIG\INC\CONFIG.H"
-#include "..\..\CONFIG\INC\TYPES.H"   
+#include "std.h"
 
 
 /*---Public include files---------------------------------------------*/
 
 /*---Private include files--------------------------------------------*/
-#include "..\INC\TYPE_CONV.H"   
-#include "..\INC\TYPE_CONV_IF.H"   
+#include "type_conv.h"   
+#include "type_conv_if.h"   
 
 
 
@@ -46,13 +45,13 @@
 /***********************************************************************
 *  Name        : type_conv_bcd_to_hex
 *  Description : change bcd code to hex code        
-*  Parameter   : U8 bcd
-*  Returns     : U8 hex
+*  Parameter   : uint8_t bcd
+*  Returns     : uint8_t hex
 ***********************************************************************/
-U8 type_conv_bcd_to_hex(U8 bcd)
+uint8_t type_conv_bcd_to_hex(uint8_t bcd)
 {
-    U8 hex;
-    U8 temp;
+    uint8_t hex;
+    uint8_t temp;
 
     temp = bcd >> 0x04;
     hex = (temp << 0x03) + (temp << 0x01) + (bcd & 0x0F);
@@ -63,10 +62,10 @@ U8 type_conv_bcd_to_hex(U8 bcd)
 /***********************************************************************
 *  Name        : type_conv_hex_to_bcd
 *  Description : change hex code to bcd code        
-*  Parameter   : U8 hex
-*  Returns     : U8 bcd
+*  Parameter   : uint8_t hex
+*  Returns     : uint8_t bcd
 ***********************************************************************/
-U8 type_conv_hex_to_bcd(U8 hex)
+uint8_t type_conv_hex_to_bcd(uint8_t hex)
 {
 	if(hex <= 99)
 	{
@@ -78,12 +77,12 @@ U8 type_conv_hex_to_bcd(U8 hex)
 /***********************************************************************
 *  Name        : type_conv_hex_to_ascii
 *  Description : change hex code to ascii code        
-*  Parameter   : U8 hex
-*  Returns     : U8 ascii
+*  Parameter   : uint8_t hex
+*  Returns     : uint8_t ascii
 ***********************************************************************/
-U8 type_conv_hex_to_ascii(U8 hex)
+uint8_t type_conv_hex_to_ascii(uint8_t hex)
 {
-    U8 ascii;
+    uint8_t ascii;
 
     if(hex <= 0x09 && hex >= 0x00)
     {
@@ -106,12 +105,12 @@ U8 type_conv_hex_to_ascii(U8 hex)
 /***********************************************************************
 *  Name        : type_conv_ascii_to_hex
 *  Description : change hex code to ascii code        
-*  Parameter   : U8 ascii
-*  Returns     : U8 hex
+*  Parameter   : uint8_t ascii
+*  Returns     : uint8_t hex
 ***********************************************************************/
-U8 type_conv_ascii_to_hex(U8 ascii)
+uint8_t type_conv_ascii_to_hex(uint8_t ascii)
 {
-    U8 hex;
+    uint8_t hex;
 
     if(ascii <= 0x39 && ascii >= 0x30)
     {
@@ -141,26 +140,26 @@ U8 type_conv_ascii_to_hex(U8 ascii)
 
 /***********************************************************************
 *  Name        : type_conv_u16_to_u8
-*  Description : change U16 to U8
-*  Parameter   : U16 , U8*
+*  Description : change uint16_t to uint8_t
+*  Parameter   : uint16_t , uint8_t*
 *  Returns     : void 
 ***********************************************************************/
-void type_conv_u16_to_u8(U16 u16, U8* u8)
+void type_conv_u16_to_u8(uint16_t u16, uint8_t* u8)
 {
-    *u8++ = (U8)(u16 >> 0x08);
+    *u8++ = (uint8_t)(u16 >> 0x08);
 
-    *u8 = (U8)u16;
+    *u8 = (uint8_t)u16;
 }
 
 /***********************************************************************
 *  Name        : type_conv_u8_to_u16
-*  Description : change U8 to U16
-*  Parameter   : U8*
-*  Returns     : U16
+*  Description : change uint8_t to uint16_t
+*  Parameter   : uint8_t*
+*  Returns     : uint16_t
 ***********************************************************************/
-U16 type_conv_u8_to_u16(U8 *u8)
+uint16_t type_conv_u8_to_u16(uint8_t *u8)
 {
-    U16 u16;
+    uint16_t u16;
 
     u16 = (*u8 << 0x08) + *(u8 + 0x01);
 
@@ -168,14 +167,14 @@ U16 type_conv_u8_to_u16(U8 *u8)
 }    
 /**********************************************************************
  *  Function:      void byte_to_hex_string
- *  Description:   convert from U8 to hex string.			  
+ *  Description:   convert from uint8_t to hex string.			  
  *  Argument(s):   dst   - pointer to string
- *                 	data - U8 to be convert
+ *                 	data - uint8_t to be convert
  *  Return:        void.
  ***********************************************************************/
-void byte_to_hex_string(U8 * dst, U8 data)
+void byte_to_hex_string(uint8_t * dst, uint8_t data)
 {
-    U8 temp = 0;
+    uint8_t temp = 0;
     temp = (data & 0xf0) >> 4;
     if(temp > 9)
     {
@@ -197,14 +196,14 @@ void byte_to_hex_string(U8 * dst, U8 data)
 }
 /**********************************************************************
  *  Function:      void byte_to_string
- *  Description:   convert from U8 to string.			  
+ *  Description:   convert from uint8_t to string.			  
  *  Argument(s):   dst   - pointer to string
- *                 	data - U8 to be convert
+ *                 	data - uint8_t to be convert
  *  Return:        string length.
  ***********************************************************************/
-U8 byte_to_string(U8 * dst, U8 data)
+uint8_t byte_to_string(uint8_t * dst, uint8_t data)
 {
-    U8 i = 0;
+    uint8_t i = 0;
     //100
     data = data % 1000;
     dst[i] = '0' + data / 100;
@@ -227,6 +226,30 @@ U8 byte_to_string(U8 * dst, U8 data)
     
 }
 
+/**********************************************************************
+ *  Function:      void byte_to_string2
+ *  Description:   convert from uint8_t to string. Eg:56 to "056". 			  
+ *  Argument(s):   dst   - pointer to string
+ *                 	data - uint8_t to be convert
+ *  Return:        string length.
+ ***********************************************************************/
+uint8_t byte_to_string2(uint8_t * dst, uint8_t data)
+{
+    uint8_t i = 0;
+    //100
+    dst[i] = '0' + data / 100;
+	i++;
+    //10
+    data = data % 100;
+    dst[i] = '0' + data / 10;
+	i++;
+    //1
+    dst[i] = '0' + data % 10;
+	i++;
+    dst[i] = 0;
+    return i;
+    
+}
 /*---Private----------------------------------------------------------*/
 
 

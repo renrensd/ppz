@@ -32,11 +32,16 @@ TIMER(TIMER_GCS_VRC_ACK_MSG,                    send_heart_beat_A2VR_msg,       
 #if DATALINK==XBEE
 TIMER(TIMER_XBEE_HEARTBEAT_MSG,                 xbee_msg_aircraft_ready_broadcast,      TIMER_TASK_TELEMETRY)
 #endif
+#ifdef UPGRADE_OPTION
+TIMER(TIMER_UPGRADE_RES_TX_TIMEOUT,				mcu_upgrade_request_reboot,						TIMER_TASK_TELEMETRY)
+#endif	/* UPGRADE_OPTION */
 #ifdef BBOX_OPTION
 TIMER(TIMER_CAN_NEW_LOG,      					bbox_can_log_start,              		TIMER_TASK_EVENT)
 TIMER(TIMER_BBOX_HEART_BEAT_TIMEOUT,      		bbox_heart_beat_timeout_handler,      	TIMER_TASK_EVENT)
-
-#endif
+#endif	/* BBOX_OPTION */
+#ifdef ENG_OPTION
+TIMER(TIMER_GET_CAL_AC_CHECKSUM,				eng_ac_checksum_calculation,			TIMER_TASK_ENG)
+#endif	/* ENG_OPTION */
 END_TIMERS
 
 

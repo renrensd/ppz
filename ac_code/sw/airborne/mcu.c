@@ -80,8 +80,8 @@
 #include <libopencm3/stm32/rcc.h>
 #endif
 
-#if 0 //def BBOX_OPTION
-#include "bbox_msg_if.h"   
+#ifdef BBOX_OPTION
+#include "subsystems/bbox/bbox_msg_if.h"   
 #include"subsystems/bbox/bbox_if.h"
 #include "subsystems/datalink/can_transport.h"
 #endif	/* BBOX_OPTION */
@@ -89,6 +89,7 @@
 #ifndef FRAM_OPTION
 #include "subsystems/fram/fram_if.h"
 #endif	/* FRAM_OPTION */
+
 #endif /* PERIPHERALS_AUTO_INIT */
 
 #ifndef NPS_SIMU
@@ -109,9 +110,9 @@ struct MCU_FAULT_INFO mcu_fault_info __attribute__ ((section(".bkpram"), aligned
 
 #ifdef WDG_OPTION
 volatile uint16_t mcu_watchdog_flag __attribute__ ((section(".bkpram"), zero_init));
+#endif	/* WDG_OPTION */
 
 struct MCU_INFO mcu_info;
-#endif	/* WDG_OPTION */
 
 void WEAK board_init(void)
 {
@@ -247,6 +248,10 @@ void mcu_init(void)
 
 #if USE_UDP0 || USE_UDP1 || USE_UDP2
   udp_arch_init();
+#endif
+
+#ifdef FRAM_OPTION
+  fram_init();
 #endif
 
 #ifdef BBOX_OPTION
@@ -576,6 +581,14 @@ void mcu_write_file_fault(void)
 	}
 }
 #endif	/* FAULT_OPTION */
+
+#ifdef UPGRADE_OPTION
+void mcu_upgrade_request_reboot(void)
+{
+	mcu_set_reset_type(MCU_RESET_BY_SW_UPGRADE);
+	scb_reset_system();
+}
+#endif	/* UPGRADE_OPTION */
 
 #endif /* NPS_SIMU */
 

@@ -71,6 +71,10 @@ const uint8_t cl_swdl_mask_array[] =
 };
 
 /*---Private----------------------------------------------------------*/
+const FRAM_DATA_INIT_TYPE fram_data_section[FRAM_DATA_INIT_SECTION_MAX] = 
+{
+	{FRAM_DATA_INIT_SECTION_ONE, CL_FRAM_RESERVE1, CL_FRAM_RESERVE2},
+};
 
 /*===FUNCTIONS========================================================*/
 
@@ -189,6 +193,73 @@ static uint16_t fram_get_address (uint8_t id, uint16_t item)
 {
 	return (object_base[id] + item * object_size[id]);
 }
+
+/*******************************************************************************
+**  FUNCTION      : fram_factory_reset_init
+**  DESCRIPTION   : This function is to reset ac fram data
+**  PARAMETERS    : items
+**  RETURN        : void
+*******************************************************************************/
+void fram_factory_reset_init(uint16_t items)
+{
+    uint8_t index1,index2;
+    const uint8_t* temp_pointer;
+	for(index1 = 0; index1 < FRAM_DATA_INIT_SECTION_MAX; index1++)
+	{
+		if(!(items & (1<<index1)))
+        {
+            continue;
+        }
+		for( index2 = fram_data_section[index1].fram_id_start; index2 <= fram_data_section[index1].fram_id_end; index2++)
+        {
+            temp_pointer = cl_data_array[index2];
+            fram_id_write(index2,(uint8_t *)temp_pointer);
+        }
+	}
+    fram_write(CL_FRAM_INIT_FLAG, 0x00, (uint8_t *)cl_fram_init_flag_array);     
+}
+
+/*******************************************************************************
+**  FUNCTION      : fram_init_all_data
+**  DESCRIPTION   : This function init all the fram data
+**  PARAMETERS    : void
+**  RETURN        : void
+*******************************************************************************/
+void fram_init_all_data(void)
+{
+    uint8_t temp_index;
+    //uint8_t temp_quantity;
+    //uint8_t temp_length;
+    const uint8_t* temp_pointer;
+    uint8_t temp_software_version_array[0x11];
+    uint8_t temp_fram_init_flags[4];
+	
+    fram_read(CL_SOFTWARE_VERSION, 0x00, temp_software_version_array);
+    temp_software_version_array[0x10] = '\0';
+	
+    if(!memcmp((const uint8_t *)cl_software_version_array, (const uint8_t *)temp_software_version_array,0x10))
+    {
+		//current software version is the same as fram.
+		fram_read(CL_FRAM_INIT_FLAG, 0x00, temp_fram_init_flags);
+        if(memcmp((const uint8_t *)fram_init_flags, (const uint8_t *)temp_fram_init_flags,4) != 0)
+        {
+            /*TODOM: reset fram data*/
+			
+            if(memcmp((const uint8_t *)&fram_init_flags[2], (const uint8_t *)&temp_fram_init_flags[2],2) == 0)
+            {
+                /* need to reset special data section */
+                fram_factory_reset_init(*((uint16_t *)temp_fram_init_flags));
+            }
+            return; 
+         }    
+    }
+	else
+	{
+	    temp_pointer = cl_data_array[CL_SOFTWARE_VERSION];
+	    fram_id_write(CL_SOFTWARE_VERSION,(uint8_t *)temp_pointer);
+	}
+}
+
 
 #ifdef UPGRADE_OPTION
 /***********************************************************************

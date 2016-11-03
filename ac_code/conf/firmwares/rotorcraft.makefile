@@ -50,6 +50,7 @@ $(TARGET).CFLAGS += -DPERIPHERALS_AUTO_INIT
 ifndef NPS_OPTION
 $(TARGET).CFLAGS += -DFAULT_OPTION
 $(TARGET).CFLAGS += -DWDG_OPTION
+# $(TARGET).CFLAGS += -DUPGRADE_OPTION
 $(TARGET).CFLAGS += -DGCS_V1_OPTION
 # $(TARGET).CFLAGS += -DCALIBRATION_OPTION
 $(TARGET).CFLAGS += -DSYS_TIMER_OPTION
@@ -80,9 +81,7 @@ endif
 # Systime
 #
 $(TARGET).srcs += mcu_periph/sys_time.c $(SRC_ARCH)/mcu_periph/sys_time_arch.c
-ifndef NPS_OPTION
-$(TARGET).srcs += modules/system/timer.c
-endif
+
 ifeq ($(ARCH), linux)
 # seems that we need to link against librt for glibc < 2.17
 $(TARGET).LDFLAGS += -lrt
@@ -110,6 +109,12 @@ ifndef NPS_OPTION
 # MONITORING_SYSTEM
 #
  include $(CFG_SHARED)/monitoring.makefile
+
+# include $(CFG_SHARED)/eng.makefile
+
+$(TARGET).srcs += modules/system/timer.c
+$(TARGET).srcs += modules/system/type_conv.c
+$(TARGET).srcs += modules/system/tools.c
 
 endif
 

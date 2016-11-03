@@ -350,6 +350,10 @@
 #define OPS_PERIODIC_FREQUENCY 200
 #define OPS_PWR_EN_GPIO 	GPIOC,GPIO13
 
+/* eng option*/
+#define ENG_PERIODIC_FREQUENCY 200
+
+
 /*monitoring system option*/
 #define MONITORING_OPTION
 #define MONITORING_FREQUENCY 2

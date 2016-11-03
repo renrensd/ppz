@@ -73,6 +73,13 @@
 #include "subsystems/gps/gps_datalink.h"
 #endif
 
+#ifdef UPGRADE_OPTION
+#include "subsystems/fram/fram_if.h"
+#include "modules/system/timer_if.h"
+#include "modules/system/timer_class.h"
+#include "modules/system/timer_def.h"
+#endif	/* UPGRADE_OPTION */
+
 //#include "subsystems/radio_control/rc_datalink.h"
 
 #include "firmwares/rotorcraft/navigation.h"
@@ -446,6 +453,31 @@ void dl_parse_msg(void)
 			//gcs_vrc_ack_timer();
 			break;
 		}
+		
+		#ifdef UPGRADE_OPTION
+ 		case DL_REQUEST_UPGRADE:
+		{
+			if( UPGRADE_TYPE_AC == DL_REQUEST_UPGRADE_type(dl_buffer) )
+			{
+				if(fram_write_swdl_mask() == 0)		//fram write swdl success.
+				{
+					uint8_t type = UPGRADE_TYPE_AC;
+					uint8_t state = UPGRADE_RES_OK;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &state);
+					tm_create_timer(TIMER_UPGRADE_RES_TX_TIMEOUT, (4 SECONDS), TIMER_ONE_SHOT,0);//wait 4s to reboot.
+				}
+				else
+				{
+					uint8_t type = UPGRADE_TYPE_AC;
+					uint8_t state = UPGRADE_RES_FAIL;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &state);
+				}
+			}
+			break;
+		}
+		#endif	/* UPGRADE_OPTION */
 		
 	    default: break;
     }

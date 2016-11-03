@@ -19,15 +19,13 @@
 *=====================================================================*/
 
 /**** System include files ****/
-#include "..\..\CONFIG\INC\CONFIG.H"
-#include "..\..\CONFIG\INC\TYPES.H"   
-
+#include "std.h"
 
 /*---Public include files---------------------------------------------*/
 
 /*---Private include files--------------------------------------------*/
-#include "..\INC\TOOLS.H"   
-#include "..\INC\TOOLS_IF.H"   
+#include "tools.h"   
+#include "tools_if.h"   
 
 
 
@@ -44,22 +42,10 @@
 
 /*---Global-----------------------------------------------------------*/
 
-/***********************************************************************
-*  Name        : get_ram_bitband
-*  Description : get mcu_ram_bitband address
-*  Parameter   : U8 *a  the address of the variable
-*  Returns     : None
-***********************************************************************/
-RAM_BIT_BAND_TYPE* get_ram_bitband( U8 *a )
+uint8_t get_the_maximum(uint8_t *src,uint8_t size)
 {
-    return( RAM_BIT_BAND_TYPE* )( 0x22000000 + ( ( int )a - 0x20000000 ) * 32 );
-}  
-
-
-U8 get_the_maximum(U8 *src,U8 size)
-{
-    U32 i=0;
-    U8 max = src[0];
+    uint32_t i=0;
+    uint8_t max = src[0];
     for(i=1;i<size;i++)
     {
        if(max <src[i])
@@ -71,10 +57,10 @@ U8 get_the_maximum(U8 *src,U8 size)
 }
 
 
-U8 get_the_minimum(U8 *src,U8 size)
+uint8_t get_the_minimum(uint8_t *src,uint8_t size)
 {
-    U32 i=0;
-    U8 min = src[0];
+    uint32_t i=0;
+    uint8_t min = src[0];
     for(i=1;i<size;i++)
     {
        if(min >src[i])
@@ -85,6 +71,36 @@ U8 get_the_minimum(U8 *src,U8 size)
     return min;
 }
 
+/***********************************************************************
+*  Name        : get_size_of_string
+*  Description : get size of string.
+*  Parameter   : src   - string address
+*  Returns     : size of string.
+***********************************************************************/
+uint8_t get_size_of_string(const uint8_t * src)
+{
+    uint8_t size = 0;
+    while(*src != 0)
+    {
+        size ++;
+        src ++;
+    }
+    return size;
+}
+
+
+bool_t  is_same_in_array(uint8_t * array,uint8_t size)
+{
+    uint8_t index;
+	for(index = size -1 ;index>0 ;index--)
+	{
+		if(array[index] != array[index -1] )
+		{
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
 /*---Private----------------------------------------------------------*/
 
 

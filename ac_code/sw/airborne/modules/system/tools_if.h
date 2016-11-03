@@ -24,11 +24,6 @@
 
 
 /**** Definition of types ****/ 
-typedef struct
-{
-    U32 bit[8];
-} RAM_BIT_BAND_TYPE;
-
 
 /**** Definition of macros ****/
 
@@ -40,8 +35,10 @@ typedef struct
 
 
 /**** Declaration of functions ****/
-extern RAM_BIT_BAND_TYPE* get_ram_bitband( U8 *a );
-
+extern uint8_t get_the_maximum(uint8_t *src,uint8_t size);
+extern uint8_t get_the_minimum(uint8_t *src,uint8_t size);
+extern uint8_t get_size_of_string(const uint8_t * src);
+extern bool_t  is_same_in_array(uint8_t * array,uint8_t size);
 
 #endif /*_TOOLS_IF_H_*/
 
