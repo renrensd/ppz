@@ -64,7 +64,7 @@ void send_heart_beat_A2R_msg(void)
 }
 
 void send_heart_beat_A2VR_msg(void)
-{   
+{
 	uint16_t system_time = sys_time.nb_sec;
 	uint8_t ac_state = (uint8_t)autopilot_in_flight;
 	uint8_t battery_remain = 85;      //unit=percent, need update from battery module
@@ -188,7 +188,7 @@ void send_aircraft_info_state(void)
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
-	char     ac_sn[10]="EFA151";	 //fix info
+	char     ac_sn[10]="EFA113";	 //fix info
 	char     ac_sv[25]="";
 	char     ops_sv[25]="";
 	char     bbox_sv[25]="";
