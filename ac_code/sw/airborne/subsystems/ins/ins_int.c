@@ -262,6 +262,7 @@ void ins_int_init(void)
   ins_int.update_use_baro = FALSE;
   ins_int.R_baro = 1000.0f;
   ins_int.R_baro_offset = 1.0f;
+  ins_int.ekf_status = INS_EKF_GPS;
 #endif
 
 #if USE_SONAR
@@ -425,7 +426,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 		else
 		{
 			update_first_order_low_pass(&ins_int.baro_z_filter, ins_int.baro_z);
-			if(ins_int.update_use_baro)
+			if(ins_int.ekf_status == INS_EKF_BARO)
 			{
 				vff_update_baro_conf(ins_int.baro_z, ins_int.R_baro);
 				ins_update_from_vff();
@@ -549,32 +550,42 @@ void ins_int_update_gps(struct GpsState *gps_s)
 #endif
 
 /*airframe height*/
- gps_pos_cm_ned.z = gps_pos_cm_ned.z - (int32_t)(GPS_B2G_DISTANCE*100 + 2);
+ gps_pos_cm_ned.z = gps_pos_cm_ned.z - (int32_t)(GPS_B2G_DISTANCE*100);
 
 #if INS_USE_GPS_ALT
   //if(gps.p_stable)
 	if(ins_int.virtual_p_stable)
   {
-  	if(ins_int.update_use_baro)
-		{
-  		ins_int.update_use_baro = FALSE;
-		}
-  	if(ins_int.vf_realign)
+		ins_int.update_radar_agl = FALSE;
+		if(ins_int.vf_realign)
 		{
 			ins_int.vf_realign = FALSE;
 			vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
 			ins_int.vf_stable = TRUE;
 		}
-  	ins_int.update_radar_agl = FALSE;
-  	vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, gps_noise_debug);
+
+  	if(ins_int.ekf_state == INS_EKF_BARO)
+		{
+  		ins_int.baro_offset_curr = vff.z - get_first_order_low_pass(&ins_int.baro_z_filter);
+  		ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
+		}
+  	else if(ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
+  	{
+
+  	}
+  	else if(ins_int.ekf_state == INS_EKF_GPS)
+  	{
+  		vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, gps_noise_debug);
+  	}
+
   	vff_update_offset_conf(vff.z - ins_int.baro_z, ins_int.R_baro_offset);
   	ins_update_from_vff();
   }
   else  /*if R <1.0, use the RTK Z info*/
   {
-  	if(!ins_int.update_use_baro)
+  	if(ins_int.ekf_state != INS_EKF_BARO)
   	{
-  		ins_int.update_use_baro = TRUE;
+  		ins_int.ekf_state = INS_EKF_BARO;
   	}
 //  	float r_unstable =(float)gps_pos_sd.z /10000.0;
 //		r_unstable = r_unstable * r_unstable;

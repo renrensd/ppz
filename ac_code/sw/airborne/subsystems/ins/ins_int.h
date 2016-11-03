@@ -36,6 +36,13 @@
 #include "math/pprz_algebra_float.h"
 #include "filters/low_pass_filter.h"
 
+enum _e_ins_ekf_status
+{
+	INS_EKF_GPS = 0,
+	INS_EKF_BARO,
+	INS_EKF_BARO_TO_GPS
+};
+
 /** Ins implementation state (fixed point) */
 struct InsInt {
   struct LtpDef_i  ltp_def;
@@ -60,11 +67,12 @@ struct InsInt {
   struct NedCoor_i ltp_accel;
 
   /* baro */
+  enum _e_ins_ekf_status ekf_state;
   float baro_z;  ///< z-position calculated from baro in meters (NED)
+  float baro_offset_curr;
   struct FirstOrderLowPass baro_z_filter;
   bool_t baro_initialized;
   bool_t baro_valid;// not used !!!
-  bool_t update_use_baro;
   float R_baro;
   float R_baro_offset;
   int32_t virtual_p_stable;
