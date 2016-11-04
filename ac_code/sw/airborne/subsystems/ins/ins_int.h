@@ -70,7 +70,7 @@ struct InsInt {
   enum _e_ins_ekf_status ekf_state;
   float baro_z;  ///< z-position calculated from baro in meters (NED)
   float gps_body_z;
-  float baro_offset_curr;
+  float raw_baro_offset;
   struct FirstOrderLowPass baro_z_filter;
   bool_t baro_initialized;
   bool_t baro_valid;// not used !!!

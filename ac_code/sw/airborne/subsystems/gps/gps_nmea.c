@@ -474,6 +474,9 @@ static void nmea_parse_TRA(void)
   // get status
   gps_nmea.sol_tatus= (float)strtod(&gps_nmea.msg_buf[i], NULL);
   NMEA_PRINT("p_TRA() - gps_nmea.pitch=%f\n\r", gps_nmea.sol_tatus);
+  nmea_read_until(&i);
+  gps.heading_sv_num=(uint8_t)strtod(&gps_nmea.msg_buf[i], NULL);
+  //gps_nmea.num_sta_use = (float)strtoi(&gps_nmea.msg_buf[i], NULL);
 }
 #endif
 
