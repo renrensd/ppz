@@ -47,6 +47,13 @@ enum AhrsMlkfStatus {
   AHRS_MLKF_RUNNING
 };
 
+enum _e_ahrs_mlkf_heading_status
+{
+	AMHS_GPS = 0,
+	AMHS_MAG,
+	AMHS_SWITCHING
+};
+
 struct AhrsMlkf {
   struct FloatQuat   ltp_to_imu_quat;  ///< Rotation from LocalTangentPlane to IMU frame as unit quaternion
   struct FloatQuat   ltp_to_body_quat; ///< Rotation from LocalTangentPlane to body frame as unit quaternion
@@ -68,8 +75,8 @@ struct AhrsMlkf {
 
   enum AhrsMlkfStatus status;
   bool_t is_aligned;
-  bool_t gps_h_stable;
-  int32_t gps_h_stable_test;
+  int32_t virtual_h_stable;
+  enum _e_ahrs_mlkf_heading_status heading_state;
 };
 
 extern struct AhrsMlkf ahrs_mlkf;
