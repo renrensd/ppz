@@ -354,7 +354,7 @@
     <!--define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/-->
     <!--define name="MODE_AUTO2" value="AP_MODE_NAV"/-->
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/> 
-    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_Z_HOLD"/>
+    <define name="MODE_AUTO2" value="AP_MODE_HOVER_Z_HOLD"/>
   </section>
 
   <section name="BAT">
