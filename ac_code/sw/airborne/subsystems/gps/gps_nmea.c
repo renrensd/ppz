@@ -475,7 +475,7 @@ static void nmea_parse_TRA(void)
   gps_nmea.sol_tatus= (float)strtod(&gps_nmea.msg_buf[i], NULL);
   NMEA_PRINT("p_TRA() - gps_nmea.pitch=%f\n\r", gps_nmea.sol_tatus);
   nmea_read_until(&i);
-  gps.head_stanum=(uint8_t)strtod(&gps_nmea.msg_buf[i], NULL);
+  gps.heading_sv_num=(uint8_t)strtod(&gps_nmea.msg_buf[i], NULL);
   //gps_nmea.num_sta_use = (float)strtoi(&gps_nmea.msg_buf[i], NULL);
 }
 #endif
@@ -494,11 +494,7 @@ static void nmea_parse_RMC(void)
     NMEA_PRINT("p_RMC() - skipping empty message\n\r");
     return;
   }
-  // get time
-  uint32_t gps_time = strtoul(&gps_nmea.msg_buf[i], NULL, 10);
-  gps.gps_time.hour = gps_time / 10000;
-  gps.gps_time.minute = (gps_time - gps.gps_time.hour*10000)/100;
-  gps.gps_time.second = gps_time % 100; 
+  // First read time (ignored)
 
   // get warning
   nmea_read_until(&i);
@@ -526,13 +522,6 @@ static void nmea_parse_RMC(void)
   double course = strtod(&gps_nmea.msg_buf[i], NULL);
   gps.course = RadOfDeg(course) * 1e7;
   NMEA_PRINT("p_RMC() - course: %f deg\n\r", course);
-
-  // get date
-  nmea_read_until(&i);
-  gps_time = strtoul(&gps_nmea.msg_buf[i], NULL, 10);
-  gps.gps_time.day = gps_time / 10000;
-  gps.gps_time.month = (gps_time - gps.gps_time.day*10000)/100;
-  gps.gps_time.year = gps_time % 100;
 }
 
 
@@ -818,7 +807,7 @@ void get_gps_heading_stable(void)
 		counter_heading++;
 	}
 
-	if( ((counter_heading>200)&&(get_sys_time_float()<300.0))
+	if( ((counter_heading>100)&&(get_sys_time_float()<300.0))
 		||((counter_heading>40)&&(get_sys_time_float()>300.0)) )
 	{
 		gps.h_stable = TRUE;

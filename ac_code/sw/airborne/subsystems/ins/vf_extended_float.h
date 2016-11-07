@@ -61,7 +61,7 @@ extern void vff_init(float z, float zdot, float accel_bias, float baro_offset);
 extern void vff_propagate(float accel, float dt);
 extern void vff_update_baro(float z_meas);
 extern void vff_update_z(float z_meas);
-extern void vff_update_offset(float offset);
+extern void vff_update_offset_conf(float offset, float conf);
 extern void vff_update_baro_conf(float z_meas, float conf);
 extern void vff_update_z_conf(float z_meas, float conf);
 extern void vff_update_zd_conf(float zd_meas, float conf);

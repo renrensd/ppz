@@ -2,12 +2,11 @@
 
 <settings target="ap|nps|test_ahrs">
   <dl_settings>
-
     <dl_settings NAME="AHRS">
        <dl_setting var="ahrs_mlkf.mag_noise.x" min="0.0" step="0.02" max="50.0" module="subsystems/ahrs/ahrs_float_mlkf" shortname="mag_noise_x" param="AHRS_MAG_NOISE_X" type="float" persistent="true"/>
        <dl_setting var="ahrs_mlkf.mag_noise.y" min="0.0" step="0.02" max="50.0" module="subsystems/ahrs/ahrs_float_mlkf" shortname="mag_noise_y" param="AHRS_MAG_NOISE_Y" type="float" persistent="true"/>
        <dl_setting var="ahrs_mlkf.mag_noise.z" min="0.0" step="0.02" max="50.0" module="subsystems/ahrs/ahrs_float_mlkf" shortname="mag_noise_z" param="AHRS_MAG_NOISE_Z" type="float" persistent="true"/>
-       <dl_setting var="ahrs_mlkf.gps_h_stable_test" type="int32" step="1" shortname="Test" module="subsystems/ahrs/ahrs_float_mlkf" min="0" max="2"/>
+       <dl_setting var="ahrs_mlkf.virtual_h_stable" type="int32" step="1" shortname="Test" module="subsystems/ahrs/ahrs_float_mlkf" min="0" max="1"/>
        <dl_setting var="acc_noise_ratio" min="250.0" step="50.0" max="10000" type="float" module="subsystems/ahrs/ahrs_float_mlkf" shortname="acc_noise_ratio"/>
     </dl_settings>
 

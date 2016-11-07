@@ -57,9 +57,9 @@
 #endif
 
 #ifndef AHRS_MAG_NOISE_X
-#define AHRS_MAG_NOISE_X 10.0
-#define AHRS_MAG_NOISE_Y 10.0
-#define AHRS_MAG_NOISE_Z 10.0
+#define AHRS_MAG_NOISE_X 0.4//0.2
+#define AHRS_MAG_NOISE_Y 0.4//0.2
+#define AHRS_MAG_NOISE_Z 0.4//0.2
 #endif
 
 
@@ -131,6 +131,9 @@ void ahrs_mlkf_init(void)
   init_butterworth_2_low_pass(&filter_q, 0.00885, (1. / 512), 0.);
   init_butterworth_2_low_pass(&filter_r, 0.00885, (1. / 512), 0.);
 #endif
+
+  ahrs_mlkf.virtual_h_stable = 1;
+  ahrs_mlkf.heading_state = AMHS_MAG;
 }
 
 void ahrs_mlkf_set_body_to_imu(struct OrientationReps *body_to_imu)
@@ -197,7 +200,7 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
 /*mag update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)*/
 void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 {
-	if (!ahrs_mlkf.gps_h_stable)
+	if(ahrs_mlkf.heading_state == AMHS_MAG)
 	{
 #if AHRS_MAG_UPDATE_ALL_AXES
 		ahrs_mlkf_update_mag_full(mag);
@@ -478,29 +481,29 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s)
 {
 	static bool_t h_stable_first_time = FALSE;
 	static bool_t gps_h_stable_prev = FALSE;
+	static bool_t gps_h_change_to_stable = FALSE;
 
-	ahrs_mlkf.gps_h_stable = gps_heading_s->h_stable;
-	if(ahrs_mlkf.gps_h_stable_test != 0)
+	if(gps_heading_s->h_stable != gps_h_stable_prev)
 	{
-		if(ahrs_mlkf.gps_h_stable_test == 1)
+		if(gps_heading_s->h_stable)
 		{
-			ahrs_mlkf.gps_h_stable = TRUE;
-		}
-		else
-		{
-			ahrs_mlkf.gps_h_stable = FALSE;
+			gps_h_change_to_stable = TRUE;
 		}
 	}
+	gps_h_stable_prev = gps_heading_s->h_stable;
 
-	if (ahrs_mlkf.gps_h_stable)
+	if (gps_heading_s->h_stable && ahrs_mlkf.virtual_h_stable)
 	{
-		ahrs_mlkf_update_gps_heading(gps_heading_s);
-
-		if(h_stable_first_time == FALSE)
+		if(ahrs_mlkf.heading_state == AMHS_MAG)
 		{
-			if(gps_h_stable_prev != gps_heading_s->h_stable)
+			ahrs_mlkf.heading_state = AMHS_GPS;
+		}
+		else if(ahrs_mlkf.heading_state == AMHS_GPS)
+		{
+			if(gps_h_change_to_stable)
 			{
-				if(gps_heading_s->h_stable == TRUE)
+				gps_h_change_to_stable = FALSE;
+				if(!h_stable_first_time)
 				{
 					h_stable_first_time = TRUE;
 					//ahrs_float_get_quat_from_accel_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, &ahrs_mlkf.lp_accel_ini, gps_heading_s);
@@ -508,7 +511,19 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s)
 
 				}
 			}
-			gps_h_stable_prev = gps_heading_s->h_stable;
+
+			ahrs_mlkf_update_gps_heading(gps_heading_s);
+		}
+		else if(ahrs_mlkf.heading_state == AMHS_SWITCHING)
+		{
+
+		}
+	}
+	else
+	{
+		if(ahrs_mlkf.heading_state != AMHS_MAG)
+		{
+			ahrs_mlkf.heading_state = AMHS_MAG;
 		}
 	}
 }
@@ -516,21 +531,18 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s)
 #define MAG_OFFSET_ANGLE 2.7
 void ahrs_mlkf_update_gps_heading(struct GpsState *gps_heading_s)
 {
-  if(gps_heading_s->h_stable)  //4 signed gps heading useful
-  {
-	  struct FloatVect3 imu_h;
-	  float gps_psi_rad;
-	  gps_psi_rad = (gps_heading_s->heading - MAG_OFFSET_ANGLE)/180.0*GPS_PI;
-	  imu_h.x = -cosf(gps_psi_rad);
-	  imu_h.y = sinf(gps_psi_rad);
-	  imu_h.z = 0.0;
+	struct FloatVect3 imu_h;
+	float gps_psi_rad;
+	gps_psi_rad = (gps_heading_s->heading - MAG_OFFSET_ANGLE)/180.0*GPS_PI;
+	imu_h.x = -cosf(gps_psi_rad);
+	imu_h.y = sinf(gps_psi_rad);
+	imu_h.z = 0.0;
 
-	  struct FloatVect3 i_meas;
-	  float_quat_vmult(&i_meas, &ahrs_mlkf.ltp_to_body_quat, &imu_h);
-	  
-	  update_state_heading(&ahrs_mlkf.mag_h, &i_meas, &ahrs_mlkf.mag_noise);  
-	  reset_state();
-  }
+	struct FloatVect3 i_meas;
+	float_quat_vmult(&i_meas, &ahrs_mlkf.ltp_to_body_quat, &imu_h);
+
+	update_state_heading(&ahrs_mlkf.mag_h, &i_meas, &ahrs_mlkf.mag_noise);
+	reset_state();
 }
 #endif
 //******************CPZ-GPS_heading

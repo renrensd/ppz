@@ -18,15 +18,6 @@
 #endif
 #include "subsystems/datalink/downlink.h"
 
-#define ACC_CALI_CHECK_MIN	(0.6f)
-#define ACC_CALI_CHECK_MAX	(1.4f)
-#define ACC_NORM_FILTER_COEF	(2.0f * my_math_pi * 0.5f / (float)PERIODIC_FREQUENCY)
-#define ACC_STATIC_TIME_THRESHOLD		((uint32_t)(0.1f*(float)PERIODIC_FREQUENCY))
-#define ACC_STATIC_VALUE_THRESHOLD	(0.05f)
-#define ACC_CALI_GRAB_TIME	(PERIODIC_FREQUENCY)
-#define IS_WITHIN_OPEN_RANGE(value,min,max)	( (((value) < (max)) && ((value) > (min))) ? 1:0 )
-#define IMU_ACCEL_SENS_SCALE_FACTOR (2048)
-
 struct AccCali acc_cali;
 
 static abi_event accel_ev;
@@ -38,6 +29,16 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp __attribute__((unused)),
                      struct Int32Vect3 *accel)
 {
+#define ACC_CALI_CHECK_MIN	(0.6f)
+#define ACC_CALI_CHECK_MAX	(1.4f)
+#define ACC_NORM_FILTER_COEF	(2.0f * my_math_pi * 0.5f / (float)PERIODIC_FREQUENCY)
+#define ACC_STATIC_TIME_THRESHOLD		((uint32_t)(0.1f*(float)PERIODIC_FREQUENCY))
+#define ACC_STATIC_VALUE_THRESHOLD	(0.05f)
+#define ACC_CALI_GRAB_TIME	(PERIODIC_FREQUENCY)
+#define IS_WITHIN_OPEN_RANGE(value,min,max)	( (((value) < (max)) && ((value) > (min))) ? 1:0 )
+// TODO: efly_hexa_pwm.xml definition "IMU_MPU9250_ACCEL_RANGE" is not valid here
+#define IMU_ACCEL_SENS_SCALE_FACTOR (2048)
+
 	uint16_t i,j;
 	uint8_t grab_enable;
 	MATRIX_DEF(F, 6, 1);
@@ -249,18 +250,18 @@ void acc_cali_periodic(void)
 	acc_cali.enable_prev = acc_cali.enable;
 
 #if PERIODIC_TELEMETRY
-		RunOnceEvery(5,   {
+		RunOnceEvery(2,   {
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_ACC_CALI(DefaultChannel, DefaultDevice, &acc_cali.acc_norm,
-																		&acc_cali.acc_norm_filter,
-																		&acc_cali.acc_SENS[0],
-																		&acc_cali.acc_SENS[1],
-																		&acc_cali.acc_SENS[2],
-																		&acc_cali.acc_NEUTRAL[0],
-																		&acc_cali.acc_NEUTRAL[1],
-																		&acc_cali.acc_NEUTRAL[2],
-																		&acc_cali.is_body_static,
-																		&acc_cali.state);}   );
+																													&acc_cali.acc_norm_filter,
+																													&acc_cali.acc_NEUTRAL[0],
+																													&acc_cali.acc_NEUTRAL[1],
+																													&acc_cali.acc_NEUTRAL[2],
+																													&acc_cali.acc_SENS[0],
+																													&acc_cali.acc_SENS[1],
+																													&acc_cali.acc_SENS[2],
+																													&acc_cali.is_body_static,
+																													&acc_cali.state);}   );
 #endif
 }
 

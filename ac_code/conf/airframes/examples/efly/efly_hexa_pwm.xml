@@ -22,10 +22,12 @@
     <!--define name="WITHOUT_RADIO"/-->   <!--not use radio_control-->
     <define name="RADIO_KILL_SWITCH" value="1"/>    
     <define name="USE_FLIGHT_HEIGHT_LIMIT"/>
+	<!--define name="ESC_CALIBRATION"/-->
 
     <!--define name="MILLIAMP_AT_FULL_THROTTLE" value="80000"/-->
 
-    <define name="DISTANCE_B2G" value="0.3"/>
+    <define name="GPS_B2G_DISTANCE" value="0.3"/>
+    <define name="BARO_B2G_DISTANCE" value="0.3"/>
     <define name="DISTANCE_ABOVE_GROUNG" value="0.45"/>
     <!--define name="USE_PERSISTENT_SETTINGS" value="TRUE"/-->
     <subsystem name="radio_control" type="ppm"/>   
@@ -35,6 +37,7 @@
     </subsystem>
 
     <subsystem name="telemetry" type="xbee_api"/>
+    <!--subsystem name="telemetry" type="transparent_usb"/-->
     <subsystem name="stabilization" type="float_double"/>
     <subsystem name="gps" type="nmea">
        <define name="USE_GPS_HEADING"/>
@@ -90,12 +93,12 @@
   </modules>
 
   <servos driver="Pwm">
-    <servo name="FRONT_LEFT" no="0" min="1000" neutral="1000" max="1900"/>
-    <servo name="FRONT_RIGHT" no="1" min="1000" neutral="1000" max="1900"/>
-    <servo name="RIGHT" no="2" min="1000" neutral="1000" max="1900"/>
-    <servo name="BACK_RIGHT" no="3" min="1000" neutral="1000" max="1900"/>
-    <servo name="BACK_LEFT" no="4" min="1000" neutral="1000" max="1900"/>
-    <servo name="LEFT" no="5" min="1000" neutral="1000" max="1900"/>
+    <servo name="FRONT_LEFT" no="0" min="1000" neutral="1100" max="2000"/>
+    <servo name="FRONT_RIGHT" no="1" min="1000" neutral="1100" max="2000"/>
+    <servo name="RIGHT" no="2" min="1000" neutral="1100" max="2000"/>
+    <servo name="BACK_RIGHT" no="3" min="1000" neutral="1100" max="2000"/>
+    <servo name="BACK_LEFT" no="4" min="1000" neutral="1100" max="2000"/>
+    <servo name="LEFT" no="5" min="1000" neutral="1100" max="2000"/>
   </servos>
   
   <commands>
@@ -130,38 +133,8 @@
     <define name="GYRO_Q_SENS" value="2.17953" integer="16"/>
     <define name="GYRO_R_SENS" value="2.17953" integer="16"/>
 
-	<!--no5 imu-->
-<!--define name="ACCEL_X_NEUTRAL" value="4"/>
-<define name="ACCEL_Y_NEUTRAL" value="-28"/>
-<define name="ACCEL_Z_NEUTRAL" value="273"/>
-<define name="ACCEL_X_SENS" value="2.452163" integer="16"/>
-<define name="ACCEL_Y_SENS" value="2.450681" integer="16"/>
-<define name="ACCEL_Z_SENS" value="2.44507" integer="16"/>
-
-<define name="MAG_X_NEUTRAL" value="-76"/>
-<define name="MAG_Y_NEUTRAL" value="4"/>
-<define name="MAG_Z_NEUTRAL" value="-12"/>
-<define name="MAG_X_SENS" value="3.69826614671" integer="16"/>
-<define name="MAG_Y_SENS" value="3.80730572919" integer="16"/>
-<define name="MAG_Z_SENS" value="3.67696122247" integer="16"/-->
-
-	<!--no4 imu-->
-<define name="ACCEL_X_NEUTRAL" value="26"/>
-<define name="ACCEL_Y_NEUTRAL" value="-5"/>
-<define name="ACCEL_Z_NEUTRAL" value="-33"/>
-<define name="ACCEL_X_SENS" value="4.91553" integer="16"/>
-<define name="ACCEL_Y_SENS" value="4.903531" integer="16"/>
-<define name="ACCEL_Z_SENS" value="4.865417" integer="16"/>
-
-<define name="MAG_X_NEUTRAL" value="-306"/>
-<define name="MAG_Y_NEUTRAL" value="373"/>
-<define name="MAG_Z_NEUTRAL" value="-108"/>
-<define name="MAG_X_SENS" value="0.369153705189" integer="16"/>
-<define name="MAG_Y_SENS" value="0.356257078681" integer="16"/>
-<define name="MAG_Z_SENS" value="0.370801921336" integer="16"/>
-
 	<!--no3 imu-->
-<!--define name="ACCEL_X_NEUTRAL" value="19"/>
+<define name="ACCEL_X_NEUTRAL" value="19"/>
 <define name="ACCEL_Y_NEUTRAL" value="16"/>
 <define name="ACCEL_Z_NEUTRAL" value="53"/>
 <define name="ACCEL_X_SENS" value="4.910085" integer="16"/>
@@ -173,7 +146,7 @@
 <define name="MAG_Z_NEUTRAL" value="194"/>
 <define name="MAG_X_SENS" value="0.353093594808" integer="16"/>
 <define name="MAG_Y_SENS" value="0.351443531742" integer="16"/>
-<define name="MAG_Z_SENS" value="0.328622737985" integer="16"/-->
+<define name="MAG_Z_SENS" value="0.328622737985" integer="16"/>
 
 
     			<!-- adiv1  -->
@@ -246,7 +219,7 @@
     <!-- setpoints -->
     <define name="SP_MAX_PHI" value="30." unit="deg"/>
     <define name="SP_MAX_THETA" value="30." unit="deg"/>
-    <define name="SP_MAX_R" value="40." unit="deg/s"/>
+    <define name="SP_MAX_R" value="50." unit="deg/s"/>
     <define name="DEADBAND_A" value="2"/>
     <define name="DEADBAND_E" value="2"/>
     <define name="DEADBAND_R" value="250"/>
@@ -264,7 +237,7 @@
 
     <define name="REF_OMEGA_R" value="150" unit="deg/s"/>
     <define name="REF_ZETA_R" value="0.85"/>
-    <define name="REF_MAX_R" value="40." unit="deg/s"/>
+    <define name="REF_MAX_R" value="30." unit="deg/s"/>
     <define name="REF_MAX_RDOT" value="RadOfDeg(360.)"/>
 
     <!-- feedback -->
@@ -299,13 +272,13 @@
     <define name="PHIRATE_IGAIN" value="800.0"/>
     <define name="PHIRATE_PGAIN" value="1200.0"/>
     <define name="PHIRATE_DGAIN" value="45.0"/>
-    <define name="PHIRATE_FFGAIN" value="0"/>
+    <define name="PHIRATE_FFGAIN" value="0.0"/>
 
     <define name="THETA_PGAIN" value="4"/>
     <define name="THETARATE_IGAIN" value="800.0"/>
     <define name="THETARATE_PGAIN" value="1200"/>
     <define name="THETARATE_DGAIN" value="45.0"/>
-    <define name="THETARATE_FFGAIN" value="0"/>
+    <define name="THETARATE_FFGAIN" value="0.0"/>
 
     <define name="PSI_PGAIN" value="15.0"/>
     <define name="PSIRATE_IGAIN" value="700.0"/>
@@ -378,8 +351,10 @@
 
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/>
-    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <!--define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/-->
+    <!--define name="MODE_AUTO2" value="AP_MODE_NAV"/-->
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/> 
+    <define name="MODE_AUTO2" value="AP_MODE_HOVER_Z_HOLD"/>
   </section>
 
   <section name="BAT">

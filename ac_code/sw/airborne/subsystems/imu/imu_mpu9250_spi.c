@@ -54,9 +54,9 @@ PRINT_CONFIG_MSG("Gyro/Accel output rate is 100Hz at 1kHz internal sampling")
  * Gyroscope: Bandwidth 250Hz, Delay 0.97ms sampling 8kHz
  * Output rate: 2kHz
  */
-#define IMU_MPU9250_GYRO_LOWPASS_FILTER MPU9250_DLPF_GYRO_250HZ
-#define IMU_MPU9250_ACCEL_LOWPASS_FILTER MPU9250_DLPF_ACCEL_184HZ
-#define IMU_MPU9250_SMPLRT_DIV 3
+#define IMU_MPU9250_GYRO_LOWPASS_FILTER MPU9250_DLPF_GYRO_41HZ
+#define IMU_MPU9250_ACCEL_LOWPASS_FILTER MPU9250_DLPF_ACCEL_41HZ
+#define IMU_MPU9250_SMPLRT_DIV 0
 PRINT_CONFIG_MSG("Gyro/Accel output rate is 2kHz at 8kHz internal sampling")
 #else
 /* By default, don't go too fast */

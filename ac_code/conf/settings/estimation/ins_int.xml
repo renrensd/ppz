@@ -3,13 +3,9 @@
 <settings target="ap|nps">
   <dl_settings>
     <dl_settings NAME="INS_INT">
-       <dl_setting var="ins_int.za_corr_k" min="0" step="0.1" max="10" module="subsystems/ins/ins_int" shortname="za_k" type="float" persistent="true"/>
-       <dl_setting var="ins_int.zv_corr_k" min="0" step="0.1" max="10" module="subsystems/ins/ins_int" shortname="zv_k" type="float" persistent="true"/>
-       <dl_setting var="ins_int.zp_corr_k" min="0" step="0.1" max="10" module="subsystems/ins/ins_int" shortname="zp_k" type="float" persistent="true"/>
-       <dl_setting var="gps_baro_convert"  min="0" step="1" max="1" module="subsystems/ins/ins_int" shortname="gps_baro_en"/>
-       <dl_setting var="a_accel_deadband"  min="0" step="0.1" max="3" module="subsystems/ins/ins_int" shortname="accel_deadband"/>
-       <dl_setting var="a_baro_deadband"  min="0" step="0.1" max="3" module="subsystems/ins/ins_int" shortname="baro_deadband"/>
-       <dl_setting var="recover_time"  min="0" step="1" max="20" module="subsystems/ins/ins_int" shortname="recover_time"/>
+       <dl_setting var="ins_int.R_baro" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_baro" type="float" persistent="true"/>
+       <dl_setting var="ins_int.R_baro_offset" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_baro_offset" type="float" persistent="true"/>      
+       <dl_setting var="ins_int.virtual_p_stable" type="int32" step="1" shortname="vps" module="subsystems/ins/ins_int" min="0" max="1"/>
     </dl_settings>
   </dl_settings>
 </settings>

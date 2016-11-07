@@ -225,12 +225,19 @@
   </message>
 
   <message name="DEBUG_GPS" id="26">
-    <field name="ned_z" type="int32" unit="m" alt_unit_coef="0.01"/>
-    <field name="ned_z_speed" type="int32" unit="m/s" alt_unit_coef="0.01"/>
-    <field name="qual"  type="uint8"/>
-    <field name="sd_x"  type="int32" unit="m" alt_unit_coef="0.0001"/>
-    <field name="sd_y"  type="int32" unit="m" alt_unit_coef="0.0001"/>
-    <field name="sd_z"  type="int32" unit="m" alt_unit_coef="0.0001"/>
+    <field name="gps_qual"    type="uint8"/>
+    <field name="p_stable"    type="uint8"/>
+    <field name="pos_sv_num"    type="uint8"/>
+    <field name="sol_tatus"    type="uint8"/>   
+    <field name="heading_sv_num"    type="uint8"/>
+    <field name="gps_heading"    type="float" unit="deg"/>
+    <field name="mag_heading"    type="float" unit="deg"/>
+    <field name="gps_pos_cm_x"    type="int32" unit="deg"/>
+    <field name="gps_pos_cm_y"    type="int32" unit="deg"/>
+    <field name="gps_pos_cm_z"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_x"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_y"    type="int32" unit="deg"/>
+    <field name="gps_pos_sd_z"    type="int32" unit="deg"/>
   </message>
 
   <message name="SURVEY" id="27">
@@ -1290,27 +1297,15 @@
   </message>
 
   <message name="VERT_LOOP" id="145">
-    <field name="z_sp"      type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
-    <field name="zd_sp"     type="int32" alt_unit="m"    alt_unit_coef="0.0000019"/>
-    <field name="est_z"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
-    <field name="est_zd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
-    <field name="est_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
-    <field name="ref_z"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
-    <field name="ref_zd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
-    <field name="ref_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
-    <field name="adp_inv_m" type="int32" alt_unit="foo"  alt_unit_coef="0.0000000596"/>
-    <field name="adp_cov"   type="int32" alt_unit="foo"  alt_unit_coef="0.0000000596"/>
-    <field name="adp_meas"  type="int32" alt_unit="foo"  alt_unit_coef="0.0000000596"/>
-    <field name="sum_z_err"   type="int32" />
-    <field name="sum_zd_err"   type="int32" /> 
-    <field name="ff_cmd"    type="int32"/>
-    <field name="fb_cmd"    type="int32"/>
-    <field name="delta_t"   type="int32"/>
-    <field name="desired_speed" type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
-    <field name="vdd_i"        type="int32"/>
-    <field name="rc_zd_sp"  type="int32" alt_unit="m/s2"  alt_unit_coef="0.0000019"/>
-    <field name="acc_z_flt"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
-    <field name="desired_pos"  type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
+    <field name="acc_z"      type="float" />
+    <field name="speed_z"    type="float" />
+    <field name="pos_z"      type="float" />
+    <field name="ref_acc_z"      type="float" />
+    <field name="ref_speed_z"    type="float" />
+    <field name="ref_pos_z"      type="float" />
+    <field name="acc_z_pid_out"      type="float" />
+    <field name="speed_z_pid_out"      type="float" />
+    <field name="pos_z_pid_out"      type="float" />
   </message>
 
 
@@ -1395,10 +1390,17 @@
   </message>
 
   <message name="INS_Z" id="151">
+    <field name="gps_qual"    type="uint8"/>
+    <field name="p_stable"    type="uint8"/>
     <field name="baro_z"    type="float" unit="m"/>
-    <field name="ins_z"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
-    <field name="ins_zd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
-    <field name="ins_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+    <field name="baro_z_filter"    type="float" unit="m"/>
+    <field name="gps_z"    type="float" unit="m"/>
+    <field name="ekf_z"    type="float" unit="m"/>
+    <field name="gps_speed_z"    type="float" unit="m/s"/>
+    <field name="ekf_speed_z"    type="float" unit="m/s"/>
+    <field name="ekf_acc_bias"    type="float" unit="m/s2"/>
+    <field name="raw_baro_offset"    type="float" unit="m"/>
+    <field name="ekf_baro_offset"    type="float" unit="m"/>
   </message>
 
   <message name="PCAP01_STATUS" id="152">
@@ -1422,7 +1424,6 @@
     <field name="lon0"    type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
     <field name="alt0"    type="int32" alt_unit="m"    alt_unit_coef="0.001"/>
     <field name="hmsl0"   type="int32" alt_unit="m"    alt_unit_coef="0.001"/>
-    <field name="baro_qfe" type="float" unit="pascal"/>
   </message>
 
   <message name="GPS_INT" id="155">
@@ -1858,10 +1859,6 @@
       <field name="ins_xdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
       <field name="ins_ydd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
       <field name="ins_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
-      <field name="zp_baro"   type="float" alt_unit="m"/>
-      <field name="zp_est"    type="float" alt_unit="m"/>
-      <field name="zv_est"    type="float" alt_unit="m/s"/>
-      <field name="za_est"    type="float" alt_unit="m/s2"/>
     </message>
 
     <message name="GPS_ERROR" id="199">
