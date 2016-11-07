@@ -15,13 +15,11 @@
   </settings>
   <header>
     <file name="acc_cali.h"/>
-    <file name="my_math.h"/>
   </header>
   <init fun="acc_cali_init()"/>
   <periodic fun="acc_cali_periodic()" freq="50"/>
   <event fun="acc_cali_event()"/>
   <makefile target="ap|nps">
     <file name="acc_cali.c"/>
-    <file name="my_math.c"/>
   </makefile>
 </module>

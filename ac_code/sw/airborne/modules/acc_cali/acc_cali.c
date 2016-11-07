@@ -12,7 +12,7 @@
 #include "subsystems/imu.h"
 #include "subsystems/abi.h"
 #include "generated/airframe.h"
-#include "my_math.h"
+#include "math/my_math.h"
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 #endif

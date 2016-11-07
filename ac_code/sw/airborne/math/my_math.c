@@ -506,7 +506,7 @@ void MatScaleAdd(
 	while (cellNum--)
 	{
 		*matR_data = (*matR_data) + ((*matA_data++) * scale);
-		*matR_data++;
+		matR_data++;
 	}
 }
 
