@@ -36,10 +36,14 @@
 
     <subsystem name="telemetry" type="xbee_api"/>
     <subsystem name="stabilization" type="float_double"/>
-    <subsystem name="gps" type="nmea"/>
+    <subsystem name="gps" type="nmea">
        <define name="USE_GPS_HEADING"/>
        <define name="GPS_INSTALL_BIAS"/>
-    <subsystem name="imu" type="mpu9250_spi"/>
+    </subsystem>
+    <subsystem name="imu" type="mpu9250_spi">
+    	<define name="GYRO_FILTER_FC" value="25"/>
+    	<define name="ACC_FILTER_FC" value="10"/>
+    </subsystem>
     <!--subsystem name="imu" type="adiv1">
       <define name="IMU_ADIV1_OPTION" value="1"/>
    </subsystem-->
@@ -63,7 +67,7 @@
     <!--define name="USE_ADC_2" value="1"/-->
   </firmware>
 
-  <modules main_freq="500">
+  <modules main_freq="512">
     <!--load name="gps_ubx_ucenter.xml"/-->
     <load name="send_imu_mag_current.xml"/>
     <load name="agl_dist.xml"/>
@@ -127,7 +131,7 @@
     <define name="GYRO_R_SENS" value="2.17953" integer="16"/>
 
 	<!--no5 imu-->
-<define name="ACCEL_X_NEUTRAL" value="4"/>
+<!--define name="ACCEL_X_NEUTRAL" value="4"/>
 <define name="ACCEL_Y_NEUTRAL" value="-28"/>
 <define name="ACCEL_Z_NEUTRAL" value="273"/>
 <define name="ACCEL_X_SENS" value="2.452163" integer="16"/>
@@ -139,22 +143,37 @@
 <define name="MAG_Z_NEUTRAL" value="-12"/>
 <define name="MAG_X_SENS" value="3.69826614671" integer="16"/>
 <define name="MAG_Y_SENS" value="3.80730572919" integer="16"/>
-<define name="MAG_Z_SENS" value="3.67696122247" integer="16"/>
+<define name="MAG_Z_SENS" value="3.67696122247" integer="16"/-->
 
 	<!--no4 imu-->
-<!--define name="ACCEL_X_NEUTRAL" value="65"/>
-<define name="ACCEL_Y_NEUTRAL" value="8"/>
-<define name="ACCEL_Z_NEUTRAL" value="-89"/>
-<define name="ACCEL_X_SENS" value="2.45834" integer="16"/>
-<define name="ACCEL_Y_SENS" value="2.461177" integer="16"/>
-<define name="ACCEL_Z_SENS" value="2.421396" integer="16"/>
+<define name="ACCEL_X_NEUTRAL" value="26"/>
+<define name="ACCEL_Y_NEUTRAL" value="-5"/>
+<define name="ACCEL_Z_NEUTRAL" value="-33"/>
+<define name="ACCEL_X_SENS" value="4.91553" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.903531" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.865417" integer="16"/>
 
 <define name="MAG_X_NEUTRAL" value="-306"/>
 <define name="MAG_Y_NEUTRAL" value="373"/>
 <define name="MAG_Z_NEUTRAL" value="-108"/>
 <define name="MAG_X_SENS" value="0.369153705189" integer="16"/>
 <define name="MAG_Y_SENS" value="0.356257078681" integer="16"/>
-<define name="MAG_Z_SENS" value="0.370801921336" integer="16"/-->
+<define name="MAG_Z_SENS" value="0.370801921336" integer="16"/>
+
+	<!--no3 imu-->
+<!--define name="ACCEL_X_NEUTRAL" value="19"/>
+<define name="ACCEL_Y_NEUTRAL" value="16"/>
+<define name="ACCEL_Z_NEUTRAL" value="53"/>
+<define name="ACCEL_X_SENS" value="4.910085" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.912377" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.860650" integer="16"/>
+
+<define name="MAG_X_NEUTRAL" value="81"/>
+<define name="MAG_Y_NEUTRAL" value="97"/>
+<define name="MAG_Z_NEUTRAL" value="194"/>
+<define name="MAG_X_SENS" value="0.353093594808" integer="16"/>
+<define name="MAG_Y_SENS" value="0.351443531742" integer="16"/>
+<define name="MAG_Z_SENS" value="0.328622737985" integer="16"/-->
 
 
     			<!-- adiv1  -->
@@ -227,7 +246,7 @@
     <!-- setpoints -->
     <define name="SP_MAX_PHI" value="30." unit="deg"/>
     <define name="SP_MAX_THETA" value="30." unit="deg"/>
-    <define name="SP_MAX_R" value="50." unit="deg/s"/>
+    <define name="SP_MAX_R" value="40." unit="deg/s"/>
     <define name="DEADBAND_A" value="2"/>
     <define name="DEADBAND_E" value="2"/>
     <define name="DEADBAND_R" value="250"/>
@@ -245,7 +264,7 @@
 
     <define name="REF_OMEGA_R" value="150" unit="deg/s"/>
     <define name="REF_ZETA_R" value="0.85"/>
-    <define name="REF_MAX_R" value="30." unit="deg/s"/>
+    <define name="REF_MAX_R" value="40." unit="deg/s"/>
     <define name="REF_MAX_RDOT" value="RadOfDeg(360.)"/>
 
     <!-- feedback -->
@@ -280,19 +299,19 @@
     <define name="PHIRATE_IGAIN" value="800.0"/>
     <define name="PHIRATE_PGAIN" value="1200.0"/>
     <define name="PHIRATE_DGAIN" value="45.0"/>
-    <define name="PHIRATE_FFGAIN" value="45.0"/>
+    <define name="PHIRATE_FFGAIN" value="0"/>
 
     <define name="THETA_PGAIN" value="4"/>
     <define name="THETARATE_IGAIN" value="800.0"/>
     <define name="THETARATE_PGAIN" value="1200"/>
     <define name="THETARATE_DGAIN" value="45.0"/>
-    <define name="THETARATE_FFGAIN" value="45.0"/>
+    <define name="THETARATE_FFGAIN" value="0"/>
 
     <define name="PSI_PGAIN" value="15.0"/>
     <define name="PSIRATE_IGAIN" value="700.0"/>
     <define name="PSIRATE_PGAIN" value="1200"/>
     <define name="PSIRATE_DGAIN" value="50"/>
-    <define name="PSIRATE_FFGAIN" value="50"/>
+    <define name="PSIRATE_FFGAIN" value="0"/>
 
 
 

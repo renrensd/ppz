@@ -46,20 +46,20 @@
 
 //#include <stdio.h>
 
-#define AHRS_PROPAGATE_LOW_PASS_RATES
+//#define AHRS_PROPAGATE_LOW_PASS_RATES
 //#define AHRS_GYRO_LEADLAG_FILTER
 //#define AHRS_GYRO_BW_FILTER
 //#define AHRS_GYRO_BW_FLOAT_FILTER
-//#define AHRS_GYRO_PASSTHROUGH
+#define AHRS_GYRO_PASSTHROUGH
 
 #if defined AHRS_GYRO_BW_FILTER || defined AHRS_GYRO_BW_FLOAT_FILTER
  #include "filters/low_pass_filter.h"
 #endif
 
 #ifndef AHRS_MAG_NOISE_X
-#define AHRS_MAG_NOISE_X 0.4//0.2
-#define AHRS_MAG_NOISE_Y 0.4//0.2
-#define AHRS_MAG_NOISE_Z 0.4//0.2
+#define AHRS_MAG_NOISE_X 10.0
+#define AHRS_MAG_NOISE_Y 10.0
+#define AHRS_MAG_NOISE_Z 10.0
 #endif
 
 
@@ -178,6 +178,7 @@ void ahrs_mlkf_propagate(struct Int32Rates *gyro, float dt)
   propagate_state(dt);
 }
 
+float acc_noise_ratio = 10000.0;
 /*accel update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)*/
 void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
 {
@@ -187,7 +188,7 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
   ahrs_mlkf.lp_accel = alpha * ahrs_mlkf.lp_accel +
                        (1. - alpha) * (float_vect3_norm(&imu_g) - 9.81);
   const struct FloatVect3 earth_g = {0.,  0., -9.81 };
-  const float dn = 250 * fabs(ahrs_mlkf.lp_accel);
+  const float dn = acc_noise_ratio * fabs(ahrs_mlkf.lp_accel);//250 * fabs(ahrs_mlkf.lp_accel);
   struct FloatVect3 g_noise = {1. + dn, 1. + dn, 1. + dn};
   update_state(&earth_g, &imu_g, &g_noise);
   reset_state();
@@ -502,7 +503,9 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s)
 				if(gps_heading_s->h_stable == TRUE)
 				{
 					h_stable_first_time = TRUE;
-					ahrs_float_get_quat_from_accel_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, &ahrs_mlkf.lp_accel_ini, gps_heading_s);
+					//ahrs_float_get_quat_from_accel_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, &ahrs_mlkf.lp_accel_ini, gps_heading_s);
+					ahrs_float_get_quat_from_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, gps_heading_s);
+
 				}
 			}
 			gps_h_stable_prev = gps_heading_s->h_stable;

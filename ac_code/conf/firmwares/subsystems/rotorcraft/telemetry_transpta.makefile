@@ -6,6 +6,8 @@
 # MODEM_BAUD
 #
 
+$(TARGET).CFLAGS += -DTRANSPTA_OPTION
+
 TRANSPTA_MODEM_PORT_LOWER=$(shell echo $(MODEM_PORT) | tr A-Z a-z)
 TRANSPTA_MODEM_PORT_UPPER=$(shell echo $(MODEM_PORT) | tr a-z A-Z)
 

@@ -53,7 +53,7 @@
 #define MAX_GROUND_INS_Z  0.6
 
 #define MAX_FLIGHT_TIME 780   //13min
-#define BAT_LIMIT_VOL  420   //unit:0.1v
+#define BAT_LIMIT_VOL  430   //unit:0.1v
 #define BAT_LIMIT_CAP  15  //unit:percent
 
 #define LESS_RES_CAP 5  //5%
@@ -107,31 +107,31 @@ void battery_flight_check(void)
 {	
 	bool_t flag_trigger = 0;
 
-if(electrical.vsupply)
-{
-	//if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
-	if( (electrical.vsupply < BAT_LIMIT_VOL) || (ops_info.o_bat_rep_percent < BAT_LIMIT_CAP) )
-	{   //hover 10s,back home
-	    flag_trigger = 1;   //record error trigger
-	    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
-		//need give special alter to RC and GCS
-        #if TEST_MSG
-		bat_flight=1;
-		#endif
+	if(electrical.vsupply)
+	{
+		//if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
+		if( (electrical.vsupply < BAT_LIMIT_VOL) || (ops_info.o_bat_rep_percent < BAT_LIMIT_CAP) )
+		{   //hover 10s,back home
+		    flag_trigger = 1;   //record error trigger
+		    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
+			//need give special alter to RC and GCS
+	        #if TEST_MSG
+			bat_flight=1;
+			#endif
+		}
 	}
-}
-else
-{
-	if( autopilot_flight_time >MAX_FLIGHT_TIME)
-	{   //hover 10s,back home
-	    flag_trigger = 1;   //record error trigger
-	    set_except_mission(BAT_LOW,TRUE,FALSE, FALSE,0, TRUE,FALSE,2);	
-		//need give special alter to RC and GCS
-        #if TEST_MSG
-		bat_flight=1;
-		#endif
+	else
+	{
+		if( autopilot_flight_time >MAX_FLIGHT_TIME)
+		{   //hover 10s,back home
+		    flag_trigger = 1;   //record error trigger
+		    set_except_mission(BAT_LOW,TRUE,FALSE, FALSE,0, TRUE,FALSE,2);	
+			//need give special alter to RC and GCS
+	        #if TEST_MSG
+			bat_flight=1;
+			#endif
+		}
 	}
-}
 
    /*
 	if( electrical.bat_critical )
@@ -231,7 +231,8 @@ void gps_flight_check(void)
 ***********************************************************************/
 void ops_flight_check(void) 
 {
-	if(ops_info.con_flag == OPS_NOT_CONNECT)  //ops lost,maybe spray is open
+	if( (ops_info.con_flag == OPS_NOT_CONNECT)
+		||(ops_info.sys_error&0x01) )//ops lost,maybe spray is open,bat_info no update
 	{
 		set_except_mission(OPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
 	}
@@ -247,10 +248,11 @@ void ops_flight_check(void)
 	}
 	else
 	{   
-		//em[OPS_EMPTY].active = FALSE;
-		//em[OPS_EMPTY].finished = FALSE;
+		if(ops_info.sys_error>>1)
+		{
+			set_except_mission(OPS_BLOCKED,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
+		}
 	}
-
 }
 
 /***********************************************************************

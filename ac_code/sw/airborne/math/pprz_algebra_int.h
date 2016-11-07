@@ -123,6 +123,8 @@ struct Int64Quat {
 #define INT32_RAD_OF_DEG(_deg) (int32_t)(((int64_t)(_deg) * 14964008)/857374503)
 #define INT32_DEG_OF_RAD(_rad) (int32_t)(((int64_t)(_rad) * 857374503)/14964008)
 
+#define INT32_RAD_OF_DEG_Q12(_deg) (int32_t)(((int64_t)(_deg) * 14964008 * (1<<INT32_ANGLE_FRAC))/857374503)
+
 #define INT32_ANGLE_NORMALIZE(_a) {             \
     while ((_a) > INT32_ANGLE_PI)  (_a) -= INT32_ANGLE_2_PI;    \
     while ((_a) < -INT32_ANGLE_PI) (_a) += INT32_ANGLE_2_PI;    \

@@ -52,6 +52,20 @@
 #define BLUEGIGA 5
 #define TRANSPTA 6
 
+#ifdef UPGRADE_OPTION
+enum UPGRADE_TYPE_PARAM
+{
+	UPGRADE_TYPE_AC = 0x01,
+	UPGRADE_TYPE_OPS,
+	UPGRADE_TYPE_BBOX,
+};
+
+enum UPGRADE_RESPONSE_PARAM
+{
+	UPGRADE_RES_OK,
+	UPGRADE_RES_FAIL,
+};
+#endif	/* UPGRADE_OPTION */
 
 /** Flag provided to control calls to ::dl_parse_msg. NOT used in this module*/
 EXTERN bool_t dl_msg_available;

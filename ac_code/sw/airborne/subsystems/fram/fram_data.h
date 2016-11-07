@@ -37,7 +37,8 @@
 
 extern const uint8_t cl_software_version_array[];
 extern const uint8_t* const cl_data_array[];
-
+extern const uint8_t cl_ac_serial_number_array[];
+extern const uint8_t cl_ac_hw_version_array[];
 /**** Declaration of functions ****/
 
 #endif //_FRAM_DATA_H_

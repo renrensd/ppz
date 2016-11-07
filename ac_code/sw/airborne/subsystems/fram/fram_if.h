@@ -31,6 +31,14 @@ struct FRAM_INFO
 	
 };
 
+enum FRAM_DATA_INIT_SECTION_TYPE
+{
+	FRAM_DATA_INIT_SECTION_ONE,
+
+	/*Add some section here*/
+	FRAM_DATA_INIT_SECTION_MAX
+};
+
 /**** Definition of macros ****/
 #define FRAM_AC_PARAM_ADDRESS	0x2000
 
@@ -46,9 +54,12 @@ extern uint8_t fram_read (uint8_t id, uint16_t item, uint8_t *read_buffer);
 extern uint8_t fram_id_read (uint8_t id, uint8_t *read_buffer);
 extern uint8_t fram_ac_param_read(uint8_t *read_buffer, uint16_t len);
 extern uint8_t fram_ac_param_write(uint8_t *write_buffer, uint16_t len);
+#ifdef UPGRADE_OPTION
 extern uint8_t fram_write_swdl_mask(void);
 extern uint8_t fram_read_swdl_mask (uint8_t* pBlockData);
 extern bool_t fram_update_is_available(void);
+#endif	/* UPGRADE_OPTION */
+extern void fram_init_all_data(void);
 
 #endif //_FRAM_IF_H_
 

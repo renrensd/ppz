@@ -49,9 +49,10 @@
 #define TASK_PARSE 19
 #define TASK_BREAK 20
 #define MODE_CONVERT_A2M 21
+#define OPS_BLOCKED 22
 
 
-#define EPT_MS_NB 22
+#define EPT_MS_NB 23
 
 /*use for monitor_cmd*/
 #define CM_NONE 0

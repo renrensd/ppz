@@ -31,6 +31,7 @@ struct BBOX_INFO
 	bool_t con_flag;	//connect flag,TRUE:connected
 	bool_t first_con;
 	bool_t start_log;
+	bool_t gps_time;
 	
 };
 

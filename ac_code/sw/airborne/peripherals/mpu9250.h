@@ -37,7 +37,7 @@
 /// Default gyro full scale range +- 2000°/s
 #define MPU9250_DEFAULT_FS_SEL MPU9250_GYRO_RANGE_1000
 /// Default accel full scale range +- 16g
-#define MPU9250_DEFAULT_AFS_SEL MPU9250_ACCEL_RANGE_8G
+#define MPU9250_DEFAULT_AFS_SEL MPU9250_ACCEL_RANGE_16G
 /// Default internal sampling (1kHz, 42Hz LP Bandwidth)
 #define MPU9250_DEFAULT_DLPF_ACCEL_CFG MPU9250_DLPF_ACCEL_41HZ
 /// Default internal sampling (1kHz, 42Hz LP Bandwidth)

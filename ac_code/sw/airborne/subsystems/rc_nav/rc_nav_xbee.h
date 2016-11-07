@@ -129,5 +129,6 @@ extern void rc_set_connect(void);
 extern void rc_set_info_init(void);
 extern void rc_motion_info_init(void);
 extern void rc_nav_init(void);
+extern void rc_set_rc_type(void);
     
 #endif /* END OF RC_NAV_XBEE_H */

@@ -41,6 +41,14 @@
 #define BARO_LIMIT_HEIGHT  563    //2.2m 2**8
 #define ERROR_LIMIT_HEIGHT  256   //1m
 
+#define ROUTE_BRAKE_DISTANCE  10  //unit:m
+#define SMOOTH_BRAKE 1
+#define PAUSE_BRAKE 2
+#define URGENT_BRAKE 3
+#define SMOOTH_BRAKE_ACCEL 1.2f
+#define PAUSE_BRAKE_ACCEL 2.2f
+#define URGENT_BRAKE_ACCEL  3.0f
+
 extern struct EnuCoor_i navigation_target;
 extern struct EnuCoor_i navigation_carrot;
 
@@ -80,10 +88,16 @@ extern float flight_altitude;
 extern float dist2_to_home;      ///< squared distance to home waypoint
 extern bool_t too_far_from_home;
 extern float failsafe_mode_dist2; ///< maximum squared distance to home wp before going to failsafe mode
-
 extern float dist2_to_wp;       ///< squared distance to next waypoint
+
 extern bool_t route_brake_flag;
-extern float brake_distance2;
+extern bool_t stop_brake_flag;
+extern float  accel_stop_brake;
+
+extern float smooth_brake_accel;
+extern float pause_brake_accel;
+
+extern uint8_t set_carrot_angle;
 
 extern float nav_circle_radians_no_rewind; /* Cumulated, add by whp */
 
@@ -109,9 +123,12 @@ extern bool_t nav_set_heading_towards_waypoint(uint8_t wp);
 extern bool_t nav_set_heading_current(void);
 extern bool_t nav_set_heading_along(struct EnuCoor_i *wp_from,struct EnuCoor_i *wp_to);
 extern bool_t nav_check_heading(void);
+extern bool_t nav_check_height(void);
 extern void record_current_waypoint(struct EnuCoor_i *wp);
 extern bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_heading);
 extern bool_t get_nav_route_mediacy(void);
+extern void set_stop_brake(uint8_t brake_grade);
+extern void release_stop_brake(void);
 
 extern void auto_nav_fp(void);
 
@@ -140,6 +157,7 @@ extern void auto_nav_fp(void);
 	                           && fabs(stateGetAccelNed_f()->y) < (HOVER_STEADY_ACCEL_H)       \
 	                           && fabs(stateGetNedToBodyEulers_f()->phi) < (HOVER_STEADY_ATT)  \
 	                           && fabs(stateGetNedToBodyEulers_f()->theta) < (HOVER_STEADY_ATT) )
+
 
 /** Normalize a degree angle between 0 and 359 */
 #define NormCourse(x) { \
@@ -202,7 +220,7 @@ extern void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end);
 bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_t approaching_time);
 #define NavApproaching(wp, time) nav_approaching_from(&waypoints[wp].enu_i, NULL, time)
 #define NavApproachingFrom(wp, from, time) nav_approaching_from(&waypoints[wp].enu_i, &waypoints[from].enu_i, time)
-
+extern bool_t nav_approaching_target(struct EnuCoor_i *wp, struct EnuCoor_i *from, float arrived_distance);  
 /** Check the time spent in a radius of 'ARRIVED_AT_WAYPOINT' around a wp  */
 bool_t nav_check_wp_time(struct EnuCoor_i *wp, uint16_t stay_time);
 #define NavCheckWaypointTime(wp, time) nav_check_wp_time(&waypoints[wp].enu_i, time)

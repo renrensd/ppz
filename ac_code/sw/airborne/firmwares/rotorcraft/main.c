@@ -96,6 +96,10 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include"subsystems/ops/ops_app_if.h"
 #endif	/* OPS_OPTION */
 
+#ifdef ENG_OPTION
+#include"subsystems/eng/eng_app_if.h"
+#endif	/* ENG_OPTION */
+
 #ifdef BBOX_OPTION
 #include"subsystems/bbox/bbox_if.h"
 #endif	/* BBOX_OPTION */
@@ -154,6 +158,9 @@ tid_t ops_tid;           ///< id for ops_task() timer
 #ifdef MONITORING_OPTION
 tid_t monitor_tid;         ///< id for monitoring_periodic() timer
 #endif
+#ifdef ENG_OPTION
+tid_t eng_tid;           ///< id for eng_task() timer
+#endif	/* ENG_OPTION */
 
 #ifndef SITL
 int main(void)
@@ -197,11 +204,6 @@ STATIC_INLINE void main_init(void)
 {
   mcu_init();
 
-#ifdef FRAM_OPTION
-  fram_init();
-#endif
- 
-
 #if defined(PPRZ_TRIG_INT_COMPR_FLASH)
   pprz_trig_int_init();
 #endif
@@ -229,6 +231,11 @@ STATIC_INLINE void main_init(void)
 #if USE_BARO_BOARD
   baro_init();
 #endif
+
+#ifdef FRAM_OPTION
+  fram_init_all_data();
+#endif
+
 #if USE_IMU
   imu_init();
 #endif
@@ -266,6 +273,10 @@ STATIC_INLINE void main_init(void)
 	ops_init();
 #endif	/* OPS_OPTION */
 
+#ifdef ENG_OPTION
+	eng_init();
+#endif	/* ENG_OPTION */
+
 #ifdef MONITORING_OPTION
     monitoring_init();
 #endif
@@ -289,6 +300,10 @@ STATIC_INLINE void main_init(void)
 #ifdef OPS_OPTION
   ops_tid = sys_time_register_timer(1. / OPS_PERIODIC_FREQUENCY, NULL);
 #endif	/* OPS_OPTION */
+
+#ifdef ENG_OPTION
+  eng_tid = sys_time_register_timer(1. / ENG_PERIODIC_FREQUENCY, NULL);
+#endif	/* ENG_OPTION */
 
 #ifdef MONITORING_OPTION
   monitor_tid = sys_time_register_timer(1. /MONITORING_FREQUENCY, NULL);
@@ -345,6 +360,13 @@ STATIC_INLINE void handle_periodic_tasks(void)
     ops_task();
   }
 #endif	/* OPS_OPTION */
+
+#ifdef ENG_OPTION
+  if (sys_time_check_and_ack_timer(eng_tid)) 
+  {
+    eng_task();
+  }
+#endif	/* ENG_OPTION */
 
 #ifdef MONITORING_OPTION
   if (sys_time_check_and_ack_timer(monitor_tid)) 
@@ -468,11 +490,21 @@ STATIC_INLINE void failsafe_check(void)
 	      autopilot_motors_on && GpsIsLost()) {
 	    autopilot_set_mode(AP_MODE_FAILSAFE);
 	  }
-    #endif
+    #endif  //end of USE_GPS
 
-  #endif
+  #else
+   if (radio_control.link_status == RC_LINK_LOST || radio_control.status == RC_REALLY_LOST ) 
+   {   //radio lost,will set mode kill
+   	   if( autopilot_mode != AP_MODE_NAV)
+   	   {
+	   	   autopilot_set_mode(AP_MODE_KILL);
+   	   }
+   }
+  #endif //end of ndef USE_MISSION
 
 }
+
+
 
 STATIC_INLINE void main_event(void)
 {

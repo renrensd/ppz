@@ -19,8 +19,8 @@
 *=====================================================================*/
 #ifndef _TYPE_CONV_IF_H_
 #define _TYPE_CONV_IF_H_ 
+#include "std.h"
 
-#include "..\..\CONFIG\INC\TYPES.H" 
 /**** Definition of constants ****/
 
 
@@ -37,14 +37,15 @@
 
 
 /**** Declaration of functions ****/ 
-U8 type_conv_bcd_to_hex(U8 bcd);
-U8 type_conv_hex_to_bcd(U8 hex);
-U8 type_conv_hex_to_ascii(U8 hex);
-U8 type_conv_ascii_to_hex(U8 ascii);
-void type_conv_u16_to_u8(U16 u16, U8* pU8);
-U16 type_conv_u8_to_u16(U8 *pU8);
-void byte_to_hex_string(U8 * dst, U8 data);
-U8 byte_to_string(U8 * dst, U8 data);
+uint8_t type_conv_bcd_to_hex(uint8_t bcd);
+uint8_t type_conv_hex_to_bcd(uint8_t hex);
+uint8_t type_conv_hex_to_ascii(uint8_t hex);
+uint8_t type_conv_ascii_to_hex(uint8_t ascii);
+void type_conv_u16_to_u8(uint16_t u16, uint8_t* puint8_t);
+uint16_t type_conv_u8_to_u16(uint8_t *puint8_t);
+void byte_to_hex_string(uint8_t * dst, uint8_t data);
+uint8_t byte_to_string(uint8_t * dst, uint8_t data);
+extern uint8_t byte_to_string2(uint8_t * dst, uint8_t data);
 
 #endif /*_TYPE_CONV_IF_H_*/
 

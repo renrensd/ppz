@@ -1444,6 +1444,7 @@
     <field name="fix"     type="uint8" values="NONE|NA|2D|3D|DGPS|RTK"/>
     <field name="heading" type="float" />
     <field name="slo_tatus" type="uint8" values="unvalid|valid"/>
+    <field name="head_stanum"   type="uint8"/>
   </message>
 
   <message name="AHRS_EULER_INT" id="156">
@@ -2121,7 +2122,7 @@
 
   <message name="ROTORCRAFT_STATUS" id="231">
     <!--field name="link_imu_nb_err" type="uint32"/-->
-    <field name="motor_nb_err"  type="uint8"/>
+    <field name="rc_link_status"  type="uint8"/>
     <field name="rc_status"    type="uint8" values="OK|LOST|REALLY_LOST"/>
     <field name="frame_rate"   type="uint8" unit="Hz"/>
     <field name="spray_state"  type="uint8" values="STOP|OPEN"/>
@@ -2134,6 +2135,7 @@
     <field name="vsupply"      type="uint16" unit="decivolt"/>
     <field name="current"      type="int32" unit="mA"/>
     <field name="rep_cap"      type="uint16" unit="mAh"/>
+    <field name="bat_temper"   type="float"  unit="C"/>
     <field name="cpu_time"     type="uint16" unit="s"/>
   </message>
 

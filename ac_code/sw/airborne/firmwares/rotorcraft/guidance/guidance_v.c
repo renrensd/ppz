@@ -305,7 +305,7 @@ static void guidance_v_filter_ini(void)
 {
 	guid_v.acc_filter_fc = 10;
 	guid_v.speed_filter_fc = 10;
-	guid_v.accd_filter_fc = 10;
+	guid_v.accd_filter_fc = 5;
 	guid_v.pid_loop_mode = ACC_SPEED_POS;
 }
 

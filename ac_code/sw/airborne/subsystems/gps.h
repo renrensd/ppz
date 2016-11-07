@@ -53,6 +53,17 @@
 #define GPS_NB_CHANNELS 1
 #endif
 
+struct Gps_Time
+{
+	uint8_t second;
+	uint8_t minute;
+	uint8_t hour;
+	uint8_t day;
+	uint8_t month;
+	uint8_t year;
+};
+
+
 /** data structure for Space Vehicle Information of a single satellite */
 struct SVinfo {
   uint8_t svid;  ///< Satellite ID
@@ -69,9 +80,10 @@ struct GpsState {
   struct EcefCoor_i ecef_pos_sd; ///< position stander diviation, 10000*m
   struct LlaCoor_i lla_pos;      ///< position in LLA (lat,lon: deg*1e7; alt: mm over ellipsoid)
   struct UtmCoor_i utm_pos;      ///< position in UTM (north,east: cm; alt: mm over ellipsoid)
-  int32_t hmsl;                  ///< height above mean sea level in mm
   struct EcefCoor_i ecef_vel;    ///< speed ECEF in cm/s
   struct NedCoor_i ned_vel;      ///< speed NED in cm/s
+  struct Gps_Time gps_time;
+  int32_t hmsl;                  ///< height above mean sea level in mm
   uint16_t gspeed;               ///< norm of 2d ground speed in cm/s
   uint16_t speed_3d;             ///< norm of 3d speed in cm/s
   int32_t course;                ///< GPS course over ground in rad*1e7, [0, 2*Pi]*1e7 (CW/north)
@@ -98,6 +110,7 @@ struct GpsState {
   float heading;
   //float pitch;
   bool_t h_stable;              ///< heading stable flag
+  uint8_t head_stanum;
   //**********************HJS-ZAM-GPS-HEAD
 };
 

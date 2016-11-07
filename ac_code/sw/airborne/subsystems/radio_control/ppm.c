@@ -28,8 +28,12 @@
 #include "subsystems/radio_control.h"
 #include "subsystems/radio_control/ppm.h"
 
+#include "filters/median_filter.h"
+
 uint16_t ppm_pulses[RADIO_CTL_NB];
 volatile bool_t ppm_frame_available;
+
+struct MedianFilterInt ppm_median_filter[RADIO_CONTROL_NB_CHANNEL];
 
 /*
  * State machine for decoding ppm frames
@@ -73,6 +77,11 @@ void radio_control_impl_init(void)
 
   ppm_arch_init();
 
+  for(uint8_t i=0; i<RADIO_CONTROL_NB_CHANNEL; i++)
+  {
+  	init_median_filter(&ppm_median_filter[i]);
+  }
+
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_PPM, send_ppm);
 #endif
@@ -80,15 +89,25 @@ void radio_control_impl_init(void)
 
 void radio_control_impl_event(void (* _received_frame_handler)(void))
 {
-  if (ppm_frame_available) {
+  if (ppm_frame_available)
+  {
     radio_control.frame_cpt++;
     radio_control.time_since_last_frame = 0;
-    if (radio_control.radio_ok_cpt > 0) {
+    if (radio_control.radio_ok_cpt > 0)
+    {
       radio_control.radio_ok_cpt--;
     } 
-	else {
+    else
+    {
       radio_control.status = RC_OK;
       NormalizePpmIIR(ppm_pulses, radio_control);
+
+	  for(uint8_t i=0; i<RADIO_CONTROL_NB_CHANNEL; i++)
+	  {
+	  	radio_control.values[i] = 
+			(int16_t)update_median_filter(&ppm_median_filter[i], (int32_t)radio_control.values[i]);
+	  }
+	  
       _received_frame_handler();
     }
     ppm_frame_available = FALSE;

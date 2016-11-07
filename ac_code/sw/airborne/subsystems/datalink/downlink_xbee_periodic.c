@@ -32,7 +32,7 @@
 #define RC_INFO_PC_FREQUENCY 1
 #define NAV_FLIGHT_FREQUENCY 1
 //#define MISSION_REPORT__FREQUENCY 0.5
-#define RC_CHECK_FREQUENCY  2
+//#define RC_CHECK_FREQUENCY  2
 
 void downlink_gcs_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
 {   
@@ -99,8 +99,7 @@ void send_heart_beat_A2G_msg(void)
    int16_t speed = (int16_t)( stateGetHorizontalSpeedNorm_f()*100 );
 
    int16_t flight_alt = (int16_t)( (stateGetPositionEnu_f()->z )*100 );    
-   int32_t pos_lon = (int32_t)( (int64_t)(stateGetPositionLla_i()->lon) * 17453293/100000000 ); 
-   int32_t pos_lat = (int32_t)( (int64_t)(stateGetPositionLla_i()->lat) * 17453293/100000000 ); 
+
    //int32_t pos_lon = 198833922;
    //int32_t pos_lat = 39340866;
   /*
@@ -110,6 +109,21 @@ void send_heart_beat_A2G_msg(void)
    i++;
    if(i==20)  i=1;
   */
+   int32_t pos_lon, pos_lat;
+   if(state.ned_initialized_i)
+   {
+	   struct EcefCoor_i pos_ecef;
+	   ecef_of_enu_pos_i(&pos_ecef, &(state.ned_origin_i), stateGetPositionEnu_i());
+	   struct LlaCoor_i pos_lla;
+	   lla_of_ecef_i(&pos_lla, &pos_ecef);
+	   pos_lon = (int32_t)( (int64_t)(pos_lla.lon) * 17453293/100000000 ); 
+	   pos_lat = (int32_t)( (int64_t)(pos_lla.lat) * 17453293/100000000 ); 
+   }
+   else
+   {
+	   pos_lon = (int32_t)( (int64_t)(stateGetPositionLla_i()->lon) * 17453293/100000000 );
+	   pos_lat = (int32_t)( (int64_t)(stateGetPositionLla_i()->lat) * 17453293/100000000 );
+   }
    
    int8_t  battery_remain = ops_info.o_bat_rep_percent; //(int8_t)((electrical.vsupply-420)*100/60);
    Bound(battery_remain, 0, 100);

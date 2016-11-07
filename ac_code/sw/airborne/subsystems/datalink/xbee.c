@@ -385,7 +385,7 @@ void xbee_msg_aircraft_ready_broadcast(void)  //call by xbee_init,priodic send u
 	const char serialcode[] = A2G_SERIAL_CODE;
 	const char ac_sn[] = AC_SN_CODE;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_BC);
-	DOWNLINK_SEND_AIRCRAFT_BIND_STATE(DefaultChannel, DefaultDevice, serialcode, ac_sn);
+	DOWNLINK_SEND_AIRCRAFT_BIND_STATE(SecondChannel, SecondDevice, serialcode, ac_sn);
 }
 #endif
 

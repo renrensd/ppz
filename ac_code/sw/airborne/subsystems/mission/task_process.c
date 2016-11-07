@@ -47,6 +47,7 @@ static bool_t spray_caculate_flag;
 /*interrupt scene var*/
 //from_wp and next_wp are request can't be changed before recover
 struct EnuCoor_i current_wp_scene;    /*use to save pos for exceptional interrupt*/
+struct EnuCoor_i interrupt_wp_scene;    /*use to save pos for exceptional interrupt*/
 
 struct EnuCoor_i home_wp_enu;
 struct EnuCoor_i reland_wp_enu;
@@ -63,7 +64,8 @@ bool_t task_wp_empty_handle(void);
 
 static inline bool_t task_nav_hover(struct EnuCoor_i hover_wp);
 static inline bool_t task_nav_wp(struct EnuCoor_i first_wp);
-static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type);
+static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type);
+static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp);
 static float set_path_flight_info(uint8_t type);
 
 void send_current_task_state(uint8_t wp_state); 
@@ -200,11 +202,13 @@ Gcs_State gcs_task_run(void)
 		case GCS_CMD_PAUSE:
 			gcs_state = GCS_RUN_PAUSE;
 			gcs_hover_enter();
+			set_stop_brake(PAUSE_BRAKE);
 			
 			break;
 			
 		case GCS_CMD_CONTI:
 			gcs_task_cmd = GCS_CMD_START;
+			release_stop_brake();
 			
 			break;
 			
@@ -212,16 +216,22 @@ Gcs_State gcs_task_run(void)
 			gcs_state = GCS_RUN_HOME;
 			if( gcs_hover_enter() )
 			{
+				set_stop_brake(SMOOTH_BRAKE);
 				spray_break_and_continual();
 				VECT2_COPY(home_wp_enu, wp_home);
+				interrupt_wp_scene = *stateGetPositionEnu_i();
 			}
 			else
-			{   			
-				if( !task_nav_path(current_wp_scene, home_wp_enu, FLIGHT_PATH) ) 
+			{
+				if(task_nav_pre_path(interrupt_wp_scene, home_wp_enu, FLIGHT_PATH))
 				{
-					/*no more task_wp to run, do land motion*/
-					task_nav_hover(home_wp_enu);
-					gcs_state = GCS_RUN_LANDING;
+					release_stop_brake();
+					if( !task_nav_path(interrupt_wp_scene, home_wp_enu) ) 
+					{
+						/*no more task_wp to run, do land motion*/
+						task_nav_hover(home_wp_enu);
+						gcs_state = GCS_RUN_LANDING;
+					}
 				}
 			}
 			break;
@@ -230,16 +240,22 @@ Gcs_State gcs_task_run(void)
 			gcs_state = GCS_RUN_RELAND;
 			if( gcs_hover_enter() )
 			{
+				set_stop_brake(SMOOTH_BRAKE);
 				spray_break_and_continual();
 				get_shortest_reland_wp();
+				interrupt_wp_scene = *stateGetPositionEnu_i();
 			}
 			else
 			{   
-				if( !task_nav_path(current_wp_scene, reland_wp_enu, FLIGHT_PATH) ) 
+				if(task_nav_pre_path(interrupt_wp_scene, reland_wp_enu, FLIGHT_PATH))
 				{
-					/*no more task_wp to run, do land motion*/
-					task_nav_hover(reland_wp_enu);
-					gcs_state = GCS_RUN_LANDING;
+					release_stop_brake();
+					if( !task_nav_path(interrupt_wp_scene, reland_wp_enu) ) 
+					{
+						/*no more task_wp to run, do land motion*/
+						task_nav_hover(reland_wp_enu);
+						gcs_state = GCS_RUN_LANDING;
+					}
 				}
 			}
 			break;
@@ -248,6 +264,7 @@ Gcs_State gcs_task_run(void)
 			gcs_state = GCS_RUN_LANDING;
 			if( gcs_hover_enter() )
 			{
+				set_stop_brake(PAUSE_BRAKE);
 				spray_break_and_continual();
 			}
 			break;
@@ -300,7 +317,7 @@ bool_t gcs_hover_enter(void)
 	{  
 		struct EnuCoor_i hover_wp;
 		hover_wp = save_task_scene();
-		task_nav_hover(hover_wp);
+		//task_nav_hover(hover_wp);
 		steady_flag = 0;
 		return TRUE;
 	}
@@ -356,21 +373,24 @@ bool_t run_normal_task(void)
 	{
 		case FLIGHT_LINE:
 		{
-			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH) ) 
+			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH))
 			{
-				if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
+				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
 				{
-					task_nav_hover(next_wp.wp_en);
-				}
-				if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
-				{
-					if( !achieve_next_wp() )  
+					if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
 					{
-						task_wp_empty_handle();
+						task_nav_hover(next_wp.wp_en);
 					}
-					else
+					if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
 					{
-						wp_state = 1;  /*interrupt reaching next_wp msg to gcs*/
+						if( !achieve_next_wp() )  
+						{
+							task_wp_empty_handle();
+						}
+						else
+						{
+							wp_state = 1;  /*interrupt reaching next_wp msg to gcs*/
+						}
 					}
 				}
 			}
@@ -379,17 +399,20 @@ bool_t run_normal_task(void)
 			
 		case SPRAY_LINE:
 		{
-			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en, SPRAY_PATH) ) 
-			{	
-				/*no more task_wp to run*/
-				if( !achieve_next_wp() )  
-				{
-					task_wp_empty_handle();
-				}
-				else
-				{
-					wp_state = 1;
-					spray_caculate_flag = FALSE;   /*reset spray caculate flag for two continual spray line*/
+			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, SPRAY_PATH))
+			{
+				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
+				{	
+					/*no more task_wp to run*/
+					if( !achieve_next_wp() )  
+					{
+						task_wp_empty_handle();
+					}
+					else
+					{
+						wp_state = 1;
+						spray_caculate_flag = FALSE;   /*reset spray caculate flag for two continual spray line*/
+					}
 				}
 			}
 			break;
@@ -397,12 +420,38 @@ bool_t run_normal_task(void)
 			
 		case SPRAY_CONVERT:
 		{
-			if(spray_convert_info.useful)
+			if( ac_config_info.spray_convert_type == CIRCLE_CONVERT )
 			{
+				if(spray_convert_info.useful)
+				{
+					/*if finish convert,get next_wp*/
+					if( nav_spray_convert(spray_convert_info.center, 
+											 spray_convert_info.radius, 
+											 spray_convert_info.heading_sp) )
+					{
+						/*no more task_wp to run*/
+						if( !achieve_next_wp() )  
+						{
+							task_wp_empty_handle();
+						}
+						else
+						{
+							spray_convert_info.useful = FALSE;  /*reset caculate*/
+							wp_state = 1;
+						}					
+					}
+				}
+				else
+				{
+					//convert fail
+					task_error_state = TASK_PARSE_ERROR;
+				}
+			}
+			else  //ac_config_info.spray_convert_type==WAYPOINT_CONVERT
+			{
+				//task_nav_wp(struct EnuCoor_i first_wp)
 				/*if finish convert,get next_wp*/
-				if( nav_spray_convert(spray_convert_info.center, 
-										 spray_convert_info.radius, 
-										 spray_convert_info.heading_sp) )
+				if( !task_nav_wp(next_wp.wp_en) )
 				{
 					/*no more task_wp to run*/
 					if( !achieve_next_wp() )  
@@ -411,15 +460,9 @@ bool_t run_normal_task(void)
 					}
 					else
 					{
-						spray_convert_info.useful = FALSE;  /*reset caculate*/
 						wp_state = 1;
 					}					
 				}
-			}
-			else
-			{
-				//convert fail
-				task_error_state = TASK_PARSE_ERROR;
 			}
 			break;
 		}
@@ -443,12 +486,15 @@ bool_t run_normal_task(void)
 				}
 			}
 			else
-			{			
-				if( !task_nav_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH) ) 
+			{
+				if(task_nav_pre_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH))
 				{
-					wp_state = 1;
-					task_nav_hover(home_wp_enu);
-					return TRUE;  /*task is finished, next to do land*/
+					if( !task_nav_path(from_wp.wp_en, home_wp_enu) ) 
+					{
+						wp_state = 1;
+						task_nav_hover(home_wp_enu);
+						return TRUE;  /*task is finished, next to do land*/
+					}
 				}
 			}
 			break;
@@ -479,7 +525,8 @@ void spray_work_run(void)
 	   #endif 	
 	   //spray_switch_flag = TRUE;
 	}
-	else if( SPRAY_LINE!=from_wp.action && get_spray_switch_state())  //TRUE==spray_switch_flag )
+	else if( (SPRAY_LINE!=from_wp.action || !get_nav_route_mediacy())
+		      && get_spray_switch_state() )
 	{
 	   #ifdef OPS_OPTION
 		ops_stop_spraying(); 
@@ -560,6 +607,7 @@ static float set_path_flight_info(uint8_t type)
 			return ac_config_info.max_flight_height;
   }
 }
+
 /** Navigation function hover flight
 */
 static inline bool_t task_nav_hover(struct EnuCoor_i hover_wp)
@@ -581,7 +629,7 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
   struct EnuCoor_i target_wp = first_wp;
 
   //Check proximity and wait for 'duration' seconds in proximity circle if desired
-  if (nav_approaching_from(&target_wp, NULL, 0)) 
+  if (nav_approaching_target(&target_wp, NULL, 0.5)) 
   {
     return FALSE;
   }
@@ -590,7 +638,7 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
   horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
   VECT3_COPY(navigation_target, target_wp);
   NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
-  NavVerticalAltitudeMode(ac_config_info.max_flight_height, 0.);
+  //NavVerticalAltitudeMode(ac_config_info.max_flight_height, 0.);
   
   return TRUE;
 }
@@ -598,26 +646,47 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 
 /** Navigation function along a segment
 */
-static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type)
+static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type)
 {
+  static float flight_height_last = 0.0f;  //use reord last time flight height,once changed it will adjust the height before forword flight
+  static bool_t height_align = FALSE;
+
   float flight_height = set_path_flight_info(flight_type); 
-	
+  if(flight_height_last != flight_height)
+  {
+  	  height_align = FALSE;
+  }
+  flight_height_last = flight_height;
+
+  if( !height_align )
+  {
+  	  if( nav_check_height() )
+  	  {
+	  	  height_align = TRUE;
+  	  }
+  }  
+
+  NavVerticalAltitudeMode(flight_height, 0.);
+  nav_set_heading_along(&p_start_wp, &p_end_wp);  /*it can caculate once economize CPU*/
+  if( height_align &&  nav_check_heading() )
+  {
+  	return TRUE;
+  }
+  return FALSE;
+}
+
+static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp)
+{
   //Check proximity and wait for 'duration' seconds in proximity circle if desired 
   if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) ) 
   {
   	   return FALSE;
   }
   
-  nav_set_heading_along(&p_start_wp, &p_end_wp);  /*it can caculate once economize CPU*/
-  if( nav_check_heading() )    //check heading error
-  {
-	  //Route Between from-to
-	  horizontal_mode = HORIZONTAL_MODE_ROUTE;
-	  nav_route(&p_start_wp, &p_end_wp);
-	  NavVerticalAutoThrottleMode(RadOfDeg(0.0));
-	  NavVerticalAltitudeMode(flight_height, 0.);
-  }
-  
+  horizontal_mode = HORIZONTAL_MODE_ROUTE;
+  nav_route(&p_start_wp, &p_end_wp);
+  NavVerticalAutoThrottleMode(RadOfDeg(0.0));
+  //NavVerticalAltitudeMode(flight_height, 0.);  
   return TRUE;
   
 }

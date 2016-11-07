@@ -80,7 +80,7 @@
 #include <libopencm3/stm32/rcc.h>
 #endif
 
-#ifndef BBOX_OPTION
+#ifdef BBOX_OPTION
 #include "subsystems/bbox/bbox_msg_if.h"   
 #include"subsystems/bbox/bbox_if.h"
 #include "subsystems/datalink/can_transport.h"
@@ -123,8 +123,7 @@ void WEAK board_init(void)
 	gpio_setup_output(OPS_PWR_EN_GPIO);
   	gpio_set(OPS_PWR_EN_GPIO);
 	
-    //gpio_setup_output(DEBUG_GPIO);
-  	//gpio_clear(DEBUG_GPIO);
+    //gpio_setup_input_pulldown(DEBUG_GPIO);
   #endif
 }
 
@@ -249,6 +248,10 @@ void mcu_init(void)
 
 #if USE_UDP0 || USE_UDP1 || USE_UDP2
   udp_arch_init();
+#endif
+
+#ifdef FRAM_OPTION
+  fram_init();
 #endif
 
 #ifdef BBOX_OPTION
@@ -578,6 +581,14 @@ void mcu_write_file_fault(void)
 	}
 }
 #endif	/* FAULT_OPTION */
+
+#ifdef UPGRADE_OPTION
+void mcu_upgrade_request_reboot(void)
+{
+	mcu_set_reset_type(MCU_RESET_BY_SW_UPGRADE);
+	scb_reset_system();
+}
+#endif	/* UPGRADE_OPTION */
 
 #endif /* NPS_SIMU */
 

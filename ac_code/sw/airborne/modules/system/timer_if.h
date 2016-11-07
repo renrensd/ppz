@@ -33,6 +33,7 @@ typedef enum
 	TIMER_TASK_TELEMETRY,
 	TIMER_TASK_IMU,
 	TIMER_TASK_EVENT,
+	TIMER_TASK_ENG,
 	TIMER_TASK_MAX    
 }TIMER_TASK_IDS;
 
@@ -40,6 +41,8 @@ typedef enum
 {
     TIMER_PERIODIC,    
     TIMER_ONE_SHOT,
+    TIMER_TWO_SHOT,
+    TIMER_THREE_SHOT    
 }TIMER_TYPES;
 
 typedef struct

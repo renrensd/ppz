@@ -239,6 +239,7 @@ void stabilization_attitude_run(bool_t  in_flight)
 	desired_rate.p = stabilization_gains.p.x  * att_err.phi;
 	desired_rate.q = stabilization_gains.p.y  * att_err.theta;
 	desired_rate.r = stabilization_gains.p.z  * att_err.psi;
+
 	BoundAbs(desired_rate.p, MAX_DESIRED_RATE);
 	BoundAbs(desired_rate.q, MAX_DESIRED_RATE);
 	BoundAbs(desired_rate.r, MAX_DESIRED_RATE);

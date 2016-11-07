@@ -28,7 +28,9 @@ extern bool_t  gcs_lost;
 
 
 extern void gcs_lost_check(void);
-extern void gcs_set_connect(void);
+extern void gcs_vrc_set_connect(void);
+extern void gcs_set_rc_type(void);
+extern void gcs_vrc_ack_timer(void);
 
 
 #endif /*_GCS_NAV_XBEE_H_*/

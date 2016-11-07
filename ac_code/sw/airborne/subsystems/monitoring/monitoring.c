@@ -196,7 +196,7 @@ void monitoring_periodic(void)
 static void monitoring_task(void)
 {
 	RunOnceEvery( MONITORING_FREQUENCY/2, imu_frequence_check() );     //need periodic =2hz
-	RunOnceEvery( MONITORING_FREQUENCY, height_frequence_check() );    //need periodic =1hz
+	//RunOnceEvery( MONITORING_FREQUENCY, height_frequence_check() );    //need periodic =1hz
 	RunOnceEvery( MONITORING_FREQUENCY, except_mission_update() );     //need periodic =1hz
 	RunOnceEvery( MONITORING_FREQUENCY/2, rc_lost_check() );           //need periodic =2hz
 	RunOnceEvery( MONITORING_FREQUENCY/2, gcs_lost_check() );           //need periodic =2hz
@@ -239,6 +239,9 @@ void ground_monitoring(void)
 			break;
 			
 		case IMU_CHECK:	
+			ground_check_step++;  //next step
+			break;
+			
 			check_state=imu_ground_check();
 			
 			if(check_state==FAILED) 
@@ -354,7 +357,7 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 {	
 	RunOnceEvery( MONITORING_FREQUENCY*2, battery_flight_check() );
 	//RunOnceEvery( MONITORING_FREQUENCY*2, board_flight_check() );
-	RunOnceEvery( MONITORING_FREQUENCY, imu_flight_check() );
+	//RunOnceEvery( MONITORING_FREQUENCY, imu_flight_check() );
 	//RunOnceEvery( MONITORING_FREQUENCY, height_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY, gps_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY*2, ops_flight_check() );

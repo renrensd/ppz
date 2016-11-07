@@ -36,6 +36,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "subsystems/datalink/datalink.h"
 #include "mcu_periph/sys_time.h"
+#include "modules/system/timer_if.h"
 
 static uint32_t last_down_nb_bytes = 0;  // previous number of bytes sent
 static uint32_t last_up_nb_msgs = 0;  // previous number of received messages
@@ -126,6 +127,10 @@ void downlink_periodic(void)
 	#ifdef GCS_V1_OPTION
 	downlink_gcs_periodic();
 	downlink_pc_periodic();
+	#endif
+
+	#if DATALINK == PPRZ
+	tm_stimulate(TIMER_TASK_TELEMETRY);
 	#endif
 }
 

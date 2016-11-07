@@ -73,6 +73,13 @@
 #include "subsystems/gps/gps_datalink.h"
 #endif
 
+#ifdef UPGRADE_OPTION
+#include "subsystems/fram/fram_if.h"
+#include "modules/system/timer_if.h"
+#include "modules/system/timer_class.h"
+#include "modules/system/timer_def.h"
+#endif	/* UPGRADE_OPTION */
+
 //#include "subsystems/radio_control/rc_datalink.h"
 
 #include "firmwares/rotorcraft/navigation.h"
@@ -125,9 +132,11 @@
 
 #define IdOfMsg(x) (x[1])
 #define TypeOfMsg(x) (x[0])
+
 #if USE_NPS
 bool_t datalink_enabled = TRUE;
 #endif
+
 
 void dl_parse_msg(void)
 {
@@ -137,71 +146,65 @@ void dl_parse_msg(void)
  #ifdef GCS_V1_OPTION
   //process RC uplink message 
   if(msg_type == XBEE_TYPE_RC)   
-  { //serial_code confirm
+  {
     #if DATALINK==XBEE
-  	if(xbee_con_info.rc_con_available != TRUE)  return;
+	if(xbee_con_info.rc_con_available != TRUE)  return;
 	#endif	/* DATALINK==XBEE */
 
-	xbee_con_info.rc_con_available = TRUE;
-	rc_set_connect();
-	
 	switch (msg_id) 
-	{  /*
-	    #define DL_RC_MOTION_CMD 1
-        #define DL_RC_SET_CMD 2
-        #define DL_RC_BIND_STATE 101
-        #define DL_HEART_BEAT_RC_STATE 102
-        */
-        case DL_RC_MOTION_CMD:
+	{  
+		case DL_RC_MOTION_CMD:
 		{
-	       rc_motion_cmd_execution(DL_RC_MOTION_CMD_motion_cmd(dl_buffer));
-		   break;
+			rc_set_connect();
+			rc_motion_cmd_execution(DL_RC_MOTION_CMD_motion_cmd(dl_buffer));
+			break;
         }
 		
 		case DL_RC_SET_CMD:
 		{  
-		   rc_set_cmd_pasre(DL_RC_SET_CMD_set_cmd(dl_buffer));
-		   break;
+			rc_set_connect();
+			rc_set_cmd_pasre(DL_RC_SET_CMD_set_cmd(dl_buffer));
+			break;
 		}
 		
-        case DL_HEART_BEAT_RC_STATE:
-		{  
-		   //static float last_time=get_sys_time_float();
-		   xbee_tx_header(XBEE_NACK,XBEE_ADDR_RC);	
-		   send_heart_beat_A2R_msg();
-		   rc_set_connect();
-		   break;
+       case DL_HEART_BEAT_RC_STATE:
+		{
+			rc_set_rc_type();    //real RC communication set type
+			rc_set_connect();
+			send_heart_beat_A2R_msg();
+			break;
 		}
 
 		#if DATALINK==XBEE
-	    case DL_RC_BIND_STATE: 
-		{ 
-		  /*check rc serial_code*/
-		  bool_t code_check = TRUE;
-		  const char rc_serial_code[10] = RC_SERIAL_CODE;
-		  char *pt_serial_code = DL_RC_BIND_STATE_serial_code(dl_buffer);
-		  for(uint8_t i=0; i<10;i++)
-		  {    
-		  	 if( *(pt_serial_code+i)!=rc_serial_code[i] )  
-			 {
-			     code_check = FALSE;         
-				 break; 
-		  	 }
-		  }
-		  //ack with bind rc message,if send fail it will continual reveice rc_bind state message
-		  if(code_check)
-		  {
-			  uint8_t ac_serial_code[10]=A2R_SERIAL_CODE;
-			  xbee_tx_header(XBEE_ACK,XBEE_ADDR_RC);		  
-			  DOWNLINK_SEND_BIND_RC(SecondChannel, SecondDevice, ac_serial_code);
-		  }
-		  break;
+		case DL_RC_BIND_STATE: 
+		{
+			/*check rc serial_code*/
+			bool_t code_check = TRUE;
+			const char rc_serial_code[10] = RC_SERIAL_CODE;
+			char *pt_serial_code = DL_RC_BIND_STATE_serial_code(dl_buffer);
+			for(uint8_t i=0; i<10;i++)
+			{
+				if( *(pt_serial_code+i)!=rc_serial_code[i] )  
+				{
+					code_check = FALSE;         
+					break; 
+				}
+			}
+			//ack with bind rc message,if send fail it will continual reveice rc_bind state message
+			if(code_check)
+			{
+				uint8_t ac_serial_code[10]=A2R_SERIAL_CODE;
+				xbee_tx_header(XBEE_ACK,XBEE_ADDR_RC);		  
+				DOWNLINK_SEND_BIND_RC(SecondChannel, SecondDevice, ac_serial_code);
+			}
+			break;
 	    }
 		#endif	/* DATALINK==XBEE */
 		
 		#ifdef CALIBRATION_OPTION
-		case PPRZ_MSG_ID_CALIBRATION_RESULT_RC_ACK_STATE:
+		case DL_CALIBRATION_RESULT_RC_ACK_STATE:
 		{
+			rc_set_connect();
 			cali_mag_state_init();
 			break;
 		}
@@ -218,42 +221,18 @@ void dl_parse_msg(void)
     #if DATALINK==XBEE
 	if(xbee_con_info.gcs_con_available != TRUE)  return;
 	#endif	/* DATALINK==XBEE */
-
-	gcs_set_connect();
 	
   	switch (msg_id) 
-	{ 
-/*
-#define DL_SET_CONFIG 1
-#define PPRZ_MSG_ID_SET_CONFIG 1
-#define DL_SET_COMMAND 2
-#define PPRZ_MSG_ID_SET_COMMAND 2
-#define DL_ADD_TASK 3
-#define PPRZ_MSG_ID_ADD_TASK 3
-#define DL_UPDATE_TASK 4
-#define PPRZ_MSG_ID_UPDATE_TASK 4
-#define DL_DELETE_TASK 5
-#define PPRZ_MSG_ID_DELETE_TASK 5
-#define DL_GET_TASK 6
-#define PPRZ_MSG_ID_GET_TASK 6
-#define DL_BIND_AIRCRAFT 7
-#define PPRZ_MSG_ID_BIND_AIRCRAFT 7
-#define DL_LAND_TASK 8
-#define PPRZ_MSG_ID_LAND_TASK 8
-#define DL_HEART_BEAT_GCS_STATE 101
-#define PPRZ_MSG_ID_HEART_BEAT_GCS_STATE 101
-#define DL_EMERGENCY_RECORD_ACK_STATE 102
-#define PPRZ_MSG_ID_EMERGENCY_RECORD_ACK_STATE 102
-*/
+	{
        case DL_HEART_BEAT_GCS_STATE: 
 		{
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			break;
 	    }
 	   
        case DL_ADD_TASK:
 	   	{
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			
 			struct Task_Info dl_task_info;
 			int8_t response = 0;
@@ -290,7 +269,7 @@ void dl_parse_msg(void)
 
 	   case DL_UPDATE_TASK:
 	   	{
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			
 			struct Task_Info dl_task_info;
 			int8_t response = 0;
@@ -328,7 +307,7 @@ void dl_parse_msg(void)
 
 	   case DL_DELETE_TASK:
 	   	{
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			
 			uint8_t task_code = DL_DELETE_TASK_task_code(dl_buffer);
 			uint8_t wp_start_id = DL_DELETE_TASK_wp_start_id(dl_buffer);
@@ -346,7 +325,7 @@ void dl_parse_msg(void)
 
 	   case DL_GET_TASK:
 	   	{
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			
 			uint8_t task_code = DL_GET_TASK_task_code(dl_buffer);
 			uint8_t wp_start_id = DL_GET_TASK_wp_start_id(dl_buffer);
@@ -357,7 +336,7 @@ void dl_parse_msg(void)
 
 	   case DL_LAND_TASK:
 	   	{
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			
 			int8_t response = 0;
 			struct Land_Info dl_land_info;
@@ -387,7 +366,7 @@ void dl_parse_msg(void)
 	   
        case DL_SET_CONFIG:
 		{  
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			
 		   uint8_t id = DL_SET_CONFIG_parameter_id(dl_buffer);
 		   uint8_t length = DL_SET_CONFIG_parameter_value_length(dl_buffer);
@@ -399,7 +378,7 @@ void dl_parse_msg(void)
 		
 		case DL_SET_COMMAND:
 		{
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			
 		   uint8_t id = DL_SET_COMMAND_command_id(dl_buffer);
 		   //uint8_t length = DL_SET_COMMAND_command_value_length(dl_buffer);
@@ -409,6 +388,7 @@ void dl_parse_msg(void)
 		   DOWNLINK_SEND_SET_COMMAND_ACK_STATE(SecondChannel, SecondDevice, &id, &pt_value, &response);
 		   break;
 		}
+		
 		#if DATALINK==XBEE
 		case DL_BIND_AIRCRAFT: 
 		{ 
@@ -427,13 +407,13 @@ void dl_parse_msg(void)
 		  if(code_check)
 		  {
 		  		XbeeSetSuccessBind();
-				gcs_set_connect();
+				gcs_vrc_set_connect();
 		  }
 		  else 
 		  {
 		  		XbeeSetFailBind();
 		  }
-          xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+         xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 		  DOWNLINK_SEND_AIRCRAFT_BIND_ACK_STATE(SecondChannel, SecondDevice, &code_check);
 		  break;
 	   }	
@@ -441,7 +421,7 @@ void dl_parse_msg(void)
 		
 		case DL_EMERGENCY_RECORD_ACK_STATE:
 		{
-			gcs_set_connect();
+			gcs_vrc_set_connect();
 			
 			if(DL_EMERGENCY_RECORD_ACK_STATE_response(dl_buffer)==0)
 			{
@@ -449,6 +429,55 @@ void dl_parse_msg(void)
 			}
 			break;
 		}
+
+       /*below is gcs virtual rc functions*/
+		case DL_HEART_BEAT_VRC_STATE:
+		{
+			gcs_vrc_set_connect();
+			send_heart_beat_A2VR_msg();
+			break;
+		}		
+		case DL_GCS_VRC_MOTION_CMD:
+		{
+			gcs_vrc_set_connect();			
+			rc_motion_cmd_execution(DL_RC_MOTION_CMD_motion_cmd(dl_buffer));
+			gcs_set_rc_type();
+			break;
+		}
+		case DL_GCS_VRC_SET_CMD:
+		{
+			rc_set_cmd_pasre(DL_RC_SET_CMD_set_cmd(dl_buffer));
+			gcs_set_rc_type();
+			gcs_vrc_set_connect();
+
+			//gcs_vrc_ack_timer();
+			break;
+		}
+		
+		#ifdef UPGRADE_OPTION
+ 		case DL_REQUEST_UPGRADE:
+		{
+			if( UPGRADE_TYPE_AC == DL_REQUEST_UPGRADE_type(dl_buffer) )
+			{
+				if(fram_write_swdl_mask() == 0)		//fram write swdl success.
+				{
+					uint8_t type = UPGRADE_TYPE_AC;
+					uint8_t state = UPGRADE_RES_OK;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &state);
+					tm_create_timer(TIMER_UPGRADE_RES_TX_TIMEOUT, (4 SECONDS), TIMER_ONE_SHOT,0);//wait 4s to reboot.
+				}
+				else
+				{
+					uint8_t type = UPGRADE_TYPE_AC;
+					uint8_t state = UPGRADE_RES_FAIL;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &state);
+				}
+			}
+			break;
+		}
+		#endif	/* UPGRADE_OPTION */
 		
 	    default: break;
     }
@@ -465,6 +494,9 @@ void dl_parse_msg(void)
 	    case  DL_PING: {
 		  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	      DOWNLINK_SEND_PONG(DefaultChannel, DefaultDevice);
+		  #if OPEN_PC_DATALINK
+  		  DOWNLINK_SEND_PONG(DOWNLINK_TRANSPORT, DOWNLINK_DEVICE);
+		  #endif
 	    }
 	    break;
 
@@ -475,6 +507,9 @@ void dl_parse_msg(void)
 	      DlSetting(i, var);
 		  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	      DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &var);
+		  #if OPEN_PC_DATALINK
+  		  DOWNLINK_SEND_DL_VALUE(DOWNLINK_TRANSPORT, DOWNLINK_DEVICE, &i, &var);
+		  #endif
 	    }
 	    break;
 
@@ -484,6 +519,9 @@ void dl_parse_msg(void)
 	      float val = settings_get_value(i);
 		  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	      DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &val);
+		  #if OPEN_PC_DATALINK
+  		  DOWNLINK_SEND_DL_VALUE(DOWNLINK_TRANSPORT, DOWNLINK_DEVICE, &i, &val);
+		  #endif
 	    }
 	    break;
 

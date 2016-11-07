@@ -117,7 +117,8 @@ static void send_gps_int(struct transport_tx *trans, struct link_device *dev)
                         &gps.num_sv,
                         &gps.fix,
                         &gps.heading,
-                        &gps.h_stable);
+                        &gps.h_stable,
+                        &gps.head_stanum);
   // send SVINFO for available satellites that have new data
   send_svinfo_available(trans, dev);
 }

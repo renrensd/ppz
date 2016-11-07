@@ -91,7 +91,7 @@
 #endif
 
 
-#if 0//def BBOX_OPTION
+#ifdef BBOX_OPTION   //USE BBOX will close wireless telemetry
 #define DefaultChannel can_tp	//pprz_tp\can_tp\pta_tp.
 #define DefaultDevice can_tp	//uart2\can_tp.
 #else
@@ -99,7 +99,7 @@
 #define DefaultDevice DOWNLINK_DEVICE	//uart2\can_tp.
 #endif	/* BBOX_OPTION */
 
-#if DATALINK==TRANSPTA
+#if DATALINK==TRANSPTA  //second device|channel use for rc /gcs telemetry
 #define SecondChannel DOWNLINK_TRANSPORT_PTA
 #define SecondDevice DOWNLINK_DEVICE_PTA
 #else

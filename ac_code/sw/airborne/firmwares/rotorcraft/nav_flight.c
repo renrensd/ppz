@@ -37,6 +37,8 @@ static uint8_t flight_step = 0;
 
 Gcs_State task_state;
 
+enum Rc_Type rc_type = REAL_RC;
+
 struct config_info ac_config_info;  //aircraft config infomation,have initial default value,change by gcs setting config
 
 static void ept_ms_run(void);
@@ -227,7 +229,7 @@ void nav_flight(void)
 					rc_set_info.vtol = LOCKED;  /*finish land, reset to locked*/
 					rc_set_info.locked = TRUE;  /*lock, refuse other rc cmd until unlock cmd*/
 				}
-		  	   else if(rc_set_info.vtol==TAKE_OFF) 
+		  	   else if(rc_set_info.vtol==TAKE_OFF && ground_check_pass) 
 			   {
 				   	monitoring_reset_emer();
 				   	flight_mode_enter(nav_rc_mode); 	/*get rc take off cmd*/
@@ -601,9 +603,10 @@ static void  ac_config_set_default(void)
 {
 	ac_config_info.spray_concentration = 80;
 	ac_config_info.atomization_grade = 3;
-	ac_config_info.max_flight_height = 1.5;
-	ac_config_info.max_flight_speed = 6.0;
-	ac_config_info.spray_height = 1.2;
+	ac_config_info.max_flight_height = 3.0;
+	ac_config_info.max_flight_speed = 4.0;
+	ac_config_info.spray_height = 3.0;
 	ac_config_info.spray_wide = 3.0;
 	ac_config_info.spray_speed = 3.0;
+	ac_config_info.spray_convert_type = WAYPOINT_CONVERT;
 }
