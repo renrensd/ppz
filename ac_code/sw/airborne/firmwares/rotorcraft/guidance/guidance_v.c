@@ -313,6 +313,7 @@ static void guidance_v_controller_ini(void)
 	guid_v.speed_z_pid.Kp = 3.0f;
 	guid_v.speed_z_pid.Kd = 0.3f;
 	guid_v.pos_z_pid.Kp = 1.0f;
+	guid_v.pos_z_pid.Kd = 0.5f;
 	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc), 1.0f/512.0f, 0);
 }
 
@@ -719,7 +720,11 @@ static void run_hover_loop(bool_t in_flight)
 	}
 	pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
 
-	guidance_v_delta_t = guid_v.acc_z_pid.out * (0.8f * (float)MAX_PPRZ);
+	float thrust_coef = FLOAT_OF_BFP(get_vertical_thrust_coeff(), INT32_TRIG_FRAC);
+	thrust_coef = 1.0f/thrust_coef;
+	Bound(thrust_coef, 0, 1.2f);
+
+	guidance_v_delta_t = guid_v.acc_z_pid.out * thrust_coef * (0.8f * (float)MAX_PPRZ);
 	/* bound the result */
 	Bound(guidance_v_delta_t, 0, MAX_PPRZ);
 
