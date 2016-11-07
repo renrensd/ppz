@@ -75,6 +75,7 @@
     <load name="send_imu_mag_current.xml"/>
     <load name="agl_dist.xml"/>
     <!--load name="acc_cali.xml"/-->
+    <load name="mag_cali.xml"/>
     <!--load name="sonar_uart_MB12xx.xml"/-->
     <!--load name="sonar_i2c_mb1242.xml"/-->
     <!--load name="sonar_uart_US100.xml"/-->

@@ -33,6 +33,7 @@
 #include "subsystems/abi.h"
 /*for get gyro offset*/
 #include "subsystems/monitoring/monitoring_imu.h"
+#include "modules/mag_cali/mag_cali.h"
 
 #ifdef IMU_POWER_GPIO
 #include "mcu_periph/gpio.h"
@@ -286,18 +287,22 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 #elif USE_MAGNETOMETER
 void WEAK imu_scale_mag(struct Imu *_imu)
 {
-#if 1//ndef CALIBRATION_OPTION
-  _imu->mag.x = ((_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN *
-                 IMU_MAG_X_SENS_NUM) / IMU_MAG_X_SENS_DEN;
-  _imu->mag.y = ((_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN *
-                 IMU_MAG_Y_SENS_NUM) / IMU_MAG_Y_SENS_DEN;
-  _imu->mag.z = ((_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN *
-                 IMU_MAG_Z_SENS_NUM) / IMU_MAG_Z_SENS_DEN;
-#else
-  _imu->mag.x = (_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN * _imu->mag_sens.x;
-  _imu->mag.y = (_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN * _imu->mag_sens.y;
-  _imu->mag.z = (_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN * _imu->mag_sens.z;
-#endif
+	if(mag_cali.cali_ok)
+	{
+		_imu->mag.x = (_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN * _imu->mag_sens.x;
+		_imu->mag.y = (_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN * _imu->mag_sens.y;
+		_imu->mag.z = (_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN * _imu->mag_sens.z;
+
+	}
+	else
+	{
+		_imu->mag.x = ((_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN *
+											 IMU_MAG_X_SENS_NUM) / IMU_MAG_X_SENS_DEN;
+		_imu->mag.y = ((_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN *
+									 IMU_MAG_Y_SENS_NUM) / IMU_MAG_Y_SENS_DEN;
+		_imu->mag.z = ((_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN *
+									 IMU_MAG_Z_SENS_NUM) / IMU_MAG_Z_SENS_DEN;
+	}
 }
 #else
 void WEAK imu_scale_mag(struct Imu *_imu __attribute__((unused))) {}

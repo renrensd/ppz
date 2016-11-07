@@ -339,18 +339,7 @@
     <field name="power"   type="float" unit="W"/>
   </message>
 
-  <message name="BARO_BMP85_CALIB" id="38">
-    <field name="a1"  type="int16"/>
-    <field name="a2"  type="int16"/>
-    <field name="a3"  type="int16"/>
-    <field name="a4"  type="uint16"/>
-    <field name="a5"  type="uint16"/>
-    <field name="a6"  type="uint16"/>
-    <field name="b1"  type="int16"/>
-    <field name="b2"  type="int16"/>
-    <field name="mb"  type="int16"/>
-    <field name="mc"  type="int16"/>
-    <field name="md"  type="int16"/>
+  <message name="MAG_CALI" id="38">
   </message>
 
   <message name="BARO_BMP85" id="39">
