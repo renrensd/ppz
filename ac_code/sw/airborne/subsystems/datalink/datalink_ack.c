@@ -62,6 +62,38 @@ void send_heart_beat_A2R_msg(void)
 		                                 &spray_flag);
 }
 
+void send_heart_beat_A2VR_msg(void)
+{
+	uint16_t system_time = sys_time.nb_sec;
+	uint8_t ac_state = (uint8_t)autopilot_in_flight;
+	uint8_t battery_remain = 85;      //unit=percent, need update from battery module
+	uint8_t pesticides_remain = (uint8_t)(ops_info.res_cap&0xFF);   //unit=percent,need updata from spray working module
+	uint8_t ac_ready = (uint8_t)ground_check_pass;
+	uint8_t error_code = 0;
+	uint8_t spray_flag;
+	if(get_spray_switch_state())
+	{
+		spray_flag = 1;
+	}
+	else
+	{
+		spray_flag = 0;
+	}
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+	DOWNLINK_SEND_HEART_BEAT_AC_RC_STATE(SecondChannel, SecondDevice,
+		                                 &system_time,
+		                                 &ac_state,
+		                                 &flight_mode,
+		                                 &battery_remain,
+		                                 &pesticides_remain,
+		                                 &rc_set_info.spray_grade,
+		                                 &rc_set_info.home,
+		                                 &rc_set_info.locked,
+		                                 &ac_ready,
+		                                 &error_code,
+		                                 &rc_alert_grade,
+		                                 &spray_flag);
+}
 
 void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 {   
