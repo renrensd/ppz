@@ -190,7 +190,7 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
   ahrs_mlkf.lp_accel = alpha * ahrs_mlkf.lp_accel +
                        (1. - alpha) * (float_vect3_norm(&imu_g) - 9.81);
   const struct FloatVect3 earth_g = {0.,  0., -9.81 };
-  const float dn = 250 * fabs(ahrs_mlkf.lp_accel);
+  const float dn = 10000 * fabs(ahrs_mlkf.lp_accel);
   struct FloatVect3 g_noise = {1. + dn, 1. + dn, 1. + dn};
   update_state(&earth_g, &imu_g, &g_noise);
   reset_state();
@@ -480,7 +480,7 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s)
 {
 	static bool_t h_stable_first_time = FALSE;
 	static bool_t gps_h_stable_prev = FALSE;
-	bool_t gps_h_change_to_stable = FALSE;
+	static bool_t gps_h_change_to_stable = FALSE;
 
 	if(gps_heading_s->h_stable != gps_h_stable_prev)
 	{
@@ -501,6 +501,7 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s)
 		{
 			if(gps_h_change_to_stable)
 			{
+				gps_h_change_to_stable = FALSE;
 				if(!h_stable_first_time)
 				{
 					h_stable_first_time = TRUE;
