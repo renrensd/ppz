@@ -178,22 +178,24 @@ void mag_cali_periodic(void)
 		mag_cali.gain[1] = fabsf(p.data[1]);
 		mag_cali.offset[0] = p.data[2];
 		mag_cali.offset[1] = p.data[3];
+
+		// range check
+		mag_cali.cali_ok = TRUE;
+		mag_cali.state = MAG_CALI_IDLE;
 	}
 
 #if PERIODIC_TELEMETRY
 		RunOnceEvery(2,   {
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_MAG_CALI(DefaultChannel, DefaultDevice,
-				&mag_cali.mag_norm,
-				&mag_cali.mag_norm_filter,
-				&mag_cali.mag_NEUTRAL[0],
-				&mag_cali.mag_NEUTRAL[1],
-				&mag_cali.mag_NEUTRAL[2],
-				&mag_cali.mag_SENS[0],
-				&mag_cali.mag_SENS[1],
-				&mag_cali.mag_SENS[2],
-				&mag_cali.is_body_static,
-				&mag_cali.state);}   );
+				&mag_cali.state,
+				&mag_cali.cali_ok,
+				&mag_cali.grab_index,
+				MAG_CALI_GRAB_NUM, &mag_cali.grab_tick,
+				&mag_cali.gain[0],
+				&mag_cali.gain[1],
+				&mag_cali.offset[0],
+				&mag_cali.offset[1]);}   );
 #endif
 }
 

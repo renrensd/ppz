@@ -340,6 +340,14 @@
   </message>
 
   <message name="MAG_CALI" id="38">
+  	<field name="state" type="uint8"/>
+  	<field name="ok" type="uint8"/>
+  	<field name="grab_index" type="uint8"/>
+    <field name="grab_tick" type="uint8[]"/>
+    <field name="gain_x" type="float"/>
+    <field name="gain_y" type="float"/>
+    <field name="offset_x" type="float"/>
+    <field name="offset_y" type="float"/>
   </message>
 
   <message name="BARO_BMP85" id="39">
