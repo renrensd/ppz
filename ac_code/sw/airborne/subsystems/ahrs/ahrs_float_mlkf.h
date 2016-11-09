@@ -95,9 +95,9 @@ extern void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag);
 
 //*********cpz-gps-heading
 #ifdef USE_GPS_HEADING
-extern void ahrs_mlkf_update_gps(struct GpsState *gps_heading_s);
+extern void ahrs_mlkf_update_gps(struct GpsState *gps);
 
-extern void ahrs_mlkf_update_gps_heading(struct GpsState *gps_heading_s);
+extern void ahrs_mlkf_update_gps_heading(struct GpsState *gps);
 #endif
 
 

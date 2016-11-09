@@ -59,7 +59,6 @@ struct _s_guidance_v
 	bool_t thr_in_deadband;
 	bool_t thr_in_deadband_prev;
 	int32_t z_sp;
-	int32_t AccelNed_i_z_filter;
 	float NED_z_acc;
 	float NED_z_speed;
 	float NED_z_pos;
@@ -135,16 +134,6 @@ extern bool_t guidance_v_adapt_throttle_enabled;
 
 extern int32_t guidance_v_thrust_coeff;
 
-extern int32_t guidance_v_kp; ///< vertical control P-gain
-extern int32_t guidance_v_kd; ///< vertical control D-gain
-extern int32_t guidance_v_ki; ///< vertical control I-gain
-
-extern int32_t guidance_vi_kp; ///< vertical inside control P-gain
-extern int32_t guidance_vi_kd; ///< vertical inside control D-gain
-extern int32_t guidance_vi_ki; ///< vertical inside control I-gain
-extern int32_t guidance_vii_kp;//nei huan pid can shu 
-extern int32_t guidance_vii_kd;
-extern int32_t guidance_vii_ki;
 extern float vh;
 extern float vh0;
 extern float r_vert;
