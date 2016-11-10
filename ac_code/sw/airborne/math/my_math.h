@@ -36,6 +36,8 @@ struct _s_matrix
 
 #define MATRIX_DEF(name,row,column) float name##_##data[row*column];\
 																    struct _s_matrix name = {row,column,0}
+#define STATIC_MATRIX_DEF(name,row,column) static float name##_##data[row*column];\
+																    static struct _s_matrix name = {row,column,0}
 #define MATRIX_INI(name) {name.data = name##_##data;}
 #define EXTERN_MATRIX(name) extern struct _s_matrix name;\
 														extern float name##_##data[]
