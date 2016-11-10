@@ -46,13 +46,14 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 		if( mag_cali.grab_tick[mag_cali.grab_index] < MAG_CALI_GRAB_COUNT_MAX )
 		{
 			mag_cali.grab_tick[mag_cali.grab_index]++;
-			mag_cali.grab_sum[mag_cali.grab_index][0] += imu.mag_unscaled.x;
-			mag_cali.grab_sum[mag_cali.grab_index][1] += imu.mag_unscaled.y;
+			//TODO : scale unscaled mag to gauss unit
+			mag_cali.grab_sum[mag_cali.grab_index][0] += (float)imu.mag_unscaled.x/(float)5000.0f;
+			mag_cali.grab_sum[mag_cali.grab_index][1] += (float)imu.mag_unscaled.y/(float)5000.0f;
 		}
 
 		for(uint8_t i=0;i<MAG_CALI_GRAB_NUM;++i)
 		{
-			if( mag_cali.grab_tick[i] > 3 )
+			if( mag_cali.grab_tick[i] > 50 )
 			{
 				ok++;
 			}
@@ -89,7 +90,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 			mag_cali.grab_sum[i][2] = 0;
 		}
 		mag_cali.grab_index = 0;
-		mag_cali.grab_index_lock = 0;
+		mag_cali.grab_index_lock = 1;
 		mag_cali.convergence_tick = 0;
 
 		mag_cali.state = MAG_CALI_GRAB;
@@ -109,27 +110,61 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 	}
 }
 
+STATIC_MATRIX_DEF(F, MAG_CALI_GRAB_NUM, 1);
+STATIC_MATRIX_DEF(JT, 4, MAG_CALI_GRAB_NUM);
+STATIC_MATRIX_DEF(p, 4, 1);
+STATIC_MATRIX_DEF(ev, 4, 1);
+
+static float grab_sum[MAG_CALI_GRAB_NUM][2] =
+{
+{0.992084324, -0.118157975},
+{0.693150163, -0.672581613},
+{0.116317995, -0.972254038},
+{-0.461079985, -0.80696398},
+{-0.831259012, -0.418678433},
+{-0.905969441, 0.140402019},
+{-0.596551895, 0.802987754},
+{-0.108388022, 1.01896238},
+{0.534478009, 0.890410185},
+{0.927089989, 0.464597851}
+};
+
 void mag_cali_init(void)
 {
-	mag_cali.enable = FALSE;
-	mag_cali.cali_ok = FALSE;
-
-	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
-	AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
-}
-
-void mag_cali_periodic(void)
-{
-	MATRIX_DEF(F, MAG_CALI_GRAB_NUM, 1);
-	MATRIX_DEF(JT, 4, MAG_CALI_GRAB_NUM);
-	MATRIX_DEF(p, 4, 1);
-	MATRIX_DEF(ev, 4, 1);
-
 	MATRIX_INI(F);
 	MATRIX_INI(JT);
 	MATRIX_INI(p);
 	MATRIX_INI(ev);
 
+	mag_cali.enable = FALSE;
+	mag_cali.cali_ok = FALSE;
+
+	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
+	AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+
+	//TEST_CASE
+	p.data[0] = 1.1f;
+	p.data[1] = 1.1f;
+	p.data[2] = 0.1f;
+	p.data[3] = 0.1f;
+
+	for (uint16_t i = 0; i < 10; ++i)
+	{
+		grab_sum[i][0] *= 10;
+		grab_sum[i][1] *= 10;
+	}
+	for (uint16_t i = 0; i < 1000; ++i)
+	{
+		sensors_mag_cali_calc_F(&F, &p, grab_sum);
+		sensors_mag_cali_calc_JT(&JT, &p, grab_sum);
+		MatMult(&ev, &JT, &F);
+		MatScale(&ev, &ev, 0.00001f);
+		MatSub(&p, &p, &ev);
+	}
+}
+
+void mag_cali_periodic(void)
+{
 	if(mag_cali.enable_prev != mag_cali.enable)
 	{
 		if(mag_cali.enable == TRUE)
@@ -147,9 +182,13 @@ void mag_cali_periodic(void)
 	{
 		for (uint8_t i = 0; i < MAG_CALI_GRAB_NUM; ++i)
 		{
+			if(mag_cali.grab_tick[i] == 0)
+			{
+				mag_cali.state = MAG_CALI_IDLE;
+				return;
+			}
 			mag_cali.grab_sum[i][0] /= (float)mag_cali.grab_tick[i];
 			mag_cali.grab_sum[i][1] /= (float)mag_cali.grab_tick[i];
-			mag_cali.grab_sum[i][2] /= (float)mag_cali.grab_tick[i];
 		}
 
 		p.data[0] = 1.1f;
@@ -164,7 +203,7 @@ void mag_cali_periodic(void)
 		sensors_mag_cali_calc_F(&F, &p, mag_cali.grab_sum);
 		sensors_mag_cali_calc_JT(&JT, &p, mag_cali.grab_sum);
 		MatMult(&ev, &JT, &F);
-		MatScale(&ev, &ev, 0.1f);
+		MatScale(&ev, &ev, 0.01f);
 		MatSub(&p, &p, &ev);
 
 		if (mag_cali.convergence_tick++ > MAG_CALI_CONVERGENCE_COUNT)
@@ -272,9 +311,9 @@ static void sensors_mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, 
 		vx2 = vx * vx;
 		vy2 = vy * vy;
 
-		JT->data[i*MAG_CALI_GRAB_NUM+0] = 2.0f*kx*vx2 - 4.0f*kx*vx*bx + 2.0f*kx*bx2;
-		JT->data[i*MAG_CALI_GRAB_NUM+1] = 2.0f*ky*vy2 - 4.0f*ky*vy*by + 2.0f*ky*by2;
-		JT->data[i*MAG_CALI_GRAB_NUM+2] = -2.0f*kx2*vx + 2.0f*kx2*bx;
-		JT->data[i*MAG_CALI_GRAB_NUM+3] = -2.0f*ky2*vy + 2.0f*ky2*by;
+		JT->data[i*4+0] = 2.0f*kx*vx2 - 4.0f*kx*vx*bx + 2.0f*kx*bx2;
+		JT->data[i*4+1] = 2.0f*ky*vy2 - 4.0f*ky*vy*by + 2.0f*ky*by2;
+		JT->data[i*4+2] = -2.0f*kx2*vx + 2.0f*kx2*bx;
+		JT->data[i*4+3] = -2.0f*ky2*vy + 2.0f*ky2*by;
 	}
 }
