@@ -220,7 +220,7 @@
     <!-- setpoints -->
     <define name="SP_MAX_PHI" value="30." unit="deg"/>
     <define name="SP_MAX_THETA" value="30." unit="deg"/>
-    <define name="SP_MAX_R" value="50." unit="deg/s"/>
+    <define name="SP_MAX_R" value="40." unit="deg/s"/>
     <define name="DEADBAND_A" value="2"/>
     <define name="DEADBAND_E" value="2"/>
     <define name="DEADBAND_R" value="250"/>
@@ -238,7 +238,7 @@
 
     <define name="REF_OMEGA_R" value="150" unit="deg/s"/>
     <define name="REF_ZETA_R" value="0.85"/>
-    <define name="REF_MAX_R" value="30." unit="deg/s"/>
+    <define name="REF_MAX_R" value="40." unit="deg/s"/>
     <define name="REF_MAX_RDOT" value="RadOfDeg(360.)"/>
 
     <!-- feedback -->
@@ -353,9 +353,9 @@
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/>
-    <!--define name="MODE_AUTO2" value="AP_MODE_NAV"/-->
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
     <!--define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/--> 
-    <define name="MODE_AUTO2" value="AP_MODE_HOVER_Z_HOLD"/>
+    <!--define name="MODE_AUTO2" value="AP_MODE_HOVER_Z_HOLD"/-->
   </section>
 
   <section name="BAT">
