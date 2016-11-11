@@ -25,6 +25,9 @@ static abi_event gps_ev;
 static void sensors_mag_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
 static void sensors_mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
 
+#define MAG_SENSITIVITY		(12000) // LSB/G
+#define NORM_MAG	(0.6f) // Gauss
+
 static void mag_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp __attribute__((unused)),
                      struct Int32Vect3 *mag)
@@ -46,9 +49,8 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 		if( mag_cali.grab_tick[mag_cali.grab_index] < MAG_CALI_GRAB_COUNT_MAX )
 		{
 			mag_cali.grab_tick[mag_cali.grab_index]++;
-			//TODO : scale unscaled mag to gauss unit
-			mag_cali.grab_sum[mag_cali.grab_index][0] += (float)imu.mag_unscaled.x/(float)5000.0f;
-			mag_cali.grab_sum[mag_cali.grab_index][1] += (float)imu.mag_unscaled.y/(float)5000.0f;
+			mag_cali.grab_sum[mag_cali.grab_index][0] += (float)imu.mag_unscaled.x/(float)MAG_SENSITIVITY;
+			mag_cali.grab_sum[mag_cali.grab_index][1] += (float)imu.mag_unscaled.y/(float)MAG_SENSITIVITY;
 		}
 
 		for(uint8_t i=0;i<MAG_CALI_GRAB_NUM;++i)
@@ -114,6 +116,7 @@ STATIC_MATRIX_DEF(F, MAG_CALI_GRAB_NUM, 1);
 STATIC_MATRIX_DEF(JT, 4, MAG_CALI_GRAB_NUM);
 STATIC_MATRIX_DEF(p, 4, 1);
 STATIC_MATRIX_DEF(ev, 4, 1);
+STATIC_MATRIX_DEF(step, 4, 1);
 
 static float grab_sum[MAG_CALI_GRAB_NUM][2] =
 {
@@ -128,6 +131,8 @@ static float grab_sum[MAG_CALI_GRAB_NUM][2] =
 {0.534478009, 0.890410185},
 {0.927089989, 0.464597851}
 };
+static float grab_sum2[MAG_CALI_GRAB_NUM][2];
+
 
 void mag_cali_init(void)
 {
@@ -135,6 +140,7 @@ void mag_cali_init(void)
 	MATRIX_INI(JT);
 	MATRIX_INI(p);
 	MATRIX_INI(ev);
+	MATRIX_INI(step);
 
 	mag_cali.enable = FALSE;
 	mag_cali.cali_ok = FALSE;
@@ -142,23 +148,81 @@ void mag_cali_init(void)
 	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
 	AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
 
-	//TEST_CASE
-	p.data[0] = 1.1f;
-	p.data[1] = 1.1f;
-	p.data[2] = 0.1f;
-	p.data[3] = 0.1f;
+	MatSetValue(&step, 0.001f);
 
+	//TEST_CASE
+
+	// test data
+	float theta,max,min,offset[2],gain[2];
 	for (uint16_t i = 0; i < 10; ++i)
 	{
-		grab_sum[i][0] *= 10;
-		grab_sum[i][1] *= 10;
+		theta = my_math_2pi/(float)MAG_CALI_GRAB_NUM*(float)i;
+		grab_sum[i][0] = cosf(theta) * 1.0f;
+		grab_sum[i][1] = sinf(theta) * 1.0f;
+
+		grab_sum[i][0] *= 1.0f/0.1f;
+		grab_sum[i][1] *= 1.0f/0.2f;
+		grab_sum[i][0] += 2;
+		grab_sum[i][1] += 3;
 	}
-	for (uint16_t i = 0; i < 1000; ++i)
+
+	// ini guess of offset and gain
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		max = grab_sum[0][i];
+		min = grab_sum[0][i];
+		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+		{
+			if(grab_sum[j][i] > max )
+			{
+				max = grab_sum[j][i];
+			}
+			else if(grab_sum[j][i] < min)
+			{
+				min = grab_sum[j][i];
+			}
+		}
+		offset[i] = (float)(max + min)/2.0f;
+	}
+
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		min = 0;
+		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+		{
+			grab_sum2[j][i] = grab_sum[j][i] - offset[i];
+			min += fabsf(grab_sum2[j][i]);
+		}
+		gain[i] = min/(float)MAG_CALI_GRAB_NUM;
+	}
+
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		max = fabsf(grab_sum2[0][i]);
+		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+		{
+			if(fabsf(grab_sum2[j][i]) > max )
+			{
+				max = fabsf(grab_sum2[j][i]);
+			}
+		}
+		gain[i] = 1.0f/max;
+	}
+
+	//sensors.mag_gain[0] = 1.0f;
+	//sensors.mag_gain[1] = (float)(sensors.mag_max[0] - sensors.mag_min[0])/(float)(sensors.mag_max[1] - sensors.mag_min[1]);
+
+	p.data[0] = gain[0];
+	p.data[1] = gain[1];
+	p.data[2] = offset[0];
+	p.data[3] = offset[1];
+
+	for (uint16_t i = 0; i < 100; ++i)
 	{
 		sensors_mag_cali_calc_F(&F, &p, grab_sum);
 		sensors_mag_cali_calc_JT(&JT, &p, grab_sum);
 		MatMult(&ev, &JT, &F);
-		MatScale(&ev, &ev, 0.00001f);
+		VectMult(&ev, 0, &ev, 0, &step, 0);
 		MatSub(&p, &p, &ev);
 	}
 }
@@ -191,10 +255,50 @@ void mag_cali_periodic(void)
 			mag_cali.grab_sum[i][1] /= (float)mag_cali.grab_tick[i];
 		}
 
-		p.data[0] = 1.1f;
-		p.data[1] = 1.1f;
-		p.data[2] = 0.1f;
-		p.data[3] = 0.1f;
+		// ini guess of offset and gain
+		float min,max,gain[2],offset[2];
+
+		for (uint8_t i = 0; i < 2; ++i)
+		{
+			max = mag_cali.grab_sum[0][i];
+			min = mag_cali.grab_sum[0][i];
+			for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+			{
+				if (mag_cali.grab_sum[j][i] > max)
+				{
+					max = mag_cali.grab_sum[j][i];
+				}
+				else if (mag_cali.grab_sum[j][i] < min)
+				{
+					min = mag_cali.grab_sum[j][i];
+				}
+			}
+			offset[i] = (float) (max + min) / 2.0f;
+		}
+
+		for (uint8_t i = 0; i < 2; ++i)
+		{
+			max = fabsf(mag_cali.grab_sum[0][i] - offset[i]);
+			for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+			{
+				float abs_value = fabsf(mag_cali.grab_sum[j][i] - offset[i]);
+				if (abs_value > max)
+				{
+					max = abs_value;
+				}
+			}
+			if(max < 0.1f)
+			{
+				mag_cali.state = MAG_CALI_IDLE;
+				return;
+			}
+			gain[i] = 1.0f / max;
+		}
+
+		p.data[0] = gain[0];
+		p.data[1] = gain[1];
+		p.data[2] = offset[0];
+		p.data[3] = offset[1];
 
 		mag_cali.state = MAG_CALI_CALC2;
 	}
@@ -203,7 +307,7 @@ void mag_cali_periodic(void)
 		sensors_mag_cali_calc_F(&F, &p, mag_cali.grab_sum);
 		sensors_mag_cali_calc_JT(&JT, &p, mag_cali.grab_sum);
 		MatMult(&ev, &JT, &F);
-		MatScale(&ev, &ev, 0.01f);
+		VectMult(&ev, 0, &ev, 0, &step, 0);
 		MatSub(&p, &p, &ev);
 
 		if (mag_cali.convergence_tick++ > MAG_CALI_CONVERGENCE_COUNT)
@@ -219,6 +323,37 @@ void mag_cali_periodic(void)
 		mag_cali.offset[1] = p.data[3];
 
 		// range check
+		float err = 0;
+		if((mag_cali.gain[0] < 0.1f) || (mag_cali.gain[0] > 10.0f))
+		{
+			err++;
+		}
+		if ((mag_cali.gain[1] < 0.1f) || (mag_cali.gain[1] > 10.0f))
+		{
+			err++;
+		}
+		if ((mag_cali.offset[0] < -0.5f) || (mag_cali.offset[0] > 0.5f))
+		{
+			err++;
+		}
+		if ((mag_cali.offset[1] < -0.5f) || (mag_cali.offset[1] > 0.5f))
+		{
+			err++;
+		}
+		if(err)
+		{
+			mag_cali.state = MAG_CALI_IDLE;
+			return;
+		}
+
+		// ok
+//		imu->mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
+//		imu->mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
+//		imu->mag_neutral.z = 0;
+//		imu->mag_neutral.x = mag_cali.gain[0];
+//		imu->mag_neutral.y = mag_cali.gain[1];
+//		imu->mag_neutral.z = 1;
+
 		mag_cali.cali_ok = TRUE;
 		mag_cali.state = MAG_CALI_IDLE;
 	}

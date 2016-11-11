@@ -102,6 +102,8 @@ void ahrs_mlkf_init(void)
   FLOAT_RATES_ZERO(ahrs_mlkf.imu_rate);
 
   VECT3_ASSIGN(ahrs_mlkf.mag_h, AHRS_H_X, AHRS_H_Y, AHRS_H_Z);
+  //ahrs_mlkf.mag_h.z = 0;
+  float_vect3_normalize(&ahrs_mlkf.mag_h);
 
   /*
    * Initialises our state
@@ -315,12 +317,12 @@ static inline void propagate_state(float dt)
   const float dq = ahrs_mlkf.imu_rate.q * dt;
   const float dr = ahrs_mlkf.imu_rate.r * dt;
 
-  float F[6][6] = {{  1.,   dr,  -dq,  -dt,   0.,   0.  },
-				    { -dr,   1.,   dp,   0.,  -dt,   0.  },
-				    {  dq,  -dp,   1.,   0.,   0.,  -dt  },
-				    {  0.,   0.,   0.,   1.,   0.,   0.  },
-				    {  0.,   0.,   0.,   0.,   1.,   0.  },
-				    {  0.,   0.,   0.,   0.,   0.,   1.  }
+  float F[6][6] = {	{  1.,   dr,  -dq,  -dt,   0.,   0.  },
+										{ -dr,   1.,   dp,   0.,  -dt,   0.  },
+										{  dq,  -dp,   1.,   0.,   0.,  -dt  },
+										{  0.,   0.,   0.,   1.,   0.,   0.  },
+										{  0.,   0.,   0.,   0.,   1.,   0.  },
+										{  0.,   0.,   0.,   0.,   0.,   1.  }
   };
   // P = FPF' + GQG
   float tmp[6][6];
@@ -415,17 +417,25 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 {
 
   /* converted expected measurement from inertial to body frame */
+
   struct FloatVect3 b_expected;
   float_quat_vmult(&b_expected, &ahrs_mlkf.ltp_to_imu_quat, i_expected);
+//  struct FloatVect3 i_b_measured;
+  float_vect3_normalize(b_measured);
+//  float_quat_vmult_inv(&i_b_measured, &ahrs_mlkf.ltp_to_imu_quat, b_measured);
+//  i_b_measured.z = 0;
+//  float_quat_vmult(b_measured, &ahrs_mlkf.ltp_to_imu_quat, &i_b_measured);
+//  float_vect3_normalize(b_measured);
 
   /* set roll/pitch errors to zero to only correct heading */
+  // S = HPH' + JRJ
   struct FloatVect3 i_h_2d = {i_expected->y, -i_expected->x, 0.f};
   struct FloatVect3 b_yaw;
   float_quat_vmult(&b_yaw, &ahrs_mlkf.ltp_to_imu_quat, &i_h_2d);
   // S = HPH' + JRJ
   float H[3][6] = {{ 0., 0., b_yaw.x, 0., 0., 0.},
                    { 0., 0., b_yaw.y, 0., 0., 0.},
-                   { 0., 0., b_yaw.z, 0., 0., 0.}
+                   { 0., 0., 0., 0., 0., 0.}
   };
   float tmp[3][6];
   MAT_MUL(3, 6, 6, tmp, H, ahrs_mlkf.P);
