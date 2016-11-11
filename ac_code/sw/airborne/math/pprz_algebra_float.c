@@ -398,6 +398,15 @@ void float_quat_integrate(struct FloatQuat *q, struct FloatRates *omega, float d
   }
 }
 
+void float_quat_vmult_inv(struct FloatVect3 *v_out, struct FloatQuat *q, const struct FloatVect3 *v_in)
+{
+	struct FloatQuat q_inv = *q;
+	q_inv.qx = -q_inv.qx;
+	q_inv.qy = -q_inv.qy;
+	q_inv.qz = -q_inv.qz;
+	float_quat_vmult(v_out, &q_inv, v_in);
+}
+
 void float_quat_vmult(struct FloatVect3 *v_out, struct FloatQuat *q, const struct FloatVect3 *v_in)
 {
   const float qi2_M1_2  = q->qi * q->qi - 0.5;

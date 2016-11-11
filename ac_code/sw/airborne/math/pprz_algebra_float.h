@@ -430,6 +430,10 @@ extern void float_quat_integrate_fi(struct FloatQuat *q, struct FloatRates *omeg
 /** in place quaternion integration with constant rotational velocity */
 extern void float_quat_integrate(struct FloatQuat *q, struct FloatRates *omega, float dt);
 
+/** inv rotate 3D vector by quaternion.
+ * vb = q_a2b * va * q_a2b^-1
+ */
+extern void float_quat_vmult_inv(struct FloatVect3 *v_out, struct FloatQuat *q, const struct FloatVect3 *v_in);
 /** rotate 3D vector by quaternion.
  * vb = q_a2b * va * q_a2b^-1
  */
