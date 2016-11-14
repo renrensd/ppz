@@ -103,7 +103,7 @@ void ahrs_mlkf_init(void)
 
   VECT3_ASSIGN(ahrs_mlkf.mag_h, AHRS_H_X, AHRS_H_Y, AHRS_H_Z);
   //ahrs_mlkf.mag_h.z = 0;
-  float_vect3_normalize(&ahrs_mlkf.mag_h);
+  //float_vect3_normalize(&ahrs_mlkf.mag_h);
 
   /*
    * Initialises our state
@@ -421,7 +421,7 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
   struct FloatVect3 b_expected;
   float_quat_vmult(&b_expected, &ahrs_mlkf.ltp_to_imu_quat, i_expected);
 //  struct FloatVect3 i_b_measured;
-  float_vect3_normalize(b_measured);
+//  float_vect3_normalize(b_measured);
 //  float_quat_vmult_inv(&i_b_measured, &ahrs_mlkf.ltp_to_imu_quat, b_measured);
 //  i_b_measured.z = 0;
 //  float_quat_vmult(b_measured, &ahrs_mlkf.ltp_to_imu_quat, &i_b_measured);
@@ -435,7 +435,7 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
   // S = HPH' + JRJ
   float H[3][6] = {{ 0., 0., b_yaw.x, 0., 0., 0.},
                    { 0., 0., b_yaw.y, 0., 0., 0.},
-                   { 0., 0., 0., 0., 0., 0.}
+                   { 0., 0., b_yaw.z, 0., 0., 0.}
   };
   float tmp[3][6];
   MAT_MUL(3, 6, 6, tmp, H, ahrs_mlkf.P);
