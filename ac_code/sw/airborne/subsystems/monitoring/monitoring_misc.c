@@ -204,7 +204,7 @@ void gps_flight_check(void)
     }
 	else
 	{
-		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0x03, FALSE,TRUE,3);	
+		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
 		#if TEST_MSG
 		gps_flight=2;
 		#endif

@@ -230,9 +230,13 @@ static void send_ins(struct transport_tx *trans, struct link_device *dev)
 static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
 {
 	float baro_filter = get_first_order_low_pass(&ins_int.baro_z_filter);
+	struct FloatEulers ltp_to_imu_euler;
+	float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
+	float mlkf_heading = ltp_to_imu_euler.psi * (180.0f/3.1415926f);
 
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_INS_Z(trans, dev, AC_ID,
+  					&mlkf_heading,
   					&ins_int.gps_qual,
   		  		&ins_int.p_stable,
   		  		&ins_int.baro_z,
@@ -498,7 +502,9 @@ static bool_t gps_speed_inspect(struct NedCoor_i data)
 
 void ins_int_update_gps(struct GpsState *gps_s)
 {
-  if (gps_s->fix < GPS_FIX_3D) {
+  //if (gps_s->fix < GPS_FIX_3D)
+	if(gps_nmea.gps_qual < 49)
+  {
     return;
   }
   
