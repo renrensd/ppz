@@ -279,7 +279,7 @@ void imu_mpu9250_event(void)
 //	    imu.mag_unscaled.z = (IMU_MPU9250_Z_SIGN) * imu_mpu9250.mag_qmc.data.vect.z;
 	  imu.mag_unscaled.x = +imu_mpu9250.mag_qmc.data.vect.y;
 	  imu.mag_unscaled.y = +imu_mpu9250.mag_qmc.data.vect.x;
-	  imu.mag_unscaled.z = +imu_mpu9250.mag_qmc.data.vect.z;
+	  imu.mag_unscaled.z = -imu_mpu9250.mag_qmc.data.vect.z;
 
 	    imu_mpu9250.mag_qmc.data_available = FALSE;
 	    imu_mpu9250.mag_valid = TRUE;
