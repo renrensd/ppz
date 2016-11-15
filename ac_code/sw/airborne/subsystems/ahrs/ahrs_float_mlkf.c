@@ -102,8 +102,6 @@ void ahrs_mlkf_init(void)
   FLOAT_RATES_ZERO(ahrs_mlkf.imu_rate);
 
   VECT3_ASSIGN(ahrs_mlkf.mag_h, AHRS_H_X, AHRS_H_Y, AHRS_H_Z);
-  //ahrs_mlkf.mag_h.z = 0;
-  float_vect3_normalize(&ahrs_mlkf.mag_h);
 
   /*
    * Initialises our state
@@ -207,13 +205,39 @@ void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 #if AHRS_MAG_UPDATE_ALL_AXES
 		ahrs_mlkf_update_mag_full(mag);
 #else
-		ahrs_mlkf_update_mag_2d(mag);
+		//ahrs_mlkf_update_mag_2d(mag);
+		ahrs_mlkf_update_mag_2d_new(mag);
 #endif
 	}
 }
 
 
+void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
+{
+  struct FloatVect3 mag_bm;
+  struct FloatVect3 mag_bm_i;
+  struct FloatVect3 mag_ic;
+  struct FloatVect3 mag_ic_b;
 
+  MAGS_FLOAT_OF_BFP(mag_bm, *mag);
+
+  // generate a virtual mag_bm that has no z-value in ltp coordinate
+  //float_vect3_normalize(&mag_bm);
+  float_quat_vmult_inv(&mag_bm_i, &ahrs_mlkf.ltp_to_imu_quat, &mag_bm);
+  mag_bm_i.z = 0;
+  float_quat_vmult(&mag_bm, &ahrs_mlkf.ltp_to_imu_quat, &mag_bm_i);
+  float_vect3_normalize(&mag_bm);
+
+  // generate a virtual mag_ic_b that has the same length with mag_bm generated in last step
+  mag_ic = ahrs_mlkf.mag_h;
+  mag_ic.z = 0;
+  float_vect3_normalize(&mag_ic);
+
+  //float_quat_vmult(&mag_ic_b, &ahrs_mlkf.ltp_to_imu_quat, &mag_ic);
+  // update mlkf
+  update_state_heading(&mag_ic, &mag_bm, &ahrs_mlkf.mag_noise);
+  reset_state();
+}
 
 void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag)
 {
@@ -435,7 +459,7 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
   // S = HPH' + JRJ
   float H[3][6] = {{ 0., 0., b_yaw.x, 0., 0., 0.},
                    { 0., 0., b_yaw.y, 0., 0., 0.},
-                   { 0., 0., 0., 0., 0., 0.}
+                   { 0., 0., b_yaw.z, 0., 0., 0.}
   };
   float tmp[3][6];
   MAT_MUL(3, 6, 6, tmp, H, ahrs_mlkf.P);
