@@ -40,6 +40,7 @@
 
 //*****cpz-gps
 #include <math.h>
+#include "math/my_math.h"
 #define GPS_PI	3.14159265358979f
 //*****cpz-gps
 
@@ -57,9 +58,9 @@
 #endif
 
 #ifndef AHRS_MAG_NOISE_X
-#define AHRS_MAG_NOISE_X 0.4//0.2
-#define AHRS_MAG_NOISE_Y 0.4//0.2
-#define AHRS_MAG_NOISE_Z 0.4//0.2
+#define AHRS_MAG_NOISE_X 10
+#define AHRS_MAG_NOISE_Y 10
+#define AHRS_MAG_NOISE_Z 10
 #endif
 
 
@@ -91,10 +92,8 @@ struct AhrsMlkf ahrs_mlkf;
 	Butterworth2LowPass filter_r;
 #endif
 
-
 void ahrs_mlkf_init(void)
 {
-
   ahrs_mlkf.is_aligned = FALSE;
 
   /* init ltp_to_imu quaternion as zero/identity rotation */
@@ -102,8 +101,6 @@ void ahrs_mlkf_init(void)
   FLOAT_RATES_ZERO(ahrs_mlkf.imu_rate);
 
   VECT3_ASSIGN(ahrs_mlkf.mag_h, AHRS_H_X, AHRS_H_Y, AHRS_H_Z);
-  //ahrs_mlkf.mag_h.z = 0;
-  //float_vect3_normalize(&ahrs_mlkf.mag_h);
 
   /*
    * Initialises our state
@@ -207,13 +204,44 @@ void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 #if AHRS_MAG_UPDATE_ALL_AXES
 		ahrs_mlkf_update_mag_full(mag);
 #else
-		ahrs_mlkf_update_mag_2d(mag);
+		//ahrs_mlkf_update_mag_2d(mag);
+		ahrs_mlkf_update_mag_2d_new(mag);
 #endif
 	}
 }
 
+void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
+{
+  struct FloatVect3 mag_bm;
+  struct FloatVect3 mag_bmv;
+  struct FloatVect3 mag_bm_i;
+  struct FloatVect3 mag_ic;
+  struct FloatVect3 mag_ic_b;
+
+  MAGS_FLOAT_OF_BFP(mag_bm, *mag);
+
+  // generate a virtual mag_bm that has no z-value in ltp coordinate
+  float_vect3_normalize(&mag_bm);
+  float_quat_vmult_inv(&mag_bm_i, &ahrs_mlkf.ltp_to_imu_quat, &mag_bm);
+  mag_bm_i.z = 0;
+  float_quat_vmult(&mag_bmv, &ahrs_mlkf.ltp_to_imu_quat, &mag_bm_i);
+  //float_vect3_normalize(&mag_bm);
 
 
+  // generate a virtual mag_ic_b that has the same length with mag_bm generated in last step
+  mag_ic = ahrs_mlkf.mag_h;
+  mag_ic.z = 0;
+  float_vect3_normalize(&mag_ic);
+
+  float norm = float_vect3_norm(&mag_bm);
+  norm = float_vect3_norm(&mag_bm_i);
+  mag_ic.x *= norm;
+  mag_ic.y *= norm;
+
+  // update mlkf
+  update_state(&mag_ic, &mag_bmv, &ahrs_mlkf.mag_noise);
+  reset_state();
+}
 
 void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag)
 {
