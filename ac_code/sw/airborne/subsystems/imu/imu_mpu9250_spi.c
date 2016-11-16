@@ -213,14 +213,14 @@ void imu_mpu9250_event(void)
   if (imu_mpu9250.mpu.data_available) {
     // set channel order
     struct Int32Vect3 accel = {
-      IMU_MPU9250_X_SIGN * (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Y]),
-      -IMU_MPU9250_Y_SIGN * (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_X]),
-      IMU_MPU9250_Z_SIGN * (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Z])
+      + (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Y]),
+      + (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_X]),
+      - (int32_t)(imu_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Z])
     };
     struct Int32Rates rates = {
-      IMU_MPU9250_X_SIGN * (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Y]),
-      -IMU_MPU9250_Y_SIGN * (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_X]),
-      IMU_MPU9250_Z_SIGN * (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Z])
+      + (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Y]),
+      + (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_X]),
+      - (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Z])
     };
     // unscaled vector
     VECT3_COPY(imu.accel_unscaled, accel);
@@ -274,9 +274,6 @@ void imu_mpu9250_event(void)
 	if (imu_mpu9250.mag_qmc.data_available) 
 	{
 	    // VECT3_COPY(imu.mag_unscaled, imu_mpu9250.mag_qmc.data.vect);
-//	    imu.mag_unscaled.x = (IMU_MPU9250_X_SIGN) * imu_mpu9250.mag_qmc.data.vect.x;
-//	    imu.mag_unscaled.y = (IMU_MPU9250_Y_SIGN) * imu_mpu9250.mag_qmc.data.vect.y;
-//	    imu.mag_unscaled.z = (IMU_MPU9250_Z_SIGN) * imu_mpu9250.mag_qmc.data.vect.z;
 	  imu.mag_unscaled.x = +imu_mpu9250.mag_qmc.data.vect.y;
 	  imu.mag_unscaled.y = +imu_mpu9250.mag_qmc.data.vect.x;
 	  imu.mag_unscaled.z = -imu_mpu9250.mag_qmc.data.vect.z;
