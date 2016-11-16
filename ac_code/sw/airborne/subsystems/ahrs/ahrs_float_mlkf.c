@@ -107,7 +107,7 @@ void ahrs_mlkf_init(void)
   memcpy(ahrs_mlkf.P, P0, sizeof(P0));
 
   VECT3_ASSIGN(ahrs_mlkf.mag_noise, 10, 10, 10);
-  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 10, 10, 10);
+  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 1, 1, 1);
 
 #ifdef AHRS_GYRO_BW_FILTER
   init_butterworth_2_low_pass_int(&filter_p, 18, (1. / 512), 0);
@@ -535,12 +535,12 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_s)
 	}
 }
 
-//#define MAG_OFFSET_ANGLE 2.7
+#define MAG_OFFSET_ANGLE 2.7
 void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s)
 {
 //	struct FloatVect3 imu_h;
 //	float gps_psi_rad;
-//	gps_psi_rad = (gps->heading - MAG_OFFSET_ANGLE)/180.0*GPS_PI;
+//	gps_psi_rad = (gps_s->heading - MAG_OFFSET_ANGLE)*my_math_deg_to_rad;
 //	imu_h.x = -cosf(gps_psi_rad);
 //	imu_h.y = sinf(gps_psi_rad);
 //	imu_h.z = 0.0;
@@ -558,8 +558,8 @@ void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s)
 	struct FloatVect3 heading_ic;
 
 	heading = gps_s->heading * my_math_deg_to_rad;
-	heading_bm.x = cosf(heading);
-	heading_bm.y = sinf(heading);
+	heading_bm.x = + cosf(heading);
+	heading_bm.y = - sinf(heading);
 	heading_bm.z = 0;
 	float_quat_vmult_inv(&heading_bm_i, &ahrs_mlkf.ltp_to_imu_quat, &heading_bm);
 	heading_bm_i.z = 0;

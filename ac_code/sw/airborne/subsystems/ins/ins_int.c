@@ -69,7 +69,7 @@
 
 #include "generated/flight_plan.h"
 #include "subsystems/ahrs/ahrs_float_mlkf.h"
-
+#include "math/my_math.h"
 //float   sonar_distance,sonar_distance_i;
 
 #if USE_BARO_BOARD
