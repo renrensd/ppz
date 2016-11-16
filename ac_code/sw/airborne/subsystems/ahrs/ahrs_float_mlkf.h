@@ -65,6 +65,7 @@ struct AhrsMlkf {
   struct FloatVect3  mag_h;
 
   struct FloatVect3  mag_noise;
+  struct FloatVect3  gps_heading_noise;
 
   struct FloatQuat  gibbs_cor;
   float P[6][6];
@@ -93,6 +94,8 @@ extern void ahrs_mlkf_update_mag(struct Int32Vect3 *mag);
 extern void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag);
 extern void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag);
 extern void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag);
+extern void ahrs_float_mlkf_SetMagNoise(float noise);
+extern void ahrs_float_mlkf_SetGpsHeadingNoise(float noise);
 
 //*********cpz-gps-heading
 #ifdef USE_GPS_HEADING
