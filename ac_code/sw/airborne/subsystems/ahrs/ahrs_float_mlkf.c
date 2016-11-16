@@ -38,12 +38,8 @@
 #include "math/pprz_simple_matrix.h"
 #include "generated/airframe.h"
 
-//*****cpz-gps
 #include <math.h>
 #include "math/my_math.h"
-#define GPS_PI	3.14159265358979f
-//*****cpz-gps
-
 
 //#include <stdio.h>
 
@@ -56,13 +52,6 @@
 #if defined AHRS_GYRO_BW_FILTER || defined AHRS_GYRO_BW_FLOAT_FILTER
  #include "filters/low_pass_filter.h"
 #endif
-
-#ifndef AHRS_MAG_NOISE_X
-#define AHRS_MAG_NOISE_X 10
-#define AHRS_MAG_NOISE_Y 10
-#define AHRS_MAG_NOISE_Z 10
-#endif
-
 
 static inline void propagate_ref(struct Int32Rates *gyro, float dt);
 static inline void propagate_state(float dt);
@@ -117,7 +106,8 @@ void ahrs_mlkf_init(void)
   };
   memcpy(ahrs_mlkf.P, P0, sizeof(P0));
 
-  VECT3_ASSIGN(ahrs_mlkf.mag_noise, AHRS_MAG_NOISE_X, AHRS_MAG_NOISE_Y, AHRS_MAG_NOISE_Z);
+  VECT3_ASSIGN(ahrs_mlkf.mag_noise, 10, 10, 10);
+  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 10, 10, 10);
 
 #ifdef AHRS_GYRO_BW_FILTER
   init_butterworth_2_low_pass_int(&filter_p, 18, (1. / 512), 0);
@@ -512,25 +502,12 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 
 }
 
-
-//******************CPZ-GPS_heading_update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)
 #ifdef USE_GPS_HEADING
-void ahrs_mlkf_update_gps(struct GpsState *gps)
+void ahrs_mlkf_update_gps(struct GpsState *gps_s)
 {
-	static bool_t h_stable_first_time = FALSE;
-	static bool_t gps_h_stable_prev = FALSE;
-	static bool_t gps_h_change_to_stable = FALSE;
+	static bool_t gps_heading_aligned = FALSE;
 
-	if(gps->h_stable != gps_h_stable_prev)
-	{
-		if(gps->h_stable)
-		{
-			gps_h_change_to_stable = TRUE;
-		}
-	}
-	gps_h_stable_prev = gps->h_stable;
-
-	if (gps->h_stable && ahrs_mlkf.virtual_h_stable)
+	if (gps_s->h_stable && ahrs_mlkf.virtual_h_stable)
 	{
 		if(ahrs_mlkf.heading_state == AMHS_MAG)
 		{
@@ -538,23 +515,15 @@ void ahrs_mlkf_update_gps(struct GpsState *gps)
 		}
 		else if(ahrs_mlkf.heading_state == AMHS_GPS)
 		{
-			if(gps_h_change_to_stable)
+			if(!gps_heading_aligned)
 			{
-				gps_h_change_to_stable = FALSE;
-				if(!h_stable_first_time)
-				{
-					h_stable_first_time = TRUE;
-					//ahrs_float_get_quat_from_accel_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, &ahrs_mlkf.lp_accel_ini, gps);
-					ahrs_float_get_quat_from_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, gps);
-
-				}
+				gps_heading_aligned = TRUE;
+				ahrs_float_get_quat_from_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, gps_s);
 			}
-
-			ahrs_mlkf_update_gps_heading(gps);
+			ahrs_mlkf_update_gps_heading(gps_s);
 		}
 		else if(ahrs_mlkf.heading_state == AMHS_SWITCHING)
 		{
-
 		}
 	}
 	else
@@ -566,26 +535,56 @@ void ahrs_mlkf_update_gps(struct GpsState *gps)
 	}
 }
 
-#define MAG_OFFSET_ANGLE 2.7
-void ahrs_mlkf_update_gps_heading(struct GpsState *gps)
+//#define MAG_OFFSET_ANGLE 2.7
+void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s)
 {
-	struct FloatVect3 imu_h;
-	float gps_psi_rad;
-	gps_psi_rad = (gps->heading - MAG_OFFSET_ANGLE)/180.0*GPS_PI;
-	imu_h.x = -cosf(gps_psi_rad);
-	imu_h.y = sinf(gps_psi_rad);
-	imu_h.z = 0.0;
+//	struct FloatVect3 imu_h;
+//	float gps_psi_rad;
+//	gps_psi_rad = (gps->heading - MAG_OFFSET_ANGLE)/180.0*GPS_PI;
+//	imu_h.x = -cosf(gps_psi_rad);
+//	imu_h.y = sinf(gps_psi_rad);
+//	imu_h.z = 0.0;
+//
+//	struct FloatVect3 i_meas;
+//	float_quat_vmult(&i_meas, &ahrs_mlkf.ltp_to_body_quat, &imu_h);
+//
+//	update_state_heading(&ahrs_mlkf.mag_h, &i_meas, &ahrs_mlkf.mag_noise);
+//	reset_state();
 
-	struct FloatVect3 i_meas;
-	float_quat_vmult(&i_meas, &ahrs_mlkf.ltp_to_body_quat, &imu_h);
+	float heading;
+	struct FloatVect3 heading_bm;
+	struct FloatVect3 heading_bmv;
+	struct FloatVect3 heading_bm_i;
+	struct FloatVect3 heading_ic;
 
-	update_state_heading(&ahrs_mlkf.mag_h, &i_meas, &ahrs_mlkf.mag_noise);
+	heading = gps_s->heading * my_math_deg_to_rad;
+	heading_bm.x = cosf(heading);
+	heading_bm.y = sinf(heading);
+	heading_bm.z = 0;
+	float_quat_vmult_inv(&heading_bm_i, &ahrs_mlkf.ltp_to_imu_quat, &heading_bm);
+	heading_bm_i.z = 0;
+	float_quat_vmult(&heading_bmv, &ahrs_mlkf.ltp_to_imu_quat, &heading_bm_i);
+	float_vect3_normalize(&heading_bmv);
+
+	heading_ic.x = 1;
+	heading_ic.y = 0;
+	heading_ic.z = 0;
+
+	// update mlkf
+	update_state(&heading_ic, &heading_bmv, &ahrs_mlkf.gps_heading_noise);
 	reset_state();
 }
 #endif
-//******************CPZ-GPS_heading
 
+void ahrs_float_mlkf_SetMagNoise(float noise)
+{
+	VECT3_ASSIGN(ahrs_mlkf.mag_noise, noise, noise, noise);
+}
 
+void ahrs_float_mlkf_SetGpsHeadingNoise(float noise)
+{
+	VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, noise, noise, noise);
+}
 
 /**
  * Incorporate errors to reference and zeros state
