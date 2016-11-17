@@ -58,7 +58,7 @@ void ahrs_chimu_register(void)
 {
   ahrs_chimu_init();
   ahrs_register_impl(ahrs_chimu_enable_output);
-  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgGPS_HEADING(ABI_BROADCAST, &gps_ev, gps_cb);
 }
 
 void ahrs_chimu_init(void)

@@ -100,5 +100,5 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 void ins_gps_utm_register(void)
 {
   ins_register_impl(ins_gps_utm_init);
-  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgGPS_POS(ABI_BROADCAST, &gps_ev, gps_cb);
 }

@@ -41,7 +41,7 @@ Task_Error task_error_state;
 
 bool_t from_wp_useful;
 bool_t hover_flag;
-//static bool_t spray_switch_flag;     /*task running spray flag*/
+static bool_t spray_switch_flag;     /*usefor sign spray_line start and end*/
 static bool_t spray_caculate_flag;
 
 /*interrupt scene var*/
@@ -87,7 +87,7 @@ void task_process_init(void)
 	task_error_state = TASK_NORMAL;
 	from_wp_useful = FALSE;
 	hover_flag = FALSE;
-//	spray_switch_flag = FALSE;
+	spray_switch_flag = FALSE;
 	spray_caculate_flag = FALSE;
 	from_wp.wp_en.z = 0;  /*z not useful*/
 	next_wp.wp_en.z = 0;
@@ -296,7 +296,6 @@ struct EnuCoor_i save_task_scene(void)
 	current_wp_scene = *stateGetPositionEnu_i();
 
 	/*interrupt, need stop spray*/
-//	spray_switch_flag = FALSE;  /*reset switch flag for next operation*/
    #ifdef OPS_OPTION
 	ops_stop_spraying(); 
    #endif
@@ -401,9 +400,10 @@ bool_t run_normal_task(void)
 		{
 			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, SPRAY_PATH))
 			{
+				spray_switch_flag = TRUE;  //AC aligned in spray_line,begin spray
 				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
 				{	
-					/*no more task_wp to run*/
+					spray_switch_flag = FALSE;  //AC end of spray_line, stop spray
 					if( !achieve_next_wp() )  
 					{
 						task_wp_empty_handle();
@@ -518,12 +518,14 @@ bool_t run_normal_task(void)
 void spray_work_run(void)
 {
 	/*spray switch control*/
-	if( SPRAY_LINE==from_wp.action && !get_spray_switch_state() && get_nav_route_mediacy() ) 
+	if( SPRAY_LINE==from_wp.action 
+	    && !get_spray_switch_state() 
+	    && get_nav_route_mediacy() 
+	    && spray_switch_flag==TRUE ) 
 	{
 	   #ifdef OPS_OPTION
 		ops_start_spraying(); 
 	   #endif 	
-	   //spray_switch_flag = TRUE;
 	}
 	else if( (SPRAY_LINE!=from_wp.action || !get_nav_route_mediacy())
 		      && get_spray_switch_state() )
@@ -531,7 +533,6 @@ void spray_work_run(void)
 	   #ifdef OPS_OPTION
 		ops_stop_spraying(); 
 	   #endif 	
-	   //spray_switch_flag = FALSE;
 	}
 
 	/*convert info pre_caculate*/

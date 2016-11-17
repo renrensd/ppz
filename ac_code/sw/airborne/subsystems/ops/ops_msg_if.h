@@ -66,6 +66,8 @@ extern void ops_msg_heart_beat(void);
 extern void ops_msg_device_manage_handler(OPS_UART_FRAME *ops_msg);
 extern void ops_msg_stop_spraying(void);
 extern void ops_msg_start_spraying(void);
+extern void ops_msg_start_selfclean(void);
+extern void ops_msg_stop_selfclean(void);
 extern void ops_start_spraying(void);
 extern void ops_stop_spraying(void);
 extern uint8_t get_spray_switch_state(void);

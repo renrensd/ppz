@@ -100,7 +100,7 @@ void ahrs_infrared_init(void)
   heading = 0.;
 
   AbiBindMsgIMU_GYRO_INT32(AHRS_INFRARED_GYRO_ID, &gyro_ev, gyro_cb);
-  AbiBindMsgGPS(AHRS_INFRARED_GPS_ID, &gps_ev, &gps_cb);
+  AbiBindMsgGPS_HEADING(AHRS_INFRARED_GPS_ID, &gps_ev, &gps_cb);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_IR_SENSORS, send_infrared);

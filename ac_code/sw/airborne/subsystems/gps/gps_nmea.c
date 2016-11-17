@@ -136,6 +136,9 @@ void gps_impl_init(void)
  #if USE_XYZA
   gps_nmea.pos_xyz_available = FALSE;
  #endif
+ #if USE_GPS_HEADING
+  gps_nmea.heading_available = FALSE;
+ #endif
   gps_nmea.have_gsv = FALSE;
   gps_nmea.gps_nb_ovrn = 0;
   gps_nmea.msg_len = 0;
@@ -149,13 +152,16 @@ void gps_nmea_msg(void)
 {
   // current timestamp
   uint32_t now_ts = get_sys_time_usec();
-
   gps.last_msg_ticks = sys_time.nb_sec_rem;
   gps.last_msg_time = sys_time.nb_sec;
   nmea_parse_msg();
-  if( gps_nmea.pos_available
+  
+  /*abi send pos info*/
+  if( 
      #if USE_XYZA
-	  && gps_nmea.pos_xyz_available
+	  gps_nmea.pos_xyz_available
+	 #else
+	  gps_nmea.pos_available
 	 #endif
                                     ) 
   {
@@ -165,15 +171,28 @@ void gps_nmea_msg(void)
 			gps.last_3dfix_time = sys_time.nb_sec;
 		}
 	 	//median filter
-	 	#if USE_XYZA
 	 	//gps_nmea_data_filter_update(&gps);
-		#endif
-		AbiSendMsgGPS(GPS_NMEA_ID, now_ts, &gps);
+		AbiSendMsgGPS_POS(GPS_NMEA_ID, now_ts, &gps);
   }
-  gps_nmea.msg_available = FALSE;
  #if USE_XYZA
   gps_nmea.pos_xyz_available = FALSE;  /*xyza msg finished,reset to false*/
+ #else 
+  gps_nmea.pos_available = FALSE;
  #endif
+
+  /*abi send heading info*/
+ #ifdef USE_GPS_HEADING
+  if( gps_nmea.heading_available ) 
+  {
+  	//median filter
+  	//gps_nmea_data_filter_update(&gps);
+  	AbiSendMsgGPS_POS(GPS_NMEA_ID, now_ts, &gps);
+  }
+  gps_nmea.heading_available = FALSE;
+ #endif
+ 
+ gps_nmea.msg_available = FALSE;
+ 
 }
 
 void WEAK nmea_configure(void)
@@ -367,26 +386,21 @@ static void nmea_parse_GSA(void)
 {
   int i = 6;     // current position in the message, start after: GPGSA,
 
-  // attempt to reject empty packets right away
-  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') {
-    NMEA_PRINT("p_GSA() - skipping empty message\n\r");
+  // set gps_mode=3=3d, 2=2d, 1=no fix or 0
+  nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
     return;
   }
-
-  // get auto2D/3D
-  // ignored
-  nmea_read_until(&i);
-
-  // get 2D/3D-fix
-  // set gps_mode=3=3d, 2=2d, 1=no fix or 0
-  gps.fix = atoi(&gps_nmea.msg_buf[i]);
-  if (gps.fix == 1) {
-    gps.fix = 0;
+  uint8_t fix = atoi(&gps_nmea.msg_buf[i]);
+  if (fix < 3) 
+  {
+  	if(gps_nmea.pos_type >= SINGLE)
+  	{
+		fix = 3;   //force change to 3D
+  	}
   }
-  #if 0
-  gps.fix=GPS_FIX_3D;       
-  gps.pacc=300;
-  #endif
+  gps.fix = fix;
   NMEA_PRINT("p_GSA() - gps.fix=%i (3=3D)\n\r", gps.fix);
   nmea_read_until(&i);
 
@@ -444,39 +458,41 @@ static void nmea_parse_TRA(void)
 {
   int i = 6;     // current position in the message, start after: GPTRA,
 
-  // attempt to reject empty packets right away
-  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') {
-    //NMEA_PRINT("p_TRA() - skipping empty message\n\r");
+  gps_nmea.heading_available = FALSE;
+  nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
     return;
   }
-
-  // ignored
-  //nmea_read_until(&i);
-	//i++;
-  // get heading
-  nmea_read_until(&i);
   gps_nmea.heading = (float)strtod(&gps_nmea.msg_buf[i],NULL);
   if(gps_nmea.heading < 0.0 || gps_nmea.heading > 360.0)
   {
-  	   gps_nmea.sol_tatus = 0;
-  	   return;
+  	 gps_nmea.sol_tatus = 0;
+  	 return;
   }
   gps.heading = gps_nmea.heading + GPS_HEADING_OFFSET;
   Course360(gps.heading);  
-  
   NMEA_PRINT("p_TRA() - gps_nmea.heading=%f\n\r", gps_nmea.heading);
+  
   nmea_read_until(&i);
-  // get pitch
   gps_nmea.pitch= (float)strtod(&gps_nmea.msg_buf[i], NULL);
   NMEA_PRINT("p_TRA() - gps_nmea.pitch=%f\n\r", gps_nmea.pitch);
+  
   nmea_read_until(&i);
   nmea_read_until(&i);
-  // get status
-  gps_nmea.sol_tatus= (float)strtod(&gps_nmea.msg_buf[i], NULL);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
+  gps_nmea.sol_tatus = (uint8_t)strtod(&gps_nmea.msg_buf[i], NULL);
   NMEA_PRINT("p_TRA() - gps_nmea.pitch=%f\n\r", gps_nmea.sol_tatus);
+  
   nmea_read_until(&i);
-  gps.heading_sv_num=(uint8_t)strtod(&gps_nmea.msg_buf[i], NULL);
-  //gps_nmea.num_sta_use = (float)strtoi(&gps_nmea.msg_buf[i], NULL);
+  gps_nmea.num_sta_use = (uint8_t)strtod(&gps_nmea.msg_buf[i], NULL);
+  gps.head_stanum = gps_nmea.num_sta_use;
+  gps_nmea.heading_available = TRUE;
+
+  gps_nmea.last_tramsg_time = get_sys_time_msec();
 }
 #endif
 
@@ -494,7 +510,11 @@ static void nmea_parse_RMC(void)
     NMEA_PRINT("p_RMC() - skipping empty message\n\r");
     return;
   }
-  // First read time (ignored)
+  // get time
+  uint32_t gps_time = strtoul(&gps_nmea.msg_buf[i], NULL, 10);
+  gps.gps_time.hour = gps_time / 10000;
+  gps.gps_time.minute = (gps_time - gps.gps_time.hour*10000)/100;
+  gps.gps_time.second = gps_time % 100; 
 
   // get warning
   nmea_read_until(&i);
@@ -522,6 +542,17 @@ static void nmea_parse_RMC(void)
   double course = strtod(&gps_nmea.msg_buf[i], NULL);
   gps.course = RadOfDeg(course) * 1e7;
   NMEA_PRINT("p_RMC() - course: %f deg\n\r", course);
+
+  // get date
+  nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
+  gps_time = strtoul(&gps_nmea.msg_buf[i], NULL, 10);
+  gps.gps_time.day = gps_time / 10000;
+  gps.gps_time.month = (gps_time - gps.gps_time.day*10000)/100;
+  gps.gps_time.year = gps_time % 100;
 }
 
 
@@ -731,30 +762,100 @@ static void nmea_parse_GSV(void)
  */
 static void nmea_parse_XYZ(void)
 {
-  //get ecef_pos
-  int i=1;
+  int i = 1;
+  gps_nmea.pos_xyz_available = FALSE;   //msg enter, set default false
   for(uint8_t n=0;n<10;n++)
   {
   	nmea_read_until(&i);
   }
-  if( !strncmp(&gps_nmea.msg_buf[i] , "NONE", 4) )
+
+  if(!strncmp(&gps_nmea.msg_buf[i] , "NARROW_INT", 10))
   {
-  	gps_nmea.pos_xyz_available = FALSE;
-	return;
+  	gps_nmea.pos_type = NARROW_INT;   //similar 52
   }
-  gps_nmea.pos_xyz_available = TRUE;
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "NARROW_FLOAT", 12))
+  {
+  	gps_nmea.pos_type = NARROW_FLOAT; //similar 53
+  }
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "SINGLE", 6))
+  {
+  	gps_nmea.pos_type = SINGLE;       //similar 49
+  }
+  else if( !strncmp(&gps_nmea.msg_buf[i] , "NONE", 4) )
+  {
+	gps_nmea.pos_type = NONE;
+	return;   //give up
+  }
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "PSRDIFF", 7))
+  {
+  	gps_nmea.pos_type = PSRDIFF;     //alt no useful
+  }
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "SBAS", 4))
+  {
+  	gps_nmea.pos_type = SBAS;         //similar 50
+  }
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "FIXEDPOS", 8))
+  {
+  	gps_nmea.pos_type = FIXEDPOS;
+  }
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "DOPPLER_VELOCITY", 16))
+  {
+  	gps_nmea.pos_type = DOPPLER_VELOCITY;
+  }
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "WIDE_INT", 8))
+  {
+  	gps_nmea.pos_type = WIDE_INT;
+  }
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "SUPER WIDE-LANE", 15))
+  {
+  	gps_nmea.pos_type = SUPER_WIDE_LANE;
+  }
+  else if(!strncmp(&gps_nmea.msg_buf[i] , "PPP", 3))
+  {
+  	gps_nmea.pos_type = PPP;
+  }
+  else
+  {
+  	//gps_nmea.pos_type = XYZ_ERROR;
+	return;  //give up
+  }
+  
   nmea_read_until(&i);  
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_pos.x = (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_pos.y = (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_pos.z = (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   
   nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_pos_sd.x = (int32_t)(strtof(&gps_nmea.msg_buf[i], NULL)*10000);
   nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_pos_sd.y = (int32_t)(strtof(&gps_nmea.msg_buf[i], NULL)*10000);
   nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_pos_sd.z = (int32_t)(strtof(&gps_nmea.msg_buf[i], NULL)*10000);
   
   for(uint8_t m=0;m<3;m++)
@@ -762,11 +863,26 @@ static void nmea_parse_XYZ(void)
   	nmea_read_until(&i);
   }
   //get ecef_speed
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_vel.x= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_vel.y= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   gps.ecef_vel.z= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
+  gps_nmea.pos_xyz_available = TRUE;
+
+  gps_nmea.last_xyzmsg_time = get_sys_time_msec();
   
 }
 
@@ -776,7 +892,8 @@ static void nmea_parse_XYZ(void)
 void get_gps_pos_stable(void)
 {
 	static uint8_t counter_nmea_qual = 0;
-	if(gps_nmea.gps_qual != 52) //not fix pos
+	//if(gps_nmea.gps_qual != 52) //not fix pos
+	if(gps_nmea.pos_type < WIDE_INT)
 	{
 		gps.p_stable = FALSE;
 		counter_nmea_qual = 0;
@@ -790,7 +907,8 @@ void get_gps_pos_stable(void)
 	{
 		gps.p_stable = TRUE;
 		counter_nmea_qual = 41;  /*avoid overflow*/
-	}	
+	}
+	
 }
 
 /*run 20hz,use 2s time no fix heading set unstable*/
@@ -807,13 +925,29 @@ void get_gps_heading_stable(void)
 		counter_heading++;
 	}
 
-	if( ((counter_heading>100)&&(get_sys_time_float()<300.0))
-		||((counter_heading>40)&&(get_sys_time_float()>300.0)) )
+	if( ((counter_heading>200)&&(get_sys_time_float()<300.0))
+		||((counter_heading>80)&&(get_sys_time_float()>300.0)) )
 	{
 		gps.h_stable = TRUE;
-		counter_heading = 101;  /*avoid overflow*/
+		counter_heading = 200;  /*avoid overflow*/
 	}	
 }
+
+#define MSG_TIME_OUT 1000  //unit:ms
+/*run 20hz, set time_out to avoid msg flag no update*/
+void gps_nmea_msg_outtime_check(void)
+{
+	uint32_t now_time = get_sys_time_msec();
+	if( (now_time-gps_nmea.last_tramsg_time) > MSG_TIME_OUT )
+	{
+		gps_nmea.sol_tatus = 0;
+	}
+	if( (now_time-gps_nmea.last_xyzmsg_time) > MSG_TIME_OUT )
+	{
+		gps_nmea.pos_type = TIME_OUT;
+	}	
+}
+
 /*
 double my_strtod(const char* s, char** endptr)
 

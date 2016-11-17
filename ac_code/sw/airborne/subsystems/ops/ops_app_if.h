@@ -39,6 +39,7 @@ struct OPS_INFO
 	uint16_t vel;		//aircraft velocity, mm/s.
 	uint8_t init_status;
 	uint8_t con_flag;	//the flag that aircraft connected to ops.
+	uint8_t selfclean_flag;
 	uint8_t ops_debug;
 	//#ifdef OPS_BAT_OPTION
 	uint16_t  o_bat_mv;
@@ -49,6 +50,7 @@ struct OPS_INFO
 	int8_t    o_bat_rep_percent;
 	//#endif
 	uint8_t  sys_error;
+	char  ops_sv[25];
 };
 
 struct OPS_CONFIG_PARAM

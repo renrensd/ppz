@@ -321,7 +321,7 @@ void ins_int_init(void)
 void ins_reset_local_origin(void)
 {
 #if USE_GPS  //called by flightplan init,set gps's postion as local ins (ltp_def is base point of ins)
-	if (GpsFixValid()) {
+  if (GpsFixValid()) {
     ltp_def_from_ecef_i(&ins_int.ltp_def, &gps.ecef_pos);
     ins_int.ltp_def.lla.alt = gps.lla_pos.alt;
     ins_int.ltp_def.hmsl = gps.hmsl;
@@ -473,7 +473,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 #ifdef GPS_INSTALL_BIAS
 /*unit :cm, body frame*/
   #define  INS_BODY_TO_GPS_X  0
-  #define  INS_BODY_TO_GPS_Y  27
+  #define  INS_BODY_TO_GPS_Y  33
   #define  INS_BODY_TO_GPS_Z  0
 #endif
 static bool_t gps_pos_inspect(struct NedCoor_i data)
@@ -502,18 +502,6 @@ static bool_t gps_speed_inspect(struct NedCoor_i data)
 
 void ins_int_update_gps(struct GpsState *gps_s)
 {
-  //if (gps_s->fix < GPS_FIX_3D)
-	if(gps_nmea.gps_qual < 49)
-  {
-    return;
-  }
-  
-#if USE_FLOW
-  if ( guidance_h.mode==GUIDANCE_H_MODE_HOVER || guidance_h.mode==GUIDANCE_H_MODE_ATTITUDE) {   //using flow in hover mode,GPS data giving up
-    return;
-  }
-#endif
-
   if (!ins_int.ltp_initialized && gps.p_stable)
   {
     ins_reset_local_origin();
@@ -557,11 +545,6 @@ void ins_int_update_gps(struct GpsState *gps_s)
   /* subtract body2gps translation in ltp from gps position */
   VECT3_SUB(gps_pos_cm_ned, b2g_n);
 
-  /*filter rate information*/
-  static int32_t ins_body_rate_z;
-  int32_t ins_body_rate_z_now;
-  ins_body_rate_z_now =  stateGetBodyRates_i()->r;  
-  ins_body_rate_z =  (ins_body_rate_z*3 + ins_body_rate_z_now)/4;
   struct Int32Vect3 delta_speed_b, delta_speed_n;
   delta_speed_b.x = (ins_body_rate_z * (-b2g_b.y)) >>INT32_RATE_FRAC;
   delta_speed_b.y = 0;
@@ -654,7 +637,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
 			&ins_int.p_stable,
 			&gps.num_sv,
 			&gps_nmea.sol_tatus,
-			&gps.heading_sv_num,
+			&gps.head_stanum,
 			&ins_int.gps_heading,
 			&ins_int.mag_heading,
   		&gps_pos_cm_ned.x,
@@ -997,7 +980,7 @@ void ins_int_register(void)
    * Subscribe to scaled IMU measurements and attach callbacks
    */
   AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
-  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgGPS_POS(ABI_BROADCAST, &gps_ev, gps_cb);
   AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
   #if USE_FLOW
   AbiBindMsgFLOW(ABI_BROADCAST, &flow_ev, flow_cb);

@@ -858,7 +858,7 @@ bool_t nav_check_heading(void)
 
 bool_t nav_check_height(void)
 {
-	if( abs(stateGetPositionNed_i()->z + nav_flight_altitude) < 0.35 )
+	if( abs(stateGetPositionNed_i()->z + nav_flight_altitude) < 0.50 )
 	{
 		return TRUE;
 	}

@@ -250,7 +250,7 @@ void acc_cali_periodic(void)
 	acc_cali.enable_prev = acc_cali.enable;
 
 #if PERIODIC_TELEMETRY
-		RunOnceEvery(2,   {
+		RunOnceEvery(5,   {
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_ACC_CALI(DefaultChannel, DefaultDevice, &acc_cali.acc_norm,
 																													&acc_cali.acc_norm_filter,

@@ -33,23 +33,33 @@
 #include "subsystems/mission/gcs_nav_xbee.h"
 #include "subsystems/ins/ins_int.h"
 
+#include "led.h"
+
 #ifdef USE_GPS_NMEA
  #include "subsystems/gps/gps_nmea.h"
 #endif
 
 /*===VARIABLES========================================================*/
 /*ground check step*/
-#define BATTERY_CHECK 0
-#define BAORD_CHECK 1
-#define IMU_CHECK 2
-#define HEIGHT_CHECK 3
-#define GPS_CHECK 4
-#define CALIBRATION_CHECK 5
-#define AUTOPILOT_CHECK 6   //ahrs ins 
-#define OPS_CHECK 7
-#define RC_CONNECT 8
 
-/*check step result*/
+/*forward leds indicate AC status*/
+#define GREED_LED 2
+#define RED_LED 3
+enum Ground_Check_Step
+{
+	BATTERY_CHECK = 0,
+	BAORD_CHECK,
+	IMU_CHECK,
+	HEIGHT_CHECK,
+	GPS_CHECK,
+	CALIBRATION_CHECK,
+	AUTOPILOT_CHECK,
+	OPS_CHECK,
+	RC_CONNECT
+} ground_check_step;  //use to sign step in ground check;
+
+
+/*ground check step result*/
 #define CHECKING 0
 #define PASS_C 1
 #define FAILED 2
@@ -66,13 +76,15 @@
 #define OPS_FAIL 8
 #define RC_FAIL 9
 
+/*monitoring state*/
+#define GROUND_MONITORING 0
+#define FLIGHT_MONITORING 1
 uint8_t monitor_cmd;  
 uint8_t rc_alert_grade;
 
-static bool_t ground_check_status;
-static bool_t ground_check_result;
-bool_t ground_check_pass;
-uint8_t ground_check_step;  //use to sign step in ground check
+static bool_t monitoring_state;  //monitoring state
+static bool_t run_monitoring_flag; 
+bool_t ground_check_pass;  //global var use to sign ground monitoring result
 
 uint16_t monitoring_fail_code;
 uint32_t em_code;   /*one bit express one emergency in EPT_MS_NB sequence*/
@@ -123,8 +135,8 @@ void monitoring_init(void)
 	height_moni_init();
 	misc_moni_init();
 	ground_check_pass = FALSE;
-	ground_check_result = TRUE;
-	monitoring_fail_code = 0;
+	run_monitoring_flag = TRUE;
+	monitoring_fail_code = PASS;
 	em_code = 0;
 	rc_cmd_interrupt = FALSE;
 	gcs_cmd_interrupt = FALSE;
@@ -152,16 +164,22 @@ int8_t monitoring_reset_emer(void)
 void monitoring_periodic(void)
 {
 	monitoring_task();
-	if(ground_check_result)   //if result(ground check) is false,break monitoring 
+	if(run_monitoring_flag)
 	{
-		if(!ground_check_status) {  //want to return ground_monitoring(),need reset sensor ground check flag
-			ground_monitoring();
+		if(monitoring_state == GROUND_MONITORING) {  //want to return ground_monitoring(),need reset sensor ground check flag
+		   ground_monitoring();
+		   LED_TOGGLE(RED_LED);  //red led toggle, sign running ground monitoring
 		}
-		else {
+		else 
+		{
 			flight_monitoring();  //once ground_monitoring() finished,it will run.
+			LED_ON(GREED_LED);
 		}
 	}
-	//ground_check_pass = TRUE;//dor debug		
+	else
+	{
+		LED_ON(RED_LED); //red led on, sign ground monitoring fail
+	}
 	
   #if PERIODIC_TELEMETRY
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
@@ -205,8 +223,8 @@ static void monitoring_task(void)
 
 void ground_monitoring_init(void)
 {
-	ground_check_status=FALSE;
-	ground_check_step=0;
+	monitoring_state = GROUND_MONITORING;
+	ground_check_step = 0;
 }
 /***********************************************************************
 * FUNCTION    : ground_monitoring
@@ -229,7 +247,7 @@ void ground_monitoring(void)
 			}
 			else  
 			{
-				monitoring_fail_code =BATTERY_FAIL;
+				monitoring_fail_code = BATTERY_FAIL;
 			}
 			break;
 			
@@ -239,14 +257,14 @@ void ground_monitoring(void)
 			break;
 			
 		case IMU_CHECK:	
-			ground_check_step++;  //next step
-			break;
+			//ground_check_step++;  //next step
+			//break;
 			
 			check_state=imu_ground_check();
 			
 			if(check_state==FAILED) 
 			{
-				monitoring_fail_code=IMU_FAIL;
+				monitoring_fail_code = IMU_FAIL;
 			}
 			else if(check_state==PASS_C) 
 			{
@@ -256,7 +274,7 @@ void ground_monitoring(void)
 			//else:check_state=CHECKING  running
 			if( (get_sys_time_msec()-time_record) >20000)  
 			{
-				monitoring_fail_code=IMU_FAIL;
+				monitoring_fail_code = IMU_FAIL;
 			}
 			break;
 			
@@ -290,17 +308,14 @@ void ground_monitoring(void)
 			  #ifdef USE_GPS_HEADING
 			   && gps.h_stable
 			  #endif 
+			   && (gps.num_sv>15)   //default use zhonghaida RTK
 			                           ) 
 			{
 				ground_check_step++;  //next step
-				monitoring_fail_code = PASS;
-			}
-			else  
-			{
-				monitoring_fail_code = GPS_WAIT;
 			}
 			break;
 		case CALIBRATION_CHECK:
+			time_record=get_sys_time_msec();
 			ground_check_step++;  //next step
 			break;
 			
@@ -311,22 +326,22 @@ void ground_monitoring(void)
 			}
 			else
 			{
-				monitoring_fail_code=AUTOPILOT_FAIL;
+				if( (get_sys_time_msec()-time_record) >10000)
+				{
+					monitoring_fail_code=AUTOPILOT_FAIL;
+				}
 			}
 			break;
 			
 		case OPS_CHECK:
 			ground_check_step++;  //next step
-			//sign finished
 			break;
 		case RC_CONNECT:	
-			//if( (flight_mode==nav_rc_mode!rc_lost) || (flight_mode==nav_gcs_mode&&!gcs_lost) )
-			if( (flight_mode!=nav_kill_mode&&!rc_lost) || (flight_mode==nav_gcs_mode&&!gcs_lost) )
+			if( !rc_lost || !gcs_lost )
 			{
-				ground_check_step = 0;        //reset step
-				ground_check_status = TRUE;    //finished ground check,pass
-				ground_check_pass = TRUE;
-				//ground check pass,set NAV mode flag				
+				//ground_check_step = 0;        //reset step
+				monitoring_state = FLIGHT_MONITORING;    //turn to flight monitoring
+				ground_check_pass = TRUE;			
 			}
 			break;
 			
@@ -334,11 +349,11 @@ void ground_monitoring(void)
 			break;		
     } 
 	
-	if( PASS!=monitoring_fail_code && GPS_WAIT!=monitoring_fail_code )
+	if( PASS != monitoring_fail_code)
 	{
-		ground_check_result = FALSE;    //ground check fail,out of monitoring
-		ground_check_step = 0; 
-		ground_check_status = TRUE;
+		run_monitoring_flag = FALSE;    //ground check fail,stop running monitoring
+		//ground_check_step = 0;   //reset step
+		monitoring_state = FLIGHT_MONITORING;
 		ground_check_pass = FALSE;
 	}
 }
@@ -357,7 +372,7 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 {	
 	RunOnceEvery( MONITORING_FREQUENCY*2, battery_flight_check() );
 	//RunOnceEvery( MONITORING_FREQUENCY*2, board_flight_check() );
-	//RunOnceEvery( MONITORING_FREQUENCY, imu_flight_check() );
+	RunOnceEvery( MONITORING_FREQUENCY, imu_flight_check() );
 	//RunOnceEvery( MONITORING_FREQUENCY, height_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY, gps_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY*2, ops_flight_check() );
@@ -370,7 +385,8 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 	{
 		imu_ground_reset();
 		height_ground_reset();
-		ground_check_status = FALSE;
+		monitoring_state = GROUND_MONITORING;
+		ground_check_step = 0; 
 	}
 }
 
@@ -506,6 +522,11 @@ static inline void alert_grade_update(void)
 			}
 			em_code = em_code|(1<<i);
 		}			
+	}
+
+	if(em_code)
+	{
+		LED_ON(RED_LED);  
 	}
 }
 

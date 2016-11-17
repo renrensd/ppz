@@ -550,7 +550,7 @@ void b2_hff_update_gps_r(float pos_r)
 	else
 	{
 		Rgps_pos = pos_r;
-		Rgps_vel = 10.0*pos_r;
+		Rgps_vel = 5.0f*pos_r;
 	}
 }
 

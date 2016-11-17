@@ -974,7 +974,7 @@ static void guidance_h_traj_run(bool_t in_flight)
 
  #ifndef NPS_SIMU   //sonar  don't work in simulator
   //if((agl_dist_value_filtered<DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30)
-  if(stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG+0.1) || stateGetHorizontalSpeedNorm_f()>30.0)
+  if(stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30.0)
   {    
   	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
 	flag_of_int_inner_x = 0;

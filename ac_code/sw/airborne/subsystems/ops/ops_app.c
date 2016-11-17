@@ -107,6 +107,33 @@ void ops_spray_msg_handler(void)
 }
 
 /***********************************************************************
+* FUNCTION    : ops_msg_start_selfclean
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void ops_msg_start_selfclean(void)
+{
+	if(ops_info.con_flag == OPS_CONNECTED)
+	{
+		ops_info.selfclean_flag = TRUE;
+		ops_msg_self_clean();
+	}
+}
+
+/***********************************************************************
+* FUNCTION    : ops_msg_stop_selfclean
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void ops_msg_stop_selfclean(void)
+{
+	ops_info.selfclean_flag = FALSE;
+	ops_stop_spraying();
+}
+
+/***********************************************************************
 * FUNCTION    : ops_msg_start_spraying
 * DESCRIPTION : 
 * INPUTS      : none
@@ -114,7 +141,7 @@ void ops_spray_msg_handler(void)
 ***********************************************************************/
 void ops_start_spraying(void)
 {
-	if(ops_info.con_flag == OPS_CONNECTED)
+	if((ops_info.con_flag==OPS_CONNECTED)&&(ops_info.selfclean_flag==FALSE))
 	{
 		ops_info.spraying_flag = OPS_SET_SPRAYING_START;
 	}
@@ -128,7 +155,7 @@ void ops_start_spraying(void)
 ***********************************************************************/
 void ops_stop_spraying(void)
 {
-	if(ops_info.con_flag == OPS_CONNECTED)
+	if((ops_info.con_flag==OPS_CONNECTED)&&(ops_info.selfclean_flag==FALSE))
 	{
 		ops_info.spraying_flag = OPS_SET_SPRAYING_STOP;
 	}
@@ -150,6 +177,7 @@ void ops_init(void)
 	ops_param.spray_chal = OPS_DEFAULT_SPRAY_CHAL;
 	ops_info.init_status = OPS_CONF_NOT_CONNECT;
 	ops_info.con_flag = OPS_NOT_CONNECT;
+	ops_info.selfclean_flag = FALSE;
 
 	ops_info.spray_state = OPS_SPRAY_IS_OFF;
 }
@@ -277,6 +305,20 @@ uint8_t get_spray_switch_state(void)
 	{
 		return 0;
 	}
+}
+
+/***********************************************************************
+* FUNCTION    : ops_software_version_handler
+* DESCRIPTION : 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
+void ops_software_version_handler(uint8_t *param, uint8_t len)
+{
+    for(uint8_t i=0; i<len; i++)
+    {
+		ops_info.ops_sv[i] = *(param+i);
+    }
 }
 /**************** END OF FILE *****************************************/
 

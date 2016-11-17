@@ -100,6 +100,9 @@ extern void mpu9250_set_default_config(struct Mpu9250Config *c);
 /// Configuration sequence called once before normal use
 extern void mpu9250_send_config(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Config *config);
 
+extern bool_t mpu9250_start_self_test(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Config *config);
+extern bool_t mpu9250_end_self_test(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Config *config);
+
 /**
  * Configure I2C slaves of the MPU.
  * This is I2C/SPI implementation specific.

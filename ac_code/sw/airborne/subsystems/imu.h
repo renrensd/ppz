@@ -40,9 +40,12 @@ extern void imu_periodic(void);
 
 /** abstract IMU interface providing fixed point interface  */
 struct Imu {
-  struct Int32Rates gyro;             ///< gyroscope measurements in rad/s in BFP with #INT32_RATE_FRAC
-  struct Int32Vect3 accel;            ///< accelerometer measurements in m/s^2 in BFP with #INT32_ACCEL_FRAC
-  struct Int32Vect3 mag;              ///< magnetometer measurements scaled to 1 in BFP with #INT32_MAG_FRAC
+  struct Int32Rates gyro;             ///< gyroscope measurements in rad/s in BFP with #INT32_RATE_FRAC, after BF filter
+  struct Int32Vect3 accel;            ///< accelerometer measurements in m/s^2 in BFP with #INT32_ACCEL_FRAC, after BF filter
+  struct Int32Vect3 mag;              ///< magnetometer measurements scaled to 1 in BFP with #INT32_MAG_FRAC, after BF filter
+  struct Int32Rates gyro_scaled;      ///< gyroscope measurements in rad/s in BFP with #INT32_RATE_FRAC, before BF filter
+  struct Int32Vect3 accel_scaled;     ///< accelerometer measurements in m/s^2 in BFP with #INT32_ACCEL_FRAC, before BF filter
+  struct Int32Vect3 mag_scaled;       ///< magnetometer measurements scaled to 1 in BFP with #INT32_MAG_FRAC, before BF filter
   struct Int32Rates gyro_prev;        ///< previous gyroscope measurements
   struct Int32Vect3 accel_prev;       ///< previous accelerometer measurements
   struct Int32Rates gyro_neutral;     ///< gyroscope bias
@@ -62,12 +65,16 @@ struct Imu {
   // filter
   float gyro_filter_fc;
   float acc_filter_fc;
+  float mag_filter_fc;
   Butterworth2LowPass_int gyro_x_filter;
   Butterworth2LowPass_int gyro_y_filter;
   Butterworth2LowPass_int gyro_z_filter;
   Butterworth2LowPass_int acc_x_filter;
   Butterworth2LowPass_int acc_y_filter;
   Butterworth2LowPass_int acc_z_filter;
+  Butterworth2LowPass_int mag_x_filter;
+  Butterworth2LowPass_int mag_y_filter;
+  Butterworth2LowPass_int mag_z_filter;
 };
 
 /** global IMU state */

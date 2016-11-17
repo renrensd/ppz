@@ -35,13 +35,13 @@
 #define DETA_GYRO 1638  //0.4(2**12)   request 200/5000
 #define DETA_MAG  42    //0.02(2**11)    request 50/500
 #define DETA_MAG_LEN2   2000000  // (2**22)   need test
-#define ACC_XY  4000   //3.0
-#define ACC_Z_MIN 9010  //8.8
-#define ACC_Z_MAX 11060  //10.8
+#define ACC_XY  4000    //3.0
+#define ACC_Z_MIN 9010  //9.0
+#define ACC_Z_MAX 11060 //10.6
 #define GYRO_P_Q_R 8192  //3 //2.0
 #define MAG_X_Y_Z  4096  //2.0
 
-#define DATA_FIX_MAX 100
+#define DATA_FIX_MAX 50
 
 /*---Global-----------------------------------------------------------*/
 struct Imu_Monitor imu_moni;
@@ -70,11 +70,11 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 ***********************************************************************/
 void imu_moni_init(void)
 {
-	imu_moni.imu_status=1;  //default ok
+	imu_moni.imu_status = 1;  //default ok
 	imu_ground_reset();
-	AbiBindMsgIMU_ACCEL_INT32(ABI_BROADCAST, &accel_ev_mo, accel_moni_cb);
-	AbiBindMsgIMU_GYRO_INT32(ABI_BROADCAST, &gyro_ev_mo, gyro_moni_cb);
-	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev_mo, mag_moni_cb);	
+	AbiBindMsgIMU_ACCEL_MONI(ABI_BROADCAST, &accel_ev_mo, accel_moni_cb);
+	AbiBindMsgIMU_GYRO_MONI(ABI_BROADCAST, &gyro_ev_mo, gyro_moni_cb);
+	AbiBindMsgIMU_MAG_MONI(ABI_BROADCAST, &mag_ev_mo, mag_moni_cb);	
 }
 
 uint8_t imu_ground_check(void)
@@ -100,7 +100,7 @@ uint8_t imu_ground_check(void)
 void imu_ground_reset(void)   //use for restart ground check
 {
 	imu_moni.accel_ground_check = FALSE;
-  imu_moni.gyro_ground_check = FALSE;
+	imu_moni.gyro_ground_check = FALSE;
 	imu_moni.mag_ground_check = FALSE;
 }
 
@@ -424,8 +424,7 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp __attribute__((unused)), struct Int32Vect3 *mag)
 {
   static struct Int32Vect3 mag_last;
-  static uint32_t mag_len2_aver, last_ts;
-  uint32_t mag_len2;
+
   imu_moni.mag_update_counter++;    //reset to 0 in main monitoring  
 
   //check fix data
@@ -434,15 +433,20 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 	  data_fix_check(mag->z, mag_last.z, &imu_moni.mag_fix_counter.z, DATA_FIX_MAX)  ) 
   {  //fix data
       imu_moni.imu_error[2] |=0x01;  //fix data
-      imu_moni.imu_status=0;  //set imu fail
+      imu_moni.imu_status = 0;  //set imu fail
       #if TEST_MSG
-	  fix_imu=3;
+	  fix_imu = 3;
 	  #endif
       return;  	
   }
   imu_moni.imu_error[2] &=0xFE;
   VECT3_COPY(mag_last, *mag);
+  
+  imu_moni.mag_ground_check = TRUE;  
 
+#if 0 //stop other mag monitoring for use gps heading
+  static uint32_t mag_len2_aver, last_ts;
+  uint32_t mag_len2;
   //check interference(after ground check finished)
   mag_len2 =mag->x*mag->x + mag->y*mag->y + mag->z*mag->z;
   if(imu_moni.mag_ground_check)
@@ -511,7 +515,7 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 	else 
 	{   //mag average out of design range
 	    imu_moni.imu_error[2] |=0x08;  //out of range
-		imu_moni.imu_status=0;
+		imu_moni.imu_status = 0;
 		//device_status &=0xFFFBFFFF;  //bit 19 set 0
 		imu_moni.mag_ground_check=TRUE;
 		imu_moni.mag_ground_counter=0;  //reset counter
@@ -548,6 +552,7 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 		return;
 	}
   }
+  #endif
   
 }
 
