@@ -380,7 +380,7 @@ void ins_altf_register(void)
   // Bind to BARO_ABS message
   AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
 #endif
-  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgGPS_POS(ABI_BROADCAST, &gps_ev, gps_cb);
   AbiBindMsgIMU_ACCEL_INT32(INS_ALT_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgBODY_TO_IMU_QUAT(INS_ALT_IMU_ID, &body_to_imu_ev, body_to_imu_cb);
 }
