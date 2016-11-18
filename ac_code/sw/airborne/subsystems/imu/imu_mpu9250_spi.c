@@ -129,6 +129,10 @@ void mpu_wait_slave4_ready(void);
 void mpu_wait_slave4_ready_cb(struct spi_transaction *t);
 bool_t imu_mpu9250_configure_mag_slave(Mpu9250ConfigSet mpu_set, void *mpu);
 
+void imu_selftest_init(void);
+bool_t imu_selftest_handle(struct Int32Vect3 accel, struct Int32Rates rates);
+
+
 void imu_impl_init(void)
 {
   /* MPU9250 */
@@ -140,6 +144,8 @@ void imu_impl_init(void)
   imu_mpu9250.mpu.config.gyro_range = IMU_MPU9250_GYRO_RANGE;
   imu_mpu9250.mpu.config.accel_range = IMU_MPU9250_ACCEL_RANGE;
 
+  //intial selftest
+  imu_selftest_init();
 
   /* "internal" ak8963 magnetometer as I2C slave */
 #if IMU_MPU9250_READ_MAG
@@ -187,9 +193,162 @@ void imu_impl_init(void)
 	#endif /* HMC5983_OPTION */
 }
 
+void imu_selftest_init(void)
+{
+	imu_mpu9250.selftest.result = FALSE;
+	imu_mpu9250.selftest.state = UNTESTED;
+	imu_mpu9250.selftest.static_counter = 0;
+	imu_mpu9250.selftest.test_counter = 0;
+	//imu_mpu9250.selftest.recover_counter = 0;
+}
+
+/*default 16G,2048->1g*/
+#define RECOVER_ACCEL_DIFF 200
+#define RECOVER_GYRO_DIFF 400
+#define ACCEL_REPONSE_MIN 500
+#define ACCEL_RESPONSE_MAX 1500
+#define GYRO_RESPONSE_MIN 2000
+#define GYRO_RESPONSE_MAX 9000
+#define INTERVAL_ABS_VALID(_a, _min, _max)    ( abs(_a) > (_min) && abs(_a) < (_max) )
+
+bool_t imu_selftest_handle(struct Int32Vect3 accel, struct Int32Rates rates)
+{
+//	if(get_sys_time_msec()<6000) return FALSE;
+	if(imu_mpu9250.selftest.state != FINISHED)  //no send data from abi
+	{
+		if(imu_mpu9250.selftest.state == UNTESTED)
+		{
+			if( ((accel.x||accel.y||accel.z) && (rates.p||rates.q||rates.r)) )  //request data is valid
+			{
+				VECT3_ADD(imu_mpu9250.selftest.static_accel, accel);
+				RATES_ADD(imu_mpu9250.selftest.static_gyro, rates);
+				imu_mpu9250.selftest.static_counter++;
+				if(imu_mpu9250.selftest.static_counter == 10)
+				{
+					VECT3_SDIV(imu_mpu9250.selftest.static_accel, 
+								imu_mpu9250.selftest.static_accel, 
+								imu_mpu9250.selftest.static_counter);
+					RATES_SDIV(imu_mpu9250.selftest.static_gyro, 
+								imu_mpu9250.selftest.static_gyro, 
+								imu_mpu9250.selftest.static_counter);
+					imu_mpu9250.selftest.state++;
+				}
+			}
+		}
+		//CONFIG_TEST, do in periodic
+		else if(imu_mpu9250.selftest.state == CONFIG_TEST)
+		{
+			if( abs(accel.x)>ACCEL_REPONSE_MIN   //request data is valid
+			    &&abs(accel.y)>ACCEL_REPONSE_MIN
+			    && abs(rates.p)>GYRO_RESPONSE_MIN
+			    && abs(rates.r)>GYRO_RESPONSE_MIN) 
+			{
+				VECT3_ADD(imu_mpu9250.selftest.test_accel, accel);
+				RATES_ADD(imu_mpu9250.selftest.test_gyro, rates);
+				imu_mpu9250.selftest.test_counter++;
+				if(imu_mpu9250.selftest.test_counter == 10)
+				{
+					VECT3_SDIV(imu_mpu9250.selftest.test_accel, 
+								imu_mpu9250.selftest.test_accel, 
+								imu_mpu9250.selftest.test_counter);
+					RATES_SDIV(imu_mpu9250.selftest.test_gyro, 
+								imu_mpu9250.selftest.test_gyro, 
+								imu_mpu9250.selftest.test_counter);
+					/*caculate response data*/
+					VECT3_DIFF(imu_mpu9250.selftest.response_accel,
+						       imu_mpu9250.selftest.test_accel,
+						       imu_mpu9250.selftest.static_accel);
+					RATES_DIFF(imu_mpu9250.selftest.response_gyro,
+						       imu_mpu9250.selftest.test_gyro,
+						       imu_mpu9250.selftest.static_gyro);
+					if( INTERVAL_ABS_VALID(imu_mpu9250.selftest.response_accel.x, ACCEL_REPONSE_MIN, ACCEL_RESPONSE_MAX)
+						&& INTERVAL_ABS_VALID(imu_mpu9250.selftest.response_accel.y, ACCEL_REPONSE_MIN, ACCEL_RESPONSE_MAX)
+						&& INTERVAL_ABS_VALID(imu_mpu9250.selftest.response_accel.z, ACCEL_REPONSE_MIN, ACCEL_RESPONSE_MAX)
+						&& INTERVAL_ABS_VALID(imu_mpu9250.selftest.response_gyro.p, GYRO_RESPONSE_MIN, GYRO_RESPONSE_MAX)
+						&& INTERVAL_ABS_VALID(imu_mpu9250.selftest.response_gyro.q, GYRO_RESPONSE_MIN, GYRO_RESPONSE_MAX)
+						&& INTERVAL_ABS_VALID(imu_mpu9250.selftest.response_gyro.r, GYRO_RESPONSE_MIN, GYRO_RESPONSE_MAX))
+					{
+						imu_mpu9250.selftest.result = TRUE;
+					}
+					imu_mpu9250.selftest.state++;
+				}
+			}
+		}
+		//CONFIG_RECOVER, do in periodic
+		else if(imu_mpu9250.selftest.state == RECOVER_CHECK)
+		{
+			if( abs(accel.x)<(ACCEL_REPONSE_MIN/5)   //request data is valid
+			    &&abs(accel.y)<(ACCEL_REPONSE_MIN/5)
+			    && abs(rates.p)<(GYRO_RESPONSE_MIN/10)
+			    && abs(rates.r)<(GYRO_RESPONSE_MIN/10) ) 
+			{
+				imu_mpu9250.selftest.state++;
+				/*
+				VECT3_ADD(imu_mpu9250.selftest.recover_accel, accel);
+				RATES_ADD(imu_mpu9250.selftest.recover_gyro, rates);
+				imu_mpu9250.selftest.recover_counter++;
+				if(imu_mpu9250.selftest.recover_counter == 10)
+				{
+					VECT3_SDIV(imu_mpu9250.selftest.recover_accel, 
+								imu_mpu9250.selftest.recover_accel, 
+								imu_mpu9250.selftest.recover_counter);
+					RATES_SDIV(imu_mpu9250.selftest.recover_gyro, 
+								imu_mpu9250.selftest.recover_gyro, 
+								imu_mpu9250.selftest.recover_counter);
+
+					VECT3_DIFF(imu_mpu9250.selftest.recover_accel,
+						       imu_mpu9250.selftest.recover_accel,
+						       imu_mpu9250.selftest.static_accel);
+					RATES_DIFF(imu_mpu9250.selftest.recover_gyro,
+						       imu_mpu9250.selftest.recover_gyro,
+						       imu_mpu9250.selftest.static_gyro);
+					if( (abs(imu_mpu9250.selftest.recover_accel.x) < RECOVER_ACCEL_DIFF)
+						&& (abs(imu_mpu9250.selftest.recover_accel.y) < RECOVER_ACCEL_DIFF)
+						&& (abs(imu_mpu9250.selftest.recover_accel.z) < RECOVER_ACCEL_DIFF)
+						&& (abs(imu_mpu9250.selftest.recover_gyro.p) < RECOVER_GYRO_DIFF)
+						&& (abs(imu_mpu9250.selftest.recover_gyro.q) < RECOVER_GYRO_DIFF)
+						&& (abs(imu_mpu9250.selftest.recover_gyro.r) < RECOVER_GYRO_DIFF) )
+					{
+						imu_mpu9250.selftest.state++;
+					}
+					else
+					{
+						//imu_mpu9250.selftest.state--;   //try to reset
+					}					
+				}
+				*/
+			}
+		}
+		return FALSE;
+	}  /*end of unfinished*/
+	else
+	{
+		return TRUE;
+	}
+
+}
+
+
 void imu_periodic(void)
 {
-  mpu9250_spi_periodic(&imu_mpu9250.mpu);
+	switch(imu_mpu9250.selftest.state)
+	{
+		case GET_STATIC_DATA:
+			if(mpu9250_spi_start_self_test(&imu_mpu9250.mpu))
+			{
+				imu_mpu9250.selftest.state++;
+			}
+			break;
+		case CONFIG_RECOVER:
+			if(mpu9250_spi_end_self_test(&imu_mpu9250.mpu))
+			{
+				imu_mpu9250.selftest.state++;
+			}
+			break;
+		default:
+			mpu9250_spi_periodic(&imu_mpu9250.mpu);
+			break;
+	}
 
 #ifdef HMC5983_OPTION
    // Read HMC58XX at 50Hz (main loop for rotorcraft: 512Hz)
@@ -222,10 +381,24 @@ void imu_mpu9250_event(void)
       + (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_X]),
       - (int32_t)(imu_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Z])
     };
-    // unscaled vector
-    VECT3_COPY(imu.accel_unscaled, accel);
-    RATES_COPY(imu.gyro_unscaled, rates);
+	
+    if(1)//imu_selftest_handle(accel, rates))
+    {
+	    // unscaled vector
+	    VECT3_COPY(imu.accel_unscaled, accel);
+	    RATES_COPY(imu.gyro_unscaled, rates);
 
+	    imu_mpu9250.mpu.data_available = FALSE;
+	    imu_scale_gyro(&imu);
+	    imu_scale_accel(&imu);
+		
+		AbiSendMsgIMU_GYRO_INT32(IMU_MPU9250_ID, now_ts, &imu.gyro);
+		AbiSendMsgIMU_ACCEL_INT32(IMU_MPU9250_ID, now_ts, &imu.accel);
+		AbiSendMsgIMU_GYRO_MONI(IMU_MPU9250_ID, now_ts, &imu.gyro_scaled);
+		AbiSendMsgIMU_ACCEL_MONI(IMU_MPU9250_ID, now_ts, &imu.accel_scaled);
+    }
+  }
+  
 #if IMU_MPU9250_READ_MAG
     if (!bit_is_set(imu_mpu9250.mpu.data_ext[6], 3)) { //mag valid just HOFL == 0
       /** FIXME: assumes that we get new mag data each time instead of reading drdy bit */
@@ -236,15 +409,10 @@ void imu_mpu9250_event(void)
       VECT3_COPY(imu.mag_unscaled, mag);
       imu_scale_mag(&imu);
       AbiSendMsgIMU_MAG_INT32(IMU_MPU9250_ID, now_ts, &imu.mag);
+	  AbiSendMsgIMU_MAG_MONI(IMU_MPU9250_ID, now_ts, &imu.mag_scaled);
     }
 #endif
 
-    imu_mpu9250.mpu.data_available = FALSE;
-    imu_scale_gyro(&imu);
-    imu_scale_accel(&imu);
-    AbiSendMsgIMU_GYRO_INT32(IMU_MPU9250_ID, now_ts, &imu.gyro);
-    AbiSendMsgIMU_ACCEL_INT32(IMU_MPU9250_ID, now_ts, &imu.accel);
-  }
 #ifdef HMC5983_OPTION
 	/* HMC58XX event task */
 	hmc58xx_event(&imu_mpu9250.mag_hmc);
@@ -266,6 +434,7 @@ void imu_mpu9250_event(void)
 	    imu_mpu9250.mag_valid = FALSE;
 	    imu_scale_mag(&imu);
 	    AbiSendMsgIMU_MAG_INT32(IMU_ADISENS_ID, now_ts, &imu.mag);
+		AbiSendMsgIMU_MAG_MONI(IMU_MPU9250_ID, now_ts, &imu.mag_scaled);
   	}
 #endif /* HMC5983_OPTION */
 
@@ -290,6 +459,7 @@ void imu_mpu9250_event(void)
 	    imu_mpu9250.mag_valid = FALSE;
 	    imu_scale_mag(&imu);
 	    AbiSendMsgIMU_MAG_INT32(IMU_ADISENS_ID, now_ts, &imu.mag);
+		AbiSendMsgIMU_MAG_MONI(IMU_MPU9250_ID, now_ts, &imu.mag_scaled);
   	}
 #endif /* HMC5983_OPTION */
 

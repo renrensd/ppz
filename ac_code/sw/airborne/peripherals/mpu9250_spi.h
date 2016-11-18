@@ -73,6 +73,8 @@ extern void mpu9250_spi_start_configure(struct Mpu9250_Spi *mpu);
 extern void mpu9250_spi_read(struct Mpu9250_Spi *mpu);
 extern void mpu9250_spi_event(struct Mpu9250_Spi *mpu);
 
+extern bool_t mpu9250_spi_start_self_test(struct Mpu9250_Spi *mpu);
+extern bool_t mpu9250_spi_end_self_test(struct Mpu9250_Spi *mpu);
 /// convenience function: read or start configuration if not already initialized
 static inline void mpu9250_spi_periodic(struct Mpu9250_Spi *mpu)
 {

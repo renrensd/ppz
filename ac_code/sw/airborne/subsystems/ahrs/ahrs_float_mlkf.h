@@ -99,9 +99,9 @@ extern void ahrs_float_mlkf_SetGpsHeadingNoise(float noise);
 
 //*********cpz-gps-heading
 #ifdef USE_GPS_HEADING
-extern void ahrs_mlkf_update_gps(struct GpsState *gps);
+extern void ahrs_mlkf_update_gps(struct GpsState *gps_s);
 
-extern void ahrs_mlkf_update_gps_heading(struct GpsState *gps);
+extern void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s);
 #endif
 
 

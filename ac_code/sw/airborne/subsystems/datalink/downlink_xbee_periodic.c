@@ -110,20 +110,9 @@ void send_heart_beat_A2G_msg(void)
    if(i==20)  i=1;
   */
    int32_t pos_lon, pos_lat;
-   if(state.ned_initialized_i)
-   {
-	   struct EcefCoor_i pos_ecef;
-	   ecef_of_enu_pos_i(&pos_ecef, &(state.ned_origin_i), stateGetPositionEnu_i());
-	   struct LlaCoor_i pos_lla;
-	   lla_of_ecef_i(&pos_lla, &pos_ecef);
-	   pos_lon = (int32_t)( (int64_t)(pos_lla.lon) * 17453293/100000000 ); 
-	   pos_lat = (int32_t)( (int64_t)(pos_lla.lat) * 17453293/100000000 ); 
-   }
-   else
-   {
-	   pos_lon = (int32_t)( (int64_t)(stateGetPositionLla_i()->lon) * 17453293/100000000 );
-	   pos_lat = (int32_t)( (int64_t)(stateGetPositionLla_i()->lat) * 17453293/100000000 );
-   }
+   pos_lon = (int32_t)( (int64_t)(stateGetPositionLla_i()->lon) * 17453293/100000000 );
+   pos_lat = (int32_t)( (int64_t)(stateGetPositionLla_i()->lat) * 17453293/100000000 );
+
    
    int8_t  battery_remain = ops_info.o_bat_rep_percent; //(int8_t)((electrical.vsupply-420)*100/60);
    Bound(battery_remain, 0, 100);

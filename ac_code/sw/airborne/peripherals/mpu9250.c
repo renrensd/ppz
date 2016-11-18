@@ -117,3 +117,68 @@ void mpu9250_send_config(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Conf
       break;
   }
 }
+
+#define MPU9250_SELFTEST_EN 0x07
+bool_t mpu9250_start_self_test(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Config *config)
+{
+	static enum Mpu9250ConfStatus start_test_step = MPU9250_CONF_GYRO;
+	switch (start_test_step) {
+	case MPU9250_CONF_GYRO:
+      /* configure gyro range */
+      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, ((config->gyro_range << 3)|(MPU9250_SELFTEST_EN<<5)));
+      start_test_step++;
+      break;
+    case MPU9250_CONF_ACCEL:
+      /* configure accelerometer range */
+      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, ((config->accel_range << 3)|(MPU9250_SELFTEST_EN<<5)));
+      start_test_step++;
+	   break;
+	/*try more time make sure writed register*/
+	case (MPU9250_CONF_GYRO+2):
+      /* configure gyro range */
+      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, ((config->gyro_range << 3)|(MPU9250_SELFTEST_EN<<5)));
+      start_test_step++;
+      break;
+    case (MPU9250_CONF_ACCEL+2):
+      /* configure accelerometer range */
+      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, ((config->accel_range << 3)|(MPU9250_SELFTEST_EN<<5)));
+      start_test_step++;
+	   break;
+	 default:
+	 	/*finish config and reset step*/
+	 	start_test_step = MPU9250_CONF_GYRO;
+	   return TRUE;
+	}
+	return FALSE;
+}
+
+bool_t mpu9250_end_self_test(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Config *config)
+{
+	static enum Mpu9250ConfStatus end_test_step = MPU9250_CONF_GYRO;
+	switch (end_test_step) {
+	case MPU9250_CONF_GYRO:
+      /* configure gyro range */
+      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, (config->gyro_range << 3));
+      end_test_step++;
+      break;
+    case MPU9250_CONF_ACCEL:
+      /* configure accelerometer range */
+      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, (config->accel_range << 3));
+      end_test_step++;
+	 case (MPU9250_CONF_GYRO+2):
+      /* configure gyro range */
+      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, (config->gyro_range << 3));
+      end_test_step++;
+      break;
+    case (MPU9250_CONF_ACCEL+2):
+      /* configure accelerometer range */
+      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, (config->accel_range << 3));
+      end_test_step++;
+	   break;
+	 default:
+	 	/*finish config and reset step*/
+	 	end_test_step = MPU9250_CONF_GYRO;
+	   return TRUE;
+	}
+	return FALSE;
+}

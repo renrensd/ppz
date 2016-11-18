@@ -59,6 +59,32 @@
 #define IMU_GYRO_R_SENS_DEN 8383
 #endif
 
+enum selftest_state
+{
+	UNTESTED,
+	GET_STATIC_DATA,
+	CONFIG_TEST,
+	CONFIG_RECOVER,
+	RECOVER_CHECK,
+	FINISHED
+};
+
+struct Imu_Selftest  
+{
+	bool_t result;
+	enum selftest_state state;
+	uint8_t static_counter;
+	uint8_t test_counter;
+	//uint8_t recover_counter;
+	struct Int32Vect3 static_accel;
+	struct Int32Vect3 test_accel;
+	struct Int32Vect3 response_accel;
+	//struct Int32Vect3 recover_accel;
+	struct Int32Rates static_gyro;
+	struct Int32Rates test_gyro;
+	struct Int32Rates response_gyro;
+	//struct Int32Rates recover_gyro;
+};
 /** default accel sensitivy from the datasheet
  * MPU with 8g has 4096 LSB/g
  * sens = 9.81 [m/s^2] / 4096 [LSB/g] * 2^INT32_ACCEL_FRAC = 2.4525
@@ -67,6 +93,7 @@
 
 struct ImuMpu9250 {
   struct Mpu9250_Spi mpu;
+  struct Imu_Selftest selftest;
 
   struct spi_transaction wait_slave4_trans;
   volatile uint8_t wait_slave4_tx_buf[1];

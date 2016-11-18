@@ -107,7 +107,7 @@ void ahrs_mlkf_init(void)
   memcpy(ahrs_mlkf.P, P0, sizeof(P0));
 
   VECT3_ASSIGN(ahrs_mlkf.mag_noise, 10, 10, 10);
-  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 1, 1, 1);
+  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 0.1f, 0.1f, 0.1f);
 
 #ifdef AHRS_GYRO_BW_FILTER
   init_butterworth_2_low_pass_int(&filter_p, 18, (1. / 512), 0);
@@ -215,7 +215,7 @@ void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
   float_quat_vmult_inv(&mag_bm_i, &ahrs_mlkf.ltp_to_imu_quat, &mag_bm);
   mag_bm_i.z = 0;
   float_quat_vmult(&mag_bmv, &ahrs_mlkf.ltp_to_imu_quat, &mag_bm_i);
-  //float_vect3_normalize(&mag_bm);
+  // float_vect3_normalize(&mag_bm);
 
 
   // generate a virtual mag_ic_b that has the same length with mag_bm generated in last step
@@ -224,7 +224,7 @@ void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
   float_vect3_normalize(&mag_ic);
 
   float norm = float_vect3_norm(&mag_bm);
-  norm = float_vect3_norm(&mag_bm_i);
+  // norm = float_vect3_norm(&mag_bm_i);
   mag_ic.x *= norm;
   mag_ic.y *= norm;
 
@@ -335,12 +335,12 @@ static inline void propagate_state(float dt)
   const float dq = ahrs_mlkf.imu_rate.q * dt;
   const float dr = ahrs_mlkf.imu_rate.r * dt;
 
-  float F[6][6] = {	{  1.,   dr,  -dq,  -dt,   0.,   0.  },
-										{ -dr,   1.,   dp,   0.,  -dt,   0.  },
-										{  dq,  -dp,   1.,   0.,   0.,  -dt  },
-										{  0.,   0.,   0.,   1.,   0.,   0.  },
-										{  0.,   0.,   0.,   0.,   1.,   0.  },
-										{  0.,   0.,   0.,   0.,   0.,   1.  }
+  float F[6][6] = {{  1.,   dr,  -dq,  -dt,   0.,   0.  },
+				    { -dr,   1.,   dp,   0.,  -dt,   0.  },
+				    {  dq,  -dp,   1.,   0.,   0.,  -dt  },
+				    {  0.,   0.,   0.,   1.,   0.,   0.  },
+				    {  0.,   0.,   0.,   0.,   1.,   0.  },
+				    {  0.,   0.,   0.,   0.,   0.,   1.  }
   };
   // P = FPF' + GQG
   float tmp[6][6];

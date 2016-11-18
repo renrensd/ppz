@@ -253,7 +253,7 @@ void ahrs_mlkf_register(void)
   AbiBindMsgIMU_ACCEL_INT32(AHRS_MLKF_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgIMU_MAG_INT32(AHRS_MLKF_MAG_ID, &mag_ev, mag_cb);
   #ifdef USE_GPS_HEADING
-  AbiBindMsgGPS(ABI_BROADCAST, &gps_heading_ev, gps_heading_cb);  /*cpz-gps-heading*/
+  AbiBindMsgGPS_HEADING(ABI_BROADCAST, &gps_heading_ev, gps_heading_cb);  /*cpz-gps-heading*/
   #endif
   AbiBindMsgIMU_LOWPASSED(ABI_BROADCAST, &aligner_ev, aligner_cb);
   AbiBindMsgBODY_TO_IMU_QUAT(ABI_BROADCAST, &body_to_imu_ev, body_to_imu_cb);

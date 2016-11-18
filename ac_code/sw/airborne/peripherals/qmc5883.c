@@ -93,7 +93,7 @@ static void qmc5883_send_config(struct Qmc5883 *qmc)
       break;
     case QMC_CONF_CTL:
       //qmc5883_i2c_tx_reg(qmc, QMC5883_REG_CTL1,qmc->config.rate | qmc->config.rng | qmc->config.osr | qmc->config.mode );
-      qmc5883_i2c_tx_reg(qmc, QMC5883_REG_CTL1, 0x0D); //qmc->config.rate | qmc->config.rng | qmc->config.osr | qmc->config.mode );
+      qmc5883_i2c_tx_reg(qmc, QMC5883_REG_CTL1, 0x0D); 
 	  qmc->init_status++;
       break;
     case QMC_CONF_DONE:
