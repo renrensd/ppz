@@ -48,12 +48,12 @@
 
 #define MAX_GROUND_ATT  0.175  //about 10deg
 #define MAX_GROUND_RATE  0.02   //about 1deg/s
-#define MAX_GROUND_INS_S  1.0  //0.8
+#define MAX_GROUND_INS_S  0.8
 #define MAX_GROUND_INS_A  0.5
 #define MAX_GROUND_INS_Z  0.6
 
 #define MAX_FLIGHT_TIME 780   //13min
-#define BAT_LIMIT_VOL  430   //unit:0.1v
+#define BAT_LIMIT_VOL  432   //unit:0.1v
 #define BAT_LIMIT_CAP  15  //unit:percent
 
 #define LESS_RES_CAP 5  //5%
@@ -61,6 +61,7 @@
 static uint8_t ahrs_ground_check(void);
 static uint8_t ins_ground_check(void);
 static bool_t yaw_command_monitor(void);
+static bool_t thrust_command_monitor(void);
 static bool_t lift_lost_detect(void);
 
 
@@ -132,27 +133,6 @@ void battery_flight_check(void)
 			#endif
 		}
 	}
-
-   /*
-	if( electrical.bat_critical )
-	{   //only alert
-	    flag_trigger=1;   //record error trigger
-	    set_except_mission(BAT_CRITICAL,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	
-		#if TEST_MSG
-		bat_flight=2;
-		#endif
-	}
-	*/
-   /*
-	if( electrical.current >FLIGHT_LIMIT_CURRENT )
-	{   //only alert
-	    flag_trigger=1;   //record error trigger
-	    set_except_mission(BAT_OTHER,TRUE,FALSE, FALSE,0, FALSE,FALSE,3);	
-		#if TEST_MSG
-		bat_flight=3;
-		#endif
-	}
-   */
     if(!flag_trigger)
     {
 		//recover
@@ -204,7 +184,8 @@ void gps_flight_check(void)
     }
 	else
 	{
-		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
+		//set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0x03, FALSE,TRUE,3);	
+		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
 		#if TEST_MSG
 		gps_flight=2;
 		#endif
@@ -252,6 +233,11 @@ void ops_flight_check(void)
 		{
 			set_except_mission(OPS_BLOCKED,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
 		}
+		else
+		{
+			em[OPS_BLOCKED].active = FALSE;
+			em[OPS_BLOCKED].finished = FALSE;
+		}
 	}
 }
 
@@ -296,19 +282,16 @@ void gcs_communication_flight_check(void)
 
 
 #define MAX_ERROR_Z_THRUST  8000
-#define MAX_ERROR_YAW_COMMAND 5000
+#define MAX_ERROR_YAW_COMMAND 8000
 
 #define MAX_ERROR_ATT (1.05)  //60deg
 
 void lift_flight_check(void)
 {
 	/*ac lower setpoint height >1m and thrust cmd >MAX_ERROR_Z_THRUST*/
-	if( get_error_z() )  
+	if( thrust_command_monitor() )  
 	{
-		if(stabilization_cmd[COMMAND_THRUST] > MAX_ERROR_Z_THRUST)
-		{
-			set_except_mission(LIFT_POWER,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	//land direct
-		}
+		set_except_mission(LIFT_POWER,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	//land direct
 	}
 
     /*yaw command overrun continual 3s*/
@@ -434,6 +417,25 @@ static bool_t yaw_command_monitor(void)
 		if(counter > 5)
 		{
 			counter = 6;
+			return TRUE;
+		}
+	}
+	else
+	{
+		counter = 0;
+	}
+	return FALSE;
+}
+
+static bool_t thrust_command_monitor(void)
+{
+	static uint8_t counter = 0;
+	if( get_error_z() &&(stabilization_cmd[COMMAND_THRUST] > MAX_ERROR_Z_THRUST) )
+	{
+		counter++;
+		if(counter > 3)
+		{
+			counter =3;
 			return TRUE;
 		}
 	}

@@ -189,8 +189,6 @@ struct InsInt ins_int;
 
 float gps_noise_debug;
 int32_t ins_body_rate_z; 
-float acc_z_meas;
-float acc_baro_meas;
 
 #if USE_FLOW
 static abi_event flow_ev;  //add for flow
@@ -321,7 +319,7 @@ void ins_int_init(void)
 void ins_reset_local_origin(void)
 {
 #if USE_GPS  //called by flightplan init,set gps's postion as local ins (ltp_def is base point of ins)
-	if (GpsFixValid()) {
+  if (GpsFixValid()) {
     ltp_def_from_ecef_i(&ins_int.ltp_def, &gps.ecef_pos);
     ins_int.ltp_def.lla.alt = gps.lla_pos.alt;
     ins_int.ltp_def.hmsl = gps.hmsl;
@@ -406,6 +404,8 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
     ins_int.propagation_cnt++;
   }
 
+  /*filter rate information*/
+  ins_body_rate_z = (ins_body_rate_z*9 + stateGetBodyRates_i()->r)/10;
 }
 
 #if USE_BARO_BOARD   //change default using bar
@@ -473,7 +473,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 #ifdef GPS_INSTALL_BIAS
 /*unit :cm, body frame*/
   #define  INS_BODY_TO_GPS_X  0
-  #define  INS_BODY_TO_GPS_Y  27
+  #define  INS_BODY_TO_GPS_Y  33
   #define  INS_BODY_TO_GPS_Z  0
 #endif
 static bool_t gps_pos_inspect(struct NedCoor_i data)
@@ -502,18 +502,6 @@ static bool_t gps_speed_inspect(struct NedCoor_i data)
 
 void ins_int_update_gps(struct GpsState *gps_s)
 {
-  //if (gps_s->fix < GPS_FIX_3D)
-	if(gps_nmea.gps_qual < 49)
-  {
-    return;
-  }
-  
-#if USE_FLOW
-  if ( guidance_h.mode==GUIDANCE_H_MODE_HOVER || guidance_h.mode==GUIDANCE_H_MODE_ATTITUDE) {   //using flow in hover mode,GPS data giving up
-    return;
-  }
-#endif
-
   if (!ins_int.ltp_initialized && gps.p_stable)
   {
     ins_reset_local_origin();
@@ -557,11 +545,6 @@ void ins_int_update_gps(struct GpsState *gps_s)
   /* subtract body2gps translation in ltp from gps position */
   VECT3_SUB(gps_pos_cm_ned, b2g_n);
 
-  /*filter rate information*/
-  static int32_t ins_body_rate_z;
-  int32_t ins_body_rate_z_now;
-  ins_body_rate_z_now =  stateGetBodyRates_i()->r;  
-  ins_body_rate_z =  (ins_body_rate_z*3 + ins_body_rate_z_now)/4;
   struct Int32Vect3 delta_speed_b, delta_speed_n;
   delta_speed_b.x = (ins_body_rate_z * (-b2g_b.y)) >>INT32_RATE_FRAC;
   delta_speed_b.y = 0;
@@ -666,42 +649,56 @@ void ins_int_update_gps(struct GpsState *gps_s)
  #endif
 #endif
 
-#if USE_HFF
+
   /* horizontal gps transformed to NED in meters as float */
-  struct FloatVect2 gps_pos_m_ned;
-  VECT2_ASSIGN(gps_pos_m_ned, gps_pos_cm_ned.x, gps_pos_cm_ned.y);
-  VECT2_SDIV(gps_pos_m_ned, gps_pos_m_ned, 100.0f);
+  if(
+  	#ifdef USE_GPS_NMEA 
+	 gps_nmea.pos_type > SINGLE
+	#else
+	 gps_s->fix >= GPS_FIX_3D
+	#endif
+	                            )
+  {	 
+  	 #if USE_HFF
+	  struct FloatVect2 gps_pos_m_ned;
+	  VECT2_ASSIGN(gps_pos_m_ned, gps_pos_cm_ned.x, gps_pos_cm_ned.y);
+	  VECT2_SDIV(gps_pos_m_ned, gps_pos_m_ned, 100.0f);
 
-  struct FloatVect2 gps_speed_m_s_ned;
-  VECT2_ASSIGN(gps_speed_m_s_ned, gps_speed_cm_s_ned.x, gps_speed_cm_s_ned.y);
-  VECT2_SDIV(gps_speed_m_s_ned, gps_speed_m_s_ned, 100.);
+	  struct FloatVect2 gps_speed_m_s_ned;
+	  VECT2_ASSIGN(gps_speed_m_s_ned, gps_speed_cm_s_ned.x, gps_speed_cm_s_ned.y);
+	  VECT2_SDIV(gps_speed_m_s_ned, gps_speed_m_s_ned, 100.);
 
-  if (ins_int.hf_realign) {
-    ins_int.hf_realign = FALSE;
-    const struct FloatVect2 zero = {0.0f, 0.0f};
-    b2_hff_realign(gps_pos_m_ned, zero);
+	  if (ins_int.hf_realign) {
+	    ins_int.hf_realign = FALSE;
+	    const struct FloatVect2 zero = {0.0f, 0.0f};
+	    b2_hff_realign(gps_pos_m_ned, zero);
+	  }
+	  
+	  /*run horizontal filter*/
+	  float pos_r =((float)gps_pos_sd.x /10000.0) * ((float)gps_pos_sd.y /10000.0);
+	  pos_r = fabs(pos_r);
+	  b2_hff_update_gps_r(pos_r);
+	  b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
+	  // convert and copy result to ins_int
+	  ins_update_from_hff();
+
+     #else  /* hff not used */
+	  /* simply copy horizontal pos/speed from gps */
+	  INT32_VECT2_SCALE_2(ins_int.ltp_pos, gps_pos_cm_ned,
+	                      INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
+	  INT32_VECT2_SCALE_2(ins_int.ltp_speed, gps_speed_cm_s_ned,
+	                      INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
+     #endif /* USE_HFF */
+
+	  ins_ned_to_state();
+
+	  /* reset the counter to indicate we just had a measurement update */
+	  ins_int.propagation_cnt = 0;
   }
-  
-  /*run horizontal filter*/
-  float pos_r =((float)gps_pos_sd.x /10000.0) * ((float)gps_pos_sd.y /10000.0);
-  pos_r = fabs(pos_r);
-  b2_hff_update_gps_r(pos_r);
-  b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
-  // convert and copy result to ins_int
-  ins_update_from_hff();
-
-#else  /* hff not used */
-  /* simply copy horizontal pos/speed from gps */
-  INT32_VECT2_SCALE_2(ins_int.ltp_pos, gps_pos_cm_ned,
-                      INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
-  INT32_VECT2_SCALE_2(ins_int.ltp_speed, gps_speed_cm_s_ned,
-                      INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
-#endif /* USE_HFF */
-
-  ins_ned_to_state();
-
-  /* reset the counter to indicate we just had a measurement update */
-  ins_int.propagation_cnt = 0;
+  else
+  {
+		//add: gps pos lost handle
+  }
 }
 #else
 void ins_int_update_gps(struct GpsState *gps_s __attribute__((unused))) {}
@@ -997,7 +994,7 @@ void ins_int_register(void)
    * Subscribe to scaled IMU measurements and attach callbacks
    */
   AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
-  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgGPS_POS(ABI_BROADCAST, &gps_ev, gps_cb);
   AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
   #if USE_FLOW
   AbiBindMsgFLOW(ABI_BROADCAST, &flow_ev, flow_cb);
