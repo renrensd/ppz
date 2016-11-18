@@ -51,6 +51,8 @@ ifndef NPS_OPTION
 $(TARGET).CFLAGS += -DFAULT_OPTION
 $(TARGET).CFLAGS += -DWDG_OPTION
 # $(TARGET).CFLAGS += -DUPGRADE_OPTION
+#  $(TARGET).CFLAGS += -DBBOX_OPTION=1
+# $(TARGET).CFLAGS += -DOPEN_PC_DATALINK=1
 $(TARGET).CFLAGS += -DGCS_V1_OPTION
 # $(TARGET).CFLAGS += -DCALIBRATION_OPTION
 $(TARGET).CFLAGS += -DSYS_TIMER_OPTION
@@ -110,7 +112,10 @@ ifndef NPS_OPTION
 #
  include $(CFG_SHARED)/monitoring.makefile
 
-# include $(CFG_SHARED)/eng.makefile
+#
+# ENG SUBSYSTEM
+#
+ include $(CFG_SHARED)/eng.makefile
 
 $(TARGET).srcs += modules/system/timer.c
 $(TARGET).srcs += modules/system/type_conv.c

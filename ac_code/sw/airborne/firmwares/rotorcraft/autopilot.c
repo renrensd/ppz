@@ -50,6 +50,7 @@
 #include "generated/settings.h"
 
 #include "subsystems/ops/ops_msg_if.h"
+#include "subsystems/ops/ops_app_if.h"
 
 #if USE_MOTOR_MIXING
 #include "subsystems/actuators/motor_mixing.h"
@@ -214,6 +215,7 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
 #endif
   uint8_t spray_state = get_spray_switch_state();
   uint16_t time_sec = sys_time.nb_sec;
+  int32_t ops_connect_info = (int32_t)((ops_info.con_flag)|(ops_info.sys_error)<<8);
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_STATUS(trans, dev, AC_ID,
                                   //&imu_nb_err, 
@@ -223,7 +225,7 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
                                   &fix, &autopilot_mode,
                                   &autopilot_in_flight, &autopilot_motors_on,
                                   &guidance_h.mode, &guidance_v_mode,
-                                  &electrical.vsupply, &electrical.current, &electrical.rep_cap, &electrical.temper,
+                                  &electrical.vsupply, &ops_connect_info, &electrical.rep_cap, &electrical.temper,
 								  &time_sec);
   #if OPEN_PC_DATALINK
   pprz_msg_send_ROTORCRAFT_STATUS(&((DOWNLINK_TRANSPORT).trans_tx), &((DOWNLINK_DEVICE).device), AC_ID,
