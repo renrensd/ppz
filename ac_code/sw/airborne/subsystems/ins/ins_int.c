@@ -637,7 +637,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
 			&ins_int.p_stable,
 			&gps.num_sv,
 			&gps_nmea.sol_tatus,
-			&gps.heading_sv_num,
+			&gps.head_stanum,
 			&ins_int.gps_heading,
 			&ins_int.mag_heading,
   		&gps_pos_cm_ned.x,

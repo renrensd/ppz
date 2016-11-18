@@ -89,7 +89,7 @@ ifeq ($(ARCH), linux)
 $(TARGET).LDFLAGS += -lrt
 endif
 
-#include $(CFG_SHARED)/fram.makefile
+ include $(CFG_SHARED)/fram.makefile
 
 ifndef NPS_OPTION
 #

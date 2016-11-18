@@ -146,7 +146,7 @@ void mag_cali_init(void)
 	mag_cali.cali_ok = FALSE;
 
 	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
-	AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+	AbiBindMsgGPS_HEADING(ABI_BROADCAST, &gps_ev, gps_cb);
 
 	MatSetValue(&step, 0.001f);
 
