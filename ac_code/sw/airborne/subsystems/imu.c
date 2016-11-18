@@ -127,12 +127,16 @@ void imu_init(void)
 
   imu.gyro_filter_fc = GYRO_FILTER_FC;
   imu.acc_filter_fc = ACC_FILTER_FC;
+  imu.mag_filter_fc = 10.0f;
   init_butterworth_2_low_pass_int(&(imu.gyro_x_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.gyro_y_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.gyro_z_filter), imu.gyro_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.acc_x_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.acc_y_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.acc_z_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
+  init_butterworth_2_low_pass_int(&(imu.mag_x_filter), imu.mag_filter_fc, 1.0f/256.0f, 0);   //need to get mag update fre
+  init_butterworth_2_low_pass_int(&(imu.mag_y_filter), imu.mag_filter_fc, 1.0f/256.0f, 0);
+  init_butterworth_2_low_pass_int(&(imu.mag_z_filter), imu.mag_filter_fc, 1.0f/256.0f, 0);
   
 #ifdef IMU_POWER_GPIO
   gpio_setup_output(IMU_POWER_GPIO);
@@ -242,6 +246,7 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
                   IMU_GYRO_Q_SENS_NUM) / IMU_GYRO_Q_SENS_DEN;
   _imu->gyro.r = ((_imu->gyro_unscaled.r - _imu->gyro_neutral.r) * IMU_GYRO_R_SIGN *
                   IMU_GYRO_R_SENS_NUM) / IMU_GYRO_R_SENS_DEN;
+  RATES_COPY(_imu->gyro_scaled, _imu->gyro);
 #ifndef NPS_SIMU
   if(!gyro_offset_success)
   {
@@ -263,6 +268,7 @@ void WEAK imu_scale_accel(struct Imu *_imu)
                    IMU_ACCEL_Y_SENS_NUM) / IMU_ACCEL_Y_SENS_DEN;
   _imu->accel.z = ((_imu->accel_unscaled.z - _imu->accel_neutral.z) * IMU_ACCEL_Z_SIGN *
                    IMU_ACCEL_Z_SENS_NUM) / IMU_ACCEL_Z_SENS_DEN;
+  VECT3_COPY(_imu->accel_scaled, _imu->accel);
 
    _imu->accel.x = update_butterworth_2_low_pass_int(&(_imu->acc_x_filter), _imu->accel.x);
    _imu->accel.y = update_butterworth_2_low_pass_int(&(_imu->acc_y_filter), _imu->accel.y);
@@ -289,19 +295,23 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 {
 	if(mag_cali.cali_ok)
 	{
-		_imu->mag.x = (_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN * _imu->mag_sens.x;
-		_imu->mag.y = (_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN * _imu->mag_sens.y;
-		_imu->mag.z = (_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN * _imu->mag_sens.z;
-
-	}
-	else
-	{
 		_imu->mag.x = ((_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN *
 											 IMU_MAG_X_SENS_NUM) / IMU_MAG_X_SENS_DEN;
 		_imu->mag.y = ((_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN *
 									 IMU_MAG_Y_SENS_NUM) / IMU_MAG_Y_SENS_DEN;
 		_imu->mag.z = ((_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN *
 									 IMU_MAG_Z_SENS_NUM) / IMU_MAG_Z_SENS_DEN;
+	VECT3_COPY(_imu->mag_scaled, _imu->mag);
+
+   _imu->mag.x = update_butterworth_2_low_pass_int(&(_imu->mag_x_filter), _imu->mag.x);
+   _imu->mag.y = update_butterworth_2_low_pass_int(&(_imu->mag_y_filter), _imu->mag.y);
+   _imu->mag.z = update_butterworth_2_low_pass_int(&(_imu->mag_z_filter), _imu->mag.z);
+	}
+	else
+	{
+		_imu->mag.x = (_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN * _imu->mag_sens.x;
+		_imu->mag.y = (_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN * _imu->mag_sens.y;
+		_imu->mag.z = (_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN * _imu->mag_sens.z;		
 	}
 }
 #else
