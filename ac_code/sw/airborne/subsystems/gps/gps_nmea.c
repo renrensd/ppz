@@ -186,7 +186,7 @@ void gps_nmea_msg(void)
   {
   	//median filter
   	//gps_nmea_data_filter_update(&gps);
-  	AbiSendMsgGPS_POS(GPS_NMEA_ID, now_ts, &gps);
+  	AbiSendMsgGPS_HEADING(GPS_NMEA_ID, now_ts, &gps);
   }
   gps_nmea.heading_available = FALSE;
  #endif
