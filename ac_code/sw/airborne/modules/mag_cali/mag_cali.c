@@ -22,8 +22,8 @@ struct MagCali mag_cali;
 static abi_event mag_ev;
 static abi_event gps_ev;
 
-static void sensors_mag_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
-static void sensors_mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
+static void mag_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
+static void mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
 
 #define MAG_SENSITIVITY		(12000) // LSB/G
 #define NORM_MAG	(0.6f) // Gauss
@@ -69,9 +69,9 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
-                   struct GpsState *gps)
+                   struct GpsState *gps_s)
 {
-	if(!gps->h_stable)
+	if(!gps_s->h_stable)
 	{
 		mag_cali.state = MAG_CALI_IDLE;
 		return;
@@ -99,7 +99,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 	}
 	else if(mag_cali.state == MAG_CALI_GRAB)
 	{
-		float gps_heading_rad = gps->heading * my_math_deg_to_rad;
+		float gps_heading_rad = gps_s->heading * my_math_deg_to_rad;
 		gps_heading_rad = LimitAngleTo_0_2pi(gps_heading_rad);
 		uint8_t index = gps_heading_rad/(my_math_2pi/(float)MAG_CALI_CIRCLE_SPLITE_NUM);
 		if(index > 9)
@@ -219,8 +219,8 @@ void mag_cali_init(void)
 //
 //	for (uint16_t i = 0; i < 100; ++i)
 //	{
-//		sensors_mag_cali_calc_F(&F, &p, grab_sum);
-//		sensors_mag_cali_calc_JT(&JT, &p, grab_sum);
+//		mag_cali_calc_F(&F, &p, grab_sum);
+//		mag_cali_calc_JT(&JT, &p, grab_sum);
 //		MatMult(&ev, &JT, &F);
 //		VectMult(&ev, 0, &ev, 0, &step, 0);
 //		MatSub(&p, &p, &ev);
@@ -233,11 +233,11 @@ void mag_cali_periodic(void)
 	{
 		if(mag_cali.enable == TRUE)
 		{
-			sensors_mag_cali_start();
+			mag_cali_start();
 		}
 		else
 		{
-			sensors_mag_cali_stop();
+			mag_cali_stop();
 		}
 	}
 	mag_cali.enable_prev = mag_cali.enable;
@@ -304,8 +304,8 @@ void mag_cali_periodic(void)
 	}
 	else if (mag_cali.state == MAG_CALI_CALC2)
 	{
-		sensors_mag_cali_calc_F(&F, &p, mag_cali.grab_sum);
-		sensors_mag_cali_calc_JT(&JT, &p, mag_cali.grab_sum);
+		mag_cali_calc_F(&F, &p, mag_cali.grab_sum);
+		mag_cali_calc_JT(&JT, &p, mag_cali.grab_sum);
 		MatMult(&ev, &JT, &F);
 		VectMult(&ev, 0, &ev, 0, &step, 0);
 		MatSub(&p, &p, &ev);
@@ -365,7 +365,8 @@ void mag_cali_periodic(void)
 				&mag_cali.state,
 				&mag_cali.cali_ok,
 				&mag_cali.grab_index,
-				MAG_CALI_GRAB_NUM, &mag_cali.grab_tick,
+				MAG_CALI_GRAB_NUM,
+				mag_cali.grab_tick,
 				&mag_cali.gain[0],
 				&mag_cali.gain[1],
 				&mag_cali.offset[0],
@@ -378,14 +379,14 @@ void mag_cali_event(void)
 
 }
 
-void sensors_mag_cali_start(void)
+void mag_cali_start(void)
 {
 	if( mag_cali.state == MAG_CALI_IDLE )
 	{
 		mag_cali.state = MAG_CALI_INI;
 	}
 }
-void sensors_mag_cali_stop(void)
+void mag_cali_stop(void)
 {
 	if( mag_cali.state != MAG_CALI_CALC1 )
 	{
@@ -393,13 +394,13 @@ void sensors_mag_cali_stop(void)
 	}
 }
 
-static void sensors_mag_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2])
+static void mag_cali_calc_F(struct _s_matrix *_F, struct _s_matrix *_p, float _v[MAG_CALI_GRAB_NUM][2])
 {
 	uint8_t i;
-	float kx = p->data[0];
-	float ky = p->data[1];
-	float bx = p->data[2];
-	float by = p->data[3];
+	float kx = _p->data[0];
+	float ky = _p->data[1];
+	float bx = _p->data[2];
+	float by = _p->data[3];
 	float kx2 = kx*kx;
 	float ky2 = ky*ky;
 	float bx2 = bx*bx;
@@ -413,23 +414,23 @@ static void sensors_mag_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, fl
 
 	for(i=0;i<MAG_CALI_GRAB_NUM;++i)
 	{
-		vx = v[i][0];
-		vy = v[i][1];
+		vx = _v[i][0];
+		vy = _v[i][1];
 		vx2 = vx * vx;
 		vy2 = vy * vy;
 
-		F->data[i] =  kx2*vx2 - 2.0f*kx2*vx*bx + kx2*bx2 +
+		_F->data[i] =  kx2*vx2 - 2.0f*kx2*vx*bx + kx2*bx2 +
 									ky2*vy2 - 2.0f*ky2*vy*by + ky2*by2 - 1.0f;
 	}
 }
 
-static void sensors_mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2])
+static void mag_cali_calc_JT(struct _s_matrix *_JT, struct _s_matrix *_p, float _v[MAG_CALI_GRAB_NUM][2])
 {
 	uint8_t i;
-	float kx = p->data[0];
-	float ky = p->data[1];
-	float bx = p->data[2];
-	float by = p->data[3];
+	float kx = _p->data[0];
+	float ky = _p->data[1];
+	float bx = _p->data[2];
+	float by = _p->data[3];
 	float kx2 = kx*kx;
 	float ky2 = ky*ky;
 	float bx2 = bx*bx;
@@ -441,14 +442,14 @@ static void sensors_mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, 
 
 	for(i=0;i<MAG_CALI_GRAB_NUM;++i)
 	{
-		vx = v[i][0];
-		vy = v[i][1];
+		vx = _v[i][0];
+		vy = _v[i][1];
 		vx2 = vx * vx;
 		vy2 = vy * vy;
 
-		JT->data[i*4+0] = 2.0f*kx*vx2 - 4.0f*kx*vx*bx + 2.0f*kx*bx2;
-		JT->data[i*4+1] = 2.0f*ky*vy2 - 4.0f*ky*vy*by + 2.0f*ky*by2;
-		JT->data[i*4+2] = -2.0f*kx2*vx + 2.0f*kx2*bx;
-		JT->data[i*4+3] = -2.0f*ky2*vy + 2.0f*ky2*by;
+		_JT->data[i*4+0] = 2.0f*kx*vx2 - 4.0f*kx*vx*bx + 2.0f*kx*bx2;
+		_JT->data[i*4+1] = 2.0f*ky*vy2 - 4.0f*ky*vy*by + 2.0f*ky*by2;
+		_JT->data[i*4+2] = -2.0f*kx2*vx + 2.0f*kx2*bx;
+		_JT->data[i*4+3] = -2.0f*ky2*vy + 2.0f*ky2*by;
 	}
 }

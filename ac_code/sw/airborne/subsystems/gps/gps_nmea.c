@@ -121,10 +121,10 @@ static void gps_nmea_data_filter_ini(void)
 	InitMedianFilterVect3Int(gps_nmea.ecef_pos_filter);
 	InitMedianFilterVect3Int(gps_nmea.ecef_vel_filter);
 }
-static void gps_nmea_data_filter_update(struct GpsState *gps)
+static void gps_nmea_data_filter_update(struct GpsState *gps_s)
 {
-	UpdateMedianFilterVect3Int(gps_nmea.ecef_pos_filter, gps->ecef_pos);
-	UpdateMedianFilterVect3Int(gps_nmea.ecef_vel_filter, gps->ecef_vel);
+	UpdateMedianFilterVect3Int(gps_nmea.ecef_pos_filter, gps_s->ecef_pos);
+	UpdateMedianFilterVect3Int(gps_nmea.ecef_vel_filter, gps_s->ecef_vel);
 }
 
 void gps_impl_init(void)
