@@ -56,6 +56,22 @@ void ops_msg_heart_beat(void)
 }
 
 /*******************************************************************************
+**  FUNCTION      : ops_msg_self_clean                                         
+**  DESCRIPTION   : 
+**  PARAMETERS    : 
+**  RETURN        : void                                                          
+*******************************************************************************/
+void ops_msg_self_clean(void)
+{
+	uint8_t arg[2];
+   	arg[0] = OPS_PRIO_GENERAL;
+	arg[1] = OPS_SELF_CLEAN;
+
+   	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+}
+
+/*******************************************************************************
 **  FUNCTION      : ops_msg_start_spraying                                         
 **  DESCRIPTION   : void 
 **  PARAMETERS    : flow - spraying flow(mL/min). 
@@ -86,6 +102,20 @@ void ops_msg_stop_spraying(void)
 
    	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
    	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+}
+
+/*******************************************************************************
+**  FUNCTION      : ops_msg_request_sv(void)                                         
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void ops_msg_request_sv(void)
+{
+	uint8_t arg[6];
+   	arg[0] = OPS_PRIO_DIAGNOSE;
+
+   	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_REQUEST_SOFTWARE_VERSION,6, &arg[0]);
 }
 
 /*******************************************************************************
@@ -255,6 +285,12 @@ void ops_msg_device_manage_handler(OPS_UART_FRAME *ops_msg)
 			else
 			{
 				//TODOM:error logo.
+			}
+			break;
+		case OPS_REQUEST_SOFTWARE_VERSION:
+			if(param[1] == OPS_POSITIVE_RESULT)
+			{
+				ops_software_version_handler(ops_msg->param + 1, ops_msg->size);
 			}
 			break;
 		

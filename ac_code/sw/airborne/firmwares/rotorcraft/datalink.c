@@ -415,6 +415,7 @@ void dl_parse_msg(void)
 		  }
          xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 		  DOWNLINK_SEND_AIRCRAFT_BIND_ACK_STATE(SecondChannel, SecondDevice, &code_check);
+		  send_aircraft_info_state();
 		  break;
 	   }	
 		#endif	/* DATALINK==XBEE */
