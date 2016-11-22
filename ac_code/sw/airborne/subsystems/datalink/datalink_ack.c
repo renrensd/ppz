@@ -13,6 +13,7 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/ops/ops_app_if.h"
 #include "subsystems/ops/ops_msg_if.h"
+#include "subsystems/eng/eng_app_if.h"
 #include "subsystems/monitoring/monitoring.h"
 
 /*
@@ -63,7 +64,7 @@ void send_heart_beat_A2R_msg(void)
 }
 
 void send_heart_beat_A2VR_msg(void)
-{
+{   
 	uint16_t system_time = sys_time.nb_sec;
 	uint8_t ac_state = (uint8_t)autopilot_in_flight;
 	uint8_t battery_remain = 85;      //unit=percent, need update from battery module
@@ -81,7 +82,7 @@ void send_heart_beat_A2VR_msg(void)
 	}
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_HEART_BEAT_AC_RC_STATE(SecondChannel, SecondDevice,
-		                                 &system_time,
+		                                 &system_time, 
 		                                 &ac_state,
 		                                 &flight_mode,
 		                                 &battery_remain,
@@ -94,6 +95,7 @@ void send_heart_beat_A2VR_msg(void)
 		                                 &rc_alert_grade,
 		                                 &spray_flag);
 }
+
 
 void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 {   
@@ -186,7 +188,21 @@ void send_aircraft_info_state(void)
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
-	char     sn_and_sv[30]="EFA113";	 //fix info
+	char     ac_sn[10]="EFA113";	 //fix info
+	char     ac_sv[25]="";
+	char     ops_sv[25]="";
+	char     bbox_sv[25]="";
+	
+	char*    buf = eng_get_ac_version(); 
+	for(uint8_t i=0; i<25; i++)
+	{
+		ac_sv[i] = *(buf+i);
+	}
+	buf = &(ops_info.ops_sv[0]);
+	for(uint8_t j=0; j<25; j++)
+	{
+		ops_sv[j] = *(buf+j);
+	}
 	
 	xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_AIRCRAFT_INFO_STATE(SecondChannel, SecondDevice, 
@@ -201,7 +217,10 @@ void send_aircraft_info_state(void)
 		                              &atomization_grade,
 		                              &max_flight_speed, 
 		                              &spray_flight_speed, 
-		                              &sn_and_sv[0]);
+		                              &ac_sn[0],
+		                              &ac_sv[0],
+		                              &ops_sv[0],
+		                              &bbox_sv[0]);
 }
 
 uint8_t DlSetCommand(uint8_t id, uint8_t pt_value)
@@ -220,6 +239,24 @@ uint8_t DlSetCommand(uint8_t id, uint8_t pt_value)
 			
 		case DELETE_ALL:
 			response = command_delete_all_task();
+			break;
+
+		case OPS_SELFCLEAN:
+			if(pt_value)
+			{
+				if(1)//!autopilot_in_flight)
+				{
+					ops_msg_start_selfclean();
+				}
+				else
+				{
+					response = 1;
+				}
+			}
+			else
+			{
+				ops_msg_stop_selfclean();
+			}
 			break;
 			
 		default:  
