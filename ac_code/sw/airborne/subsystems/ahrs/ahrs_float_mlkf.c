@@ -224,7 +224,7 @@ void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
   float_vect3_normalize(&mag_ic);
 
   float norm = float_vect3_norm(&mag_bm);
-  norm = float_vect3_norm(&mag_bm_i);
+  //norm = float_vect3_norm(&mag_bm_i);
   mag_ic.x *= norm;
   mag_ic.y *= norm;
 
@@ -335,12 +335,12 @@ static inline void propagate_state(float dt)
   const float dq = ahrs_mlkf.imu_rate.q * dt;
   const float dr = ahrs_mlkf.imu_rate.r * dt;
 
-  float F[6][6] = {	{  1.,   dr,  -dq,  -dt,   0.,   0.  },
-										{ -dr,   1.,   dp,   0.,  -dt,   0.  },
-										{  dq,  -dp,   1.,   0.,   0.,  -dt  },
-										{  0.,   0.,   0.,   1.,   0.,   0.  },
-										{  0.,   0.,   0.,   0.,   1.,   0.  },
-										{  0.,   0.,   0.,   0.,   0.,   1.  }
+  float F[6][6] = {{  1.,   dr,  -dq,  -dt,   0.,   0.  },
+				    { -dr,   1.,   dp,   0.,  -dt,   0.  },
+				    {  dq,  -dp,   1.,   0.,   0.,  -dt  },
+				    {  0.,   0.,   0.,   1.,   0.,   0.  },
+				    {  0.,   0.,   0.,   0.,   1.,   0.  },
+				    {  0.,   0.,   0.,   0.,   0.,   1.  }
   };
   // P = FPF' + GQG
   float tmp[6][6];

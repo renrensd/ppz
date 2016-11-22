@@ -396,9 +396,9 @@ void guidance_v_run(bool_t in_flight)
 
 	case GUIDANCE_V_MODE_RC_DIRECT:
 		guidance_v_z_sp = stateGetPositionNed_i()->z; // for display only
-		//if ( guidance_v_rc_delta_t > 1400)
-			//stabilization_cmd[COMMAND_THRUST] = (guidance_v_rc_delta_t - 1400) / 5 * 4	+ 1400;
-		//else
+		if ( guidance_v_rc_delta_t > 1400)
+			stabilization_cmd[COMMAND_THRUST] = (guidance_v_rc_delta_t - 1400) / 5 * 4	+ 1400;
+		else
 			stabilization_cmd[COMMAND_THRUST] = guidance_v_rc_delta_t;
 		break;
 
