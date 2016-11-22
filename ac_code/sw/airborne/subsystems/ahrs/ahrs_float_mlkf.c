@@ -107,7 +107,7 @@ void ahrs_mlkf_init(void)
   memcpy(ahrs_mlkf.P, P0, sizeof(P0));
 
   VECT3_ASSIGN(ahrs_mlkf.mag_noise, 10, 10, 10);
-  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 1, 1, 1);
+  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 0.1f, 0.1f, 0.1f);
 
 #ifdef AHRS_GYRO_BW_FILTER
   init_butterworth_2_low_pass_int(&filter_p, 18, (1. / 512), 0);

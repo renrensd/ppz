@@ -191,6 +191,7 @@ void gps_periodic_check(void)
     gps.p_stable = FALSE;
   }
  #else
+  gps_nmea_msg_outtime_check();
   get_gps_pos_stable();
   #ifdef USE_GPS_HEADING
   get_gps_heading_stable();

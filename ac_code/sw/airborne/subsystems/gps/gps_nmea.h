@@ -39,11 +39,31 @@
 
 #define NMEA_MAXLEN 510
 
+/*information form RTK datasheet, page 84*/
+enum Xyzmsg_Pos_Type
+{
+	NONE = 0,
+	FIXEDPOS = 1,
+	DOPPLER_VELOCITY = 8,
+	SINGLE = 16,
+	PSRDIFF = 17,
+	SBAS = 18,
+	NARROW_FLOAT = 34,
+	WIDE_INT = 49,
+	NARROW_INT = 50,
+	SUPER_WIDE_LANE = 51,
+	PPP = 69,
+	TIME_OUT = 2  //whp add, once update need check the value
+};
+
 struct GpsNmea {
   bool_t msg_available;
   bool_t pos_available;
  #if USE_XYZA
   bool_t pos_xyz_available;
+ #endif
+ #ifdef USE_GPS_HEADING
+  bool_t heading_available;
  #endif
   bool_t is_configured;       ///< flag set to TRUE if configuration is finished
   bool_t have_gsv;            ///< flag set to TRUE if GPGSV message received
@@ -52,12 +72,16 @@ struct GpsNmea {
   
   uint8_t status;             ///< line parser status
   uint8_t gps_qual;           ///< RTK FIX(0x04) OR RTK FLOAT(0x05) OR SINGLE(0x01)
+  enum Xyzmsg_Pos_Type pos_type;
   
   uint8_t sol_tatus;          ///< gps heading status
   uint8_t num_sta_use;        ///< number of sta in used
   uint32_t msg_len;
   float heading;
   float pitch;
+
+  uint32_t last_xyzmsg_time; ///< last available msg cpu time(ms)
+  uint32_t last_tramsg_time; ///< last available msg cpu time(ms)
 
   //median filter
   struct MedianFilter3Int ecef_pos_filter;
@@ -83,6 +107,7 @@ extern void nmea_parse_prop_msg(void);
 extern void gps_nmea_msg(void);
 extern void get_gps_pos_stable(void);
 extern void get_gps_heading_stable(void);
+extern void gps_nmea_msg_outtime_check(void);
 
 static inline void GpsEvent(void)
 {

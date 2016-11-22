@@ -270,7 +270,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 void ins_xsens_register(void)
 {
   ins_register_impl(ins_xsens_init);
-  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgGPS_POS(ABI_BROADCAST, &gps_ev, gps_cb);
 }
 
 void ins_xsens_update_gps(struct GpsState *gps_s)

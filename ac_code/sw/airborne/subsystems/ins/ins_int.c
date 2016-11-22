@@ -473,7 +473,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 #ifdef GPS_INSTALL_BIAS
 /*unit :cm, body frame*/
   #define  INS_BODY_TO_GPS_X  0
-  #define  INS_BODY_TO_GPS_Y  27
+  #define  INS_BODY_TO_GPS_Y  33
   #define  INS_BODY_TO_GPS_Z  0
 #endif
 static bool_t gps_pos_inspect(struct NedCoor_i data)
@@ -654,7 +654,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
 			&ins_int.p_stable,
 			&gps.num_sv,
 			&gps_nmea.sol_tatus,
-			&gps.heading_sv_num,
+			&gps.head_stanum,
 			&ins_int.gps_heading,
 			&ins_int.mag_heading,
   		&gps_pos_cm_ned.x,
@@ -997,7 +997,7 @@ void ins_int_register(void)
    * Subscribe to scaled IMU measurements and attach callbacks
    */
   AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
-  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgGPS_POS(ABI_BROADCAST, &gps_ev, gps_cb);
   AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
   #if USE_FLOW
   AbiBindMsgFLOW(ABI_BROADCAST, &flow_ev, flow_cb);

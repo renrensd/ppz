@@ -108,7 +108,6 @@ struct GpsState {
 
   //**********************HJS-ZAM-GPS-HEAD
   float heading;
-  uint8_t heading_sv_num;
   //float pitch;
   bool_t h_stable;              ///< heading stable flag
   uint8_t head_stanum;

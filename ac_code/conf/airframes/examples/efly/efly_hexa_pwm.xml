@@ -22,7 +22,7 @@
     <!--define name="WITHOUT_RADIO"/-->   <!--not use radio_control-->
     <define name="RADIO_KILL_SWITCH" value="1"/>    
     <define name="USE_FLIGHT_HEIGHT_LIMIT"/>
-	<!--define name="ESC_CALIBRATION"/-->
+    <!--define name="ESC_CALIBRATION"/-->
 
     <!--define name="MILLIAMP_AT_FULL_THROTTLE" value="80000"/-->
 
