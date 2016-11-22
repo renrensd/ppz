@@ -300,11 +300,12 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 									 IMU_MAG_Y_SENS_NUM) / IMU_MAG_Y_SENS_DEN;
 		_imu->mag.z = ((_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN *
 									 IMU_MAG_Z_SENS_NUM) / IMU_MAG_Z_SENS_DEN;
+
 		VECT3_COPY(_imu->mag_scaled, _imu->mag);
 
 		_imu->mag.x = update_butterworth_2_low_pass_int(&(_imu->mag_x_filter), _imu->mag.x);
-	  	_imu->mag.y = update_butterworth_2_low_pass_int(&(_imu->mag_y_filter), _imu->mag.y);
-	   	_imu->mag.z = update_butterworth_2_low_pass_int(&(_imu->mag_z_filter), _imu->mag.z);
+		_imu->mag.y = update_butterworth_2_low_pass_int(&(_imu->mag_y_filter), _imu->mag.y);
+		_imu->mag.z = update_butterworth_2_low_pass_int(&(_imu->mag_z_filter), _imu->mag.z);
 	}
 	else
 	{

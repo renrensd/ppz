@@ -206,7 +206,6 @@ void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
   struct FloatVect3 mag_bmv;
   struct FloatVect3 mag_bm_i;
   struct FloatVect3 mag_ic;
-  struct FloatVect3 mag_ic_b;
 
   MAGS_FLOAT_OF_BFP(mag_bm, *mag);
 
@@ -218,7 +217,7 @@ void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
   //float_vect3_normalize(&mag_bm);
 
 
-  // generate a virtual mag_ic_b that has the same length with mag_bm generated in last step
+  // generate a virtual mag_ic that has the same length with mag_bm generated in last step
   mag_ic = ahrs_mlkf.mag_h;
   mag_ic.z = 0;
   float_vect3_normalize(&mag_ic);

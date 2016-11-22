@@ -134,7 +134,7 @@ static inline void ahrs_float_get_quat_from_accel_mag(struct FloatQuat *q, struc
 }
 
 static inline void ahrs_float_get_quat_from_accel_gps_heading(struct FloatQuat *q, struct Int32Vect3 *accel,
-		struct GpsState *gps)
+		struct GpsState *gps_s)
 {
 
   /* the quaternion representing roll and pitch from acc measurement */
@@ -142,7 +142,7 @@ static inline void ahrs_float_get_quat_from_accel_gps_heading(struct FloatQuat *
   struct FloatQuat q_gps_h;
 
 	//
-  float h_theta = gps->heading * 3.1415926f / 180.0f / 2.0f;
+  float h_theta = gps_s->heading * 3.1415926f / 180.0f / 2.0f;
   q_gps_h.qx = 0.0;
   q_gps_h.qy = 0.0;
   q_gps_h.qz = sinf(h_theta);
