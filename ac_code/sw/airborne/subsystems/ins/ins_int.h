@@ -75,6 +75,7 @@ struct InsInt {
   bool_t baro_initialized;
   bool_t baro_valid;// not used !!!
   float R_baro;
+  float R_gps;
   float R_baro_offset;
   uint32_t baro_to_gps_count;
   float baro_to_gps_offset_step;
