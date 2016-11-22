@@ -84,6 +84,16 @@ void mpu9250_spi_start_configure(struct Mpu9250_Spi *mpu)
   }
 }
 
+// Configuration function called once before normal use
+bool_t mpu9250_spi_start_self_test(struct Mpu9250_Spi *mpu)
+{
+	return mpu9250_start_self_test(mpu9250_spi_write_to_reg, (void *)mpu, &(mpu->config));
+}
+bool_t mpu9250_spi_end_self_test(struct Mpu9250_Spi *mpu)
+{
+	return mpu9250_end_self_test(mpu9250_spi_write_to_reg, (void *)mpu, &(mpu->config));
+}
+
 void mpu9250_spi_read(struct Mpu9250_Spi *mpu)
 {
   if (mpu->config.initialized && mpu->spi_trans.status == SPITransDone) {
