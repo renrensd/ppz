@@ -9,7 +9,7 @@
   <settings>
     <dl_settings>
       <dl_settings name="mag_cali">
-        <dl_setting min="0" max="1" step="1" values="OFF|ON" var="mag_cali.enable" module="mag_cali/mag_cali" shortname="Enable"/>
+        <dl_setting min="0" max="1" step="1" values="OFF|ON" var="mag_cali.manual_enable" module="mag_cali/mag_cali" shortname="Enable"/>
       </dl_settings>
     </dl_settings>
   </settings>

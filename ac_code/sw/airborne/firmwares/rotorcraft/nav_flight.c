@@ -22,6 +22,7 @@
 #include "firmwares/rotorcraft/pvtolc.h"
 
 #include "modules/system/timer_if.h"
+#include "modules/mag_cali/mag_cali.h"
 
 
 uint8_t  flight_mode;       //nav_gcs_mode/nav_rc_mode,requested autopilot_mode==NAV
@@ -251,12 +252,16 @@ void nav_flight(void)
 			{
 				take_off_motion(TRUE);
 				flight_step = 5;      /*jump from take off to land*/
+				mag_cali_nav_loop(FALSE);
 				break;
 			}
-			if( !take_off_motion(FALSE) )  //process take off motion
+			if( !take_off_motion(FALSE) )	// take off done
 			{
-				record_current_waypoint(&wp_take_off);  /*record take off waypoint as wp_take_off*/
-				flight_step++;          /*take_off motion finished, next cruise step*/
+				if( mag_cali_nav_loop(TRUE) )
+				{
+					record_current_waypoint(&wp_take_off);  /*record take off waypoint as wp_take_off*/
+					flight_step++;          /*take_off motion finished, next cruise step*/
+				}
 			}
 			break;
 

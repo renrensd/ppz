@@ -31,9 +31,11 @@ enum _e_mag_cali_status
 
 struct MagCali
 {
-  bool_t enable;
-  bool_t enable_prev;
+  bool_t manual_enable;
+  bool_t manual_enable_prev;
   enum _e_mag_cali_status state;
+  bool_t need_cali;
+  bool_t auto_cali;
   bool_t cali_ok;
 
   uint8_t grab_tick[MAG_CALI_GRAB_NUM];
@@ -49,8 +51,7 @@ extern void mag_cali_init(void);
 extern void mag_cali_periodic(void);
 extern void mag_cali_event(void);
 
-extern void mag_cali_start(void);
-extern void mag_cali_stop(void);
+extern bool_t mag_cali_nav_loop(bool_t run);
 
 extern struct MagCali mag_cali;
 

@@ -25,8 +25,14 @@ static abi_event gps_ev;
 static void mag_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
 static void mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
 
+static void mag_cali_start(bool_t auto_cali);
+static void mag_cali_stop(void);
+static bool_t is_mag_cali_done(void);
+
 #define MAG_SENSITIVITY		(12000) // LSB/G
 #define NORM_MAG	(0.6f) // Gauss
+
+extern int32_t nav_heading; // from navigation.c
 
 static void mag_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp __attribute__((unused)),
@@ -142,7 +148,11 @@ void mag_cali_init(void)
 	MATRIX_INI(ev);
 	MATRIX_INI(step);
 
-	mag_cali.enable = FALSE;
+	mag_cali.manual_enable = FALSE;
+	mag_cali.manual_enable_prev = FALSE;
+	mag_cali.state = MAG_CALI_IDLE;
+	mag_cali.need_cali = FALSE; // TODO: according to fram mag cali block
+	mag_cali.auto_cali = FALSE;
 	mag_cali.cali_ok = FALSE;
 
 	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
@@ -227,22 +237,32 @@ void mag_cali_init(void)
 //	}
 }
 
+
+
 void mag_cali_periodic(void)
 {
-	if(mag_cali.enable_prev != mag_cali.enable)
+	if(mag_cali.manual_enable_prev != mag_cali.manual_enable)
 	{
-		if(mag_cali.enable == TRUE)
+		if(mag_cali.manual_enable == TRUE)
 		{
-			mag_cali_start();
+			mag_cali_start(FALSE);
 		}
 		else
 		{
 			mag_cali_stop();
 		}
 	}
-	mag_cali.enable_prev = mag_cali.enable;
+	mag_cali.manual_enable_prev = mag_cali.manual_enable;
 
-	if(mag_cali.state == MAG_CALI_CALC1)
+	if(mag_cali.state == MAG_CALI_GRAB)
+	{
+		if(mag_cali.auto_cali)
+		{
+			nav_heading += ((ANGLE_BFP_OF_REAL(RadOfDeg(30.)) / MAG_CALI_PERIODIC_FREQ));
+			INT32_COURSE_NORMALIZE(nav_heading);
+		}
+	}
+	else if(mag_cali.state == MAG_CALI_CALC1)
 	{
 		for (uint8_t i = 0; i < MAG_CALI_GRAB_NUM; ++i)
 		{
@@ -379,19 +399,58 @@ void mag_cali_event(void)
 
 }
 
-void mag_cali_start(void)
+static void mag_cali_start(bool_t auto_cali)
 {
 	if( mag_cali.state == MAG_CALI_IDLE )
 	{
+		mag_cali.auto_cali = auto_cali;
 		mag_cali.state = MAG_CALI_INI;
 	}
 }
-void mag_cali_stop(void)
+static void mag_cali_stop(void)
 {
-	if( mag_cali.state != MAG_CALI_CALC1 )
+	mag_cali.state = MAG_CALI_IDLE;
+	mag_cali.auto_cali = FALSE;
+}
+static bool_t is_mag_cali_done(void)
+{
+	return (mag_cali.state == MAG_CALI_IDLE);
+}
+
+bool_t mag_cali_nav_loop(bool_t run)
+{
+	bool_t to_next_step = FALSE;
+	static bool_t run_prev = FALSE;
+
+	if(!run)
 	{
-		mag_cali.state = MAG_CALI_IDLE;
+		mag_cali_stop();
+		return TRUE;
 	}
+
+	if(mag_cali.need_cali)
+	{
+		if ((!run_prev) && run)
+		{
+			mag_cali_start(TRUE);
+		}
+		run_prev = run;
+
+		if(is_mag_cali_done())
+		{
+			to_next_step = TRUE;
+		}
+		else
+		{
+			to_next_step = FALSE;
+		}
+	}
+	else
+	{
+		to_next_step = TRUE;
+	}
+
+	return to_next_step;
 }
 
 static void mag_cali_calc_F(struct _s_matrix *_F, struct _s_matrix *_p, float _v[MAG_CALI_GRAB_NUM][2])
