@@ -74,7 +74,7 @@ struct AhrsMlkf {
   /** body_to_imu rotation */
   struct OrientationReps body_to_imu;
 
-  enum AhrsMlkfStatus status;
+  enum AhrsMlkfStatus mlkf_state;
   bool_t is_aligned;
   int32_t virtual_h_stable;
   enum _e_ahrs_mlkf_heading_status heading_state;
@@ -99,9 +99,9 @@ extern void ahrs_float_mlkf_SetGpsHeadingNoise(float noise);
 
 //*********cpz-gps-heading
 #ifdef USE_GPS_HEADING
-extern void ahrs_mlkf_update_gps(struct GpsState *gps);
+extern void ahrs_mlkf_update_gps(struct GpsState *gps_s);
 
-extern void ahrs_mlkf_update_gps_heading(struct GpsState *gps);
+extern void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s);
 #endif
 
 

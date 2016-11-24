@@ -54,11 +54,10 @@ enum _e_v_pid_loop_mode
 
 struct _s_guidance_v
 {
-	enum _e_v_pid_loop_mode pid_loop_mode;
-	enum _e_v_pid_loop_mode pid_loop_mode_now;
+	enum _e_v_pid_loop_mode pid_loop_mode_gcs;
+	enum _e_v_pid_loop_mode pid_loop_mode_running;
 	bool_t thr_in_deadband;
 	bool_t thr_in_deadband_prev;
-	int32_t z_sp;
 	float NED_z_acc;
 	float NED_z_speed;
 	float NED_z_pos;
@@ -69,12 +68,14 @@ struct _s_guidance_v
 	struct _s_pid acc_z_pid;
 	struct _s_pid speed_z_pid;
 	struct _s_pid pos_z_pid;
+	float rc_pos_z;
 	float rc_speed_z;
 	float rc_acc_z;
 	float ref_pos_z;
 	float ref_speed_z;
 	float ref_acc_z;
 	Butterworth2LowPass NED_z_acc_filter;
+	float thrust_coef;
 };
 
 extern struct _s_guidance_v guid_v;

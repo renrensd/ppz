@@ -120,8 +120,8 @@ int32_t c_az = 0; //su du huan shuchu ,jia su du huan gei ding shuru
 
 static int32_t get_vertical_thrust_coeff(void);
 static void run_hover_loop(bool_t in_flight);
-static void dynamic_pid_check(void);
 static void guidance_v_controller_ini(void);
+static void state_update_loop(void);
 
 float fsg(float x, float d);
 float fhan(float signal);
@@ -224,17 +224,12 @@ void guidance_v_init(void)
 #endif
 }
 
-static guidance_v_get_temp_v_z_sp(void)
-{
-	guid_v.z_sp = stateGetPositionNed_i()->z;
-	//guid_v.ref_pos_z = - POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
-}
-
 static void guidance_v_controller_ini(void)
 {
 	guid_v.acc_filter_fc = 5;
 	guid_v.speed_filter_fc = 10;
-	guid_v.pid_loop_mode = ACC_SPEED_POS;
+	guid_v.pid_loop_mode_gcs = ACC_SPEED_POS;
+	guid_v.pid_loop_mode_running = ACC_SPEED_POS;
 
 	pid_ini(&guid_v.acc_z_pid, 512);
 	pid_ini(&guid_v.speed_z_pid, 512);
@@ -242,10 +237,10 @@ static void guidance_v_controller_ini(void)
 
 	pid_set_out_range(&guid_v.acc_z_pid, 0, 1);
 	pid_set_Ui_range(&guid_v.acc_z_pid, 0, 1);
-	pid_set_out_range(&guid_v.speed_z_pid, -5, 5);
-	pid_set_Ui_range(&guid_v.speed_z_pid, -5, 5);
-	pid_set_out_range(&guid_v.pos_z_pid, -3, 3);
-	pid_set_Ui_range(&guid_v.pos_z_pid, -3, 3);
+	pid_set_out_range(&guid_v.speed_z_pid, -3, 3);
+	pid_set_Ui_range(&guid_v.speed_z_pid, -3, 3);
+	pid_set_out_range(&guid_v.pos_z_pid, -2, 2);
+	pid_set_Ui_range(&guid_v.pos_z_pid, -2, 2);
 
 	guid_v.acc_z_pid.Kp = 0.02f;
 	guid_v.acc_z_pid.Ki = 0.5f;
@@ -278,7 +273,6 @@ void guidance_v_read_rc(void)
 	{
 		if (guid_v.thr_in_deadband)
 		{
-			guidance_v_get_temp_v_z_sp();
 		}
 	}
 	guid_v.thr_in_deadband_prev = guid_v.thr_in_deadband;
@@ -337,10 +331,10 @@ void guidance_v_mode_changed(uint8_t new_mode)
 	{
 	case GUIDANCE_V_MODE_HOVER:
 	case GUIDANCE_V_MODE_GUIDED:
-		guidance_v_get_temp_v_z_sp();
+		guid_v.rc_pos_z = guid_v.NED_z_pos;
 		guid_v.acc_z_pid.Ui = (float)guidance_v_rc_delta_t * (1.0f/(float)MAX_PPRZ) * (1.0f/0.8f);
 		guidance_v_z_sp = stateGetPositionNed_i()->z; // set current altitude as setpoint
-		GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0);
+		GuidanceVSetRef(guidance_v_z_sp, 0, 0);
 		break;
 	case GUIDANCE_V_MODE_RC_CLIMB:
 	case GUIDANCE_V_MODE_CLIMB:
@@ -375,7 +369,7 @@ void guidance_v_notify_in_flight(bool_t in_flight)
 
 void guidance_v_run(bool_t in_flight)
 {
-
+	state_update_loop();
 	// FIXME... SATURATIONS NOT TAKEN INTO ACCOUNT
 	// AKA SUPERVISION and co
 	guidance_v_thrust_coeff = get_vertical_thrust_coeff();
@@ -552,9 +546,29 @@ uint8_t get_error_z(void)
 	}
 }
 
+static void state_update_loop(void)
+{
+	guid_v.NED_z_acc = - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z);
+	guid_v.NED_z_speed = - SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z);
+	guid_v.NED_z_pos = - POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
+
+	update_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, guid_v.NED_z_acc);
+
+
+	guid_v.rc_speed_z = - SPEED_FLOAT_OF_BFP(guidance_v_rc_zd_sp);
+	guid_v.rc_acc_z = 3.0f * guid_v.rc_speed_z;
+	if(!guid_v.thr_in_deadband)
+	{
+		guid_v.rc_pos_z += guid_v.rc_speed_z * guid_v.pos_z_pid.dT;
+	}
+
+	guid_v.thrust_coef = FLOAT_OF_BFP(get_vertical_thrust_coeff(), INT32_TRIG_FRAC);
+	guid_v.thrust_coef = 1.0f / guid_v.thrust_coef;
+	Bound(guid_v.thrust_coef, 0, 1.2f);
+}
+
 static void run_hover_loop(bool_t in_flight)
 {
-
 	/* convert our reference to generic representation */
 	int64_t tmp = gv_z_ref >> (GV_Z_REF_FRAC - INT32_POS_FRAC);
 	guidance_v_z_ref = (int32_t) tmp;
@@ -564,77 +578,69 @@ static void run_hover_loop(bool_t in_flight)
 
 	if (in_flight)
 	{
+		if (guidance_v_mode == GUIDANCE_V_MODE_HOVER)
+		{
+			guid_v.pid_loop_mode_running = guid_v.pid_loop_mode_gcs;
+			if ((guid_v.pid_loop_mode_running == ACC_SPEED) || (guid_v.pid_loop_mode_running == ACC_SPEED_POS))
+			{
+				if (guid_v.pid_loop_mode_running == ACC_SPEED_POS)
+				{
+					guid_v.ref_pos_z = guid_v.rc_pos_z;
+					pid_loop_calc_2(&guid_v.pos_z_pid, guid_v.ref_pos_z, guid_v.NED_z_pos, 0, guid_v.NED_z_speed);
+					guid_v.ref_speed_z = guid_v.pos_z_pid.out;
+				}
+				else
+				{
+					guid_v.ref_speed_z = guid_v.rc_speed_z;
+				}
+				//pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0, guid_v.NED_z_acc);
+				pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0,
+						get_butterworth_2_low_pass(&guid_v.NED_z_acc_filter));
+				guid_v.ref_acc_z = guid_v.speed_z_pid.out;
+			}
+			else // RC ACC loop
+			{
+				guid_v.ref_acc_z = guid_v.rc_acc_z;
+			}
+			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
 
+			guidance_v_delta_t = guid_v.acc_z_pid.out * guid_v.thrust_coef * (0.8f * (float) MAX_PPRZ);
+			Bound(guidance_v_delta_t, 0, MAX_PPRZ);
+		}
+		else if (guidance_v_mode == GUIDANCE_V_MODE_NAV)
+		{
+			guid_v.ref_pos_z = - DOUBLE_OF_BFP(gv_z_ref, GV_Z_REF_FRAC);
+			pid_loop_calc_2(&guid_v.pos_z_pid, guid_v.ref_pos_z, guid_v.NED_z_pos, 0, guid_v.NED_z_speed);
+			if (vertical_mode == VERTICAL_MODE_ALT)
+			{
+				guid_v.ref_speed_z = guid_v.pos_z_pid.out;
+			}
+			else if (vertical_mode == VERTICAL_MODE_CLIMB)
+			{
+				guid_v.ref_speed_z = - FLOAT_OF_BFP(gv_zd_ref, GV_ZD_REF_FRAC);
+			}
+			else
+			{
+				guid_v.ref_speed_z = 0;
+			}
+			pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0,
+									get_butterworth_2_low_pass(&guid_v.NED_z_acc_filter));
+			guid_v.ref_acc_z = guid_v.speed_z_pid.out;
+			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
+
+			guidance_v_delta_t = guid_v.acc_z_pid.out * guid_v.thrust_coef * (0.8f * (float) MAX_PPRZ);
+			Bound(guidance_v_delta_t, 0, MAX_PPRZ);
+		}
+		else
+		{
+			guidance_v_delta_t = 0;
+		}
 	}
 	else
 	{
 		pid_reset(&guid_v.acc_z_pid);
+		guidance_v_delta_t = 0;
 	}
-
-	//filter coef calculation
-	guid_v.acc_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.acc_filter_fc;
-	guid_v.speed_filter_coef = 2.0f * 3.14f * (1.0f/512.0f) * guid_v.speed_filter_fc;
-
-	guid_v.NED_z_acc = - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z);
-	update_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, guid_v.NED_z_acc);
-	//guid_v.NED_z_acc = update_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
-	//guid_v.NED_z_acc = pid_simple_filter(guid_v.acc_filter_coef, guid_v.NED_z_acc, - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z));
-	guid_v.NED_z_speed = - SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z);
-	//guid_v.NED_z_speed = pid_simple_filter(guid_v.speed_filter_coef, guid_v.NED_z_speed, - SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z));
-	guid_v.NED_z_pos = - POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
-
-	guid_v.rc_speed_z = - SPEED_FLOAT_OF_BFP(guidance_v_rc_zd_sp);
-	guid_v.rc_acc_z = 3.0f * guid_v.rc_speed_z;
-
-//	if (guid_v.pid_loop_mode == ACC_SPEED_POS)
-//	{
-//		if (guid_v.thr_in_deadband)
-//		{
-//			guid_v.pid_loop_mode_now = ACC_SPEED_POS;
-//		}
-//		else
-//		{
-//			guid_v.pid_loop_mode_now = ACC_SPEED;
-//		}
-//	}
-//	else
-//	{
-//		guid_v.pid_loop_mode_now = guid_v.pid_loop_mode;
-//	}
-	guid_v.pid_loop_mode_now = guid_v.pid_loop_mode;
-
-	if ((guid_v.pid_loop_mode_now == ACC_SPEED)
-			|| (guid_v.pid_loop_mode_now == ACC_SPEED_POS))
-	{
-		if (guid_v.pid_loop_mode_now == ACC_SPEED_POS)
-		{
-			guid_v.ref_pos_z = - DOUBLE_OF_BFP(gv_z_ref, GV_Z_REF_FRAC);
-			//+= guid_v.rc_speed_z * guid_v.pos_z_pid.dT;
-
-			pid_loop_calc_2(&guid_v.pos_z_pid, guid_v.ref_pos_z, guid_v.NED_z_pos, 0, guid_v.NED_z_speed);
-			guid_v.ref_speed_z = guid_v.pos_z_pid.out;
-		}
-		else
-		{
-			guid_v.ref_speed_z = guid_v.rc_speed_z;
-		}
-		//pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0, guid_v.NED_z_acc);
-		pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0, get_butterworth_2_low_pass(&guid_v.NED_z_acc_filter));
-		guid_v.ref_acc_z = guid_v.speed_z_pid.out;
-	}
-	else // RC ACC loop
-	{
-		guid_v.ref_acc_z = guid_v.rc_acc_z;
-	}
-	pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
-
-	float thrust_coef = FLOAT_OF_BFP(get_vertical_thrust_coeff(), INT32_TRIG_FRAC);
-	thrust_coef = 1.0f/thrust_coef;
-	Bound(thrust_coef, 0, 1.2f);
-
-	guidance_v_delta_t = guid_v.acc_z_pid.out * thrust_coef * (0.8f * (float)MAX_PPRZ);
-	/* bound the result */
-	Bound(guidance_v_delta_t, 0, MAX_PPRZ);
 }
 
 bool_t guidance_v_set_guided_z(float z)

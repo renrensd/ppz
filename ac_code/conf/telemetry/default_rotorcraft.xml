@@ -11,12 +11,12 @@
       <message name="ROTORCRAFT_STATUS"      period="0.2"/>
       <message name="ROTORCRAFT_FP"          period="1.0"/>
       <message name="ALIVE"                  period="1.0"/>
-      <message name="INS_REF"                period="10.0"/>
+      <message name="INS_REF"                period="5.0"/>
       <message name="ROTORCRAFT_NAV_STATUS"  period="2.0"/>
-      <message name="WP_MOVED"               period="5.0"/>
+      <message name="WP_MOVED"               period="10.0"/>
       <message name="GPS_INT"                period="1.0"/>
       <message name="INS"                    period="1.0"/>
-      <message name="RC"                       period="0.1"/>
+      <message name="RC"                     period="0.1"/>
       <!--message name="I2C_ERRORS"          period="2.0"/>
       <message name="UART_ERRORS"            period="3.1"/>
       <message name="SUPERBITRF"             period="3"/>
@@ -30,11 +30,11 @@
       <message name="VERT_LOOP"              period="1.0"/>
       <message name="HOVER_LOOP"             period="2.0"/>
       <!--message name="PX4FLOW"             period="1.0"/-->
-      <!--message name="MOTOR_MIXING"           period="1.0"/-->
-      <message name="STAB_ATTITUDE_FLOAT"          period="0.3"/>
-      <!--message name="INS_Z"                  period="1.0"/>
+      <!--message name="MOTOR_MIXING"        period="1.0"/-->
+      <message name="STAB_ATTITUDE_FLOAT"    period="0.3"/>
+      <!--message name="INS_Z"               period="1.0"/>
       <message name="GUIDANCE_H_REF_INT"     period="0.5"/-->
-      <message name="MCU_FAULT"             period="5.0"/>
+      <message name="MCU_FAULT"              period="5.0"/>
     </mode>
 
     <mode name="ins">

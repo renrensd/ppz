@@ -72,9 +72,10 @@
 #include "math/my_math.h"
 //float   sonar_distance,sonar_distance_i;
 
-#if USE_BARO_BOARD
-#define BARO_OFFSET 0.3   //baro upper agl 0.3m
-#endif
+#define R_BARO					(1000.0f)
+#define R_BARO_OFFSET		(10.0f)
+#define R_GPS						(0.0004f)
+float gps_noise_debug = R_GPS;
 
 #if USE_SONAR
 #if !USE_VFF_EXTENDED
@@ -187,7 +188,6 @@ static void radar24_cb(uint8_t sender_id, float distance);
 
 struct InsInt ins_int;
 
-float gps_noise_debug;
 int32_t ins_body_rate_z; 
 
 #if USE_FLOW
@@ -277,8 +277,8 @@ void ins_int_init(void)
 #if USE_BARO_BOARD
   AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
   ins_int.baro_initialized = FALSE;
-  ins_int.R_baro = 1000.0f;
-  ins_int.R_baro_offset = 10.0f;
+  ins_int.R_baro = R_BARO;
+  ins_int.R_baro_offset = R_BARO_OFFSET;
   ins_int.ekf_state = INS_EKF_GPS;
   ins_int.virtual_p_stable = 1;
 #endif
@@ -313,13 +313,13 @@ void ins_int_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
 #endif
 
-  gps_noise_debug = 0.0004;
+  ins_int.R_gps = gps_noise_debug;
 }
 
 void ins_reset_local_origin(void)
 {
 #if USE_GPS  //called by flightplan init,set gps's postion as local ins (ltp_def is base point of ins)
-	if (GpsFixValid()) {
+  if (GpsFixValid()) {
     ltp_def_from_ecef_i(&ins_int.ltp_def, &gps.ecef_pos);
     ins_int.ltp_def.lla.alt = gps.lla_pos.alt;
     ins_int.ltp_def.hmsl = gps.hmsl;
@@ -558,68 +558,76 @@ void ins_int_update_gps(struct GpsState *gps_s)
   ins_int.gps_body_z = (float)gps_pos_cm_ned.z * 0.01f + (- GPS_B2G_DISTANCE);
 
 #if INS_USE_GPS_ALT
-
 #define BARO_TO_GPS_TIME	(10)
-  if(gps.p_stable && ins_int.virtual_p_stable)
-  {
-		if(ins_int.vf_realign)
-		{
-			ins_int.vf_realign = FALSE;
-			vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
-			ins_int.vf_stable = TRUE;
-		}
 
-		if(ins_int.vf_stable)
+  bool_t p_stable_2 = (gps_nmea.pos_type > PSRDIFF);
+
+  if(gps.p_stable && ins_int.vf_realign)
+  {
+  	ins_int.vf_realign = FALSE;
+		vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
+		ins_int.vf_stable = TRUE;
+  }
+
+  if( (gps.p_stable || p_stable_2) && ins_int.vf_stable )
+  {
+  	if(ins_int.ekf_state == INS_EKF_BARO)
 		{
-			if(ins_int.ekf_state == INS_EKF_BARO)
+			ins_int.baro_to_gps_count = 0;
+			ins_int.baro_to_gps_offset_step =
+					((ins_int.gps_body_z - get_first_order_low_pass(&ins_int.baro_z_filter)) - vff.offset) / (float)BARO_TO_GPS_TIME;
+			ins_int.baro_to_gps_z_step =
+					(ins_int.gps_body_z - vff.z) / (float)BARO_TO_GPS_TIME;
+			ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
+		}
+		else if(ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
+		{
+			vff.offset += ins_int.baro_to_gps_offset_step;
+			vff.z += ins_int.baro_to_gps_z_step;
+			//vff_update_z_conf(ins_int.gps_body_z, 10.0f);
+			ins_update_from_vff();
+			if(++ins_int.baro_to_gps_count == BARO_TO_GPS_TIME) // 2s
 			{
-				ins_int.baro_to_gps_count = 0;
-				ins_int.baro_to_gps_offset_step =
-						((ins_int.gps_body_z - get_first_order_low_pass(&ins_int.baro_z_filter)) - vff.offset) / (float)BARO_TO_GPS_TIME;
-				ins_int.baro_to_gps_z_step =
-						(ins_int.gps_body_z - vff.z) / (float)BARO_TO_GPS_TIME;
-				ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
+				ins_int.ekf_state = INS_EKF_GPS;
 			}
-			else if(ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
+		}
+		else if(ins_int.ekf_state == INS_EKF_GPS)
+		{
+			float r_unstable =(float)gps_pos_sd.z /10000.0;
+			r_unstable = r_unstable * r_unstable;
+
+			if(gps.p_stable)
 			{
-				vff.offset += ins_int.baro_to_gps_offset_step;
-				vff.z += ins_int.baro_to_gps_z_step;
-				//vff_update_z_conf(ins_int.gps_body_z, 10.0f);
-				ins_update_from_vff();
-				if(++ins_int.baro_to_gps_count == BARO_TO_GPS_TIME) // 2s
+				if(r_unstable < gps_noise_debug)
 				{
-					ins_int.ekf_state = INS_EKF_GPS;
+					r_unstable = gps_noise_debug;
 				}
 			}
-			else if(ins_int.ekf_state == INS_EKF_GPS)
+			else if(p_stable_2)
 			{
-				vff_update_z_conf(ins_int.gps_body_z, gps_noise_debug);
-				vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
-				ins_update_from_vff();
+				if(r_unstable< 0.001f)
+				{
+					r_unstable = 0.001f;
+				}
 			}
+			else
+			{
+				r_unstable = gps_noise_debug;
+			}
+			ins_int.R_gps = r_unstable;
+
+			vff_update_z_conf(ins_int.gps_body_z, ins_int.R_gps);
+			vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
+			ins_update_from_vff();
 		}
   }
-  else  /*if R <1.0, use the RTK Z info*/
-  {
-  	if(ins_int.ekf_state != INS_EKF_BARO)
-  	{
-  		ins_int.ekf_state = INS_EKF_BARO;
-  	}
-//  	float r_unstable =(float)gps_pos_sd.z /10000.0;
-//		r_unstable = r_unstable * r_unstable;
-//		if( r_unstable< 0.001)
-//		{
-//			r_unstable = 0.001;
-//		}
-//		if(r_unstable <0.25)
-//		{
-//			 vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, r_unstable );
-//		}
-//		else
-//		{
-//			/*need use baro*/
-//		}
-  }
+  else
+	{
+		if(ins_int.ekf_state != INS_EKF_BARO)
+		{
+			ins_int.ekf_state = INS_EKF_BARO;
+		}
+	}
 
 	ins_int.gps_qual = gps_nmea.gps_qual;
 	ins_int.p_stable = gps.p_stable;
@@ -633,6 +641,8 @@ void ins_int_update_gps(struct GpsState *gps_s)
  #if PERIODIC_TELEMETRY
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
+  		&ins_int.ekf_state,
+			&ahrs_mlkf.mlkf_state,
   		&ins_int.gps_qual,
 			&ins_int.p_stable,
 			&gps.num_sv,
@@ -699,7 +709,6 @@ void ins_int_update_gps(struct GpsState *gps_s)
   {
 		//add: gps pos lost handle
   }
-
 }
 
 #else

@@ -184,7 +184,7 @@ void send_aircraft_info_state(void)
 	uint16_t spray_wide = (uint16_t)(ac_config_info.spray_wide*100); 
 	uint16_t spray_height = (uint16_t)(ac_config_info.spray_height*100);
 	uint16_t max_flight_height= (uint16_t)(ac_config_info.max_flight_height*100);
-	uint8_t  spray_concentration = ac_config_info.spray_concentration;
+	uint16_t  spray_concentration = ac_config_info.spray_concentration;
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
