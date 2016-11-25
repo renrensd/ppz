@@ -292,6 +292,10 @@ static void send_hover_loop(struct transport_tx *trans, struct link_device *dev)
   struct NedCoor_i *pos = stateGetPositionNed_i();
   struct NedCoor_i *speed = stateGetSpeedNed_i();
   struct NedCoor_i *accel = stateGetAccelNed_i();
+
+  int32_t NED_x_speed_filter = get_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter);
+  int32_t NED_y_speed_filter = get_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter);
+
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_HOVER_LOOP(trans, dev, AC_ID,
                            &guidance_h.sp.pos.x,
@@ -315,7 +319,9 @@ static void send_hover_loop(struct transport_tx *trans, struct link_device *dev)
                            &desire_speed.x,
                            &desire_speed.y,
                            &ii_term.x,
-                           &ii_term.y);
+                           &ii_term.y,
+													 &NED_x_speed_filter,
+													 &NED_y_speed_filter);
 }
 
 static void send_href(struct transport_tx *trans, struct link_device *dev)
@@ -745,8 +751,10 @@ static void guidance_h_traj_run(bool_t in_flight)
   
   /* compute position error    */
   struct NedCoor_i speed_now = *stateGetSpeedNed_i();
-  h_speed_fl.x = update_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, speed_now.x);
-  h_speed_fl.y = update_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, speed_now.y);
+  h_speed_fl.x = speed_now.x;
+  h_speed_fl.y = speed_now.y;
+  //h_speed_fl.x = update_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, speed_now.x);
+  //h_speed_fl.y = update_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, speed_now.y);
   
   VECT2_DIFF(guidance_h_pos_err, guidance_h.ref.pos, *stateGetPositionNed_i());
   /* saturate it               */

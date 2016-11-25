@@ -1330,6 +1330,8 @@
     <field name="dspey" type="float"/>
     <field name="ii_tex" type="float"/>
     <field name="ii_tey" type="float"/>
+    <field name="NED_x_speed_filter" type="int32" alt_unit_coef="0.0000019"/>
+    <field name="NED_y_speed_filter" type="int32" alt_unit_coef="0.0000019"/>
   </message>
 
   <message name="ROTORCRAFT_FP" id="147">

@@ -586,7 +586,7 @@ static void run_hover_loop(bool_t in_flight)
 	guidance_v_zdd_ref = gv_zdd_ref << (INT32_ACCEL_FRAC - GV_ZDD_REF_FRAC);
 	/* compute the error to our reference */
 
-	if (in_flight)
+	if (autopilot_motors_on)
 	{
 		if (guidance_v_mode == GUIDANCE_V_MODE_HOVER)
 		{
