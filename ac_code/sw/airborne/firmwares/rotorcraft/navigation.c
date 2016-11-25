@@ -576,6 +576,15 @@ bool_t nav_approaching_target(struct EnuCoor_i *wp, struct EnuCoor_i *from, floa
   return arive_flag;
 }
 
+float distance_to_target(void)
+{
+	struct EnuCoor_i pos_now_enu, diff_wp;
+	pos_now_enu = *stateGetPositionEnu_i();
+	VECT3_DIFF(diff_wp, navigation_target, pos_now_enu);
+	uint32_t distance = int32_sqrt(VECT2_NORM2(diff_wp));
+	return POS_FLOAT_OF_BFP(distance);	
+}
+
 /** Check the time spent in a radius of 'ARRIVED_AT_WAYPOINT' around a wp  */
 bool_t nav_check_wp_time(struct EnuCoor_i *wp, uint16_t stay_time)
 {
@@ -858,7 +867,7 @@ bool_t nav_check_heading(void)
 
 bool_t nav_check_height(void)
 {
-	if( abs(stateGetPositionNed_i()->z + nav_flight_altitude) < 0.50 )
+	if( abs(stateGetPositionNed_i()->z + nav_flight_altitude) < POS_BFP_OF_REAL(0.15))
 	{
 		return TRUE;
 	}

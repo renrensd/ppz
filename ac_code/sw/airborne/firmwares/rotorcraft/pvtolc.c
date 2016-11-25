@@ -51,7 +51,7 @@ bool_t flight_prepare(bool_t reset)
   return TRUE;
 }
 
-
+#if 0
 bool_t take_off_motion(bool_t reset)
 { 
   static uint8_t step_t=0;
@@ -98,50 +98,109 @@ bool_t take_off_motion(bool_t reset)
 
 }
 
+#else
+bool_t take_off_motion(bool_t reset)
+{ 
+  static uint8_t step_t=0;
+  if(reset) { step_t=0; return FALSE; }
+  switch(step_t) {
+    case 0:  //reset output cmd
+	  /*horizontal set attitude 0 */
+	  NavAttitude(RadOfDeg(0));
+	  NavVerticalAutoThrottleMode(RadOfDeg(0));
+	  /*vertical set throttle 0 */
+	  NavVerticalThrottleMode(9600*(0));
+	  step_t++;
+	  break;
+	case 1:
+	  if ((NavResurrect())) return TRUE;  //auto unlocked
+	  step_t++;
+	  break;
+	case 2://set dynamic wp_takeoff when z <DISTANCE_ABOVE_GROUNG,avoid AC dump
+	  if ( stateGetPositionEnu_f()->z < DISTANCE_ABOVE_GROUNG )   //!above_ground )
+	  { 
+	    wp_ToL=*stateGetPositionEnu_i();  
+		NavGotoWaypoint_wp(wp_ToL);
+	    NavVerticalAutoThrottleMode(RadOfDeg(0.0));
+	    //NavVerticalAltitudeMode(Height(2.000000), 0.);
+	    NavVerticalClimbMode(0.5f);
+	    return TRUE; 
+	  }
+	  step_t++;
+	  break;
+    case 3:
+	  /*stay takeoff waypoint*/
+	  NavGotoWaypoint_wp(wp_ToL);
+	  //NavVerticalAltitudeMode(Height(2.000000), 0.);
+	  if(stateGetPositionEnu_f()->z  >1.5)  //&&(fabs(stateGetSpeedEnu_f()->z) < 0.2))
+	  {
+	  	NavVerticalAltitudeMode(Height(2.0f), 0.);
+	  	step_t = 0;   //reset
+	  	return FALSE;   //finish take off motion
+	  }
+	  break;
+	  
+    default: break;	  
+  }
+  
+  return TRUE;
+}
+#endif
+
 bool_t land_motion(bool_t reset)
 { 
   static uint8_t step_l=0;
+  static uint8_t thrust_counter = 0;
   if(reset) { step_l=0; return FALSE; }
   switch(step_l) {
   	case 0:
-	  //wp_ToL=*stateGetPositionEnu_i(); //wp_ToL should be given wp_land before this function called 
-	  if( NavGetHoverSteady() )
+	  if( (NavGetHoverSteady()) && (distance_to_target() < 0.3f) )
 	  {
 	  	step_l++;
 	  }
 	  break;
 	case 1:
-	  if(stateGetPositionEnu_f()->z >0.800000) {   
-	    //NavGotoWaypoint_wp(wp_ToL);
+	  if(stateGetPositionEnu_f()->z >0.8f) {   
 	    NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
-	    NavVerticalClimbMode(-0.5 ); 
-	    return TRUE;
+	    NavVerticalClimbMode(-0.5f); 
       }
-      step_l++;
-	 //break; 	let it do fast 
+	  else
+	  {
+	  	step_l++;
+	  }
+	  break;
 	case 2:
-	  //NavGotoWaypoint_wp(wp_ToL);
 	  NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
-	  NavVerticalClimbMode(-0.2 ); 
+	  NavVerticalClimbMode(-0.3f); 
+	  thrust_counter = 0;
 	  step_l++;
 	  break;
 	case 3:
-	  //not use agl_sonar detect touching ground,
-	  //once on_ground,thrust will deline
-	  if(stabilization_cmd[COMMAND_THRUST]>4000) return TRUE;
-	  NavAttitude(RadOfDeg(0));
-	  NavVerticalAutoThrottleMode(RadOfDeg(0));
-	  NavVerticalThrottleMode(9600*(0));
-	  step_l++;
+	  //not use agl_sonar detect touching ground,once on_ground,thrust will deline
+	  if(stabilization_cmd[COMMAND_THRUST]<4000) 
+	  {
+	  	thrust_counter++;
+		if(thrust_counter>8)   //32hz periodic,8:0.33s
+		{
+		  NavAttitude(RadOfDeg(0));
+		  NavVerticalAutoThrottleMode(RadOfDeg(0));
+		  NavVerticalThrottleMode(9600*(0));
+		  step_l++;
+		}
+	  }
 	  break;
 	case 4:	 
- 	  if ( (NavKillThrottle()) )  return TRUE;
-	  step_l = 0;  //reset
-	  return FALSE;   //lock motors and finish      	  
+ 	  if ( !NavKillThrottle() )
+ 	  {
+	  	step_l = 0;     //reset step
+	  	return FALSE;   //lock motors and finish land motion      	  
+ 	  }
+	  break;
 	
 	default: break;
   }
-  return TRUE;
+  
+  return TRUE;  //running land motion
 }
 
 bool_t lock_motion(bool_t reset)

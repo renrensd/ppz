@@ -220,7 +220,8 @@ extern void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end);
 bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_t approaching_time);
 #define NavApproaching(wp, time) nav_approaching_from(&waypoints[wp].enu_i, NULL, time)
 #define NavApproachingFrom(wp, from, time) nav_approaching_from(&waypoints[wp].enu_i, &waypoints[from].enu_i, time)
-extern bool_t nav_approaching_target(struct EnuCoor_i *wp, struct EnuCoor_i *from, float arrived_distance);  
+extern bool_t nav_approaching_target(struct EnuCoor_i *wp, struct EnuCoor_i *from, float arrived_distance); 
+extern float distance_to_target(void);
 /** Check the time spent in a radius of 'ARRIVED_AT_WAYPOINT' around a wp  */
 bool_t nav_check_wp_time(struct EnuCoor_i *wp, uint16_t stay_time);
 #define NavCheckWaypointTime(wp, time) nav_check_wp_time(&waypoints[wp].enu_i, time)
