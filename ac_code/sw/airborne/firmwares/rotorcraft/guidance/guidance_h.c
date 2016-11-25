@@ -388,6 +388,12 @@ void guidance_h_init(void)
   hh = GUIDANCE_H_TD_H;
   r_h = GUIDANCE_H_TD_R;
   
+  guidance_h.NED_xy_speed_filter_fc = 10;
+  init_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, guidance_h.NED_xy_speed_filter_fc,
+  																1.0f/512.0f, 0);
+  init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, guidance_h.NED_xy_speed_filter_fc,
+    															1.0f/512.0f, 0);
+
   transition_percentage = 0;
   transition_theta_offset = 0;
   rc_turn_rate = 0;
@@ -410,6 +416,14 @@ void guidance_h_init(void)
 #endif
 }
 
+void guidance_h_SetSpeedCutoff(float fc)
+{
+	guidance_h.NED_xy_speed_filter_fc = fc;
+	init_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, fc,
+	  																1.0f/512.0f, guidance_h.NED_x_speed_filter.i[0]);
+	init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, fc,
+																		1.0f/512.0f, guidance_h.NED_y_speed_filter.i[0]);
+}
 
 static inline void reset_guidance_reference_from_current_position(void)
 {
@@ -731,8 +745,8 @@ static void guidance_h_traj_run(bool_t in_flight)
   
   /* compute position error    */
   struct NedCoor_i speed_now = *stateGetSpeedNed_i();
-  h_speed_fl.x = h_speed_fl.x + (speed_now.x-h_speed_fl.x) * guid_v.speed_filter_coef;
-  h_speed_fl.y = h_speed_fl.y + (speed_now.y-h_speed_fl.y) * guid_v.speed_filter_coef;
+  h_speed_fl.x = update_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, speed_now.x);
+  h_speed_fl.y = update_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, speed_now.y);
   
   VECT2_DIFF(guidance_h_pos_err, guidance_h.ref.pos, *stateGetPositionNed_i());
   /* saturate it               */

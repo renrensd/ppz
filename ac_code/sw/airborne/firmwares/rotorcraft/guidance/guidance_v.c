@@ -39,6 +39,8 @@
 #include "controllers/pid.h"
 #include "filters/low_pass_filter.h"
 
+#define GUIDANCE_V_LOOP_FREQ	(PERIODIC_FREQUENCY)
+
 /* error if some gains are negative */
 #if (GUIDANCE_V_HOVER_KP < 0) ||                   \
   (GUIDANCE_V_HOVER_KD < 0)   ||                   \
@@ -226,14 +228,12 @@ void guidance_v_init(void)
 
 static void guidance_v_controller_ini(void)
 {
-	guid_v.acc_filter_fc = 5;
-	guid_v.speed_filter_fc = 10;
 	guid_v.pid_loop_mode_gcs = ACC_SPEED_POS;
 	guid_v.pid_loop_mode_running = ACC_SPEED_POS;
 
-	pid_ini(&guid_v.acc_z_pid, 512);
-	pid_ini(&guid_v.speed_z_pid, 512);
-	pid_ini(&guid_v.pos_z_pid, 512);
+	pid_ini(&guid_v.acc_z_pid, GUIDANCE_V_LOOP_FREQ);
+	pid_ini(&guid_v.speed_z_pid, GUIDANCE_V_LOOP_FREQ);
+	pid_ini(&guid_v.pos_z_pid, GUIDANCE_V_LOOP_FREQ);
 
 	pid_set_out_range(&guid_v.acc_z_pid, 0, 1);
 	pid_set_Ui_range(&guid_v.acc_z_pid, 0, 1);
@@ -248,7 +248,17 @@ static void guidance_v_controller_ini(void)
 	guid_v.speed_z_pid.Kd = 0.3f;
 	guid_v.pos_z_pid.Kp = 1.0f;
 	guid_v.pos_z_pid.Kd = 0.5f;
-	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc), 1.0f/512.0f, 0);
+
+	guid_v.acc_filter_fc = 5;
+	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter,
+			low_pass_filter_get_tau(guid_v.acc_filter_fc), 1.0f/(float)GUIDANCE_V_LOOP_FREQ, 0);
+}
+
+void guidance_v_SetAccCutoff(float fc)
+{
+	guid_v.acc_filter_fc = fc;
+	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter,
+				low_pass_filter_get_tau(fc), 1.0f/(float)GUIDANCE_V_LOOP_FREQ, guid_v.NED_z_acc_filter.i[0]);
 }
 
 void guidance_v_read_rc(void)

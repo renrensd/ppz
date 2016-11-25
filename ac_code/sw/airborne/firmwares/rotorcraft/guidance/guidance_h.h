@@ -33,6 +33,7 @@
 #include "firmwares/rotorcraft/guidance/guidance_h_ref.h"
 #include "generated/airframe.h"
 #include "std.h"
+#include "filters/low_pass_filter.h"
 
 /** Use horizontal guidance reference trajectory.
  * Default is TRUE, define to FALSE to always disable it.
@@ -111,6 +112,10 @@ struct HorizontalGuidance {
   struct HorizontalGuidanceReference ref; ///< reference calculated from setpoints
 
   struct Int32Eulers rc_sp;    ///< with #INT32_ANGLE_FRAC
+
+  float NED_xy_speed_filter_fc;
+  Butterworth2LowPass_int NED_x_speed_filter;
+  Butterworth2LowPass_int NED_y_speed_filter;
 };
 
 struct position_float 
@@ -143,6 +148,8 @@ extern void guidance_h_run(bool_t in_flight);
 
 extern void guidance_h_set_igain(uint32_t igain);
 extern void guidance_h_nav_rc_enter(void); //use when nav_rc_mode enter
+
+extern void guidance_h_SetSpeedCutoff(float fc);
 
 /** Set horizontal position setpoint in GUIDED mode.
  * @param x North position (local NED frame) in meters.

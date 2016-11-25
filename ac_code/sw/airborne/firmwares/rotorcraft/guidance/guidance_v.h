@@ -61,10 +61,6 @@ struct _s_guidance_v
 	float NED_z_acc;
 	float NED_z_speed;
 	float NED_z_pos;
-	float acc_filter_fc;
-	float speed_filter_fc;
-	float acc_filter_coef;
-	float speed_filter_coef;
 	struct _s_pid acc_z_pid;
 	struct _s_pid speed_z_pid;
 	struct _s_pid pos_z_pid;
@@ -74,6 +70,7 @@ struct _s_guidance_v
 	float ref_pos_z;
 	float ref_speed_z;
 	float ref_acc_z;
+	float acc_filter_fc;
 	Butterworth2LowPass NED_z_acc_filter;
 	float thrust_coef;
 };
@@ -144,6 +141,8 @@ extern void guidance_v_read_rc(void);
 extern void guidance_v_mode_changed(uint8_t new_mode);
 extern void guidance_v_notify_in_flight(bool_t in_flight);
 extern void guidance_v_run(bool_t in_flight);
+
+extern void guidance_v_SetAccCutoff(float fc);
 
 extern uint8_t get_error_z(void);
 
