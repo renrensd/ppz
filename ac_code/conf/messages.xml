@@ -228,6 +228,7 @@
     <field name="baro_sw"    type="uint8"/>
     <field name="mag_sw"     type="uint8"/>
     <field name="gps_qual"    type="uint8"/>
+    <field name="pos_type"    type="uint8"/>
     <field name="p_stable"    type="uint8"/>
     <field name="pos_sv_num"    type="uint8"/>
     <field name="sol_tatus"    type="uint8"/>   
