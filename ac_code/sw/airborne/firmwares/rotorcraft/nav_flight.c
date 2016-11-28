@@ -169,6 +169,8 @@ uint8_t flight_demo(void)
  */
 void nav_flight(void)
 { 
+	static bool_t takeoff_done = FALSE;
+
  #ifndef DEBUG_RC
   if ( autopilot_mode != AP_MODE_NAV) 
   {
@@ -253,13 +255,22 @@ void nav_flight(void)
 				take_off_motion(TRUE);
 				flight_step = 5;      /*jump from take off to land*/
 				mag_cali_nav_loop(FALSE);
+				takeoff_done = FALSE;
 				break;
 			}
-			if( !take_off_motion(FALSE) )	// take off done
+
+			if(!takeoff_done)
 			{
-				if( mag_cali_nav_loop(TRUE) )
+				if( !take_off_motion(FALSE) )	// take off done
 				{
+					takeoff_done = TRUE;
 					record_current_waypoint(&wp_take_off);  /*record take off waypoint as wp_take_off*/
+				}
+			}
+			else
+			{
+				if( mag_cali_nav_loop(TRUE) )	// mag_cali done or not necessary to cali
+				{
 					flight_step++;          /*take_off motion finished, next cruise step*/
 				}
 			}
