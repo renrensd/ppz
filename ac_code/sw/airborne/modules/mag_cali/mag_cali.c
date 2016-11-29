@@ -378,8 +378,17 @@ void mag_cali_periodic(void)
 		mag_cali.state = MAG_CALI_IDLE;
 	}
 
+float grab_x[MAG_CALI_GRAB_NUM];
+float grab_y[MAG_CALI_GRAB_NUM];
+
+for(int i=0;i<MAG_CALI_GRAB_NUM;++i)
+{
+	grab_x[i] = mag_cali.grab_sum[i][0];
+	grab_y[i] = mag_cali.grab_sum[i][1];
+}
+
 #if PERIODIC_TELEMETRY
-		RunOnceEvery(2,   {
+		RunOnceEvery(25,   {
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_MAG_CALI(DefaultChannel, DefaultDevice,
 				&mag_cali.state,
@@ -390,7 +399,11 @@ void mag_cali_periodic(void)
 				&mag_cali.gain[0],
 				&mag_cali.gain[1],
 				&mag_cali.offset[0],
-				&mag_cali.offset[1]);}   );
+				&mag_cali.offset[1],
+				MAG_CALI_GRAB_NUM,
+				grab_x,
+				MAG_CALI_GRAB_NUM,
+				grab_y);}   );
 #endif
 }
 

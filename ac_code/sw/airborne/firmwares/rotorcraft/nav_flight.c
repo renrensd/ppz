@@ -220,6 +220,7 @@ void nav_flight(void)
 				{
 					monitoring_reset_emer();
 					flight_mode_enter(nav_gcs_mode);   //make sure get sp before take off,meas less
+					takeoff_done = FALSE;
 					flight_step++;  /*once get gcs start cmd, jump to next step: take off*/
 				}
 			}
