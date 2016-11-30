@@ -43,6 +43,7 @@ struct Imu {
   struct Int32Rates gyro;             ///< gyroscope measurements in rad/s in BFP with #INT32_RATE_FRAC, after BF filter
   struct Int32Vect3 accel;            ///< accelerometer measurements in m/s^2 in BFP with #INT32_ACCEL_FRAC, after BF filter
   struct Int32Vect3 mag;              ///< magnetometer measurements scaled to 1 in BFP with #INT32_MAG_FRAC, after BF filter
+  struct FloatVect3 mag_real;
   struct Int32Rates gyro_scaled;      ///< gyroscope measurements in rad/s in BFP with #INT32_RATE_FRAC, before BF filter
   struct Int32Vect3 accel_scaled;     ///< accelerometer measurements in m/s^2 in BFP with #INT32_ACCEL_FRAC, before BF filter
   struct Int32Vect3 mag_scaled;       ///< magnetometer measurements scaled to 1 in BFP with #INT32_MAG_FRAC, before BF filter

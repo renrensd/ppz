@@ -367,14 +367,14 @@ void mag_cali_periodic(void)
 		}
 
 		// ok
-//		imu->mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
-//		imu->mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
-//		imu->mag_neutral.z = 0;
-//		imu->mag_neutral.x = mag_cali.gain[0];
-//		imu->mag_neutral.y = mag_cali.gain[1];
-//		imu->mag_neutral.z = 1;
-
+		imu.mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
+		imu.mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
+		imu.mag_neutral.z = 0;
+		imu.mag_sens.x = mag_cali.gain[0];
+		imu.mag_sens.y = mag_cali.gain[1];
+		imu.mag_sens.z = 1;
 		mag_cali.cali_ok = TRUE;
+
 		mag_cali.state = MAG_CALI_IDLE;
 	}
 

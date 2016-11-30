@@ -458,7 +458,7 @@ void imu_mpu9250_event(void)
 	{
 	    imu_mpu9250.mag_valid = FALSE;
 	    imu_scale_mag(&imu);
-	    AbiSendMsgIMU_MAG_INT32(IMU_ADISENS_ID, now_ts, &imu.mag);
+	    	AbiSendMsgIMU_MAG_INT32(IMU_ADISENS_ID, now_ts, &imu.mag);
 		AbiSendMsgIMU_MAG_MONI(IMU_MPU9250_ID, now_ts, &imu.mag_scaled);
   	}
 #endif /* HMC5983_OPTION */
