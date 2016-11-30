@@ -237,6 +237,7 @@ void nav_flight(void)
 			   {
 				   	monitoring_reset_emer();
 				   	flight_mode_enter(nav_rc_mode); 	/*get rc take off cmd*/
+				   	takeoff_done = FALSE;
 					flight_step++;
 		  	   }
 			   else   /*rc_set_info.vtol==LOCKED/CRUISE*/

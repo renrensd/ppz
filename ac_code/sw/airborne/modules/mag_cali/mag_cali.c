@@ -452,6 +452,7 @@ bool_t mag_cali_nav_loop(bool_t run)
 		if(is_mag_cali_done())
 		{
 			to_next_step = TRUE;
+			run_prev = FALSE;
 		}
 		else
 		{
@@ -461,6 +462,7 @@ bool_t mag_cali_nav_loop(bool_t run)
 	else
 	{
 		to_next_step = TRUE;
+		run_prev = FALSE;
 	}
 
 	return to_next_step;
