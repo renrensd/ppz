@@ -57,6 +57,7 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 			mag_cali.grab_tick[mag_cali.grab_index]++;
 			mag_cali.grab_sum[mag_cali.grab_index][0] += (float)imu.mag_unscaled.x/(float)MAG_SENSITIVITY;
 			mag_cali.grab_sum[mag_cali.grab_index][1] += (float)imu.mag_unscaled.y/(float)MAG_SENSITIVITY;
+			mag_cali.grab_sum[mag_cali.grab_index][2] += (float)imu.mag_unscaled.z/(float)MAG_SENSITIVITY;
 		}
 
 		for(uint8_t i=0;i<MAG_CALI_GRAB_NUM;++i)
@@ -68,7 +69,7 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 		}
 		if(ok == MAG_CALI_GRAB_NUM)
 		{
-			mag_cali.state = MAG_CALI_CALC1;
+			mag_cali.state = MAG_CALI_HEADING_ALIGN;
 		}
 	}
 }
@@ -79,7 +80,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 {
 	if(!gps_s->h_stable)
 	{
-		mag_cali.state = MAG_CALI_IDLE;
+		mag_cali_stop();
 		return;
 	}
 
@@ -126,16 +127,26 @@ STATIC_MATRIX_DEF(step, 4, 1);
 
 static float grab_sum[MAG_CALI_GRAB_NUM][2] =
 {
-{0.992084324, -0.118157975},
-{0.693150163, -0.672581613},
-{0.116317995, -0.972254038},
-{-0.461079985, -0.80696398},
-{-0.831259012, -0.418678433},
-{-0.905969441, 0.140402019},
-{-0.596551895, 0.802987754},
-{-0.108388022, 1.01896238},
-{0.534478009, 0.890410185},
-{0.927089989, 0.464597851}
+//{0.992084324, -0.118157975},
+//{0.693150163, -0.672581613},
+//{0.116317995, -0.972254038},
+//{-0.461079985, -0.80696398},
+//{-0.831259012, -0.418678433},
+//{-0.905969441, 0.140402019},
+//{-0.596551895, 0.802987754},
+//{-0.108388022, 1.01896238},
+//{0.534478009, 0.890410185},
+//{0.927089989, 0.464597851}
+		{0.752711, 0.17588},
+		{0.569393, -0.138552},
+		{0.380054, -0.214333},
+		{-0.005076, -0.048989},
+		{-0.059772, 0.148237},
+		{-0.006241, 0.366058},
+		{0.124128, 0.538781},
+		{0.352286, 0.609604},
+		{0.709104, 0.415204},
+		{0.757587, 0.221678}
 };
 static float grab_sum2[MAG_CALI_GRAB_NUM][2];
 
@@ -163,81 +174,107 @@ void mag_cali_init(void)
 	//TEST_CASE
 
 	// test data
-//	float theta,max,min,offset[2],gain[2];
-//	for (uint16_t i = 0; i < 10; ++i)
-//	{
-//		theta = my_math_2pi/(float)MAG_CALI_GRAB_NUM*(float)i;
-//		grab_sum[i][0] = cosf(theta) * 1.0f;
-//		grab_sum[i][1] = sinf(theta) * 1.0f;
-//
-//		grab_sum[i][0] *= 1.0f/0.1f;
-//		grab_sum[i][1] *= 1.0f/0.2f;
-//		grab_sum[i][0] += 2;
-//		grab_sum[i][1] += 3;
-//	}
-//
-//	// ini guess of offset and gain
-//	for (uint8_t i = 0; i < 2; ++i)
-//	{
-//		max = grab_sum[0][i];
-//		min = grab_sum[0][i];
-//		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
-//		{
-//			if(grab_sum[j][i] > max )
-//			{
-//				max = grab_sum[j][i];
-//			}
-//			else if(grab_sum[j][i] < min)
-//			{
-//				min = grab_sum[j][i];
-//			}
-//		}
-//		offset[i] = (float)(max + min)/2.0f;
-//	}
-//
-//	for (uint8_t i = 0; i < 2; ++i)
-//	{
-//		min = 0;
-//		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
-//		{
-//			grab_sum2[j][i] = grab_sum[j][i] - offset[i];
-//			min += fabsf(grab_sum2[j][i]);
-//		}
-//		gain[i] = min/(float)MAG_CALI_GRAB_NUM;
-//	}
-//
-//	for (uint8_t i = 0; i < 2; ++i)
-//	{
-//		max = fabsf(grab_sum2[0][i]);
-//		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
-//		{
-//			if(fabsf(grab_sum2[j][i]) > max )
-//			{
-//				max = fabsf(grab_sum2[j][i]);
-//			}
-//		}
-//		gain[i] = 1.0f/max;
-//	}
-//
-//	//sensors.mag_gain[0] = 1.0f;
-//	//sensors.mag_gain[1] = (float)(sensors.mag_max[0] - sensors.mag_min[0])/(float)(sensors.mag_max[1] - sensors.mag_min[1]);
-//
-//	p.data[0] = gain[0];
-//	p.data[1] = gain[1];
-//	p.data[2] = offset[0];
-//	p.data[3] = offset[1];
-//
-//	for (uint16_t i = 0; i < 100; ++i)
-//	{
-//		mag_cali_calc_F(&F, &p, grab_sum);
-//		mag_cali_calc_JT(&JT, &p, grab_sum);
-//		MatMult(&ev, &JT, &F);
-//		VectMult(&ev, 0, &ev, 0, &step, 0);
-//		MatSub(&p, &p, &ev);
-//	}
+	float theta,max,min,offset[2],gain[2];
+	for (uint16_t i = 0; i < 10; ++i)
+	{
+		theta = my_math_2pi/(float)MAG_CALI_GRAB_NUM*(float)i;
+		grab_sum[i][0] = cosf(theta) * 1.0f;
+		grab_sum[i][1] = sinf(theta) * 1.0f;
+
+		grab_sum[i][0] *= 1.0f/0.1f;
+		grab_sum[i][1] *= 1.0f/0.2f;
+		grab_sum[i][0] += 2;
+		grab_sum[i][1] += 3;
+	}
+
+	// ini guess of offset and gain
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		max = grab_sum[0][i];
+		min = grab_sum[0][i];
+		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+		{
+			if(grab_sum[j][i] > max )
+			{
+				max = grab_sum[j][i];
+			}
+			else if(grab_sum[j][i] < min)
+			{
+				min = grab_sum[j][i];
+			}
+		}
+		offset[i] = (float)(max + min)/2.0f;
+	}
+
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		min = 0;
+		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+		{
+			grab_sum2[j][i] = grab_sum[j][i] - offset[i];
+			min += fabsf(grab_sum2[j][i]);
+		}
+		gain[i] = min/(float)MAG_CALI_GRAB_NUM;
+	}
+
+	for (uint8_t i = 0; i < 2; ++i)
+	{
+		max = fabsf(grab_sum2[0][i]);
+		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+		{
+			if(fabsf(grab_sum2[j][i]) > max )
+			{
+				max = fabsf(grab_sum2[j][i]);
+			}
+		}
+		gain[i] = 1.0f/max;
+	}
+
+	//sensors.mag_gain[0] = 1.0f;
+	//sensors.mag_gain[1] = (float)(sensors.mag_max[0] - sensors.mag_min[0])/(float)(sensors.mag_max[1] - sensors.mag_min[1]);
+
+	p.data[0] = gain[0];
+	p.data[1] = gain[1];
+	p.data[2] = offset[0];
+	p.data[3] = offset[1];
+
+	for (uint16_t i = 0; i < 100; ++i)
+	{
+		mag_cali_calc_F(&F, &p, grab_sum);
+		mag_cali_calc_JT(&JT, &p, grab_sum);
+		MatMult(&ev, &JT, &F);
+		VectMult(&ev, 0, &ev, 0, &step, 0);
+		MatSub(&p, &p, &ev);
+	}
+
+	mag_cali.gain[0] = fabsf(p.data[0]);
+	mag_cali.gain[1] = fabsf(p.data[1]);
+	mag_cali.offset[0] = p.data[2];
+	mag_cali.offset[1] = p.data[3];
+
+	imu.mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
+	imu.mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
+	imu.mag_neutral.z = 0;
+	imu.mag_sens.x = mag_cali.gain[0];
+	imu.mag_sens.y = mag_cali.gain[1];
+	imu.mag_sens.z = 1;
+	mag_cali.cali_ok = TRUE;
 }
 
+#define HEADING_ROTATE_DELTA	((ANGLE_BFP_OF_REAL(RadOfDeg(30.)) / MAG_CALI_PERIODIC_FREQ))
 
+static void mag_cali_heading_rotate(bool_t dir)
+{
+	if(dir)
+	{
+		nav_heading += HEADING_ROTATE_DELTA;
+	}
+	else
+	{
+		nav_heading -= HEADING_ROTATE_DELTA;
+	}
+	INT32_COURSE_NORMALIZE(nav_heading);
+}
 
 void mag_cali_periodic(void)
 {
@@ -258,8 +295,28 @@ void mag_cali_periodic(void)
 	{
 		if(mag_cali.auto_cali)
 		{
-			nav_heading += ((ANGLE_BFP_OF_REAL(RadOfDeg(30.)) / MAG_CALI_PERIODIC_FREQ));
-			INT32_COURSE_NORMALIZE(nav_heading);
+			mag_cali_heading_rotate(TRUE);
+		}
+	}
+	else if(mag_cali.state == MAG_CALI_HEADING_ALIGN)
+	{
+		if(mag_cali.auto_cali)
+		{
+			int32_t heading_err = mag_cali.nav_heading_ini - nav_heading;
+			INT32_COURSE_NORMALIZE(heading_err);
+			if(nav_heading > 2*HEADING_ROTATE_DELTA)
+			{
+				mag_cali_heading_rotate((heading_err <= (ANGLE_BFP_OF_REAL(RadOfDeg(180.)))));
+			}
+			else
+			{
+				nav_heading = mag_cali.nav_heading_ini;
+				mag_cali.state = MAG_CALI_CALC1;
+			}
+		}
+		else
+		{
+			mag_cali.state = MAG_CALI_CALC1;
 		}
 	}
 	else if(mag_cali.state == MAG_CALI_CALC1)
@@ -268,7 +325,7 @@ void mag_cali_periodic(void)
 		{
 			if(mag_cali.grab_tick[i] == 0)
 			{
-				mag_cali.state = MAG_CALI_IDLE;
+				mag_cali_stop();
 				return;
 			}
 			mag_cali.grab_sum[i][0] /= (float)mag_cali.grab_tick[i];
@@ -309,7 +366,7 @@ void mag_cali_periodic(void)
 			}
 			if(max < 0.1f)
 			{
-				mag_cali.state = MAG_CALI_IDLE;
+				mag_cali_stop();
 				return;
 			}
 			gain[i] = 1.0f / max;
@@ -362,7 +419,7 @@ void mag_cali_periodic(void)
 		}
 		if(err)
 		{
-			mag_cali.state = MAG_CALI_IDLE;
+			mag_cali_stop();
 			return;
 		}
 
@@ -372,10 +429,10 @@ void mag_cali_periodic(void)
 		imu.mag_neutral.z = 0;
 		imu.mag_sens.x = mag_cali.gain[0];
 		imu.mag_sens.y = mag_cali.gain[1];
-		imu.mag_sens.z = 1;
+		imu.mag_sens.z = 0;
 		mag_cali.cali_ok = TRUE;
 
-		mag_cali.state = MAG_CALI_IDLE;
+		mag_cali_stop();
 	}
 
 float grab_x[MAG_CALI_GRAB_NUM];
@@ -446,6 +503,7 @@ bool_t mag_cali_nav_loop(bool_t run)
 		if ((!run_prev) && run)
 		{
 			mag_cali_start(TRUE);
+			mag_cali.nav_heading_ini = nav_heading;
 		}
 		run_prev = run;
 

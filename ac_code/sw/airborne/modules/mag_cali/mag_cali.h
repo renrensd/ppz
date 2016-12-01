@@ -24,6 +24,7 @@ enum _e_mag_cali_status
 	MAG_CALI_IDLE = 0,
 	MAG_CALI_INI,
 	MAG_CALI_GRAB,
+	MAG_CALI_HEADING_ALIGN,
 	MAG_CALI_CALC1,
 	MAG_CALI_CALC2,
 	MAG_CALI_CALC3
@@ -37,9 +38,10 @@ struct MagCali
   bool_t need_cali;
   bool_t auto_cali;
   bool_t cali_ok;
+  int32_t nav_heading_ini;
 
   uint8_t grab_tick[MAG_CALI_GRAB_NUM];
-  float grab_sum[MAG_CALI_GRAB_NUM][2];
+  float grab_sum[MAG_CALI_GRAB_NUM][3];
   uint8_t grab_index;
   uint8_t grab_index_lock;
   uint16_t convergence_tick;
