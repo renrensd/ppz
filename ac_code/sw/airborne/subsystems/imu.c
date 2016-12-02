@@ -294,11 +294,11 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 {
 	if(!mag_cali.cali_ok)
 	{
-		_imu->mag.x = ((_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN *
-											 IMU_MAG_X_SENS_NUM) / IMU_MAG_X_SENS_DEN;
-		_imu->mag.y = ((_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN *
+		_imu->mag.x = ((_imu->mag_unscaled.x - _imu->mag_neutral.x)  *
+									 IMU_MAG_X_SENS_NUM) / IMU_MAG_X_SENS_DEN;
+		_imu->mag.y = ((_imu->mag_unscaled.y - _imu->mag_neutral.y)  *
 									 IMU_MAG_Y_SENS_NUM) / IMU_MAG_Y_SENS_DEN;
-		_imu->mag.z = ((_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN *
+		_imu->mag.z = ((_imu->mag_unscaled.z - _imu->mag_neutral.z)  *
 									 IMU_MAG_Z_SENS_NUM) / IMU_MAG_Z_SENS_DEN;
 
 		VECT3_COPY(_imu->mag_scaled, _imu->mag);
@@ -309,10 +309,7 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 	}
 	else
 	{
-		_imu->mag_real.x = (_imu->mag_unscaled.x - _imu->mag_neutral.x) * IMU_MAG_X_SIGN * _imu->mag_sens.x;
-		_imu->mag_real.y = (_imu->mag_unscaled.y - _imu->mag_neutral.y) * IMU_MAG_Y_SIGN * _imu->mag_sens.y;
-		_imu->mag_real.z = (_imu->mag_unscaled.z - _imu->mag_neutral.z) * IMU_MAG_Z_SIGN * _imu->mag_sens.z;
-		MAGS_BFP_OF_REAL(_imu->mag, _imu->mag_real);
+		mag_cali_imu_scale(_imu);
 	}
 }
 #else

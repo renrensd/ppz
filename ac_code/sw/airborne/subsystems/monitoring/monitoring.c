@@ -257,8 +257,9 @@ void ground_monitoring(void)
 			break;
 			
 		case IMU_CHECK:	
-			//ground_check_step++;  //next step
-			//break;
+			//TEST_CASE
+			ground_check_step++;  //next step
+			break;
 			
 			check_state=imu_ground_check();
 			

@@ -9,7 +9,6 @@
  */
 
 #include "mag_cali.h"
-#include "subsystems/imu.h"
 #include "subsystems/abi.h"
 #include "generated/airframe.h"
 #include "math/my_math.h"
@@ -57,7 +56,6 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 			mag_cali.grab_tick[mag_cali.grab_index]++;
 			mag_cali.grab_sum[mag_cali.grab_index][0] += (float)imu.mag_unscaled.x/(float)MAG_SENSITIVITY;
 			mag_cali.grab_sum[mag_cali.grab_index][1] += (float)imu.mag_unscaled.y/(float)MAG_SENSITIVITY;
-			mag_cali.grab_sum[mag_cali.grab_index][2] += (float)imu.mag_unscaled.z/(float)MAG_SENSITIVITY;
 		}
 
 		for(uint8_t i=0;i<MAG_CALI_GRAB_NUM;++i)
@@ -96,7 +94,6 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 			mag_cali.grab_tick[i] = 0;
 			mag_cali.grab_sum[i][0] = 0;
 			mag_cali.grab_sum[i][1] = 0;
-			mag_cali.grab_sum[i][2] = 0;
 		}
 		mag_cali.grab_index = 0;
 		mag_cali.grab_index_lock = 1;
@@ -127,27 +124,28 @@ STATIC_MATRIX_DEF(step, 4, 1);
 
 static float grab_sum[MAG_CALI_GRAB_NUM][2] =
 {
-//{0.992084324, -0.118157975},
-//{0.693150163, -0.672581613},
-//{0.116317995, -0.972254038},
-//{-0.461079985, -0.80696398},
-//{-0.831259012, -0.418678433},
-//{-0.905969441, 0.140402019},
-//{-0.596551895, 0.802987754},
-//{-0.108388022, 1.01896238},
-//{0.534478009, 0.890410185},
-//{0.927089989, 0.464597851}
-		{0.752711, 0.17588},
-		{0.569393, -0.138552},
-		{0.380054, -0.214333},
-		{-0.005076, -0.048989},
-		{-0.059772, 0.148237},
-		{-0.006241, 0.366058},
-		{0.124128, 0.538781},
-		{0.352286, 0.609604},
-		{0.709104, 0.415204},
-		{0.757587, 0.221678}
+//{0.81444, -0.169973},
+//{0.734748, -0.421992},
+//{0.518295, -0.576011},
+//{0.320252, -0.483407},
+//{0.163265, -0.22022},
+//{0.114414, 0.145734},
+//{0.197053, 0.4374},
+//{0.365831, 0.572692},
+//{0.571578, 0.515232},
+//{0.760845, 0.216879}
+	{0.787996709, -0.280681372},
+	{0.669165194, -0.50187403},
+	{0.445261717, -0.559789181},
+	{0.248248234, -0.408304095},
+	{0.124468334, -0.103591673},
+	{0.123394191, 0.268348336},
+	{0.259845763, 0.524962544},
+	{0.49145335, 0.572828531},
+	{0.683733344, 0.379964918},
+	{0.766995072, 0.232583329}
 };
+
 static float grab_sum2[MAG_CALI_GRAB_NUM][2];
 
 
@@ -175,17 +173,17 @@ void mag_cali_init(void)
 
 	// test data
 	float theta,max,min,offset[2],gain[2];
-	for (uint16_t i = 0; i < 10; ++i)
-	{
-		theta = my_math_2pi/(float)MAG_CALI_GRAB_NUM*(float)i;
-		grab_sum[i][0] = cosf(theta) * 1.0f;
-		grab_sum[i][1] = sinf(theta) * 1.0f;
-
-		grab_sum[i][0] *= 1.0f/0.1f;
-		grab_sum[i][1] *= 1.0f/0.2f;
-		grab_sum[i][0] += 2;
-		grab_sum[i][1] += 3;
-	}
+//	for (uint16_t i = 0; i < 10; ++i)
+//	{
+//		theta = my_math_2pi/(float)MAG_CALI_GRAB_NUM*(float)i;
+//		grab_sum[i][0] = cosf(theta) * 1.0f;
+//		grab_sum[i][1] = sinf(theta) * 1.0f;
+//
+//		grab_sum[i][0] *= 1.0f/0.1f;
+//		grab_sum[i][1] *= 1.0f/0.2f;
+//		grab_sum[i][0] += 2;
+//		grab_sum[i][1] += 3;
+//	}
 
 	// ini guess of offset and gain
 	for (uint8_t i = 0; i < 2; ++i)
@@ -238,7 +236,7 @@ void mag_cali_init(void)
 	p.data[2] = offset[0];
 	p.data[3] = offset[1];
 
-	for (uint16_t i = 0; i < 100; ++i)
+	for (uint16_t i = 0; i < 200; ++i)
 	{
 		mag_cali_calc_F(&F, &p, grab_sum);
 		mag_cali_calc_JT(&JT, &p, grab_sum);
@@ -257,7 +255,7 @@ void mag_cali_init(void)
 	imu.mag_neutral.z = 0;
 	imu.mag_sens.x = mag_cali.gain[0];
 	imu.mag_sens.y = mag_cali.gain[1];
-	imu.mag_sens.z = 1;
+	imu.mag_sens.z = 0;
 	mag_cali.cali_ok = TRUE;
 }
 
@@ -274,6 +272,15 @@ static void mag_cali_heading_rotate(bool_t dir)
 		nav_heading -= HEADING_ROTATE_DELTA;
 	}
 	INT32_COURSE_NORMALIZE(nav_heading);
+}
+
+void mag_cali_imu_scale(struct Imu *_imu)
+{
+	_imu->mag_real.x = (float)(_imu->mag_unscaled.x - _imu->mag_neutral.x) * _imu->mag_sens.x / (float)MAG_SENSITIVITY;
+	_imu->mag_real.y = (float)(_imu->mag_unscaled.y - _imu->mag_neutral.y) * _imu->mag_sens.y / (float)MAG_SENSITIVITY;
+	_imu->mag_real.z = (float)(_imu->mag_unscaled.z - _imu->mag_neutral.z) * _imu->mag_sens.z / (float)MAG_SENSITIVITY;
+	MAGS_BFP_OF_REAL(_imu->mag, _imu->mag_real);
+	VECT3_COPY(_imu->mag_scaled, _imu->mag);
 }
 
 void mag_cali_periodic(void)
@@ -304,7 +311,7 @@ void mag_cali_periodic(void)
 		{
 			int32_t heading_err = mag_cali.nav_heading_ini - nav_heading;
 			INT32_COURSE_NORMALIZE(heading_err);
-			if(nav_heading > 2*HEADING_ROTATE_DELTA)
+			if(heading_err > 2*HEADING_ROTATE_DELTA)
 			{
 				mag_cali_heading_rotate((heading_err <= (ANGLE_BFP_OF_REAL(RadOfDeg(180.)))));
 			}

@@ -12,6 +12,7 @@
 #define MAG_CALI_H
 
 #include "std.h"
+#include "subsystems/imu.h"
 
 #define MAG_CALI_GRAB_COUNT_MAX				(100)
 #define MAG_CALI_AUTO_ROTATE_TIME		(10)
@@ -41,7 +42,7 @@ struct MagCali
   int32_t nav_heading_ini;
 
   uint8_t grab_tick[MAG_CALI_GRAB_NUM];
-  float grab_sum[MAG_CALI_GRAB_NUM][3];
+  float grab_sum[MAG_CALI_GRAB_NUM][2];
   uint8_t grab_index;
   uint8_t grab_index_lock;
   uint16_t convergence_tick;
@@ -53,6 +54,7 @@ extern void mag_cali_init(void);
 extern void mag_cali_periodic(void);
 extern void mag_cali_event(void);
 
+extern void mag_cali_imu_scale(struct Imu *_imu);
 extern bool_t mag_cali_nav_loop(bool_t run);
 
 extern struct MagCali mag_cali;
