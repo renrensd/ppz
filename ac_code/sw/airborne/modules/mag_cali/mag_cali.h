@@ -39,6 +39,8 @@ struct MagCali
   bool_t need_cali;
   bool_t auto_cali;
   bool_t cali_ok;
+  bool_t cali_ok_last;
+  bool_t setting_store;
   int32_t nav_heading_ini;
 
   uint8_t grab_tick[MAG_CALI_GRAB_NUM];

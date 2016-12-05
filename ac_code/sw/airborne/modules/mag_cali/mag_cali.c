@@ -25,8 +25,9 @@ static void mag_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[MA
 static void mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[MAG_CALI_GRAB_NUM][2]);
 
 static void mag_cali_start(bool_t auto_cali);
-static void mag_cali_stop(void);
+static void mag_cali_stop(bool_t ok);
 static bool_t is_mag_cali_done(void);
+static bool_t mag_cali_load_to_imu(void);
 
 #define MAG_SENSITIVITY		(12000) // LSB/G
 #define NORM_MAG	(0.6f) // Gauss
@@ -78,7 +79,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 {
 	if(!gps_s->h_stable)
 	{
-		mag_cali_stop();
+		mag_cali_stop(FALSE);
 		return;
 	}
 
@@ -160,9 +161,16 @@ void mag_cali_init(void)
 	mag_cali.manual_enable = FALSE;
 	mag_cali.manual_enable_prev = FALSE;
 	mag_cali.state = MAG_CALI_IDLE;
-	mag_cali.need_cali = FALSE; // TODO: according to fram mag cali block
+	if(mag_cali.cali_ok)	// TODO: according to fram mag cali block
+	{
+		mag_cali.need_cali = !mag_cali_load_to_imu();
+	}
+	else
+	{
+		mag_cali.need_cali = TRUE;
+	}
 	mag_cali.auto_cali = FALSE;
-	mag_cali.cali_ok = FALSE;
+	mag_cali.setting_store = FALSE;
 
 	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
 	AbiBindMsgGPS_HEADING(ABI_BROADCAST, &gps_ev, gps_cb);
@@ -274,6 +282,44 @@ static void mag_cali_heading_rotate(bool_t dir)
 	INT32_COURSE_NORMALIZE(nav_heading);
 }
 
+static bool_t mag_cali_load_to_imu(void)
+{
+	// range check
+	float err = 0;
+	if((mag_cali.gain[0] < 0.1f) || (mag_cali.gain[0] > 10.0f))
+	{
+		err++;
+	}
+	if ((mag_cali.gain[1] < 0.1f) || (mag_cali.gain[1] > 10.0f))
+	{
+		err++;
+	}
+	if ((mag_cali.offset[0] < -1.0f) || (mag_cali.offset[0] > 1.0f))
+	{
+		err++;
+	}
+	if ((mag_cali.offset[1] < -1.0f) || (mag_cali.offset[1] > 1.0f))
+	{
+		err++;
+	}
+
+	if(err)
+	{
+		return FALSE;
+	}
+	else
+	{
+		imu.mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
+		imu.mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
+		imu.mag_neutral.z = 0;
+		imu.mag_sens.x = mag_cali.gain[0];
+		imu.mag_sens.y = mag_cali.gain[1];
+		imu.mag_sens.z = 0;
+
+		return TRUE;
+	}
+}
+
 void mag_cali_imu_scale(struct Imu *_imu)
 {
 	_imu->mag_real.x = (float)(_imu->mag_unscaled.x - _imu->mag_neutral.x) * _imu->mag_sens.x / (float)MAG_SENSITIVITY;
@@ -285,6 +331,16 @@ void mag_cali_imu_scale(struct Imu *_imu)
 
 void mag_cali_periodic(void)
 {
+	if(mag_cali.setting_store)
+	{
+		if(kill_throttle)
+		{
+			settings_store_flag = TRUE;
+			settings_store();
+			mag_cali.setting_store = FALSE;
+		}
+	}
+
 	if(mag_cali.manual_enable_prev != mag_cali.manual_enable)
 	{
 		if(mag_cali.manual_enable == TRUE)
@@ -293,7 +349,7 @@ void mag_cali_periodic(void)
 		}
 		else
 		{
-			mag_cali_stop();
+			mag_cali_stop(FALSE);
 		}
 	}
 	mag_cali.manual_enable_prev = mag_cali.manual_enable;
@@ -332,7 +388,7 @@ void mag_cali_periodic(void)
 		{
 			if(mag_cali.grab_tick[i] == 0)
 			{
-				mag_cali_stop();
+				mag_cali_stop(FALSE);
 				return;
 			}
 			mag_cali.grab_sum[i][0] /= (float)mag_cali.grab_tick[i];
@@ -373,7 +429,7 @@ void mag_cali_periodic(void)
 			}
 			if(max < 0.1f)
 			{
-				mag_cali_stop();
+				mag_cali_stop(FALSE);
 				return;
 			}
 			gain[i] = 1.0f / max;
@@ -406,40 +462,8 @@ void mag_cali_periodic(void)
 		mag_cali.offset[0] = p.data[2];
 		mag_cali.offset[1] = p.data[3];
 
-		// range check
-		float err = 0;
-		if((mag_cali.gain[0] < 0.1f) || (mag_cali.gain[0] > 10.0f))
-		{
-			err++;
-		}
-		if ((mag_cali.gain[1] < 0.1f) || (mag_cali.gain[1] > 10.0f))
-		{
-			err++;
-		}
-		if ((mag_cali.offset[0] < -0.5f) || (mag_cali.offset[0] > 0.5f))
-		{
-			err++;
-		}
-		if ((mag_cali.offset[1] < -0.5f) || (mag_cali.offset[1] > 0.5f))
-		{
-			err++;
-		}
-		if(err)
-		{
-			mag_cali_stop();
-			return;
-		}
-
-		// ok
-		imu.mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
-		imu.mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
-		imu.mag_neutral.z = 0;
-		imu.mag_sens.x = mag_cali.gain[0];
-		imu.mag_sens.y = mag_cali.gain[1];
-		imu.mag_sens.z = 0;
-		mag_cali.cali_ok = TRUE;
-
-		mag_cali_stop();
+		// check and load
+		mag_cali_stop(mag_cali_load_to_imu());
 	}
 
 float grab_x[MAG_CALI_GRAB_NUM];
@@ -482,12 +506,23 @@ static void mag_cali_start(bool_t auto_cali)
 	{
 		mag_cali.auto_cali = auto_cali;
 		mag_cali.state = MAG_CALI_INI;
+		mag_cali.cali_ok_last = mag_cali.cali_ok;
 	}
 }
-static void mag_cali_stop(void)
+static void mag_cali_stop(bool_t ok)
 {
 	mag_cali.state = MAG_CALI_IDLE;
 	mag_cali.auto_cali = FALSE;
+	if(ok)
+	{
+		mag_cali.cali_ok = TRUE;
+		mag_cali.setting_store = TRUE;
+	}
+	else
+	{
+		mag_cali.cali_ok = mag_cali.cali_ok_last;
+	}
+	mag_cali.need_cali = !mag_cali.cali_ok;
 }
 static bool_t is_mag_cali_done(void)
 {
@@ -501,7 +536,7 @@ bool_t mag_cali_nav_loop(bool_t run)
 
 	if(!run)
 	{
-		mag_cali_stop();
+		mag_cali_stop(FALSE);
 		return TRUE;
 	}
 

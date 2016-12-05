@@ -70,10 +70,7 @@ void settings_init(void)
   #endif	/* FRAM_OPTION */
   
   /* from generated/settings.h */
-  if(guidance_v_kp != 0)
-  {
-  	persistent_settings_load();
-  }
+  persistent_settings_load();
 #endif
 }
 

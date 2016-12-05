@@ -204,6 +204,12 @@ STATIC_INLINE void main_init(void)
 {
   mcu_init();
 
+#ifdef FRAM_OPTION
+  fram_init_all_data();
+#endif
+
+  settings_init();
+
 #if defined(PPRZ_TRIG_INT_COMPR_FLASH)
   pprz_trig_int_init();
 #endif
@@ -232,10 +238,6 @@ STATIC_INLINE void main_init(void)
   baro_init();
 #endif
 
-#ifdef FRAM_OPTION
-  fram_init_all_data();
-#endif
-
 #if USE_IMU
   imu_init();
 #endif
@@ -256,8 +258,6 @@ STATIC_INLINE void main_init(void)
   autopilot_init();
 
   modules_init();
-
-  settings_init();
 
   mcu_int_enable();
 
