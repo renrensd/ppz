@@ -27,6 +27,8 @@
 #if DATALINK == TRANSPTA
 #include "subsystems/datalink/transpta.h"
 #endif	/* TRANSPTA */
+/*for virtual RC*/
+#include "subsystems/rc_nav/rc_nav_xbee.h"
 
 #include "modules/system/timer_if.h"
 #include "modules/system/timer_class.h"

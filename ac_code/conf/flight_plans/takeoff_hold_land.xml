@@ -73,7 +73,7 @@
       <go wp="TD"/>
     </block>
     <block name="flare">
-      <exception cond="0.36 > agl_dist_value_filtered" deroute="Holding point"/>
+      <exception cond="0.36 > stateGetPositionEnu_f()->z" deroute="Holding point"/>
       <exception cond="!nav_is_in_flight()" deroute="landed"/>
       <call fun="NavStartDetectGround()"/>
       <stay climb="-0.15" vmode="climb" wp="TD"/>

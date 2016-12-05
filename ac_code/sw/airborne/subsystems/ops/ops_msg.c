@@ -110,7 +110,7 @@ void ops_msg_stop_spraying(void)
 **  PARAMETERS    : void
 **  RETURN        : void                                                          
 *******************************************************************************/
-void ops_msg_request_sv(void)
+void ops_request_software_version(void)
 {
 	uint8_t arg[6];
    	arg[0] = OPS_PRIO_DIAGNOSE;

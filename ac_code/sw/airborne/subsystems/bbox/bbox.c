@@ -31,6 +31,7 @@
 /*---Private include files--------------------------------------------*/
 #include "bbox.h"   
 #include "bbox_if.h" 
+#include "bbox_msg_if.h" 
 #include "bbox_msg_def.h"   
 
 
@@ -65,6 +66,8 @@ void bbox_init(void)
 	bbox_info.con_flag = TRUE;
 	bbox_info.start_log = FALSE;
 	bbox_info.gps_time = FALSE;
+
+	bbox_info.sv_update = FALSE;
 	tm_create_timer(TIMER_CAN_NEW_LOG, (600 SECONDS), TIMER_PERIODIC,0);
 }
 

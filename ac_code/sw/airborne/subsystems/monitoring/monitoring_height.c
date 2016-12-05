@@ -53,7 +53,9 @@ static abi_event sonar_ev_mo;
 static abi_event baro_ev_mo;
 
 static void sonar_moni_cb(uint8_t __attribute__((unused)) sender_id, float distance);
-static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id, float pressure);
+static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
+                         uint32_t __attribute__((unused)) stamp, 
+                         float pressure, float temp);
 
 static inline void sonar_flight_check(void);
 static inline void baro_flight_check(void);
@@ -505,7 +507,9 @@ static void sonar_moni_cb(uint8_t __attribute__((unused)) sender_id, float dista
 * INPUTS      : sender_id, and baro pressure(pascal)
 * RETURN      : none
 ***********************************************************************/
-static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
+static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
+                         uint32_t __attribute__((unused)) stamp, 
+                         float pressure, float temp)
 {
   static float last_pressure, ground_pressure_aver;
   static uint32_t last_ts;

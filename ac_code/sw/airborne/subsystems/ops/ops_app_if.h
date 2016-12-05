@@ -27,6 +27,8 @@
 #define PARAM_SPRAY_ATOM  4
 #define PARAM_SPRAY_CHANNEL  5
 
+#define MAX_OPS_SV_VERSION_LEN  30
+
 /**** Definition of types ****/ 
 
 /**** Definition of macros ****/
@@ -50,7 +52,10 @@ struct OPS_INFO
 	int8_t    o_bat_rep_percent;
 	//#endif
 	uint8_t  sys_error;
-	char  ops_sv[25];
+
+	bool_t  sv_update;
+	uint8_t sv_len;
+	uint8_t version[MAX_OPS_SV_VERSION_LEN];
 };
 
 struct OPS_CONFIG_PARAM
@@ -77,6 +82,7 @@ extern void ops_update_aircraft_vel(void);
 extern void ops_heart_beat_lose_handler(void);
 extern void ops_update_config_param(uint16_t param, uint8_t param_type);
 extern void rc_update_ops_config_param(uint8_t grade);
+extern void ops_software_version_handler(uint8_t *param, uint8_t len);
 
 #endif /*_OPS_APP_IF_H_*/
 /****************************** END OF FILE ***************************/

@@ -121,10 +121,10 @@ static void gps_nmea_data_filter_ini(void)
 	InitMedianFilterVect3Int(gps_nmea.ecef_pos_filter);
 	InitMedianFilterVect3Int(gps_nmea.ecef_vel_filter);
 }
-static void gps_nmea_data_filter_update(struct GpsState *gps_s)
+static void gps_nmea_data_filter_update(void)
 {
-	UpdateMedianFilterVect3Int(gps_nmea.ecef_pos_filter, gps_s->ecef_pos);
-	UpdateMedianFilterVect3Int(gps_nmea.ecef_vel_filter, gps_s->ecef_vel);
+	UpdateMedianFilterVect3Int(gps_nmea.ecef_pos_filter, gps.ecef_pos);
+	UpdateMedianFilterVect3Int(gps_nmea.ecef_vel_filter, gps.ecef_vel);
 }
 
 void gps_impl_init(void)
@@ -171,7 +171,7 @@ void gps_nmea_msg(void)
 			gps.last_3dfix_time = sys_time.nb_sec;
 		}
 	 	//median filter
-	 	//gps_nmea_data_filter_update(&gps);
+	 	//gps_nmea_data_filter_update(gps);
 		AbiSendMsgGPS_POS(GPS_NMEA_ID, now_ts, &gps);
   }
  #if USE_XYZA
@@ -185,7 +185,7 @@ void gps_nmea_msg(void)
   if( gps_nmea.heading_available ) 
   {
   	//median filter
-  	//gps_nmea_data_filter_update(&gps);
+  	//gps_nmea_data_filter_update(gps);
   	AbiSendMsgGPS_HEADING(GPS_NMEA_ID, now_ts, &gps);
   }
   gps_nmea.heading_available = FALSE;
@@ -892,7 +892,7 @@ static void nmea_parse_XYZ(void)
 void get_gps_pos_stable(void)
 {
 	static uint8_t counter_nmea_qual = 0;
-	//if(gps_nmea.gps_qual != 52) //not fix pos
+
 	if(gps_nmea.pos_type < WIDE_INT)
 	{
 		gps.p_stable = FALSE;
@@ -908,7 +908,15 @@ void get_gps_pos_stable(void)
 		gps.p_stable = TRUE;
 		counter_nmea_qual = 41;  /*avoid overflow*/
 	}
-	
+
+	if( gps_nmea.pos_type <= SINGLE )
+	{
+		gps.flag_rtk = FALSE;
+	}
+	else
+	{
+		gps.flag_rtk = TRUE;
+	}
 }
 
 /*run 20hz,use 2s time no fix heading set unstable*/
@@ -925,7 +933,7 @@ void get_gps_heading_stable(void)
 		counter_heading++;
 	}
 
-	if( ((counter_heading>200)&&(get_sys_time_float()<300.0))
+	if( ((counter_heading>200)&&(get_sys_time_float()<300.0)&&(gps_nmea.num_sta_use>14))
 		||((counter_heading>80)&&(get_sys_time_float()>300.0)) )
 	{
 		gps.h_stable = TRUE;

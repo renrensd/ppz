@@ -43,8 +43,8 @@
 /*ground check step*/
 
 /*forward leds indicate AC status*/
-#define GREED_LED 2
-#define RED_LED 3
+#define GREED_LED 3
+#define RED_LED 2
 enum Ground_Check_Step
 {
 	BATTERY_CHECK = 0,
@@ -168,16 +168,27 @@ void monitoring_periodic(void)
 	{
 		if(monitoring_state == GROUND_MONITORING) {  //want to return ground_monitoring(),need reset sensor ground check flag
 		   ground_monitoring();
+		   LED_ON(GREED_LED);
 		   LED_TOGGLE(RED_LED);  //red led toggle, sign running ground monitoring
 		}
 		else 
 		{
 			flight_monitoring();  //once ground_monitoring() finished,it will run.
-			LED_ON(GREED_LED);
+			if(em_code)
+			{
+				LED_OFF(GREED_LED); 
+				LED_TOGGLE(RED_LED);  
+			}
+			else
+			{
+				LED_OFF(RED_LED);
+				LED_ON(GREED_LED);
+			}
 		}
 	}
 	else
 	{
+		LED_OFF(GREED_LED);
 		LED_ON(RED_LED); //red led on, sign ground monitoring fail
 	}
 	
@@ -523,11 +534,6 @@ static inline void alert_grade_update(void)
 			}
 			em_code = em_code|(1<<i);
 		}			
-	}
-
-	if(em_code)
-	{
-		LED_ON(RED_LED);  
 	}
 }
 

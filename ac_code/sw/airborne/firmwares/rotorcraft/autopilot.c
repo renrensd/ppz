@@ -194,6 +194,27 @@ static void send_mcu_fault(struct transport_tx *trans, struct link_device *dev)
   pprz_msg_send_MCU_FAULT(trans, dev, AC_ID, &mcu_info.reset_src);
 }
 #endif
+#ifdef BBOX_OPTION
+static void send_utc_time(struct transport_tx *trans, struct link_device *dev)
+{
+	if(get_sys_day())
+	{
+		uint32_t time = (get_sys_year()<<24) | (get_sys_month()<<16) | (get_sys_day()<<8) | (get_sys_day());
+		pprz_msg_send_UTC_TIME(trans, dev, AC_ID, &time);
+	}
+}
+
+static void send_actuators_pwm(struct transport_tx *trans, struct link_device *dev)
+{
+	pprz_msg_send_ACTUATORS_PWM(trans, dev, AC_ID , 
+	  	                         &actuators_pwm_values[0],
+	  	                         &actuators_pwm_values[1],
+	  	                         &actuators_pwm_values[2],
+	  	                         &actuators_pwm_values[3],
+	  	                         &actuators_pwm_values[4],
+	  	                         &actuators_pwm_values[5]      );
+}
+#endif
 static void send_attitude(struct transport_tx *trans, struct link_device *dev)
 {
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
@@ -406,6 +427,10 @@ void autopilot_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DL_VALUE, send_dl_value);
   #ifndef NPS_SIMU
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MCU_FAULT, send_mcu_fault);
+  #endif
+  #ifdef BBOX_OPTION
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_UTC_TIME, send_utc_time);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_UTC_TIME, send_actuators_pwm);
   #endif
 #ifdef ACTUATORS
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);

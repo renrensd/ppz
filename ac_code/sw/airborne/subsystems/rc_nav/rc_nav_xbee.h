@@ -32,11 +32,11 @@ struct rc_motion
 struct rc_set
 {
 	uint8_t mode_state;
-	uint8_t vtol;
+	uint8_t vtol;   //total nav_rc_mode ac state
 	bool_t  home;
 	uint8_t spray_grade;
 	bool_t  m_power;	
-	bool_t  locked;
+	bool_t  locked; //ac motors locked status
 };
 
 enum manual_mission

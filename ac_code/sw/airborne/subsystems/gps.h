@@ -105,13 +105,13 @@ struct GpsState {
   uint32_t last_msg_time;        ///< cpu time in sec at last received GPS message
   uint16_t reset;                ///< hotstart, warmstart, coldstart
   bool_t p_stable;                 ///< position stable flag
+  bool_t flag_rtk;
 
-  //**********************HJS-ZAM-GPS-HEAD
   float heading;
-  //float pitch;
   bool_t h_stable;              ///< heading stable flag
   uint8_t head_stanum;
-  //**********************HJS-ZAM-GPS-HEAD
+
+
 };
 
 /** data structure for GPS time sync */

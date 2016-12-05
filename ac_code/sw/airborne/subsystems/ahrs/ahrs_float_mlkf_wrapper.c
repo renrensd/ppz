@@ -31,7 +31,7 @@
 #include "state.h"
 
 #ifndef AHRS_MLKF_OUTPUT_ENABLED
-#define AHRS_MLKF_OUTPUT_ENABLED TRUE
+#define AHRS_MLKF_OUTPUT_ENABLED FALSE
 #endif
 PRINT_CONFIG_VAR(AHRS_MLKF_OUTPUT_ENABLED)
 
@@ -190,12 +190,15 @@ static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
                        struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
                        struct Int32Vect3 *lp_mag)
 {
-  if (!ahrs_mlkf.is_aligned) {
+  if (!ahrs_mlkf.is_aligned) 
+  {
     /* set initial body orientation in state interface if alignment was successful */
     /*now we use mag data for aligned,need use gps heading instead later:TODOM*/
 	
-    if (ahrs_mlkf_align(lp_gyro, lp_accel, lp_mag)) {
-      set_body_state_from_quat();
+    if (ahrs_mlkf_align(lp_gyro, lp_accel, lp_mag)) 
+	{
+		ahrs_mlkf_output_enabled = TRUE;
+		set_body_state_from_quat();
     }
   }
 }

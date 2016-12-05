@@ -34,6 +34,13 @@
 #include "subsystems/fram/fram_class.h"
 #include "subsystems/fram/fram_def.h"
 
+#include "subsystems/ops/ops_app_if.h"
+#include "subsystems/ops/ops_msg_if.h"
+#ifdef BBOX_OPTION
+#include "subsystems/bbox/bbox_if.h"
+#include "subsystems/bbox/bbox_msg_if.h"
+#endif
+
 /*---Private include files--------------------------------------------*/
 #include "eng_app.h"
 #include "eng_app_if.h"
@@ -53,9 +60,15 @@ static uint8_t *checksum_ptr;
 static uint16_t counter_rom_segment; 
 static uint8_t eng_con_flag = 0;
 
+COMPONENT_VERSION_INFO eng_components_info;
+
 //the following only used before first connect completed.
 
 /*===FUNCTIONS========================================================*/
+static void eng_update_components_info(void);
+static void request_components_sv_version(void);
+static void get_components_sv_version(void);
+
 
 /*---Global-----------------------------------------------------------*/
 void eng_task(void)
@@ -75,6 +88,87 @@ void eng_task(void)
     	eng_get_ac_identification(ENG_GET_AC_HW_VERSION);
 		eng_get_ac_identification(ENG_GET_MANUFACTURE_INFO);
 		eng_get_ac_identification(ENG_GET_AC_CHECKSUM);
+	}
+	
+	RunOnceEvery(ENG_PERIODIC_FREQUENCY/5, eng_update_components_info());
+}
+
+static void eng_update_components_info(void)
+{
+	request_components_sv_version();	
+	get_components_sv_version();
+}
+
+static void request_components_sv_version(void)
+{
+	static bool_t ops_timer_creat = FALSE;
+	
+	if(!eng_components_info.ops_sv.sv_update && !ops_timer_creat)
+	{
+		tm_create_timer((uint8_t)TIMER_GET_OPS_SV_VERSION,2 SECONDS,10,0);
+		ops_timer_creat = TRUE;
+	}
+	if(eng_components_info.ops_sv.sv_update && ops_timer_creat)
+	{
+		tm_kill_timer((uint8_t)TIMER_GET_OPS_SV_VERSION);
+		ops_timer_creat = FALSE;
+	}
+
+   #ifdef BBOX_OPTION
+    static bool_t bbox_timer_creat = FALSE;
+   
+   	if(!eng_components_info.bbox_sv.sv_update && !bbox_timer_creat)
+	{
+		tm_create_timer((uint8_t)TIMER_GET_BBOX_SV_VERSION,2 SECONDS,10,0);
+		bbox_timer_creat = TRUE;
+	}
+	if(eng_components_info.bbox_sv.sv_update && bbox_timer_creat)
+	{
+		tm_kill_timer((uint8_t)TIMER_GET_BBOX_SV_VERSION);
+		bbox_timer_creat = FALSE;
+	}
+   #endif
+}
+
+static void get_components_sv_version(void)
+{
+	if(!eng_components_info.ops_sv.sv_update)
+	{
+		if(ops_info.sv_update)
+		{
+			for(uint8_t i=0; i<ops_info.sv_len; i++)
+			{
+				eng_components_info.ops_sv.version[i] = ops_info.version[i];
+			}
+			eng_components_info.ops_sv.sv_len = ops_info.sv_len;
+			eng_components_info.ops_sv.sv_update = TRUE;
+		}
+	}
+
+	#ifdef BBOX_OPTION
+	if(!eng_components_info.bbox_sv.sv_update)
+	{
+		if(bbox_info.sv_update)
+		{
+			for(uint8_t i=0; i<bbox_info.sv_len; i++)
+			{
+				eng_components_info.bbox_sv.version[i] = bbox_info.version[i];
+			}
+			eng_components_info.bbox_sv.sv_len = bbox_info.sv_len;
+			eng_components_info.bbox_sv.sv_update = TRUE;
+		}
+	}
+	#endif
+	
+	if(!eng_components_info.ac_sv.sv_update)
+	{
+		uint8_t* ac_sv = eng_get_ac_version();
+		for(uint8_t i=0; i<SIZE_OF_AC_VERSION; i++)
+		{
+			eng_components_info.ac_sv.version[i] = *(ac_sv+i);
+		}
+		eng_components_info.ac_sv.sv_len = SIZE_OF_AC_VERSION;
+		eng_components_info.ac_sv.sv_update = TRUE;
 	}
 }
 
@@ -177,6 +271,30 @@ uint8_t* eng_get_12nc_series_number(void)
 uint8_t* eng_get_manufacture_date(void)
 {
 	return 	&manufacture_info.cl_manufacture_date[0];
+}
+
+/***********************************************************************
+* FUNCTION    : eng_request_ops_sw_version
+* DESCRIPTION : 
+* INPUTS      : void
+* RETURN      : 
+***********************************************************************/
+void eng_request_ops_sw_version(void)
+{
+	ops_request_software_version();
+}
+
+/***********************************************************************
+* FUNCTION    : eng_request_bbox_sw_version
+* DESCRIPTION : 
+* INPUTS      : void
+* RETURN      : 
+***********************************************************************/
+void eng_request_bbox_sw_version(void)
+{
+	#ifdef BBOX_OPTION
+	bbox_request_software_version();
+	#endif
 }
 
 /***********************************************************************

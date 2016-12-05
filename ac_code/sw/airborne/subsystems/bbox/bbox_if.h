@@ -21,7 +21,7 @@
 #define _BBOX_IF_H_ 
 
 /**** Definition of constants ****/
-
+#define MAX_BBOX_SV_VERSION_LEN  30
 
 /**** Definition of types ****/ 
 
@@ -32,6 +32,10 @@ struct BBOX_INFO
 	bool_t first_con;
 	bool_t start_log;
 	bool_t gps_time;
+
+	bool_t sv_update;
+	uint8_t sv_len;
+	uint8_t version[MAX_BBOX_SV_VERSION_LEN];
 	
 };
 

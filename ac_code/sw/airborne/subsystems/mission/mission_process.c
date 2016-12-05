@@ -155,7 +155,7 @@ static inline bool_t mission_nav_path(struct _mission_element *el)
 	  el->element.mission_path.path_idx++;
     }
 	//set heading along the path
-	nav_set_heading_along(from_wp,to_wp);
+	nav_set_heading_forward_line(from_wp,to_wp);
 	if( nav_check_heading() )    //check heading error
 	{
 	    //Route Between from-to

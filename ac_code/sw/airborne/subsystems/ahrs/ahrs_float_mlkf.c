@@ -434,18 +434,10 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 {
 
   /* converted expected measurement from inertial to body frame */
-
   struct FloatVect3 b_expected;
   float_quat_vmult(&b_expected, &ahrs_mlkf.ltp_to_imu_quat, i_expected);
-//  struct FloatVect3 i_b_measured;
-//  float_vect3_normalize(b_measured);
-//  float_quat_vmult_inv(&i_b_measured, &ahrs_mlkf.ltp_to_imu_quat, b_measured);
-//  i_b_measured.z = 0;
-//  float_quat_vmult(b_measured, &ahrs_mlkf.ltp_to_imu_quat, &i_b_measured);
-//  float_vect3_normalize(b_measured);
 
   /* set roll/pitch errors to zero to only correct heading */
-  // S = HPH' + JRJ
   struct FloatVect3 i_h_2d = {i_expected->y, -i_expected->x, 0.f};
   struct FloatVect3 b_yaw;
   float_quat_vmult(&b_yaw, &ahrs_mlkf.ltp_to_imu_quat, &i_h_2d);
@@ -517,7 +509,7 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_s)
 			if(!gps_heading_aligned)
 			{
 				gps_heading_aligned = TRUE;
-				ahrs_float_get_quat_from_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, gps_s);
+				ahrs_float_get_quat_from_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, gps_s->heading);
 			}
 			ahrs_mlkf_update_gps_heading(gps_s);
 		}

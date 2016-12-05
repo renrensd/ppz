@@ -41,6 +41,8 @@ TIMER(TIMER_BBOX_HEART_BEAT_TIMEOUT,      		bbox_heart_beat_timeout_handler,    
 #endif	/* BBOX_OPTION */
 #ifdef ENG_OPTION
 TIMER(TIMER_GET_CAL_AC_CHECKSUM,				eng_ac_checksum_calculation,			TIMER_TASK_ENG)
+TIMER(TIMER_GET_OPS_SV_VERSION,				   eng_request_ops_sw_version,			    TIMER_TASK_ENG)
+TIMER(TIMER_GET_BBOX_SV_VERSION,				eng_request_bbox_sw_version,			TIMER_TASK_ENG)
 #endif	/* ENG_OPTION */
 END_TIMERS
 

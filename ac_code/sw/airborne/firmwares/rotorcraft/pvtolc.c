@@ -41,7 +41,6 @@ bool_t flight_prepare(bool_t reset)
 	  break;
 	case 4:
 	  NavAttitude(RadOfDeg(0));
-      NavVerticalAutoThrottleMode(RadOfDeg(0));
       NavVerticalThrottleMode(9600*(0));
 	  step_p=0;      //reset step_p,make it can rerun
 	  return FALSE;  //finish flight prepare	
@@ -51,7 +50,7 @@ bool_t flight_prepare(bool_t reset)
   return TRUE;
 }
 
-#if 0
+#if 1
 bool_t take_off_motion(bool_t reset)
 { 
   static uint8_t step_t=0;
@@ -60,7 +59,6 @@ bool_t take_off_motion(bool_t reset)
     case 0:  //reset output cmd
 	  //horizontal set attitude 0
 	  NavAttitude(RadOfDeg(0));
-	  NavVerticalAutoThrottleMode(RadOfDeg(0));
 	  //vertical set throttle 0
 	  NavVerticalThrottleMode(9600*(0));
 	  step_t++;
@@ -74,7 +72,6 @@ bool_t take_off_motion(bool_t reset)
 	  { 
 	    wp_ToL=*stateGetPositionEnu_i();  
 		NavGotoWaypoint_wp(wp_ToL);
-	    NavVerticalAutoThrottleMode(RadOfDeg(0.0));
 	    NavVerticalAltitudeMode(Height(2.000000), 0.);
 	    return TRUE; 
 	  }
@@ -107,7 +104,6 @@ bool_t take_off_motion(bool_t reset)
     case 0:  //reset output cmd
 	  /*horizontal set attitude 0 */
 	  NavAttitude(RadOfDeg(0));
-	  NavVerticalAutoThrottleMode(RadOfDeg(0));
 	  /*vertical set throttle 0 */
 	  NavVerticalThrottleMode(9600*(0));
 	  step_t++;
@@ -121,7 +117,6 @@ bool_t take_off_motion(bool_t reset)
 	  { 
 	    wp_ToL=*stateGetPositionEnu_i();  
 		NavGotoWaypoint_wp(wp_ToL);
-	    NavVerticalAutoThrottleMode(RadOfDeg(0.0));
 	    //NavVerticalAltitudeMode(Height(2.000000), 0.);
 	    NavVerticalClimbMode(0.5f);
 	    return TRUE; 
@@ -161,7 +156,6 @@ bool_t land_motion(bool_t reset)
 	  break;
 	case 1:
 	  if(stateGetPositionEnu_f()->z >0.8f) {   
-	    NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
 	    NavVerticalClimbMode(-0.5f); 
       }
 	  else
@@ -170,20 +164,18 @@ bool_t land_motion(bool_t reset)
 	  }
 	  break;
 	case 2:
-	  NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
 	  NavVerticalClimbMode(-0.3f); 
 	  thrust_counter = 0;
 	  step_l++;
 	  break;
 	case 3:
 	  //not use agl_sonar detect touching ground,once on_ground,thrust will deline
-	  if(stabilization_cmd[COMMAND_THRUST]<4000) 
+	  if(stabilization_cmd[COMMAND_THRUST]<3500) 
 	  {
 	  	thrust_counter++;
 		if(thrust_counter>8)   //32hz periodic,8:0.33s
 		{
 		  NavAttitude(RadOfDeg(0));
-		  NavVerticalAutoThrottleMode(RadOfDeg(0));
 		  NavVerticalThrottleMode(9600*(0));
 		  step_l++;
 		}
@@ -210,7 +202,6 @@ bool_t lock_motion(bool_t reset)
   switch(step_o) {
 	case 1:
 	  NavAttitude(RadOfDeg(0));
-	  NavVerticalAutoThrottleMode(RadOfDeg(0));
 	  NavVerticalThrottleMode(9600*(0));
 	  step_o++;
 	  break;

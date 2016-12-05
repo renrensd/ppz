@@ -133,6 +133,18 @@ void ops_msg_stop_selfclean(void)
 	ops_stop_spraying();
 }
 
+
+void ops_msg_direct_open_spray(void)
+{
+	ops_info.ops_debug = TRUE;
+	ops_msg_start_spraying();
+}
+
+void ops_msg_direct_stop_spray(void)
+{
+	ops_info.ops_debug = FALSE;
+	ops_msg_stop_spraying();
+}
 /***********************************************************************
 * FUNCTION    : ops_msg_start_spraying
 * DESCRIPTION : 
@@ -180,6 +192,7 @@ void ops_init(void)
 	ops_info.selfclean_flag = FALSE;
 
 	ops_info.spray_state = OPS_SPRAY_IS_OFF;
+	ops_info.sv_update = FALSE;
 }
 
 /***********************************************************************
@@ -204,9 +217,9 @@ void ops_heart_beat_handler(uint8_t *param)
 	ops_info.o_bat_rep = (*(param+11) << 8 | *(param+10));
 	ops_info.o_bat_tem = (*(param+13) << 8 | *(param+12));
 	ops_info.sys_error = *(param+22);
-	if(ops_info.o_bat_cap <20000)
+	if(ops_info.o_bat_cap < 1)
 	{
-		ops_info.o_bat_cap = 20000;
+		ops_info.o_bat_cap = 1;
 	}
 	ops_info.o_bat_rep_percent = ops_info.o_bat_rep*100/ops_info.o_bat_cap;
 	#endif
@@ -315,10 +328,15 @@ uint8_t get_spray_switch_state(void)
 ***********************************************************************/
 void ops_software_version_handler(uint8_t *param, uint8_t len)
 {
-    for(uint8_t i=0; i<len; i++)
-    {
-		ops_info.ops_sv[i] = *(param+i);
-    }
+	if(len < MAX_OPS_SV_VERSION_LEN)
+	{
+	    for(uint8_t i=0; i<len; i++)
+	    {
+			ops_info.version[i] = *(param+i);
+	    }
+		ops_info.sv_update = TRUE;
+		ops_info.sv_len = len;
+	}
 }
 /**************** END OF FILE *****************************************/
 

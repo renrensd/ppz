@@ -78,7 +78,7 @@ void ahrs_init(void)
 #endif
 
   // enable primary AHRS by default
-  ahrs_switch(0);
+  //ahrs_switch(0);  //stop set ahrs_mlkf_output_enabled true, only data update open it
 }
 
 int ahrs_switch(uint8_t idx)

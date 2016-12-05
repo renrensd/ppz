@@ -638,7 +638,7 @@ static inline void stateSetPosition_f(
 /// Get position in ECEF coordinates (int).
 static inline struct EcefCoor_i *stateGetPositionEcef_i(void)
 {
-  if (!bit_is_set(state.pos_status, POS_ECEF_I)) {
+  if (!bit_is_set(state.pos_status, POS_ECEF_I) && state.pos_status) {
     stateCalcPositionEcef_i();
   }
   return &state.ecef_pos_i;
@@ -647,7 +647,7 @@ static inline struct EcefCoor_i *stateGetPositionEcef_i(void)
 /// Get position in local NED coordinates (int).
 static inline struct NedCoor_i *stateGetPositionNed_i(void)
 {
-  if (!bit_is_set(state.pos_status, POS_NED_I)) {
+  if (!bit_is_set(state.pos_status, POS_NED_I) && state.pos_status) {
     stateCalcPositionNed_i();
   }
   return &state.ned_pos_i;
@@ -656,7 +656,7 @@ static inline struct NedCoor_i *stateGetPositionNed_i(void)
 /// Get position in local ENU coordinates (int).
 static inline struct EnuCoor_i *stateGetPositionEnu_i(void)
 {
-  if (!bit_is_set(state.pos_status, POS_ENU_I)) {
+  if (!bit_is_set(state.pos_status, POS_ENU_I) && state.pos_status) {
     stateCalcPositionEnu_i();
   }
   return &state.enu_pos_i;
@@ -665,7 +665,7 @@ static inline struct EnuCoor_i *stateGetPositionEnu_i(void)
 /// Get position in LLA coordinates (int).
 static inline struct LlaCoor_i *stateGetPositionLla_i(void)
 {
-  if (!bit_is_set(state.pos_status, POS_LLA_I)) {
+  if (!bit_is_set(state.pos_status, POS_LLA_I) && state.pos_status) {
     stateCalcPositionLla_i();
   }
   return &state.lla_pos_i;
@@ -674,7 +674,7 @@ static inline struct LlaCoor_i *stateGetPositionLla_i(void)
 /// Get position in UTM coordinates (float).
 static inline struct UtmCoor_f *stateGetPositionUtm_f(void)
 {
-  if (!bit_is_set(state.pos_status, POS_UTM_F)) {
+  if (!bit_is_set(state.pos_status, POS_UTM_F) && state.pos_status) {
     stateCalcPositionUtm_f();
   }
   return &state.utm_pos_f;
@@ -683,7 +683,7 @@ static inline struct UtmCoor_f *stateGetPositionUtm_f(void)
 /// Get position in ECEF coordinates (float).
 static inline struct EcefCoor_f *stateGetPositionEcef_f(void)
 {
-  if (!bit_is_set(state.pos_status, POS_ECEF_F)) {
+  if (!bit_is_set(state.pos_status, POS_ECEF_F) && state.pos_status) {
     stateCalcPositionEcef_f();
   }
   return &state.ecef_pos_f;
@@ -692,7 +692,7 @@ static inline struct EcefCoor_f *stateGetPositionEcef_f(void)
 /// Get position in local NED coordinates (float).
 static inline struct NedCoor_f *stateGetPositionNed_f(void)
 {
-  if (!bit_is_set(state.pos_status, POS_NED_F)) {
+  if (!bit_is_set(state.pos_status, POS_NED_F) && state.pos_status) {
     stateCalcPositionNed_f();
   }
   return &state.ned_pos_f;
@@ -701,7 +701,7 @@ static inline struct NedCoor_f *stateGetPositionNed_f(void)
 /// Get position in local ENU coordinates (float).
 static inline struct EnuCoor_f *stateGetPositionEnu_f(void)
 {
-  if (!bit_is_set(state.pos_status, POS_ENU_F)) {
+  if (!bit_is_set(state.pos_status, POS_ENU_F) && state.pos_status) {
     stateCalcPositionEnu_f();
   }
   return &state.enu_pos_f;
@@ -710,7 +710,7 @@ static inline struct EnuCoor_f *stateGetPositionEnu_f(void)
 /// Get position in LLA coordinates (float).
 static inline struct LlaCoor_f *stateGetPositionLla_f(void)
 {
-  if (!bit_is_set(state.pos_status, POS_LLA_F)) {
+  if (!bit_is_set(state.pos_status, POS_LLA_F) && state.pos_status) {
     stateCalcPositionLla_f();
   }
   return &state.lla_pos_f;
@@ -839,7 +839,7 @@ static inline void stateSetSpeed_f(
 /// Get ground speed in local NED coordinates (int).
 static inline struct NedCoor_i *stateGetSpeedNed_i(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_NED_I)) {
+  if (!bit_is_set(state.speed_status, SPEED_NED_I) && state.speed_status) {
     stateCalcSpeedNed_i();
   }
   return &state.ned_speed_i;
@@ -848,7 +848,7 @@ static inline struct NedCoor_i *stateGetSpeedNed_i(void)
 /// Get ground speed in local ENU coordinates (int).
 static inline struct EnuCoor_i *stateGetSpeedEnu_i(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_ENU_I)) {
+  if (!bit_is_set(state.speed_status, SPEED_ENU_I) && state.speed_status) {
     stateCalcSpeedEnu_i();
   }
   return &state.enu_speed_i;
@@ -857,7 +857,7 @@ static inline struct EnuCoor_i *stateGetSpeedEnu_i(void)
 /// Get ground speed in ECEF coordinates (int).
 static inline struct EcefCoor_i *stateGetSpeedEcef_i(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_ECEF_I)) {
+  if (!bit_is_set(state.speed_status, SPEED_ECEF_I) && state.speed_status) {
     stateCalcSpeedEcef_i();
   }
   return &state.ecef_speed_i;
@@ -866,7 +866,7 @@ static inline struct EcefCoor_i *stateGetSpeedEcef_i(void)
 /// Get norm of horizontal ground speed (int).
 static inline uint32_t stateGetHorizontalSpeedNorm_i(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_HNORM_I)) {
+  if (!bit_is_set(state.speed_status, SPEED_HNORM_I) && state.speed_status) {
     stateCalcHorizontalSpeedNorm_i();
   }
   return state.h_speed_norm_i;
@@ -875,7 +875,7 @@ static inline uint32_t stateGetHorizontalSpeedNorm_i(void)
 /// Get dir of horizontal ground speed (int).
 static inline int32_t stateGetHorizontalSpeedDir_i(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_HDIR_I)) {
+  if (!bit_is_set(state.speed_status, SPEED_HDIR_I) && state.speed_status) {
     stateCalcHorizontalSpeedDir_i();
   }
   return state.h_speed_dir_i;
@@ -884,7 +884,7 @@ static inline int32_t stateGetHorizontalSpeedDir_i(void)
 /// Get ground speed in local NED coordinates (float).
 static inline struct NedCoor_f *stateGetSpeedNed_f(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_NED_F)) {
+  if (!bit_is_set(state.speed_status, SPEED_NED_F) && state.speed_status) {
     stateCalcSpeedNed_f();
   }
   return &state.ned_speed_f;
@@ -893,7 +893,7 @@ static inline struct NedCoor_f *stateGetSpeedNed_f(void)
 /// Get ground speed in local ENU coordinates (float).
 static inline struct EnuCoor_f *stateGetSpeedEnu_f(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_ENU_F)) {
+  if (!bit_is_set(state.speed_status, SPEED_ENU_F) && state.speed_status) {
     stateCalcSpeedEnu_f();
   }
   return &state.enu_speed_f;
@@ -902,7 +902,7 @@ static inline struct EnuCoor_f *stateGetSpeedEnu_f(void)
 /// Get ground speed in ECEF coordinates (float).
 static inline struct EcefCoor_f *stateGetSpeedEcef_f(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_ECEF_F)) {
+  if (!bit_is_set(state.speed_status, SPEED_ECEF_F) && state.speed_status) {
     stateCalcSpeedEcef_f();
   }
   return &state.ecef_speed_f;
@@ -911,7 +911,7 @@ static inline struct EcefCoor_f *stateGetSpeedEcef_f(void)
 /// Get norm of horizontal ground speed (float).
 static inline float stateGetHorizontalSpeedNorm_f(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_HNORM_F)) {
+  if (!bit_is_set(state.speed_status, SPEED_HNORM_F) && state.speed_status) {
     stateCalcHorizontalSpeedNorm_f();
   }
   return state.h_speed_norm_f;
@@ -920,7 +920,7 @@ static inline float stateGetHorizontalSpeedNorm_f(void)
 /// Get dir of horizontal ground speed (float).
 static inline float stateGetHorizontalSpeedDir_f(void)
 {
-  if (!bit_is_set(state.speed_status, SPEED_HDIR_F)) {
+  if (!bit_is_set(state.speed_status, SPEED_HDIR_F) && state.speed_status) {
     stateCalcHorizontalSpeedDir_f();
   }
   return state.h_speed_dir_f;
@@ -990,7 +990,7 @@ static inline void stateSetAccelEcef_f(struct EcefCoor_f *ecef_accel)
 /// Get acceleration in NED coordinates (int).
 static inline struct NedCoor_i *stateGetAccelNed_i(void)
 {
-  if (!bit_is_set(state.accel_status, ACCEL_NED_I)) {
+  if (!bit_is_set(state.accel_status, ACCEL_NED_I) && state.accel_status) {
     stateCalcAccelNed_i();
   }
   return &state.ned_accel_i;
@@ -999,7 +999,7 @@ static inline struct NedCoor_i *stateGetAccelNed_i(void)
 /// Get acceleration in ECEF coordinates (int).
 static inline struct EcefCoor_i *stateGetAccelEcef_i(void)
 {
-  if (!bit_is_set(state.accel_status, ACCEL_ECEF_I)) {
+  if (!bit_is_set(state.accel_status, ACCEL_ECEF_I) && state.accel_status) {
     stateCalcAccelEcef_i();
   }
   return &state.ecef_accel_i;
@@ -1008,7 +1008,7 @@ static inline struct EcefCoor_i *stateGetAccelEcef_i(void)
 /// Get acceleration in NED coordinates (float).
 static inline struct NedCoor_f *stateGetAccelNed_f(void)
 {
-  if (!bit_is_set(state.accel_status, ACCEL_NED_F)) {
+  if (!bit_is_set(state.accel_status, ACCEL_NED_F) && state.accel_status) {
     stateCalcAccelNed_f();
   }
   return &state.ned_accel_f;
@@ -1017,7 +1017,7 @@ static inline struct NedCoor_f *stateGetAccelNed_f(void)
 /// Get acceleration in ECEF coordinates (float).
 static inline struct EcefCoor_f *stateGetAccelEcef_f(void)
 {
-  if (!bit_is_set(state.accel_status, ACCEL_ECEF_F)) {
+  if (!bit_is_set(state.accel_status, ACCEL_ECEF_F) && state.accel_status) {
     stateCalcAccelEcef_f();
   }
   return &state.ecef_accel_f;
@@ -1161,7 +1161,7 @@ static inline void stateSetBodyRates_f(struct FloatRates *body_rate)
 /// Get vehicle body angular rate (int).
 static inline struct Int32Rates *stateGetBodyRates_i(void)
 {
-  if (!bit_is_set(state.rate_status, RATE_I)) {
+  if (!bit_is_set(state.rate_status, RATE_I) && state.rate_status) {
     stateCalcBodyRates_i();
   }
   return &state.body_rates_i;
@@ -1170,7 +1170,7 @@ static inline struct Int32Rates *stateGetBodyRates_i(void)
 /// Get vehicle body angular rate (float).
 static inline struct FloatRates *stateGetBodyRates_f(void)
 {
-  if (!bit_is_set(state.rate_status, RATE_F)) {
+  if (!bit_is_set(state.rate_status, RATE_F) && state.rate_status) {
     stateCalcBodyRates_f();
   }
   return &state.body_rates_f;
@@ -1282,7 +1282,7 @@ static inline void stateSetSideslip_f(float sideslip)
 /// Get horizontal windspeed (int).
 static inline struct Int32Vect2 *stateGetHorizontalWindspeed_i(void)
 {
-  if (!bit_is_set(state.wind_air_status, WINDSPEED_I)) {
+  if (!bit_is_set(state.wind_air_status, WINDSPEED_I) && state.wind_air_status) {
     stateCalcHorizontalWindspeed_i();
   }
   return &state.h_windspeed_i;
@@ -1291,7 +1291,7 @@ static inline struct Int32Vect2 *stateGetHorizontalWindspeed_i(void)
 /// Get airspeed (int).
 static inline int32_t stateGetAirspeed_i(void)
 {
-  if (!bit_is_set(state.wind_air_status, AIRSPEED_I)) {
+  if (!bit_is_set(state.wind_air_status, AIRSPEED_I) && state.wind_air_status) {
     stateCalcAirspeed_i();
   }
   return state.airspeed_i;
@@ -1300,7 +1300,7 @@ static inline int32_t stateGetAirspeed_i(void)
 /// Get horizontal windspeed (float).
 static inline struct FloatVect2 *stateGetHorizontalWindspeed_f(void)
 {
-  if (!bit_is_set(state.wind_air_status, WINDSPEED_F)) {
+  if (!bit_is_set(state.wind_air_status, WINDSPEED_F) && state.wind_air_status) {
     stateCalcHorizontalWindspeed_f();
   }
   return &state.h_windspeed_f;
@@ -1309,7 +1309,7 @@ static inline struct FloatVect2 *stateGetHorizontalWindspeed_f(void)
 /// Get airspeed (float).
 static inline float stateGetAirspeed_f(void)
 {
-  if (!bit_is_set(state.wind_air_status, AIRSPEED_F)) {
+  if (!bit_is_set(state.wind_air_status, AIRSPEED_F) && state.wind_air_status) {
     stateCalcAirspeed_f();
   }
   return state.airspeed_f;

@@ -54,8 +54,7 @@ static FRESULT res;
 /** Start the file logger and open a new file */
 void file_logger_start(void)
 {
-	ops_info.ops_debug = TRUE;
-	ops_msg_start_spraying();
+	ops_msg_direct_open_spray();
 	#if 0
   uint32_t counter = 0;
   char filename[512];
@@ -92,8 +91,7 @@ void file_logger_start(void)
 /** Stop the logger an nicely close the file */
 void file_logger_stop(void)
 {
-	ops_info.ops_debug = FALSE;
-	ops_msg_stop_spraying();
+	ops_msg_direct_stop_spray();
 
 	#if 0
   if (res == FR_OK) 

@@ -142,8 +142,7 @@ int32_t rc_turn_rate;    //using in HORIZONTAL_MODE_RC,cmd of psi rate
 //int32_t guidance_h_vgain;
 
 //add in bouble control loop
-int32_t sum_in_x = 0;
-int32_t sum_in_y = 0;
+struct Int32Vect2 guidance_h_sum_integrator;
 //add
 static void guidance_h_update_reference(void);
 #if !GUIDANCE_INDI
@@ -182,8 +181,8 @@ int inner_PID_y(int error, int sumerror, int d_error, int kp, int ki, int kd){
 */
 
 
-int32_t c_x=1000000;
-int32_t c_y=1000000;
+int32_t c_x = 0;
+int32_t c_y = 0;
 /*
 void test_signal(void)
 {
@@ -289,49 +288,43 @@ static void send_gh(struct transport_tx *trans, struct link_device *dev)
 
 static void send_hover_loop(struct transport_tx *trans, struct link_device *dev)
 {
-  struct NedCoor_i *pos = stateGetPositionNed_i();
-  struct NedCoor_i *speed = stateGetSpeedNed_i();
-  struct NedCoor_i *accel = stateGetAccelNed_i();
-
-  int32_t NED_x_speed_filter = get_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter);
-  int32_t NED_y_speed_filter = get_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter);
+  struct NedCoor_i pos = *stateGetPositionNed_i();
+  struct NedCoor_i speed = *stateGetSpeedNed_i();
+  struct NedCoor_i accel = *stateGetAccelNed_i();
+  int32_t sum_inter_x = guidance_h_sum_integrator.x>>3;
+  int32_t sum_inter_y = guidance_h_sum_integrator.y>>3;
+  int32_t speed_err_x = guidance_h_speed_err.x;
+  int32_t speed_err_y = guidance_h_speed_err.y;
 
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_HOVER_LOOP(trans, dev, AC_ID,
                            &guidance_h.sp.pos.x,
                            &guidance_h.sp.pos.y,
-                           &(pos->x), &(pos->y),
-                           &(speed->x), &(speed->y),
-                           &(accel->x), &(accel->y),
+                           &(pos.x), &(pos.y),
+                           &(speed.x), &(speed.y),
+                           &(accel.x), &(accel.y),
                            &guidance_h_pos_err.x,
                            &guidance_h_pos_err.y,
-                           &guidance_hf_speed_err.x,
-                           &guidance_hf_speed_err.y,
-                           //&guidance_h_speed_err.x,
-                           //&guidance_h_speed_err.y,
+                           //&guidance_hf_speed_err.x,
+                           //&guidance_hf_speed_err.y,
+                           &speed_err_x,
+                           &speed_err_y,
                            //&guidance_h_trim_att_integrator.x,
                            //&guidance_h_trim_att_integrator.y,
-                           &i_term.x,
-                           &i_term.y,
+                           &sum_inter_x,
+                           &sum_inter_y,
                            &guidance_h_cmd_earth.x,
                            &guidance_h_cmd_earth.y,
-                           &guidance_h.sp.heading,
-                           &desire_speed.x,
-                           &desire_speed.y,
-                           &ii_term.x,
-                           &ii_term.y,
-													 &NED_x_speed_filter,
-													 &NED_y_speed_filter);
+                           &c_x,
+                           &c_y,
+                           &xh1,
+                           &yh1,
+                           &xh2,
+                           &yh2);
 }
 
 static void send_href(struct transport_tx *trans, struct link_device *dev)
 {
-	int32_t temp_c_x = c_x;
-	int32_t temp_xh1 = (int32_t)xh1;
-	float temp_xh2 = xh2;
-	int32_t temp_c_y = c_y;
-	int32_t temp_yh1 = (int32_t)yh1;
-	float temp_yh2 = yh2;
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_GUIDANCE_H_REF_INT(trans, dev, AC_ID,
                                    &guidance_h.sp.pos.x, &guidance_h.ref.pos.x,
@@ -339,13 +332,7 @@ static void send_href(struct transport_tx *trans, struct link_device *dev)
                                    &guidance_h.ref.accel.x,
                                    &guidance_h.sp.pos.y, &guidance_h.ref.pos.y,
                                    &guidance_h.sp.speed.y, &guidance_h.ref.speed.y,
-                                   &guidance_h.ref.accel.y,
-                                   &temp_c_x,
-                                   &temp_c_y,
-                                   &temp_xh1,
-                                   &temp_yh1,
-                                   &temp_xh2,
-                                   &temp_yh2);
+                                   &guidance_h.ref.accel.y);
 }
 
 static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
@@ -375,8 +362,8 @@ void guidance_h_init(void)
 
   INT_VECT2_ZERO(guidance_h.sp.pos);
   INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  sum_in_x=0;
-  sum_in_y=0;
+  guidance_h_sum_integrator.x=0;
+  guidance_h_sum_integrator.y=0;
   INT_EULERS_ZERO(guidance_h.rc_sp);
   guidance_h.sp.heading = 0;
   guidance_h.gains.p = GUIDANCE_H_PGAIN;
@@ -394,12 +381,6 @@ void guidance_h_init(void)
   hh = GUIDANCE_H_TD_H;
   r_h = GUIDANCE_H_TD_R;
   
-  guidance_h.NED_xy_speed_filter_fc = 10;
-  init_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, guidance_h.NED_xy_speed_filter_fc,
-  																1.0f/512.0f, 0);
-  init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, guidance_h.NED_xy_speed_filter_fc,
-    															1.0f/512.0f, 0);
-
   transition_percentage = 0;
   transition_theta_offset = 0;
   rc_turn_rate = 0;
@@ -422,14 +403,6 @@ void guidance_h_init(void)
 #endif
 }
 
-void guidance_h_SetSpeedCutoff(float fc)
-{
-	guidance_h.NED_xy_speed_filter_fc = fc;
-	init_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, fc,
-	  																1.0f/512.0f, guidance_h.NED_x_speed_filter.i[0]);
-	init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, fc,
-																		1.0f/512.0f, guidance_h.NED_y_speed_filter.i[0]);
-}
 
 static inline void reset_guidance_reference_from_current_position(void)
 {
@@ -439,8 +412,8 @@ static inline void reset_guidance_reference_from_current_position(void)
   gh_set_ref(guidance_h.ref.pos, guidance_h.ref.speed, guidance_h.ref.accel);
 
   INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  sum_in_x = 0;
-  sum_in_y = 0;
+  guidance_h_sum_integrator.x = 0;
+  guidance_h_sum_integrator.y = 0;
 }
 
 void guidance_h_mode_changed(uint8_t new_mode)
@@ -648,8 +621,8 @@ void guidance_h_run(bool_t  in_flight)
 	        stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
       }
 	  /* in waypoint,route,circle mode*/
-        else 
-        {
+      else 
+      {
 	        INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
 
 	        guidance_h_update_reference();
@@ -665,7 +638,7 @@ void guidance_h_run(bool_t  in_flight)
 	        /* set final attitude setpoint */
 	        stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth,  guidance_h.sp.heading);
             #endif
-        }
+      }
 	 #if 0 //TODOM:use intergrater limit in take off,see above ground signal
 	  stabilization_attitude_run(above_ground);	  
 	 #else
@@ -734,6 +707,7 @@ static void guidance_h_update_reference(void)
 #define GH_GAIN_SCALE 2
 
 #if !GUIDANCE_INDI
+#include "firmwares/rotorcraft/nav_flight.h"
 static void guidance_h_traj_run(bool_t in_flight)
 {
   /* maximum bank angle: default 20 deg, max 40 deg*/
@@ -742,19 +716,13 @@ static void guidance_h_traj_run(bool_t in_flight)
   static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(15), INT32_ANGLE_FRAC);
   static const int32_t total_limit_bank = BFP_OF_REAL(RadOfDeg(3), INT32_ANGLE_FRAC);	//add by whp.
 
-  static int32_t flag_of_int_inner_x = 1;
-  static int32_t flag_of_int_inner_y = 1;
-
-  struct position_float d_term_temp; //wia huan wen fen 
-  struct position_float in_d_term_temp;// nei huan wei fen 
-  struct position_float control_temp;// kongzhi bian liang 
-  
+  static int32_t integrator_x_flag = 1;
+  static int32_t integrator_y_flag = 1;
+ 
   /* compute position error    */
   struct NedCoor_i speed_now = *stateGetSpeedNed_i();
-  h_speed_fl.x = speed_now.x;
-  h_speed_fl.y = speed_now.y;
-  //h_speed_fl.x = update_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, speed_now.x);
-  //h_speed_fl.y = update_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, speed_now.y);
+  h_speed_fl.x = h_speed_fl.x + (speed_now.x-h_speed_fl.x) * guid_v.speed_filter_coef;
+  h_speed_fl.y = h_speed_fl.y + (speed_now.y-h_speed_fl.y) * guid_v.speed_filter_coef;
   
   VECT2_DIFF(guidance_h_pos_err, guidance_h.ref.pos, *stateGetPositionNed_i());
   /* saturate it               */
@@ -766,6 +734,9 @@ static void guidance_h_traj_run(bool_t in_flight)
   VECT2_STRIM(guidance_h_speed_err, -MAX_SPEED_ERR, MAX_SPEED_ERR);
 #if 0
 //**********pid_double_loop****
+  struct position_float d_term_temp; //wia huan wen fen 
+  struct position_float in_d_term_temp;// nei huan wei fen 
+  struct position_float control_temp;// kongzhi bian liang 
 
 //********position
 	if (1)
@@ -784,9 +755,9 @@ static void guidance_h_traj_run(bool_t in_flight)
 
 			VECT2_STRIM(guidance_hf_pos_err, -2.0, 2.0);
 
-			sum_err.x += flag_of_int_inner_x * (guidance_hf_pos_err.x)
+			sum_err.x += integrator_x_flag * (guidance_hf_pos_err.x)
 					* (1.0f / 512.0f);
-			sum_err.y += flag_of_int_inner_y * (guidance_hf_pos_err.y)
+			sum_err.y += integrator_y_flag * (guidance_hf_pos_err.y)
 					* (1.0f / 512.0f);
 
 			i_term.x = (sum_err.x) * (guidance_h.gains_f.i);
@@ -839,8 +810,8 @@ static void guidance_h_traj_run(bool_t in_flight)
 
  VECT2_STRIM(guidance_hf_speed_err,-5.0,5.0);
 
- sum_in_err.x+=flag_of_int_inner_x*(guidance_hf_speed_err.x)*(1.0f/512.0f);
- sum_in_err.y+=flag_of_int_inner_y*(guidance_hf_speed_err.y)*(1.0f/512.0f);
+ sum_in_err.x+=integrator_x_flag*(guidance_hf_speed_err.x)*(1.0f/512.0f);
+ sum_in_err.y+=integrator_y_flag*(guidance_hf_speed_err.y)*(1.0f/512.0f);
 
  ii_term.x=(sum_in_err.x)*(guidance_h.gains_f.in_i);
  ii_term.y=(sum_in_err.y)*(guidance_h.gains_f.in_i);
@@ -912,33 +883,56 @@ static void guidance_h_traj_run(bool_t in_flight)
 /*-------------------new functions run below-----------*/
 
 /*outer PID here*/
-
-  sum_in_x += flag_of_int_inner_x * guidance_h.gains.i * guidance_h_pos_err.x;
-  sum_in_y += flag_of_int_inner_y * guidance_h.gains.i * guidance_h_pos_err.y;
-
-  if(!in_flight||guidance_h.gains.i==0)
+  static uint32_t i_sum_counter = 0;
+  if(ac_config_info.spray_convert_type != WAYPOINT_P2P)
   {
-  	  sum_in_x = 0;
-	  sum_in_y = 0;
+	  if(flight_state == landing)
+	  {
+	  	i_sum_counter++;
+		i_sum_counter%=100;
+		if(i_sum_counter==1)
+		{
+			guidance_h.gains.i++;
+			Bound(guidance_h.gains.i, 0, 5);
+		}
+	  }
+	  else
+	  {
+	  	i_sum_counter = 0;
+		guidance_h.gains.i = 1;
+	  }
+  }
+  else
+  {
+  	guidance_h.gains.i = 5;
+  }
+
+  guidance_h_sum_integrator.x += integrator_x_flag * guidance_h.gains.i * guidance_h_pos_err.x;
+  guidance_h_sum_integrator.y += integrator_y_flag * guidance_h.gains.i * guidance_h_pos_err.y;
+
+  if(!in_flight || guidance_h.gains.i==0)
+  {
+  	  guidance_h_sum_integrator.x = 0;
+	  guidance_h_sum_integrator.y = 0;
   }
 
 /*
   c_x = guidance_h.ref.speed.x 
   	    + guidance_h_pos_err.x*12*guidance_h.gains.a
   	    + (guidance_h_speed_err.x>>6)*guidance_h.gains.v
-  	    + (sum_in_x>>7)*guidance_h.gains.i;
+  	    + (guidance_h_sum_integrator.x>>7)*guidance_h.gains.i;
 
   c_y = guidance_h.ref.speed.y 
   	    + guidance_h_pos_err.y*12*guidance_h.gains.a
   	    + (guidance_h_speed_err.y>>6)*guidance_h.gains.v
-  	    + (sum_in_y>>7)*guidance_h.gains.i;
+  	    + (guidance_h_sum_integrator.y>>7)*guidance_h.gains.i;
 */
-  int32_t px = (guidance_h_pos_err.x<<5)*guidance_h.gains.a;
-  int32_t dx = (guidance_h_speed_err.x>>6)*guidance_h.gains.v;
-  int32_t ix = sum_in_x>>11;
+  int32_t px = (guidance_h_pos_err.x<<5)*guidance_h.gains.a;   //Qa = (Q19-Q8)-5 = 6   (64 scaled)
+  int32_t dx = (guidance_h_speed_err.x>>6)*guidance_h.gains.v; //Qv = 6                (64 scaled)
+  int32_t ix = guidance_h_sum_integrator.x>>3;                                   //Qi = (Q19-Q8)+11 = 22 (4194304 scalde)
   int32_t py = (guidance_h_pos_err.y<<5)*guidance_h.gains.a;
   int32_t dy = (guidance_h_speed_err.y>>6)*guidance_h.gains.v;
-  int32_t iy = sum_in_y>>11;
+  int32_t iy = guidance_h_sum_integrator.y>>3;                 //set Qi = 64, i = 64,1m error pos continual 1s generate 2m/s gain
 
   c_x = guidance_h.ref.speed.x + px + dx + ix;
   c_y = guidance_h.ref.speed.y + py + dy + iy;
@@ -947,12 +941,12 @@ static void guidance_h_traj_run(bool_t in_flight)
   c_x = guidance_h.ref.speed.x 
   	    + (guidance_h_pos_err.x<<5)*guidance_h.gains.a
   	    + (guidance_h_speed_err.x>>6)*guidance_h.gains.v
-  	    + (sum_in_x>>11);
+  	    + (guidance_h_sum_integrator.x>>11);
 
   c_y = guidance_h.ref.speed.y 
   	    + (guidance_h_pos_err.y<<5)*guidance_h.gains.a
   	    + (guidance_h_speed_err.y>>6)*guidance_h.gains.v
-  	    + (sum_in_y>>11);
+  	    + (guidance_h_sum_integrator.y>>11);
 */
   int32_t error_x= c_x - h_speed_fl.x;
   int32_t error_y= c_y - h_speed_fl.y;
@@ -983,30 +977,25 @@ static void guidance_h_traj_run(bool_t in_flight)
                              thrust_cmd_filt));
   }
   
-  flag_of_int_inner_x = 1;
-  flag_of_int_inner_y = 1;
+  integrator_x_flag = 1;
+  integrator_y_flag = 1;
   if(abs(guidance_h_cmd_earth.x) >= (total_max_bank))
   {
-	flag_of_int_inner_x = 0;
+	integrator_x_flag = 0;
   }
   if(abs(guidance_h_cmd_earth.y) >= (total_max_bank))
   {
-	flag_of_int_inner_y = 0;
+	integrator_y_flag = 0;
   }	
 
- #ifndef NPS_SIMU   //sonar  don't work in simulator
-  //if((agl_dist_value_filtered<DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30)
   if(stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30.0)
   {    
   	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
-	flag_of_int_inner_x = 0;
-	flag_of_int_inner_y = 0;
+	integrator_x_flag = 0;
+	integrator_y_flag = 0;
   }  //angle is 3deg limited
- #endif
 
-  VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 30` limited
-
-  
+  VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 30` limited  
 }
 #endif
 
@@ -1093,8 +1082,8 @@ void guidance_h_set_igain(uint32_t igain)
 {
   guidance_h.gains.i = igain;
   INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  sum_in_x = 0;
-  sum_in_y = 0;
+  guidance_h_sum_integrator.x = 0;
+  guidance_h_sum_integrator.y = 0;
 }
 
 bool_t guidance_h_set_guided_pos(float x, float y)

@@ -29,8 +29,8 @@
       <message name="BMP_STATUS"             period="0.25"/-->
       <message name="VERT_LOOP"              period="1.0"/>
       <message name="HOVER_LOOP"             period="2.0"/>
-      <!--message name="PX4FLOW"             period="1.0"/-->
-      <!--message name="MOTOR_MIXING"        period="1.0"/-->
+      <message name="UTC_TIME"               period="10.0"/>
+      <message name="ACTUATORS_PWM"         period="0.25"/>
       <message name="STAB_ATTITUDE_FLOAT"    period="0.3"/>
       <!--message name="INS_Z"               period="1.0"/>
       <message name="GUIDANCE_H_REF_INT"     period="0.5"/-->
@@ -40,7 +40,7 @@
     <mode name="ins">
       <message name="DL_VALUE"               period="0.5"/>
       <message name="ALIVE"                  period="2.1"/>
-      <message name="INS_Z"                  period=".02"/>
+      <message name="INS"               period="0.05"/>
       <!--message name="GUIDANCE_H_REF_INT"    period="0.01"/-->
     </mode>
 
@@ -141,14 +141,15 @@
       <message name="VFF"               period=".05"/>
       <message name="VFF_EXTENDED"      period=".05"/>
       <message name="VERT_LOOP"         period=".05"/>
+      <message name="INS_Z"             period=".05"/>
       <message name="INS"               period=".11"/>
       <message name="INS_REF"           period="5.1"/>
     </mode>
 
     <mode name="h_loop" key_press="h">
-      <message name="ALIVE"                 period="0.9"/>
-      <message name="HOVER_LOOP"            period="0.062"/>
-      <message name="GUIDANCE_H_REF_INT"    period="0.062"/>
+      <message name="ALIVE"                 period="1.0"/>
+      <message name="HOVER_LOOP"            period="0.08"/>
+      <message name="GUIDANCE_H_REF_INT"    period="0.1"/>
       <!--message name="STAB_ATTITUDE_INT"     period="0.4"/>
       <message name="STAB_ATTITUDE_FLOAT"   period="0.4"/>
       <message name="STAB_ATTITUDE_REF_INT" period="0.4"/>

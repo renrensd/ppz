@@ -3,7 +3,6 @@
 #
 #
 
-FRAM_CFLAGS += -DFRAM_OPTION
 $(TARGET).srcs += subsystems/fram/fram.c subsystems/fram/fm25v.c subsystems/fram/fram_data.c
 
 FRAM_CFLAGS += -DFRAM_SPI_SLAVE_IDX=SPI_SLAVE4

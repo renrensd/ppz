@@ -68,6 +68,6 @@ extern void vff_update_zd_conf(float zd_meas, float conf);
 extern float baro_alt_wb_filter(float alt);
 
 //extern void vff_update_vz_conf(float vz_meas, float conf);
-extern void vff_realign(float z_meas);
+//extern void vff_realign(float z_meas);
 
 #endif /* VF_EXTENDED_FLOAT_H */

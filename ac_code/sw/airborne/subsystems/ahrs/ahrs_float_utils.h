@@ -159,9 +159,9 @@ static inline void ahrs_float_get_quat_from_accel_gps_heading(struct FloatQuat *
   */
 }
 
-static inline void ahrs_float_get_quat_from_gps_heading(struct FloatQuat *q, struct GpsState *ahrs_gps)
+static inline void ahrs_float_get_quat_from_gps_heading(struct FloatQuat *q, float gps_heading)
 {
-	float align_heading = ahrs_gps->heading * 3.1415926f / 180.0f;
+	float align_heading = gps_heading * 3.1415926f / 180.0f;
  	struct FloatEulers pre_euler = *stateGetNedToBodyEulers_f();
 	pre_euler.psi = align_heading;
 	float_quat_of_eulers(q, &pre_euler);

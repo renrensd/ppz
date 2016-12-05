@@ -144,9 +144,13 @@
      <field name="climb_gaz_submode" type="uint8"/>
    </message>
 
-   <message name="SETTINGS" id="15">
+   <!--message name="SETTINGS" id="15">
      <field name="slider_1_val" type="float"/>
      <field name="slider_2_val" type="float"/>
+   </message-->
+
+   <message name="UTC_TIME" id="15">
+     <field name="utc_time" type="uint32"/>
    </message>
 
    <message name="DESIRED" id="16">
@@ -167,9 +171,17 @@
      <field name="numSV" type="uint8"/>
    </message>
 
-   <message name="ADC_GENERIC" id="18">
+   <!--message name="ADC_GENERIC" id="18">
      <field name="val1" type="uint16"/>
      <field name="val2" type="uint16"/>
+   </message-->
+   <message name="ACTUATORS_PWM" id="18">
+     <field name="motor1" type="int32"/>
+     <field name="motor2" type="int32"/>
+     <field name="motor3" type="int32"/>
+     <field name="motor4" type="int32"/>
+     <field name="motor5" type="int32"/>
+     <field name="motor6" type="int32"/>
    </message>
 
    <message name="ROUTE_LEN" id="19">
@@ -549,7 +561,7 @@
   <message name="NAV_FLIGHT" id="62">
     <field name="flight_state" type="uint8" values="preparing|ready|taking_off|crusing|home|landing"/>
     <field name="flight_mode" type="uint8" values="KILL|RC|GCS"/>
-    <field name="task_state" type="uint8" values="none|normal|pause|home|reland|landing|error"/>
+    <field name="task_state" type="uint8" values="none|normal|pause|home|reland|land|error"/>
     <field name="task_error" type="uint8" values="normal|parse_error|run_over|interrupted"/>
     <field name="rc_link" type="uint8" values="connected|lost"/>
     <field name="gcs_link" type="uint8" values="connected|lost"/>
@@ -1299,15 +1311,27 @@
   </message>
 
   <message name="VERT_LOOP" id="145">
-    <field name="acc_z"      type="float" />
-    <field name="speed_z"    type="float" />
-    <field name="pos_z"      type="float" />
-    <field name="ref_acc_z"      type="float" />
-    <field name="ref_speed_z"    type="float" />
-    <field name="ref_pos_z"      type="float" />
-    <field name="acc_z_pid_out"      type="float" />
-    <field name="speed_z_pid_out"      type="float" />
-    <field name="pos_z_pid_out"      type="float" />
+    <field name="z_sp"      type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
+    <field name="zd_sp"     type="int32" alt_unit="m"    alt_unit_coef="0.0000019"/>
+    <field name="est_z"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
+    <field name="est_zd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
+    <field name="est_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+    <field name="ref_z"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
+    <field name="ref_zd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
+    <field name="ref_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+    <field name="adp_inv_m" type="int32" alt_unit="foo"  alt_unit_coef="0.0000000596"/>
+    <field name="adp_cov"   type="int32" alt_unit="foo"  alt_unit_coef="0.0000000596"/>
+    <field name="adp_meas"  type="int32" alt_unit="foo"  alt_unit_coef="0.0000000596"/>
+    <field name="sum_z_err"   type="int32" />
+    <field name="sum_zd_err"   type="int32" /> 
+    <field name="ff_cmd"    type="int32"/>
+    <field name="fb_cmd"    type="int32"/>
+    <field name="delta_t"   type="int32"/>
+    <field name="desired_speed" type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
+    <field name="vdd_i"        type="int32"/>
+    <field name="rc_zd_sp"  type="int32" alt_unit="m/s2"  alt_unit_coef="0.0000019"/>
+    <field name="acc_z_flt"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+    <field name="desired_pos"  type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
   </message>
 
 
@@ -1322,19 +1346,18 @@
     <field name="est_ydd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009765"/>
     <field name="err_x"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
     <field name="err_y"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
-    <field name="err_xd"    type="float" alt_unit="m/s"  />
-    <field name="err_yd"    type="float" alt_unit="m/s"  />
-    <field name="i_tex" type="float"/>
-    <field name="i_tey" type="float"/>
-    <field name="cmd_x"     type="int32"/>
-    <field name="cmd_y"     type="int32"/>
-    <field name="cmd_heading" type="int32"/>
-    <field name="dspex" type="float"/>
-    <field name="dspey" type="float"/>
-    <field name="ii_tex" type="float"/>
-    <field name="ii_tey" type="float"/>
-    <field name="NED_x_speed_filter" type="int32" alt_unit_coef="0.0000019"/>
-    <field name="NED_y_speed_filter" type="int32" alt_unit_coef="0.0000019"/>
+    <field name="err_xd"    type="float" />
+    <field name="err_yd"    type="float" />
+    <field name="i_posx"    type="int32" alt_unit_coef="0.0000019"/>
+    <field name="i_posy"    type="int32" alt_unit_coef="0.0000019"/>
+    <field name="cmd_x"     type="int32" alt_unit="deg" alt_unit_coef="0.013989"/>
+    <field name="cmd_y"     type="int32" alt_unit="deg" alt_unit_coef="0.013989"/>
+    <field name="desired_vx"     type="int32" alt_unit="m/s" alt_unit_coef="0.0000019"/>
+    <field name="desired_vy"     type="int32" alt_unit="m/s" alt_unit_coef="0.0000019"/>
+    <field name="xh1"    type="float" alt_unit="m/s" alt_unit_coef="0.0000019"/>
+    <field name="yh1"    type="float" alt_unit="m/s" alt_unit_coef="0.0000019"/>
+    <field name="xh2"    type="float"/>
+    <field name="yh2"    type="float"/>
   </message>
 
   <message name="ROTORCRAFT_FP" id="147">
@@ -1372,12 +1395,6 @@
     <field name="sp_yd"   type="int32" alt_unit="m/s"   alt_unit_coef="0.0000019"/>
     <field name="ref_yd"  type="int32" alt_unit="m/s"   alt_unit_coef="0.0000019"/>
     <field name="ref_ydd" type="int32" alt_unit="m/s2"  alt_unit_coef="0.0009766"/>
-    <field name="c_x"     type="int32" alt_unit_coef="0.0000019"/>
-    <field name="c_y"     type="int32" alt_unit_coef="0.0000019"/>
-    <field name="xh1"     type="int32"/>
-    <field name="yh1"     type="int32"/>
-    <field name="xh2"     type="float"/>
-    <field name="yh2"     type="float"/>
   </message>
 
   <message name="ROTORCRAFT_TUNE_HOVER" id="150">
@@ -1394,7 +1411,7 @@
   </message>
 
   <message name="INS_Z" id="151">
-  	<field name="mlkf_heading"    type="float"/>
+    <field name="mlkf_heading"    type="float"/>
     <field name="gps_qual"    type="uint8"/>
     <field name="p_stable"    type="uint8"/>
     <field name="baro_z"    type="float" unit="m"/>

@@ -50,7 +50,8 @@ enum Set_Command
 	GCS_CMD = 1,
 	REQUEST_AC_INFO = 2,
 	DELETE_ALL = 3,
-	OPS_SELFCLEAN
+	OPS_SELFCLEAN = 4,
+	OPS_SPRAY_CONTROL = 5
 };
 
 /* task_ack_type: add = 0, update = 1, delete = 2, get = 3; */

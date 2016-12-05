@@ -151,6 +151,7 @@ void gps_init(void)
   gps.cacc = 0;
   gps.p_stable = FALSE;
   gps.h_stable = FALSE;
+  gps.flag_rtk = FALSE;
   gps.last_3dfix_ticks = 0;
   gps.last_3dfix_time = 0;
   gps.last_msg_ticks = 0;

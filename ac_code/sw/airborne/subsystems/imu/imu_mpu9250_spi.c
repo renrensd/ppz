@@ -442,9 +442,15 @@ void imu_mpu9250_event(void)
 	qmc5883_event(&imu_mpu9250.mag_qmc);
 	if (imu_mpu9250.mag_qmc.data_available) 
 	{
-	    // VECT3_COPY(imu.mag_unscaled, imu_mpu9250.mag_qmc.data.vect);
+	  /*no 4/5*/
+/*
 	  imu.mag_unscaled.x = +imu_mpu9250.mag_qmc.data.vect.y;
 	  imu.mag_unscaled.y = +imu_mpu9250.mag_qmc.data.vect.x;
+	  imu.mag_unscaled.z = -imu_mpu9250.mag_qmc.data.vect.z;
+*/
+      /*after no 6++*/
+	  imu.mag_unscaled.x = +imu_mpu9250.mag_qmc.data.vect.x;
+	  imu.mag_unscaled.y = -imu_mpu9250.mag_qmc.data.vect.y;
 	  imu.mag_unscaled.z = -imu_mpu9250.mag_qmc.data.vect.z;
 
 	    imu_mpu9250.mag_qmc.data_available = FALSE;
@@ -458,7 +464,7 @@ void imu_mpu9250_event(void)
 	{
 	    imu_mpu9250.mag_valid = FALSE;
 	    imu_scale_mag(&imu);
-	    	AbiSendMsgIMU_MAG_INT32(IMU_ADISENS_ID, now_ts, &imu.mag);
+	    AbiSendMsgIMU_MAG_INT32(IMU_ADISENS_ID, now_ts, &imu.mag);
 		AbiSendMsgIMU_MAG_MONI(IMU_MPU9250_ID, now_ts, &imu.mag_scaled);
   	}
 #endif /* HMC5983_OPTION */

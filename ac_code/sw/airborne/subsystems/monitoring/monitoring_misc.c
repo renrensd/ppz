@@ -37,6 +37,9 @@
 
 #include "state.h"
 
+#include "subsystems/ahrs/ahrs_float_mlkf.h"
+#include "subsystems/ins/ins_int.h"
+
 
 /*===VARIABLES========================================================*/
 #define GROUND_LIMIT_ELECTRICITY  2000   //unit=mAh
@@ -107,18 +110,29 @@ uint8_t battery_ground_check(void)
 void battery_flight_check(void)
 {	
 	bool_t flag_trigger = 0;
+	static uint8_t bat_counter = 0;
 
-	if(electrical.vsupply)
+	if( (electrical.vsupply)&&(ops_info.con_flag==OPS_CONNECTED)&&((ops_info.sys_error&0x01)==0) )
 	{
 		//if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
-		if( (electrical.vsupply < BAT_LIMIT_VOL) || (ops_info.o_bat_rep_percent < BAT_LIMIT_CAP) )
-		{   //hover 10s,back home
-		    flag_trigger = 1;   //record error trigger
-		    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
-			//need give special alter to RC and GCS
-	        #if TEST_MSG
-			bat_flight=1;
-			#endif
+		if( (electrical.vsupply < BAT_LIMIT_VOL) || (electrical.remain_percent < BAT_LIMIT_CAP) )
+		{   
+			bat_counter++;
+			if(bat_counter > 3)
+			{
+				/*hover 10s,back home*/
+			    flag_trigger = 1;   //record error trigger
+			    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
+				//need give special alter to RC and GCS
+		        #if TEST_MSG
+				bat_flight=1;
+				#endif
+				bat_counter = 3;
+			}
+		}
+		else
+		{
+			bat_counter = 0;
 		}
 	}
 	else
@@ -135,9 +149,6 @@ void battery_flight_check(void)
 	}
     if(!flag_trigger)
     {
-		//recover
-		//em[BAT_LOW].active =0;
-		//em[BAT_LOW].finished =0;
 		em[BAT_CRITICAL].active =0;
 		em[BAT_CRITICAL].finished =0;
 		em[BAT_OTHER].active=0;
@@ -154,9 +165,9 @@ void battery_flight_check(void)
 ***********************************************************************/
 void gps_flight_check(void) 
 {  
-    if( GpsFixValid() )
+    if( GpsFixValid() && gps.flag_rtk)
 	{
-		if( gps.p_stable )
+		if( gps.p_stable && ins_int.virtual_p_stable)
         {   //could be recovered
 			em[GPS_ACC].active =0;
 			em[GPS_ACC].finished =0;
@@ -184,21 +195,21 @@ void gps_flight_check(void)
     }
 	else
 	{
-		//set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0x03, FALSE,TRUE,3);	
-		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
+		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,2, FALSE,TRUE,3);	
+		//set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,2, FALSE,FALSE,3);	
 		#if TEST_MSG
 		gps_flight=2;
 		#endif
 	}
    #ifdef USE_GPS_HEADING
-	if(!gps.h_stable)
-	{
-		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0x10, FALSE,TRUE,3);
-	}
-	else
+	if(gps.h_stable && ahrs_mlkf.virtual_h_stable)
 	{
 		em[IMU_MAG_EMI].active = 0;
 		em[IMU_MAG_EMI].finished = 0;
+	}
+	else
+	{
+		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
 	}
    #endif	
 	
@@ -231,7 +242,10 @@ void ops_flight_check(void)
 	{   
 		if(ops_info.sys_error>>1)
 		{
-			set_except_mission(OPS_BLOCKED,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
+			//set_except_mission(OPS_BLOCKED,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
+
+
+			
 		}
 		else
 		{
@@ -370,7 +384,7 @@ static uint8_t ahrs_ground_check(void)
 
 static uint8_t ins_ground_check(void)
 {
-	if (!state.ned_initialized_i) return 0;
+	if( !stateIsLocalCoordinateValid()) return 0;
  	if( fabs(stateGetSpeedEnu_f()->x) >MAX_GROUND_INS_S)  return 0;
 	if( fabs(stateGetSpeedEnu_f()->y) >MAX_GROUND_INS_S)  return 0;
 	if( fabs(stateGetSpeedEnu_f()->z) >MAX_GROUND_INS_S)  return 0;

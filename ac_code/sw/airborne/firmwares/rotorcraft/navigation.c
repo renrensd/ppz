@@ -51,7 +51,7 @@
 #include "messages.h"
 #include "mcu_periph/uart.h"
 
-struct EnuCoor_i navigation_target;
+struct EnuCoor_i navigation_target;  //now only use pos x/y,send to navigation_carrot
 struct EnuCoor_i navigation_carrot;
 struct EnuCoor_i navigation_obstacle;
 
@@ -415,8 +415,8 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
 
 void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 {
-  static uint8_t last_regulate_ratio = 2;
-  uint8_t regulate_ratio = 2;
+  //static uint8_t last_regulate_ratio = 2;
+  //uint8_t regulate_ratio = 2;
   struct Int32Vect2 wp_diff, pos_diff, wp_diff_prec ,wp_corre;
   struct EnuCoor_i pos_current;
   
@@ -426,8 +426,8 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
   // go back to metric precision or values are too large
   VECT2_COPY(wp_diff_prec, wp_diff);                      //pos_diff_prec is deta of route(x,y)
 
-  uint32_t leg_length2 = Max((wp_diff.x * wp_diff.x + wp_diff.y * wp_diff.y)>>16, 1);   //leg_length2 is route length square(real)
-  int32_t leg_progress2 = (pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y)>>16;        //leg_progress2 is route_len * (shadow of cur_star len)
+  uint32_t leg_length2 = Max(((int64_t)wp_diff.x*(int64_t)wp_diff.x + (int64_t)wp_diff.y*(int64_t)wp_diff.y)>>16, 1);   //leg_length2 is route length square(real)
+  int32_t leg_progress2 = ((int64_t)pos_diff.x*(int64_t)wp_diff.x + (int64_t)pos_diff.y*(int64_t)wp_diff.y)>>16;        //leg_progress2 is route_len * (shadow of cur_star len)
   nav_leg_progress2_from = leg_progress2;   // <0:signed AC not reach start waypoint
   nav_leg_length = int32_sqrt(leg_length2);                                             //nav_leg_length is real length of route
   nav_leg_progress = (float)(leg_progress2 / nav_leg_length);                                    //nav_leg_progress is shadow length of flighted line
@@ -671,15 +671,12 @@ void nav_periodic_task(void)
   dist2_to_wp = 0;
 
   /* from nav_flight.c or flight_plan.h */
-#if 1
  #ifndef USE_MISSION
    auto_nav(); 
  #else
    nav_flight();
  #endif
-#else   //only for test
- flight_demo();
-#endif 
+
 
   /* run carrot loop */
   nav_run();
@@ -808,14 +805,37 @@ bool_t nav_set_heading_deg(float deg)
 }
 
 /** Set nav_heading along a given path. */
-bool_t nav_set_heading_along(struct EnuCoor_i *wp_from,struct EnuCoor_i *wp_to)
+bool_t nav_set_heading_forward_line(struct EnuCoor_i *wp_from,struct EnuCoor_i *wp_to)
 {
   struct Int32Vect2 pos_diff;
   VECT2_DIFF(pos_diff, *wp_to, *wp_from);
   // don't change heading if closer than 0.5m to target
-  if ( VECT2_NORM2(pos_diff) > BFP_OF_REAL(0.25,16) )
+  if( abs(pos_diff.x)>65 || abs(pos_diff.y)>65 )
   {
     nav_heading  = int32_atan2(pos_diff.x, pos_diff.y);
+  }
+  return FALSE;
+}
+
+/** Set nav_heading along a given path. */
+bool_t nav_set_heading_parallel_line(struct EnuCoor_i *wp_from,struct EnuCoor_i *wp_to)
+{
+  struct Int32Vect2 pos_diff;
+  VECT2_DIFF(pos_diff, *wp_to, *wp_from);
+  // don't change heading if closer than 0.5m to target
+  if( abs(pos_diff.x)>65 || abs(pos_diff.y)>65 )
+  {
+  	int32_t pre_heading = int32_atan2(pos_diff.x, pos_diff.y);
+	int32_t sp_heading = nav_heading;
+	INT32_ANGLE_NORMALIZE(pre_heading);
+	INT32_ANGLE_NORMALIZE(nav_heading);
+	int32_t delta_angle = pre_heading - nav_heading;
+	INT32_ANGLE_NORMALIZE(delta_angle);
+	delta_angle = abs(delta_angle);
+	if( delta_angle>ANGLE_BFP_OF_REAL(0.2f) && delta_angle<ANGLE_BFP_OF_REAL(3.14f-0.2f) )  //12deg error allowed
+	{
+		nav_heading = pre_heading;
+	}	
   }
   return FALSE;
 }
@@ -867,7 +887,7 @@ bool_t nav_check_heading(void)
 
 bool_t nav_check_height(void)
 {
-	if( abs(stateGetPositionNed_i()->z + nav_flight_altitude) < POS_BFP_OF_REAL(0.15))
+	if( abs(stateGetPositionNed_i()->z + nav_flight_altitude) < POS_BFP_OF_REAL(0.15) )
 	{
 		return TRUE;
 	}

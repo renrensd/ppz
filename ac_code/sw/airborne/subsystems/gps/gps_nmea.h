@@ -76,7 +76,7 @@ struct GpsNmea {
   
   uint8_t sol_tatus;          ///< gps heading status
   uint8_t num_sta_use;        ///< number of sta in used
-  uint32_t msg_len;
+  int32_t msg_len;
   float heading;
   float pitch;
 

@@ -204,6 +204,8 @@ void electrical_periodic(void)
 	   	electrical.vsupply = ops_info.o_bat_mv / 100;
 	    electrical.current = (int32_t)ops_info.o_bat_ma;
 		electrical.rep_cap = ops_info.o_bat_rep;
+		electrical.bat_cap = ops_info.o_bat_cap;
+		electrical.remain_percent = ops_info.o_bat_rep_percent;
 		electrical.temper = (float)((ops_info.o_bat_tem -2731) / 10);
 	  #endif
 	#endif	

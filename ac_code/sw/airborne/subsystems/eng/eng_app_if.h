@@ -36,6 +36,8 @@
 #define SIZE_OF_12NC_SERIES_NUMBER		5
 #define SIZE_OF_MANUFACTURE_DATE		4
 
+#define SIZE_OF_COMPONENT_VERSION		25
+
 enum
 {
 	ENG_GET_AC_VERSION,
@@ -59,8 +61,25 @@ typedef struct
 	uint8_t cl_manufacture_date[SIZE_OF_MANUFACTURE_DATE];
 }MANUFACTURE_INFO;
 
+struct Software_Version
+{
+	bool_t  sv_update;
+	uint8_t sv_len;
+	uint8_t version[SIZE_OF_COMPONENT_VERSION];
+};
+
+typedef struct Component_Version_Info
+{
+	struct Software_Version ac_sv;
+	struct Software_Version ops_sv;
+   #ifdef BBOX_OPTION
+	struct Software_Version bbox_sv;
+   #endif
+} COMPONENT_VERSION_INFO;
+
 /**** Declaration of variables ****/
 extern const uint8_t project_number_array[SIZE_OF_AC_PROJECT_NAME];
+extern COMPONENT_VERSION_INFO eng_components_info;
 
 
 /**** Declaration of functions ****/

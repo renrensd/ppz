@@ -37,7 +37,6 @@
     </subsystem>
 
     <subsystem name="telemetry" type="xbee_api"/>
-    <!--subsystem name="telemetry" type="transparent_usb"/-->
     <subsystem name="stabilization" type="float_double"/>
     <subsystem name="gps" type="nmea">
        <define name="USE_GPS_HEADING"/>
@@ -72,8 +71,8 @@
 
   <modules main_freq="512">
     <!--load name="gps_ubx_ucenter.xml"/-->
-    <load name="send_imu_mag_current.xml"/>
-    <load name="agl_dist.xml"/>
+    <!--load name="send_imu_mag_current.xml"/-->
+    <!--load name="agl_dist.xml"/-->
     <!--load name="acc_cali.xml"/-->
     <load name="mag_cali.xml"/>
     <!--load name="sonar_uart_MB12xx.xml"/-->
@@ -81,7 +80,7 @@
     <!--load name="sonar_uart_US100.xml"/-->
     <!--load name="nav_survey_poly_osam.xml"/-->
     <!--load name="laser_r2100.xml"/-->
-    <load name="radar_nra24.xml"/>
+    <!--load name="radar_nra24.xml"/-->
     <!--load name="bat_manager.xml"/-->
     <load name="logger_file.xml"/>
     <!--load name="nav_survey_rectangle_rotorcraft.xml"/-->    
@@ -133,9 +132,67 @@
     <define name="GYRO_P_SENS" value="2.17953" integer="16"/>
     <define name="GYRO_Q_SENS" value="2.17953" integer="16"/>
     <define name="GYRO_R_SENS" value="2.17953" integer="16"/>
+	<!--no8 imu-->
+<!--define name="ACCEL_X_NEUTRAL" value="117"/>
+<define name="ACCEL_Y_NEUTRAL" value="233"/>
+<define name="ACCEL_Z_NEUTRAL" value="361"/>
+<define name="ACCEL_X_SENS" value="4.903951" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.905409" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.838202" integer="16"/>
+
+<define name="MAG_X_NEUTRAL" value="3621"/>
+<define name="MAG_Y_NEUTRAL" value="194"/>
+<define name="MAG_Z_NEUTRAL" value="2139"/>
+<define name="MAG_X_SENS" value="0.349549333331" integer="16"/>
+<define name="MAG_Y_SENS" value="0.357547482736" integer="16"/>
+<define name="MAG_Z_SENS" value="0.36603607012" integer="16"/-->
+	<!--no6 imu-->
+<define name="ACCEL_X_NEUTRAL" value="-5"/>
+<define name="ACCEL_Y_NEUTRAL" value="4"/>
+<define name="ACCEL_Z_NEUTRAL" value="-84"/>
+<define name="ACCEL_X_SENS" value="4.906804" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.907840" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.873094" integer="16"/>
+
+<define name="MAG_X_NEUTRAL" value="2320"/>
+<define name="MAG_Y_NEUTRAL" value="1756"/>
+<define name="MAG_Z_NEUTRAL" value="-1884"/>
+<define name="MAG_X_SENS" value="0.34469166806" integer="16"/>
+<define name="MAG_Y_SENS" value="0.354649004464" integer="16"/>
+<define name="MAG_Z_SENS" value="0.360991869661" integer="16"/>
+
+	<!--no5 imu-->
+<!--define name="ACCEL_X_NEUTRAL" value="2"/>
+<define name="ACCEL_Y_NEUTRAL" value="-15"/>
+<define name="ACCEL_Z_NEUTRAL" value="160"/>
+<define name="ACCEL_X_SENS" value="4.922391" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.908957" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.889877" integer="16"/>
+
+<define name="MAG_X_NEUTRAL" value="-241"/>
+<define name="MAG_Y_NEUTRAL" value="3686"/>
+<define name="MAG_Z_NEUTRAL" value="-269"/>
+<define name="MAG_X_SENS" value="0.341552543729" integer="16"/>
+<define name="MAG_Y_SENS" value="0.365644633735" integer="16"/>
+<define name="MAG_Z_SENS" value="0.373745503946" integer="16"/-->
+
+	<!--no4 imu-->
+<!--define name="ACCEL_X_NEUTRAL" value="26"/>
+<define name="ACCEL_Y_NEUTRAL" value="-5"/>
+<define name="ACCEL_Z_NEUTRAL" value="-33"/>
+<define name="ACCEL_X_SENS" value="4.91553" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.903531" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.865417" integer="16"/>
+
+<define name="MAG_X_NEUTRAL" value="-306"/>
+<define name="MAG_Y_NEUTRAL" value="373"/>
+<define name="MAG_Z_NEUTRAL" value="-108"/>
+<define name="MAG_X_SENS" value="0.369153705189" integer="16"/>
+<define name="MAG_Y_SENS" value="0.356257078681" integer="16"/>
+<define name="MAG_Z_SENS" value="0.370801921336" integer="16"/-->
 
 	<!--no3 imu-->
-<define name="ACCEL_X_NEUTRAL" value="19"/>
+<!--define name="ACCEL_X_NEUTRAL" value="19"/>
 <define name="ACCEL_Y_NEUTRAL" value="16"/>
 <define name="ACCEL_Z_NEUTRAL" value="53"/>
 <define name="ACCEL_X_SENS" value="4.910085" integer="16"/>
@@ -147,7 +204,7 @@
 <define name="MAG_Z_NEUTRAL" value="194"/>
 <define name="MAG_X_SENS" value="0.353093594808" integer="16"/>
 <define name="MAG_Y_SENS" value="0.351443531742" integer="16"/>
-<define name="MAG_Z_SENS" value="0.328622737985" integer="16"/>
+<define name="MAG_Z_SENS" value="0.328622737985" integer="16"/-->
 
 
     			<!-- adiv1  -->
@@ -330,7 +387,7 @@
     <define name="AGAIN" value="60"/-->
     <define name="PGAIN" value="45"/>
     <define name="DGAIN" value="265"/>
-    <define name="IGAIN" value="85"/>
+    <define name="IGAIN" value="1"/>
     <define name="VGAIN" value="200"/>
     <define name="AGAIN" value="100"/>
     <define name="TD_H" value="1024"/>
@@ -354,8 +411,6 @@
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
-    <!--define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/--> 
-    <!--define name="MODE_AUTO2" value="AP_MODE_HOVER_Z_HOLD"/-->
   </section>
 
   <section name="BAT">

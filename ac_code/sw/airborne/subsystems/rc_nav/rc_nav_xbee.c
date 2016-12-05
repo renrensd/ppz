@@ -136,7 +136,7 @@ void rc_setpoint_speed_parse(float speed_fb,float speed_rl)
 static uint8_t rc_motion_cmd_verify(uint8_t cmd)
 {
 	#ifdef DEBUG_RC
-	/*on ground,execute stop spray*/
+	/*on ground, execute stop spray in any flight mode, for debug or test*/
 	if( cmd==K_HOLD && !autopilot_in_flight)
 	{
 		#ifdef OPS_OPTION
@@ -144,25 +144,22 @@ static uint8_t rc_motion_cmd_verify(uint8_t cmd)
 		#endif
 	}
 	#endif
+	
 	uint8_t error_code =0;
 	if(flight_mode!=nav_rc_mode)
-	{//error,not in manual mode
+	{  //error,request in manual mode
 		return error_code=10; 
 	}
 
 	/*in ground ,up_key give take_off cmd*/
-	if( cmd==K_UP 
+	if( cmd == K_UP 
 		&& !rc_set_info.locked
 		&& !autopilot_in_flight 
-	   #ifdef USE_MISSION 
-		&& flight_state==ready
-	   #else 
-		&& rc_set_info.vtol==LOCKED
-	   #endif   
-	                               )   
+		&& ground_check_pass
+		&& rc_set_info.vtol==LOCKED )   
 	{  
-		rc_set_info.vtol = TAKE_OFF;  /*give take off cmd*/
-		return error_code = 0; 
+		rc_set_info.vtol = TAKE_OFF;  /*generate take off cmd*/
+		return error_code = 1;    //not 0, for key up will set climb cmd
 	}
 
 	/*on ground,execute stop spray*/
@@ -174,7 +171,7 @@ static uint8_t rc_motion_cmd_verify(uint8_t cmd)
 	}
    
 	if(!autopilot_in_flight) 
-	{//error,ac need take off
+	{//error,ac need take off first
 		return error_code=11;  
 	}
 	
@@ -365,7 +362,7 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 ***********************************************************************/
  uint8_t rc_set_cmd_pasre(uint8_t cmd)
  {    
- 	  rc_set_cmd=cmd;
+ 	  rc_set_cmd = cmd;
 
 	  switch(rc_set_cmd)
 	  {    
@@ -378,7 +375,6 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 						break;  /*if aircraft in flight, refuse change mode from manual to auto*/
 					}		   	
 				  
-				   rc_set_info.mode_state = nav_gcs_mode;
 				   flight_mode_enter(nav_gcs_mode);			   		
 		   	   	}		   	  
 			   break;
@@ -386,7 +382,6 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		   case RC_SET_MANUAL:
 		   		if( AP_MODE_NAV == autopilot_mode)
 		   		{
-				  #ifdef USE_MISSION
 			   	   if(flight_state==taking_off || flight_state==landing)  
 				   	{ 
 						break;
@@ -396,9 +391,7 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 				   		mode_convert_a2m = TRUE;
 						spray_break_and_continual();
 				   	}
-				  #endif		
 				  
-				   rc_set_info.mode_state = nav_rc_mode;
 				   flight_mode_enter(nav_rc_mode); 
 		   		}
 			   break;
@@ -458,13 +451,9 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		   	   break;
 			   
 		   case  RC_HOME:
-		   	   if( flight_mode==nav_rc_mode && autopilot_in_flight 
-			   	  #ifdef USE_MISSION
-		   	       && flight_state==cruising
-			      #else
-			       && rc_set_info.vtol==CRUISE
-			      #endif                                            
-				                                                      )
+		   	   if( flight_mode==nav_rc_mode 
+			   	    && autopilot_in_flight 
+			   	    && flight_state==cruising )
 			   {
 				   rc_set_info.home = TRUE;
 				  #ifdef OPS_OPTION    
@@ -476,20 +465,17 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		   	   break;
 			   
 		   case  RC_STOP_HOME:
-		   	   if( flight_mode==nav_rc_mode && autopilot_in_flight 
-			   	  #ifdef USE_MISSION
-		   	       && flight_state==home
-			      #else
-			       && rc_set_info.home==TRUE
-			      #endif                                           
-				                                                       )
+		   	   if( flight_mode==nav_rc_mode 
+			   	    && autopilot_in_flight 
+			   	    && flight_state==home    )
 			   {
 				   rc_set_info.home = FALSE;
-				  	//use for monitoring process
-		           rc_cmd_interrupt = TRUE;
+				   	/*use for monitoring process*/
+					rc_cmd_interrupt = TRUE;
 			   }
 		   	   break;
-			   
+
+		   /*LOCK set cmd not request in nav_rc_mode*/			   
 		   case  RC_LOCK:
 		   	   if(rc_set_info.vtol==LOCKED)   //request ac is not in flight cmd
 		   	   {
@@ -517,28 +503,6 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 				break;
 		   #endif /* CALIBRATION_OPTION */
 		   
-		   #if 0   
-		   /*reserve function*/ 
-		   case RC_MAINPOWER_ON:
-	    	   rc_set_info.m_power=1;
-		   	   break;
-		   case RC_MAINPOWER_OFF:
-	    	   rc_set_info.m_power=0;
-		   	   break;
-		   /*not use, instead of K_UP*/   
-		   case RC_TAKE_OFF:
-		   	  #ifdef USE_MISSION
-		   	   if(flight_mode!=nav_rc_mode || autopilot_in_flight || flight_state!=ready)  
-			   {   break;  }			   
-	    	   
-			  #else
-			   if(flight_mode!=nav_rc_mode || autopilot_in_flight || rc_set_info.vtol!=LOCKED) 
-			   {   break;  }
-			  #endif
-			   rc_set_info.vtol=TAKE_OFF;
-		   	   break;
-		   #endif
-
 		   default:
 		   	   break;
 	  }
@@ -559,12 +523,12 @@ void rc_set_info_reset(void)
 
 void rc_set_info_init(void)
 {
-    rc_set_info.mode_state= nav_gcs_mode; //or nav_gcs_mode,use in rc_cmd mode change
+	rc_set_info.mode_state = nav_gcs_mode; //or nav_gcs_mode,use in rc_cmd mode change
 	rc_set_info.vtol = LOCKED;
 	rc_set_info.home = FALSE;
-	rc_set_info.spray_grade= 0;
+	rc_set_info.spray_grade = 0;
 #ifdef OPS_OPTION
-	 ops_stop_spraying();//TODOM
+	ops_stop_spraying();//TODOM
 #endif
 	//rc_set_info.m_power = 0;
     rc_set_info.locked = TRUE;
@@ -599,8 +563,8 @@ void rc_lost_check(void)
 
 void rc_set_connect(void)
 {
-	rc_count=0;  //reset rc_count,use for check rc_lost
-	rc_lost=FALSE;
+	rc_count = 0;  //reset rc_count,use for check rc_lost
+	rc_lost = FALSE;
 }
 
 void rc_set_rc_type(void)

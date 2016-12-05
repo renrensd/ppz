@@ -129,6 +129,21 @@ void bbox_write_file_fault(char *buf, uint8_t len)
    	bbox_can_msg_send(len+2, &arg[0]);
 }
 
+/*******************************************************************************
+**  FUNCTION      : bbox_request_software_version                                         
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void bbox_request_software_version(void)
+{
+	uint8_t arg[2];
+   	arg[0] = BBOX_CONTROL_COMMAND_SERVICE;
+	arg[1] = 0x01;
+	
+   	bbox_can_msg_send(2, &arg[0]);
+}
+
 /***********************************************************************
 *  Name        : bbox_msg_handle
 *  Description :      
@@ -138,8 +153,6 @@ void bbox_write_file_fault(char *buf, uint8_t len)
 ***********************************************************************/
 void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len)
 {
-	uint8_t i;
-
 	if(can_id == CANID_BBOX)
 	{
 		bbox_info.con_flag = TRUE;
@@ -179,9 +192,22 @@ void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len)
 							bbox_info.start_log = TRUE;
 						}
 					}
-				}
-				
+				}				
 				break;
+
+			case BBOX_CONTROL_COMMAND_SERVICE:
+				if(frame[3] == 0x02)
+				{
+					if( (len-4) < MAX_BBOX_SV_VERSION_LEN )
+					{
+						for(uint8_t i=0; i<len; i++)
+						{
+							bbox_info.version[i] = frame[i+4];
+						}
+						bbox_info.sv_len = len - 4;
+						bbox_info.sv_update = TRUE;
+					}
+				}
 
 			default:
 				break;

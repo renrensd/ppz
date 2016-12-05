@@ -86,7 +86,7 @@
 #include "subsystems/datalink/can_transport.h"
 #endif	/* BBOX_OPTION */
 
-#ifndef FRAM_OPTION
+#ifdef FRAM_OPTION
 #include "subsystems/fram/fram_if.h"
 #endif	/* FRAM_OPTION */
 
@@ -319,7 +319,7 @@ void mcu_event(void)
 void mcu_fault_info_handle(uint16_t msp_offset)
 {
 	//gpio_set(ECS_PWM_EN_GPIO);
-	uint32_t *vp = (mcu_fault_info.msp + msp_offset);
+	uint32_t *vp = (uint32_t*)(mcu_fault_info.msp + msp_offset);
 	
 	for(uint8_t i=0; i<15; i++)
 	{

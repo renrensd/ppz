@@ -35,7 +35,8 @@ enum Rc_Type
 enum Spray_Convert_Type
 {
 	CIRCLE_CONVERT = 0,
-	WAYPOINT_CONVERT
+	WAYPOINT_FORWARD,
+	WAYPOINT_P2P
 };
 
 struct config_info
@@ -63,8 +64,6 @@ extern void nav_flight_init(void);
 extern void nav_flight(void);
 extern uint16_t get_flight_status(void);
 extern void flight_mode_enter(uint8_t new_mode);
-extern uint8_t flight_demo(void);
-extern void rc_mode_enter(void);
 
 
 #endif /* END OF RC_NAV_H */

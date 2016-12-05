@@ -184,25 +184,38 @@ void send_aircraft_info_state(void)
 	uint16_t spray_wide = (uint16_t)(ac_config_info.spray_wide*100); 
 	uint16_t spray_height = (uint16_t)(ac_config_info.spray_height*100);
 	uint16_t max_flight_height= (uint16_t)(ac_config_info.max_flight_height*100);
-	uint16_t  spray_concentration = ac_config_info.spray_concentration;
+	uint16_t spray_concentration = ac_config_info.spray_concentration;
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
-	char     ac_sn[10]="EFA113";	 //fix info
+	char     ac_sn[10]="EFA116";	 //fix info
 	char     ac_sv[25]="";
 	char     ops_sv[25]="";
 	char     bbox_sv[25]="";
 	
-	char*    buf = eng_get_ac_version(); 
-	for(uint8_t i=0; i<25; i++)
+	if(eng_components_info.ac_sv.sv_update)
 	{
-		ac_sv[i] = *(buf+i);
+		for(uint8_t i=0; i<eng_components_info.ac_sv.sv_len; i++)
+		{
+			ac_sv[i] = eng_components_info.ac_sv.version[i];
+		}
 	}
-	buf = &(ops_info.ops_sv[0]);
-	for(uint8_t j=0; j<25; j++)
+	if(eng_components_info.ops_sv.sv_update)
 	{
-		ops_sv[j] = *(buf+j);
+		for(uint8_t i=0; i<eng_components_info.ops_sv.sv_len; i++)
+		{
+			ops_sv[i] = eng_components_info.ops_sv.version[i];
+		}
 	}
+	#ifdef BBOX_OPTION
+	if(eng_components_info.bbox_sv.sv_update)
+	{
+		for(uint8_t i=0; i<eng_components_info.bbox_sv.sv_len; i++)
+		{
+			ops_sv[i] = eng_components_info.bbox_sv.version[i];
+		}
+	}
+	#endif
 	
 	xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_AIRCRAFT_INFO_STATE(SecondChannel, SecondDevice, 
@@ -256,6 +269,17 @@ uint8_t DlSetCommand(uint8_t id, uint8_t pt_value)
 			else
 			{
 				ops_msg_stop_selfclean();
+			}
+			break;
+
+		case OPS_SPRAY_CONTROL:
+			if(pt_value)
+			{
+				ops_msg_direct_open_spray();
+			}
+			else
+			{
+				ops_msg_direct_stop_spray();
 			}
 			break;
 			

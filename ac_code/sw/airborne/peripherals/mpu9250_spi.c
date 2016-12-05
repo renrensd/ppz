@@ -106,6 +106,15 @@ void mpu9250_spi_read(struct Mpu9250_Spi *mpu)
 }
 
 #define Int16FromBuf(_buf,_idx) ((int16_t)((_buf[_idx]<<8) | _buf[_idx+1]))
+static inline bool_t DataValidCheck(uint8_t* buf)  
+{ 
+	uint8_t temp =0xFF;
+	for(uint8_t i=0; i<14; i++)
+	{
+		temp &= buf[i];
+	}
+	return (temp!=0xFF);
+}
 
 void mpu9250_spi_event(struct Mpu9250_Spi *mpu)
 {
@@ -114,7 +123,7 @@ void mpu9250_spi_event(struct Mpu9250_Spi *mpu)
       mpu->spi_trans.status = SPITransDone;
     } else if (mpu->spi_trans.status == SPITransSuccess) {
       // Successfull reading
-      if (bit_is_set(mpu->rx_buf[1], 0)) {
+      if ( bit_is_set(mpu->rx_buf[1], 0) && DataValidCheck(&(mpu->rx_buf[2])) ){
         // new data
         mpu->data_accel.vect.x = Int16FromBuf(mpu->rx_buf, 2);
         mpu->data_accel.vect.y = Int16FromBuf(mpu->rx_buf, 4);

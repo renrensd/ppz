@@ -228,7 +228,7 @@ static void gh_compute_ref_max(struct Int32Vect2 *ref_vector)
 		Bound(brake_accel_modify, 0.0, 6.0);
 		int32_t brake_delta_speed = BFP_OF_REAL(brake_accel_modify, GH_MAX_SPEED_REF_FRAC)*route_brake_counter/512;
 		int32_t ref_max_speed = gh_ref.max_speed_int - brake_delta_speed;
-		Bound(ref_max_speed,  BFP_OF_REAL(1.0, GH_MAX_SPEED_REF_FRAC), gh_ref.max_speed_int );
+		Bound(ref_max_speed, BFP_OF_REAL(1.0, GH_MAX_SPEED_REF_FRAC), gh_ref.max_speed_int);
 		gh_ref.max_vel.x = INT_MULT_RSHIFT(ref_max_speed, gh_ref.c_route_ref, INT32_TRIG_FRAC);
 		gh_ref.max_vel.y = INT_MULT_RSHIFT(ref_max_speed, gh_ref.s_route_ref, INT32_TRIG_FRAC);
 		
