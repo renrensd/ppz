@@ -31,6 +31,17 @@ enum _e_mag_cali_status
 	MAG_CALI_CALC3
 };
 
+struct MagCaliPersData
+{
+	struct EcefCoor_i cali_ecef_pos_i;
+	float gain[2];
+	float offset[2];
+	uint32_t cali_ok;
+	uint32_t crc16;
+}__attribute((aligned (4)));
+
+#define MAG_CALI_PERS_DATA_STRUCT_LENGTH	(sizeof(struct MagCaliPersData))
+
 struct MagCali
 {
   bool_t manual_enable;
@@ -39,6 +50,8 @@ struct MagCali
   bool_t need_cali;
   bool_t auto_cali;
   bool_t cali_ok;
+  bool_t cali_ok_last;
+  bool_t persistent_store;
   int32_t nav_heading_ini;
 
   uint8_t grab_tick[MAG_CALI_GRAB_NUM];

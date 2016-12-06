@@ -54,6 +54,8 @@ extern uint8_t fram_read (uint8_t id, uint16_t item, uint8_t *read_buffer);
 extern uint8_t fram_id_read (uint8_t id, uint8_t *read_buffer);
 extern uint8_t fram_ac_param_read(uint8_t *read_buffer, uint16_t len);
 extern uint8_t fram_ac_param_write(uint8_t *write_buffer, uint16_t len);
+extern uint8_t fram_mag_cali_data_read(uint8_t *read_buffer);
+extern uint8_t fram_mag_cali_data_write(uint8_t *write_buffer);
 #ifdef UPGRADE_OPTION
 extern uint8_t fram_write_swdl_mask(void);
 extern uint8_t fram_read_swdl_mask (uint8_t* pBlockData);

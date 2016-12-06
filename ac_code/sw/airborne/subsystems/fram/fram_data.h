@@ -20,9 +20,11 @@
 #ifndef _FRAM_DATA_H_
 #define _FRAM_DATA_H_
 #include "std.h"
+#include "modules/mag_cali/mag_cali.h"
 
 /**** Definition of constants ****/
 #define SW_VERSION_LONGTH     16
+#define MAG_CALI_FRAM_DATA_LENGTH	(MAG_CALI_PERS_DATA_STRUCT_LENGTH)
 
 /**** Definition of types ****/ 
 

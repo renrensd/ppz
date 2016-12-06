@@ -260,6 +260,20 @@ void fram_init_all_data(void)
 	}
 }
 
+/*
+ *	mag_cali
+ */
+uint8_t fram_mag_cali_data_read(uint8_t *read_buffer)
+{
+	return fram_id_read(CL_MAG_CALI_FRAM_DATA, read_buffer);
+}
+
+uint8_t fram_mag_cali_data_write(uint8_t *write_buffer)
+{
+	return fram_id_write(CL_MAG_CALI_FRAM_DATA, write_buffer);
+}
+
+
 
 #ifdef UPGRADE_OPTION
 /***********************************************************************

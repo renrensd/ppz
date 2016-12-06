@@ -9,8 +9,13 @@
   <settings>
     <dl_settings>
       <dl_settings name="mag_cali">
-        <dl_setting min="0" max="1" step="1" values="OFF|ON" var="mag_cali.manual_enable" module="mag_cali/mag_cali" shortname="Enable"/>
-        <dl_setting min="0" max="1" step="1" values="DISABLE|ENABLE" var="mag_cali.need_cali" module="mag_cali/mag_cali" shortname="Enable"/>
+        <dl_setting min="0" max="1" step="1" type="bool" values="OFF|ON" var="mag_cali.manual_enable" module="mag_cali/mag_cali" shortname="manual_cali"/>
+        <dl_setting min="0" max="1" step="1" type="bool" values="DISABLE|ENABLE" var="mag_cali.need_cali" module="mag_cali/mag_cali" shortname="need_cali"/>
+        <dl_setting min="0" max="1" step="1" type="bool" values="INVALID|VALID" var="mag_cali.cali_ok" module="mag_cali/mag_cali" shortname="cali_ok"/>
+        <dl_setting min="0" max="1" step="0.01" type="float" var="mag_cali.offset[0]" module="mag_cali/mag_cali" shortname="offset_x"/>
+     	<dl_setting min="0" max="1" step="0.01" type="float" var="mag_cali.offset[1]" module="mag_cali/mag_cali" shortname="offset_y"/>
+ 		<dl_setting min="0.1" max="10" step="0.01" type="float" var="mag_cali.gain[0]" module="mag_cali/mag_cali" shortname="gain_x"/>
+ 		<dl_setting min="0.1" max="10" step="0.01" type="float" var="mag_cali.gain[1]" module="mag_cali/mag_cali" shortname="gain_y"/>
       </dl_settings>
     </dl_settings>
   </settings>
