@@ -205,7 +205,7 @@ Gcs_State gcs_task_run(void)
 			
 		case GCS_CMD_PAUSE:
 			gcs_state = GCS_RUN_PAUSE;
-			//gcs_hover_enter();
+			gcs_hover_enter();   //for stop spray
 			set_stop_brake(PAUSE_BRAKE);
 			
 			break;

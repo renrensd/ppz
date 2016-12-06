@@ -76,7 +76,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
-	if(!gps_s->h_stable)
+	if(!gps_s->h_stable) //TODO: move to period
 	{
 		mag_cali_stop();
 		return;
@@ -172,7 +172,7 @@ void mag_cali_init(void)
 	//TEST_CASE
 
 	// test data
-	float theta,max,min,offset[2],gain[2];
+//	float theta,max,min,offset[2],gain[2];
 //	for (uint16_t i = 0; i < 10; ++i)
 //	{
 //		theta = my_math_2pi/(float)MAG_CALI_GRAB_NUM*(float)i;
@@ -186,77 +186,77 @@ void mag_cali_init(void)
 //	}
 
 	// ini guess of offset and gain
-	for (uint8_t i = 0; i < 2; ++i)
-	{
-		max = grab_sum[0][i];
-		min = grab_sum[0][i];
-		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
-		{
-			if(grab_sum[j][i] > max )
-			{
-				max = grab_sum[j][i];
-			}
-			else if(grab_sum[j][i] < min)
-			{
-				min = grab_sum[j][i];
-			}
-		}
-		offset[i] = (float)(max + min)/2.0f;
-	}
-
-	for (uint8_t i = 0; i < 2; ++i)
-	{
-		min = 0;
-		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
-		{
-			grab_sum2[j][i] = grab_sum[j][i] - offset[i];
-			min += fabsf(grab_sum2[j][i]);
-		}
-		gain[i] = min/(float)MAG_CALI_GRAB_NUM;
-	}
-
-	for (uint8_t i = 0; i < 2; ++i)
-	{
-		max = fabsf(grab_sum2[0][i]);
-		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
-		{
-			if(fabsf(grab_sum2[j][i]) > max )
-			{
-				max = fabsf(grab_sum2[j][i]);
-			}
-		}
-		gain[i] = 1.0f/max;
-	}
-
-	//sensors.mag_gain[0] = 1.0f;
-	//sensors.mag_gain[1] = (float)(sensors.mag_max[0] - sensors.mag_min[0])/(float)(sensors.mag_max[1] - sensors.mag_min[1]);
-
-	p.data[0] = gain[0];
-	p.data[1] = gain[1];
-	p.data[2] = offset[0];
-	p.data[3] = offset[1];
-
-	for (uint16_t i = 0; i < 200; ++i)
-	{
-		mag_cali_calc_F(&F, &p, grab_sum);
-		mag_cali_calc_JT(&JT, &p, grab_sum);
-		MatMult(&ev, &JT, &F);
-		VectMult(&ev, 0, &ev, 0, &step, 0);
-		MatSub(&p, &p, &ev);
-	}
-
-	mag_cali.gain[0] = fabsf(p.data[0]);
-	mag_cali.gain[1] = fabsf(p.data[1]);
-	mag_cali.offset[0] = p.data[2];
-	mag_cali.offset[1] = p.data[3];
-
-	imu.mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
-	imu.mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
-	imu.mag_neutral.z = 0;
-	imu.mag_sens.x = mag_cali.gain[0];
-	imu.mag_sens.y = mag_cali.gain[1];
-	imu.mag_sens.z = 0;
-	mag_cali.cali_ok = TRUE;
+//	for (uint8_t i = 0; i < 2; ++i)
+//	{
+//		max = grab_sum[0][i];
+//		min = grab_sum[0][i];
+//		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+//		{
+//			if(grab_sum[j][i] > max )
+//			{
+//				max = grab_sum[j][i];
+//			}
+//			else if(grab_sum[j][i] < min)
+//			{
+//				min = grab_sum[j][i];
+//			}
+//		}
+//		offset[i] = (float)(max + min)/2.0f;
+//	}
+//
+//	for (uint8_t i = 0; i < 2; ++i)
+//	{
+//		min = 0;
+//		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+//		{
+//			grab_sum2[j][i] = grab_sum[j][i] - offset[i];
+//			min += fabsf(grab_sum2[j][i]);
+//		}
+//		gain[i] = min/(float)MAG_CALI_GRAB_NUM;
+//	}
+//
+//	for (uint8_t i = 0; i < 2; ++i)
+//	{
+//		max = fabsf(grab_sum2[0][i]);
+//		for (uint8_t j = 0; j < MAG_CALI_GRAB_NUM; ++j)
+//		{
+//			if(fabsf(grab_sum2[j][i]) > max )
+//			{
+//				max = fabsf(grab_sum2[j][i]);
+//			}
+//		}
+//		gain[i] = 1.0f/max;
+//	}
+//
+//	//sensors.mag_gain[0] = 1.0f;
+//	//sensors.mag_gain[1] = (float)(sensors.mag_max[0] - sensors.mag_min[0])/(float)(sensors.mag_max[1] - sensors.mag_min[1]);
+//
+//	p.data[0] = gain[0];
+//	p.data[1] = gain[1];
+//	p.data[2] = offset[0];
+//	p.data[3] = offset[1];
+//
+//	for (uint16_t i = 0; i < 200; ++i)
+//	{
+//		mag_cali_calc_F(&F, &p, grab_sum);
+//		mag_cali_calc_JT(&JT, &p, grab_sum);
+//		MatMult(&ev, &JT, &F);
+//		VectMult(&ev, 0, &ev, 0, &step, 0);
+//		MatSub(&p, &p, &ev);
+//	}
+//
+//	mag_cali.gain[0] = fabsf(p.data[0]);
+//	mag_cali.gain[1] = fabsf(p.data[1]);
+//	mag_cali.offset[0] = p.data[2];
+//	mag_cali.offset[1] = p.data[3];
+//
+//	imu.mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
+//	imu.mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
+//	imu.mag_neutral.z = 0;
+//	imu.mag_sens.x = mag_cali.gain[0];
+//	imu.mag_sens.y = mag_cali.gain[1];
+//	imu.mag_sens.z = 0;
+//	mag_cali.cali_ok = TRUE;
 }
 
 #define HEADING_ROTATE_DELTA	((ANGLE_BFP_OF_REAL(RadOfDeg(30.)) / MAG_CALI_PERIODIC_FREQ))
