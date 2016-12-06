@@ -29,7 +29,7 @@
     <define name="GPS_B2G_DISTANCE" value="0.3"/>
     <define name="BARO_B2G_DISTANCE" value="0.3"/>
     <define name="DISTANCE_ABOVE_GROUNG" value="0.45"/>
-    <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>
+    <!--define name="USE_PERSISTENT_SETTINGS" value="TRUE"/-->
     <subsystem name="radio_control" type="ppm"/>   
     <subsystem name="motor_mixing"/>
     <subsystem name="actuators" type="pwm">

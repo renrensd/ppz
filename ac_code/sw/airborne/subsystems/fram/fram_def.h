@@ -36,7 +36,7 @@ FRAM_START
 	CLASS	 (CL_HARDWARE_VERSION,			1,                   1,			cl_ac_hw_version_array)
 	CLASS	 (CL_FRAM_RESERVE1,				1,                   1,			cl_no_init_data_array)
 	CLASS	 (CL_FRAM_RESERVE2,				1,                   1,			cl_no_init_data_array)
-
+	CLASS	 (CL_MAG_CALI_FRAM_DATA,				1,                   MAG_CALI_FRAM_DATA_LENGTH,			cl_no_init_data_array)
 FRAM_END
 
 
