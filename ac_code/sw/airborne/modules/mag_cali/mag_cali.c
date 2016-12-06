@@ -12,8 +12,9 @@
 #include "subsystems/abi.h"
 #include "generated/airframe.h"
 #include "math/my_math.h"
-#include "math/pprz_geodetic_int.h"
+#include "math/pprz_algebra_float.h"
 #include "state.h"
+#include "subsystems/ins/ins_int.h"
 #include "subsystems/fram/fram_if.h"
 #include "data_check/crc16.h"
 #if PERIODIC_TELEMETRY
@@ -145,9 +146,22 @@ static void mag_cali_persistent_read(void)
 	mag_cali.offset[1] = temp_MagCaliFramData.offset[1];
 	mag_cali.cali_ok = temp_MagCaliFramData.cali_ok;
 
-	temp_MagCaliFramData.cali_ecef_pos_i
-	struct NedCoor_i ned_last_cali_pos;
-	ned_of_ecef_point_i(&ned_last_cali_pos, state.)
+
+	struct NedCoor_i ned_last_cali_pos_i;
+	ned_of_ecef_point_i(&ned_last_cali_pos_i, &state.ned_origin_i, &temp_MagCaliFramData.cali_ecef_pos_i);
+	struct FloatVect3 dist_v_f;
+
+	struct NedCoor_i curr_ned_pos_i = *stateGetPositionNed_i();
+
+	dist_v_f.x = POS_FLOAT_OF_BFP((curr_ned_pos_i.x - ned_last_cali_pos_i.x));
+	dist_v_f.y = POS_FLOAT_OF_BFP((curr_ned_pos_i.y - ned_last_cali_pos_i.y));
+	dist_v_f.z = POS_FLOAT_OF_BFP((curr_ned_pos_i.z - ned_last_cali_pos_i.z));
+	float dist_f = float_vect3_norm(&dist_v_f);
+
+	if(dist_f > 5000)
+	{
+		mag_cali.cali_ok = FALSE;
+	}
 }
 
 static void mag_cali_persistent_write(void)
@@ -155,6 +169,7 @@ static void mag_cali_persistent_write(void)
 	struct MagCaliPersData temp_MagCaliFramData;
 	uint8_t *ptemp = (uint8_t *) (&temp_MagCaliFramData);
 
+	temp_MagCaliFramData.cali_ecef_pos_i = *stateGetPositionEcef_i();
 	temp_MagCaliFramData.gain[0] = mag_cali.gain[0];
 	temp_MagCaliFramData.gain[1] = mag_cali.gain[1];
 	temp_MagCaliFramData.offset[0] = mag_cali.offset[0];
@@ -163,6 +178,17 @@ static void mag_cali_persistent_write(void)
 	temp_MagCaliFramData.crc16 = Crc16_normal(ptemp, 0, MAG_CALI_PERS_DATA_STRUCT_LENGTH - 4);
 
 	fram_mag_cali_data_write(ptemp);
+}
+
+static void mag_cali_manual_fram_erase(void)
+{
+	mag_cali.gain[0] = 1;
+	mag_cali.gain[1] = 1;
+	mag_cali.offset[0] = 0;
+	mag_cali.offset[1] = 0;
+	mag_cali.cali_ok = FALSE;
+
+	mag_cali_persistent_write();
 }
 
 void mag_cali_init(void)
@@ -175,6 +201,8 @@ void mag_cali_init(void)
 
 	mag_cali.manual_enable = FALSE;
 	mag_cali.manual_enable_prev = FALSE;
+	mag_cali.manual_fram_erase = FALSE;
+	mag_cali.manual_fram_erase_prev = FALSE;
 	mag_cali.state = MAG_CALI_IDLE;
 
 	mag_cali.gain[0] = 1;
@@ -184,6 +212,7 @@ void mag_cali_init(void)
 	mag_cali.cali_ok = FALSE;
 	mag_cali.auto_cali = FALSE;
 	mag_cali.persistent_store = FALSE;
+	mag_cali.persistent_read = TRUE;
 
 	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
 	AbiBindMsgGPS_HEADING(ABI_BROADCAST, &gps_ev, gps_cb);
@@ -238,7 +267,7 @@ static bool_t mag_cali_load_to_imu(void)
 		imu.mag_neutral.z = 0;
 		imu.mag_sens.x = mag_cali.gain[0];
 		imu.mag_sens.y = mag_cali.gain[1];
-		imu.mag_sens.z = 0;
+		imu.mag_sens.z = mag_cali.gain[1];
 
 		return TRUE;
 	}
@@ -251,6 +280,7 @@ void mag_cali_imu_scale(struct Imu *_imu)
 	_imu->mag_real.z = (float)(_imu->mag_unscaled.z - _imu->mag_neutral.z) * _imu->mag_sens.z / (float)MAG_SENSITIVITY;
 	MAGS_BFP_OF_REAL(_imu->mag, _imu->mag_real);
 	VECT3_COPY(_imu->mag_scaled, _imu->mag);
+	_imu->mag.z = 0;
 }
 
 void mag_cali_periodic(void)
@@ -264,26 +294,42 @@ void mag_cali_periodic(void)
 		}
 	}
 
-	if(!gps.h_stable)	// stop calibration if gps heading unstable
+	if (!is_mag_cali_done())
 	{
-		mag_cali_stop(FALSE);
-		return;
+		if (!gps.h_stable)	// stop calibration if gps heading unstable
+		{
+			mag_cali_stop(FALSE);
+		}
 	}
 
 	// read persistent cali data after ltp_initialized to decide need cali or not
-	if(ins_int.ltp_initialized)
-	{
-		mag_cali_persistent_read();
 
-		if(mag_cali.cali_ok)
+	if (mag_cali.persistent_read)
+	{
+		if (ins_int.ltp_initialized)
 		{
-			mag_cali.need_cali = !mag_cali_load_to_imu();
-		}
-		else
-		{
-			mag_cali.need_cali = TRUE;
+			mag_cali_persistent_read();
+
+			if (mag_cali.cali_ok)
+			{
+				mag_cali.need_cali = !mag_cali_load_to_imu();
+			}
+			else
+			{
+				mag_cali.need_cali = TRUE;
+			}
+			mag_cali.persistent_read = FALSE;
 		}
 	}
+
+	if(mag_cali.manual_fram_erase_prev != mag_cali.manual_fram_erase)
+	{
+		if (mag_cali.manual_fram_erase == TRUE)
+		{
+			mag_cali_manual_fram_erase();
+		}
+	}
+	mag_cali.manual_fram_erase_prev = mag_cali.manual_fram_erase;
 
 	if(mag_cali.manual_enable_prev != mag_cali.manual_enable)
 	{

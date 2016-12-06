@@ -13,6 +13,7 @@
 
 #include "std.h"
 #include "subsystems/imu.h"
+#include "math/pprz_geodetic_int.h"
 
 #define MAG_CALI_GRAB_COUNT_MAX				(100)
 #define MAG_CALI_AUTO_ROTATE_TIME		(10)
@@ -46,12 +47,15 @@ struct MagCali
 {
   bool_t manual_enable;
   bool_t manual_enable_prev;
+  bool_t manual_fram_erase;
+  bool_t manual_fram_erase_prev;
   enum _e_mag_cali_status state;
   bool_t need_cali;
   bool_t auto_cali;
   bool_t cali_ok;
   bool_t cali_ok_last;
   bool_t persistent_store;
+  bool_t persistent_read;
   int32_t nav_heading_ini;
 
   uint8_t grab_tick[MAG_CALI_GRAB_NUM];
