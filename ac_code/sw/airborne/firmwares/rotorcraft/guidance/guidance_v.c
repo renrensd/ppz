@@ -244,10 +244,10 @@ static void guidance_v_controller_ini(void)
 
 	guid_v.acc_z_pid.Kp = 0.02f;
 	guid_v.acc_z_pid.Ki = 0.5f;
-	guid_v.speed_z_pid.Kp = 3.0f;
-	guid_v.speed_z_pid.Kd = 0.3f;
-	guid_v.pos_z_pid.Kp = 1.0f;
-	guid_v.pos_z_pid.Kd = 0.5f;
+	guid_v.speed_z_pid.Kp = 5.0f;
+	guid_v.speed_z_pid.Kd = 0.15f;
+	guid_v.pos_z_pid.Kp = 2.5f;
+	guid_v.pos_z_pid.Kd = 0.0f;
 
 	guid_v.acc_filter_fc = 5;
 	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter,
