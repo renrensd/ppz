@@ -141,7 +141,7 @@
       <message name="VFF"               period=".05"/>
       <message name="VFF_EXTENDED"      period=".05"/>
       <message name="VERT_LOOP"         period=".05"/>
-      <message name="INS_Z"             period=".05"/>
+      <message name="INS_Z"             period="0.5"/>
       <message name="INS"               period=".11"/>
       <message name="INS_REF"           period="5.1"/>
     </mode>

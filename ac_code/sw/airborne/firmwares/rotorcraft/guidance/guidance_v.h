@@ -32,6 +32,9 @@
 #include "firmwares/rotorcraft/guidance/guidance_v_ref.h"
 #include "firmwares/rotorcraft/guidance/guidance_v_adapt.h"
 
+#include "controllers/pid.h"
+#include "filters/low_pass_filter.h"
+
 #define GUIDANCE_V_MODE_KILL      0
 #define GUIDANCE_V_MODE_RC_DIRECT 1
 #define GUIDANCE_V_MODE_RC_CLIMB  2
@@ -51,21 +54,25 @@ enum _e_v_pid_loop_mode
 
 struct _s_guidance_v
 {
-	enum _e_v_pid_loop_mode pid_loop_mode;
-	enum _e_v_pid_loop_mode pid_loop_mode_now;
+	enum _e_v_pid_loop_mode pid_loop_mode_gcs;
+	enum _e_v_pid_loop_mode pid_loop_mode_running;
 	bool_t thr_in_deadband;
 	bool_t thr_in_deadband_prev;
-	int32_t z_sp;
-	int32_t AccelNed_i_z_filter;
 	float NED_z_acc;
 	float NED_z_speed;
 	float NED_z_pos;
+	struct _s_pid acc_z_pid;
+	struct _s_pid speed_z_pid;
+	struct _s_pid pos_z_pid;
+	float rc_pos_z;
+	float rc_speed_z;
+	float rc_acc_z;
+	float ref_pos_z;
+	float ref_speed_z;
+	float ref_acc_z;
 	float acc_filter_fc;
-	float speed_filter_fc;
-	float accd_filter_fc;
-	float acc_filter_coef;
-	float speed_filter_coef;
-	float accd_filter_coef;
+	Butterworth2LowPass NED_z_acc_filter;
+	float thrust_coef;
 };
 
 extern struct _s_guidance_v guid_v;
@@ -125,16 +132,6 @@ extern bool_t guidance_v_adapt_throttle_enabled;
 
 extern int32_t guidance_v_thrust_coeff;
 
-extern int32_t guidance_v_kp; ///< vertical control P-gain
-extern int32_t guidance_v_kd; ///< vertical control D-gain
-extern int32_t guidance_v_ki; ///< vertical control I-gain
-
-extern int32_t guidance_vi_kp; ///< vertical inside control P-gain
-extern int32_t guidance_vi_kd; ///< vertical inside control D-gain
-extern int32_t guidance_vi_ki; ///< vertical inside control I-gain
-extern int32_t guidance_vii_kp;//nei huan pid can shu 
-extern int32_t guidance_vii_kd;
-extern int32_t guidance_vii_ki;
 extern float vh;
 extern float vh0;
 extern float r_vert;
@@ -144,6 +141,8 @@ extern void guidance_v_read_rc(void);
 extern void guidance_v_mode_changed(uint8_t new_mode);
 extern void guidance_v_notify_in_flight(bool_t in_flight);
 extern void guidance_v_run(bool_t in_flight);
+
+extern void guidance_v_SetAccCutoff(float fc);
 
 extern uint8_t get_error_z(void);
 

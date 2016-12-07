@@ -36,6 +36,10 @@
 #include"subsystems/gps.h"
 
 #include "math/pprz_algebra_int.h"
+#include "controllers/pid.h"
+#include "filters/low_pass_filter.h"
+
+#define GUIDANCE_V_LOOP_FREQ	(PERIODIC_FREQUENCY)
 
 /* error if some gains are negative */
 #if (GUIDANCE_V_HOVER_KP < 0) ||                   \
@@ -77,29 +81,6 @@ PRINT_CONFIG_VAR(GUIDANCE_V_ADAPT_THROTTLE_ENABLED)
 #define GUIDANCE_V_MAX_RC_DESCENT_SPEED GUIDANCE_V_REF_MAX_ZD
 #endif
 
-#ifndef GUIDANCE_V_MIN_ERR_Z
-#define GUIDANCE_V_MIN_ERR_Z POS_BFP_OF_REAL(-5.)
-#endif
-
-#ifndef GUIDANCE_V_MAX_ERR_Z
-#define GUIDANCE_V_MAX_ERR_Z POS_BFP_OF_REAL(5.)
-#endif
-
-#ifndef GUIDANCE_V_MIN_ERR_ZD
-#define GUIDANCE_V_MIN_ERR_ZD SPEED_BFP_OF_REAL(-5.)
-#endif
-
-#ifndef GUIDANCE_V_MAX_ERR_ZD
-#define GUIDANCE_V_MAX_ERR_ZD SPEED_BFP_OF_REAL(5.)
-#endif
-
-#ifndef GUIDANCE_V_MAX_SUM_ERR
-#define GUIDANCE_V_MAX_SUM_ERR  1500000  //default is 2000000
-#endif
-
-#define USE_ANTI_WIND_UP TRUE
-int32_t wind_up_flag = 1;
-
 uint8_t guidance_v_mode;
 int32_t guidance_v_ff_cmd;
 int32_t guidance_v_fb_cmd;
@@ -127,37 +108,10 @@ int32_t guidance_v_z_ref;
 int32_t guidance_v_zd_ref;
 int32_t guidance_v_zdd_ref;
 
-int32_t guidance_v_kp;
-int32_t guidance_v_kd;
-int32_t guidance_v_ki;
-
-int32_t guidance_vi_kp;
-int32_t guidance_vi_kd;
-int32_t guidance_vi_ki;
-
-int32_t guidance_vii_kp; //nei huan pid can shu
-int32_t guidance_vii_kd;
-int32_t guidance_vii_ki;
-
-int32_t guidance_v_z_sum_err;
-int32_t guidance_v_zd_sum_err;
-int32_t guidance_v_zdd_sum_err; //jia su du huan jifen xiang
 int32_t guidance_v_thrust_coeff;
 
 int32_t c_z = 0; //waihuan gaodu shuchu neihuan sudu geiding
-int32_t c_z_pre = 0; //qian yi shi ke
 int32_t c_az = 0; //su du huan shuchu ,jia su du huan gei ding shuru
-int32_t c_az_pre = 0; //qian yi shi ke
-int32_t num_to_acc = 400; // 2000/num_to_acc=(+-)5m/m2
-int32_t v_pre = 0;
-int32_t vd_pre = 0; //su du huan weifen lvbo
-int32_t vdd_pre = 0; //jiasudu huan weifen lvbo
-int32_t vdd_i = 0; //jiasudu huan jifen huanjie for display only
-int32_t err_vvz_pre = 0; // qian yi shi ke jiasudu wucha
-int32_t acc_z_pre = 0;
-int32_t acc_z_speed_pre = 0;
-#define time_inv 512
-int32_t inside_isum = 0;
 
 #define GuidanceVSetRef(_pos, _speed, _accel) { \
     gv_set_ref(_pos, _speed, _accel);        \
@@ -168,8 +122,8 @@ int32_t inside_isum = 0;
 
 static int32_t get_vertical_thrust_coeff(void);
 static void run_hover_loop(bool_t in_flight);
-static void dynamic_pid_check(void);
-static void guidance_v_filter_ini(void);
+static void guidance_v_controller_ini(void);
+static void state_update_loop(void);
 
 float fsg(float x, float d);
 float fhan(float signal);
@@ -224,31 +178,17 @@ void Tracking_differntiator(float signal)
 
 static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
 {
-	int32_t pos_deta_test = (guidance_v_rc_zd_sp)>>(INT32_SPEED_FRAC-INT32_POS_FRAC);
-	int32_t pos_desired = pos_deta_test + guidance_v_z_sp;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_VERT_LOOP(trans, dev, AC_ID,
-			&guidance_v_z_sp,
-			&guidance_v_zd_sp,
-			&(stateGetPositionNed_i()->z),
-			&(stateGetSpeedNed_i()->z),
-			&(stateGetAccelNed_i()->z),
-			&guidance_v_z_ref,
-			&guidance_v_zd_ref,
-			&guidance_v_zdd_ref,
-			&gv_adapt_X,
-			&gv_adapt_P,
-			&gv_adapt_Xmeas,
-			&guidance_v_z_sum_err,
-			&inside_isum,
-			&guidance_v_ff_cmd,
-			&guidance_v_fb_cmd,
-			&guidance_v_delta_t,
-			&c_z,
-			&vdd_i,
-			&pos_desired,
-			&acc_z_pre,
-			&guid_v.z_sp);
+			&guid_v.NED_z_acc,
+			&guid_v.NED_z_speed,
+			&guid_v.NED_z_pos,
+			&guid_v.ref_acc_z,
+			&guid_v.ref_speed_z,
+			&guid_v.ref_pos_z,
+			&guid_v.acc_z_pid.out,
+			&guid_v.speed_z_pid.out,
+			&guid_v.pos_z_pid.out);
 }
 
 static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
@@ -267,26 +207,15 @@ void guidance_v_init(void)
 
 	guidance_v_mode = GUIDANCE_V_MODE_KILL;
 
-	guidance_v_kp = GUIDANCE_V_HOVER_KP;
-	guidance_v_kd = GUIDANCE_V_HOVER_KD;
-	guidance_v_ki = GUIDANCE_V_HOVER_KI;
-	guidance_vi_kp = GUIDANCE_V_INSIDE_KP;
-	guidance_vi_kd = GUIDANCE_V_INSIDE_KD;
-	guidance_vi_ki = GUIDANCE_V_INSIDE_KI;
-	guidance_vii_kp = GUIDANCE_V_II_KP;
-	guidance_vii_kd = GUIDANCE_V_II_KD;
-	guidance_vii_ki = GUIDANCE_V_II_KI;
 	vh = GUIDANCE_V_TD_H;
 	vh0 = GUIDANCE_V_TD_H0;
 	r_vert = GUIDANCE_V_TD_R;
-
-	guidance_v_z_sum_err = 0;
 
 	guidance_v_nominal_throttle = GUIDANCE_V_NOMINAL_HOVER_THROTTLE;
 	guidance_v_adapt_throttle_enabled = GUIDANCE_V_ADAPT_THROTTLE_ENABLED;
 
 	gv_adapt_init();
-	guidance_v_filter_ini();
+	guidance_v_controller_ini();
 #if GUIDANCE_V_MODE_MODULE_SETTING == GUIDANCE_V_MODE_MODULE
 	guidance_v_module_init();
 #endif
@@ -297,17 +226,39 @@ void guidance_v_init(void)
 #endif
 }
 
-static guidance_v_get_temp_v_z_sp(void)
+static void guidance_v_controller_ini(void)
 {
-	guid_v.z_sp = stateGetPositionNed_i()->z;
+	guid_v.pid_loop_mode_gcs = ACC_SPEED_POS;
+	guid_v.pid_loop_mode_running = ACC_SPEED_POS;
+
+	pid_ini(&guid_v.acc_z_pid, GUIDANCE_V_LOOP_FREQ);
+	pid_ini(&guid_v.speed_z_pid, GUIDANCE_V_LOOP_FREQ);
+	pid_ini(&guid_v.pos_z_pid, GUIDANCE_V_LOOP_FREQ);
+
+	pid_set_out_range(&guid_v.acc_z_pid, 0, 1);
+	pid_set_Ui_range(&guid_v.acc_z_pid, 0, 1);
+	pid_set_out_range(&guid_v.speed_z_pid, -3, 3);
+	pid_set_Ui_range(&guid_v.speed_z_pid, -3, 3);
+	pid_set_out_range(&guid_v.pos_z_pid, -2, 2);
+	pid_set_Ui_range(&guid_v.pos_z_pid, -2, 2);
+
+	guid_v.acc_z_pid.Kp = 0.02f;
+	guid_v.acc_z_pid.Ki = 0.5f;
+	guid_v.speed_z_pid.Kp = 3.0f;
+	guid_v.speed_z_pid.Kd = 0.3f;
+	guid_v.pos_z_pid.Kp = 1.0f;
+	guid_v.pos_z_pid.Kd = 0.5f;
+
+	guid_v.acc_filter_fc = 5;
+	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter,
+			low_pass_filter_get_tau(guid_v.acc_filter_fc), 1.0f/(float)GUIDANCE_V_LOOP_FREQ, 0);
 }
 
-static void guidance_v_filter_ini(void)
+void guidance_v_SetAccCutoff(float fc)
 {
-	guid_v.acc_filter_fc = 10;
-	guid_v.speed_filter_fc = 10;
-	guid_v.accd_filter_fc = 5;
-	guid_v.pid_loop_mode = ACC_SPEED_POS;
+	guid_v.acc_filter_fc = fc;
+	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter,
+				low_pass_filter_get_tau(fc), 1.0f/(float)GUIDANCE_V_LOOP_FREQ, guid_v.NED_z_acc_filter.i[0]);
 }
 
 void guidance_v_read_rc(void)
@@ -332,7 +283,6 @@ void guidance_v_read_rc(void)
 	{
 		if (guid_v.thr_in_deadband)
 		{
-			guidance_v_get_temp_v_z_sp();
 		}
 	}
 	guid_v.thr_in_deadband_prev = guid_v.thr_in_deadband;
@@ -391,20 +341,16 @@ void guidance_v_mode_changed(uint8_t new_mode)
 	{
 	case GUIDANCE_V_MODE_HOVER:
 	case GUIDANCE_V_MODE_GUIDED:
-		guidance_v_get_temp_v_z_sp();
+		guid_v.rc_pos_z = guid_v.NED_z_pos;
+		guid_v.acc_z_pid.Ui = (float)guidance_v_rc_delta_t * (1.0f/(float)MAX_PPRZ) * (1.0f/0.8f);
 		guidance_v_z_sp = stateGetPositionNed_i()->z; // set current altitude as setpoint
-		guidance_v_z_sum_err = 0;
-		GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)
-		;
+		GuidanceVSetRef(guidance_v_z_sp, 0, 0);
 		break;
-
 	case GUIDANCE_V_MODE_RC_CLIMB:
 	case GUIDANCE_V_MODE_CLIMB:
 		guidance_v_zd_sp = 0;
 	case GUIDANCE_V_MODE_NAV:
-		guidance_v_z_sum_err = 0;
-		GuidanceVSetRef(stateGetPositionNed_i()->z, stateGetSpeedNed_i()->z, 0)
-		;
+		GuidanceVSetRef(stateGetPositionNed_i()->z, stateGetSpeedNed_i()->z, 0);
 		break;
 
 #if GUIDANCE_V_MODE_MODULE_SETTING == GUIDANCE_V_MODE_MODULE
@@ -420,9 +366,7 @@ void guidance_v_mode_changed(uint8_t new_mode)
 		break;
 
 	}
-
 	guidance_v_mode = new_mode;
-
 }
 
 void guidance_v_notify_in_flight(bool_t in_flight)
@@ -435,7 +379,7 @@ void guidance_v_notify_in_flight(bool_t in_flight)
 
 void guidance_v_run(bool_t in_flight)
 {
-
+	state_update_loop();
 	// FIXME... SATURATIONS NOT TAKEN INTO ACCOUNT
 	// AKA SUPERVISION and co
 	guidance_v_thrust_coeff = get_vertical_thrust_coeff();
@@ -545,7 +489,6 @@ void guidance_v_run(bool_t in_flight)
 			guidance_v_z_sp = stateGetPositionNed_i()->z;
 			guidance_v_zd_sp = stateGetSpeedNed_i()->z;
 			GuidanceVSetRef(guidance_v_z_sp, guidance_v_zd_sp, 0);
-			guidance_v_z_sum_err = 0;
 			guidance_v_delta_t = nav_throttle;
 		}
 #if 0//!NO_RC_THRUST_LIMIT    //TODOM:in nav mod,no RC_thrust_limit
@@ -613,9 +556,29 @@ uint8_t get_error_z(void)
 	}
 }
 
+static void state_update_loop(void)
+{
+	guid_v.NED_z_acc = - ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->z);
+	guid_v.NED_z_speed = - SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->z);
+	guid_v.NED_z_pos = - POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
+
+	update_butterworth_2_low_pass(&guid_v.NED_z_acc_filter, guid_v.NED_z_acc);
+
+
+	guid_v.rc_speed_z = - SPEED_FLOAT_OF_BFP(guidance_v_rc_zd_sp);
+	guid_v.rc_acc_z = 3.0f * guid_v.rc_speed_z;
+	if(!guid_v.thr_in_deadband)
+	{
+		guid_v.rc_pos_z += guid_v.rc_speed_z * guid_v.pos_z_pid.dT;
+	}
+
+	guid_v.thrust_coef = FLOAT_OF_BFP(get_vertical_thrust_coeff(), INT32_TRIG_FRAC);
+	guid_v.thrust_coef = 1.0f / guid_v.thrust_coef;
+	Bound(guid_v.thrust_coef, 0, 1.2f);
+}
+
 static void run_hover_loop(bool_t in_flight)
 {
-
 	/* convert our reference to generic representation */
 	int64_t tmp = gv_z_ref >> (GV_Z_REF_FRAC - INT32_POS_FRAC);
 	guidance_v_z_ref = (int32_t) tmp;
@@ -623,180 +586,71 @@ static void run_hover_loop(bool_t in_flight)
 	guidance_v_zdd_ref = gv_zdd_ref << (INT32_ACCEL_FRAC - GV_ZDD_REF_FRAC);
 	/* compute the error to our reference */
 
-	int32_t err_z  = guidance_v_z_ref - stateGetPositionNed_i()->z;
-	//int32_t err_z  = guidance_v_z_sp - stateGetPositionNed_i()->z
-	//               + (guidance_v_rc_zd_sp>>(INT32_SPEED_FRAC-INT32_POS_FRAC));
-	//int32_t err_z = guid_v.z_sp - stateGetPositionNed_i()->z;
-
-	Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
-	int32_t err_zd = guidance_v_zd_ref - stateGetSpeedNed_i()->z;
-	Bound(err_zd, GUIDANCE_V_MIN_ERR_ZD, GUIDANCE_V_MAX_ERR_ZD);
-
-	//int32_t err_vz = c_z - stateGetSpeedNed_i()->z;
-	int32_t err_vz = 0;  //wai huan shuchu yu neihuan chuizhi sudu wucha
-	int32_t err_vvz = 0;   //jia su du huan wucha
-	int32_t vd_temp = 0;   //sudu huan wei fen
-	int32_t vdd_temp = 0;  //jiasudu huan wei fen
-	int32_t vdd_i_temp = 0;  //jia su du huan jifenbufen jububianliang
-
-	//int32_t err_dvz = x2-stateGetAccelNed_i()->z;
-	if (in_flight)
+	if (autopilot_motors_on)
 	{
-		/*here is the anti_windup block */
-#if USE_ANTI_WIND_UP  //use sum wind up
-		if ((abs(c_z) >= 2 * 1024 * 512) || (abs(guidance_v_fb_cmd) >= 2000))
+		if (guidance_v_mode == GUIDANCE_V_MODE_HOVER)
 		{
-			wind_up_flag = 0;
+			guid_v.pid_loop_mode_running = guid_v.pid_loop_mode_gcs;
+			if ((guid_v.pid_loop_mode_running == ACC_SPEED) || (guid_v.pid_loop_mode_running == ACC_SPEED_POS))
+			{
+				if (guid_v.pid_loop_mode_running == ACC_SPEED_POS)
+				{
+					guid_v.ref_pos_z = guid_v.rc_pos_z;
+					pid_loop_calc_2(&guid_v.pos_z_pid, guid_v.ref_pos_z, guid_v.NED_z_pos, 0, guid_v.NED_z_speed);
+					guid_v.ref_speed_z = guid_v.pos_z_pid.out;
+				}
+				else
+				{
+					guid_v.ref_speed_z = guid_v.rc_speed_z;
+				}
+				//pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0, guid_v.NED_z_acc);
+				pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0,
+						get_butterworth_2_low_pass(&guid_v.NED_z_acc_filter));
+				guid_v.ref_acc_z = guid_v.speed_z_pid.out;
+			}
+			else // RC ACC loop
+			{
+				guid_v.ref_acc_z = guid_v.rc_acc_z;
+			}
+			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
+
+			guidance_v_delta_t = guid_v.acc_z_pid.out * guid_v.thrust_coef * (0.8f * (float) MAX_PPRZ);
+			Bound(guidance_v_delta_t, 0, MAX_PPRZ);
+		}
+		else if (guidance_v_mode == GUIDANCE_V_MODE_NAV)
+		{
+			guid_v.ref_pos_z = - DOUBLE_OF_BFP(gv_z_ref, GV_Z_REF_FRAC);
+			pid_loop_calc_2(&guid_v.pos_z_pid, guid_v.ref_pos_z, guid_v.NED_z_pos, 0, guid_v.NED_z_speed);
+			if (vertical_mode == VERTICAL_MODE_ALT)
+			{
+				guid_v.ref_speed_z = guid_v.pos_z_pid.out;
+			}
+			else if (vertical_mode == VERTICAL_MODE_CLIMB)
+			{
+				guid_v.ref_speed_z = - FLOAT_OF_BFP(gv_zd_ref, GV_ZD_REF_FRAC);
+			}
+			else
+			{
+				guid_v.ref_speed_z = 0;
+			}
+			pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0,
+									get_butterworth_2_low_pass(&guid_v.NED_z_acc_filter));
+			guid_v.ref_acc_z = guid_v.speed_z_pid.out;
+			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
+
+			guidance_v_delta_t = guid_v.acc_z_pid.out * guid_v.thrust_coef * (0.8f * (float) MAX_PPRZ);
+			Bound(guidance_v_delta_t, 0, MAX_PPRZ);
 		}
 		else
 		{
-			wind_up_flag = 1;
-		}
-
-		guidance_v_z_sum_err  += wind_up_flag*err_z;
-		//guidance_v_zd_sum_err += wind_up_flag*err_vz;
-#else
-		guidance_v_z_sum_err += err_z;
-		Bound(guidance_v_z_sum_err, -GUIDANCE_V_MAX_SUM_ERR, GUIDANCE_V_MAX_SUM_ERR);
-		guidance_v_zd_sum_err+= err_vz;
-#endif
-		/*here is the anti_windup block ends*/
-
-	}
-	else
-	{
-		guidance_v_z_sum_err = 0;
-		guidance_v_zd_sum_err = 0;
-		guidance_v_zdd_sum_err = 0;
-	}
-
-	/* our nominal command : (g + zdd)*m   */
-	int32_t inv_m;
-	if (guidance_v_adapt_throttle_enabled)
-	{
-		inv_m = gv_adapt_X >> (GV_ADAPT_X_FRAC - FF_CMD_FRAC);
-	}
-	else
-	{
-		/* use the fixed nominal throttle */
-		inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
-	}
-
-	const int32_t g_m_zdd = (int32_t) BFP_OF_REAL(9.81, FF_CMD_FRAC)
-			- (guidance_v_zdd_ref << (FF_CMD_FRAC - INT32_ACCEL_FRAC));
-
-	guidance_v_ff_cmd = g_m_zdd / inv_m;
-	/* feed forward command */
-	guidance_v_ff_cmd = (guidance_v_ff_cmd << INT32_TRIG_FRAC)
-			/ guidance_v_thrust_coeff;
-
-	/* bound the nominal command to 0.9*MAX_PPRZ */
-	Bound(guidance_v_ff_cmd, 0, 8640);
-
-	//filter coef calculation
-	guid_v.acc_filter_coef = 2.0f * 3.14f * 0.002f * guid_v.acc_filter_fc;
-	guid_v.speed_filter_coef = 2.0f * 3.14f * 0.002f * guid_v.speed_filter_fc;
-	guid_v.accd_filter_coef = 2.0f * 3.14f * 0.002f * guid_v.accd_filter_fc;
-	
-	int32_t speed_now = stateGetSpeedNed_i()->z;
-	v_pre = v_pre + (int32_t) ((float) (speed_now - v_pre) * guid_v.speed_filter_coef);
-
-	c_z = guidance_v_kp * (err_z << (INT32_SPEED_FRAC - INT32_POS_FRAC - 8))
-			- ((guidance_v_kd * v_pre) >> 5)
-			+ guidance_v_ki*(guidance_v_z_sum_err>>10);
-	BoundAbs(c_z, 2 * 1024 * 512);
-
-	err_vz = c_z - v_pre;
-	vd_temp = (c_z - c_z_pre) * time_inv - ((stateGetAccelNed_i()->z) << 9); //dang qian su du huan wei fen
-	c_z_pre = c_z;
-	vd_pre = vd_pre	+ (int32_t) ((float) (vd_temp - vd_pre) * guid_v.acc_filter_coef);
-	guidance_v_zd_sum_err += wind_up_flag * (err_vz >> 10);
-	BoundAbs(guidance_v_zd_sum_err, (1<<30));
-	inside_isum = ((guidance_v_zd_sum_err * guidance_vi_ki) >> 12);
-	BoundAbs(inside_isum, 2000);
-
-	c_az = ((err_vz * guidance_vi_kp) >> 16) 
-			+ ((vd_pre * guidance_vi_kd) >> 22)
-			+ inside_isum;
-	Bound(c_az, -2000, 2000);
-	guidance_v_fb_cmd = -c_az;
-
-/*
-	if (guid_v.pid_loop_mode == ACC_SPEED_POS)
-	{
-		if (guid_v.thr_in_deadband)
-		{
-			guid_v.pid_loop_mode_now = ACC_SPEED_POS;
-		}
-		else
-		{
-			guid_v.pid_loop_mode_now = ACC_SPEED;
+			guidance_v_delta_t = 0;
 		}
 	}
 	else
 	{
-		guid_v.pid_loop_mode_now = ACC_SPEED;
+		pid_reset(&guid_v.acc_z_pid);
+		guidance_v_delta_t = 0;
 	}
-
-	if ((guid_v.pid_loop_mode_now == ACC_SPEED)
-			|| (guid_v.pid_loop_mode_now == ACC_SPEED_POS))
-	{
-		if (guid_v.pid_loop_mode_now == ACC_SPEED_POS)
-		{
-			c_z = guidance_v_kp * (err_z << (INT32_SPEED_FRAC - INT32_POS_FRAC - 8))
-					- ((guidance_v_kd * v_pre) >> 5)
-					+ guidance_v_ki*(guidance_v_z_sum_err>>10);
-			BoundAbs(c_z, 4 * 1024 * 512);
-		}
-		else
-		{
-			c_z = guidance_v_rc_zd_sp;
-		}
-		err_vz = c_z - v_pre;
-		//vd_temp = - ((stateGetAccelNed_i()->z) << 9); //dang qian su du huan wei fen
-		vd_temp = (c_z - c_z_pre) * time_inv - ((stateGetAccelNed_i()->z) << 9); //dang qian su du huan wei fen
-		c_z_pre = c_z;
-		vd_pre = vd_pre
-				+ (int32_t) ((float) (vd_temp - vd_pre) * guid_v.acc_filter_coef);
-		guidance_v_zd_sum_err += wind_up_flag * err_vz;
-		//BoundAbs(guidance_v_zd_sum_err, (2000<<19));
-		inside_isum = ((guidance_v_zd_sum_err * guidance_vi_ki) >> 22);
-		BoundAbs(inside_isum, 2000);
-		c_az = ((err_vz * guidance_vi_kp) >> 16) + ((vd_pre * guidance_vi_kd) >> 22)
-				+ inside_isum;
-		Bound(c_az, -2000, 2000);
-		guidance_v_fb_cmd = -c_az;
-	}
-*/
-	guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
-	/* bound the result */
-	Bound(guidance_v_delta_t, 0, MAX_PPRZ);
-
-}
-
-/*check loop pid*/
-static void dynamic_pid_check(void)  //1
-{
-#ifdef USE_GPS_NMEA
-	if(!gps.p_stable)
-	{
-		guidance_v_kp = 100;
-		guidance_v_kd = 145;
-		guidance_v_ki = 190;
-		guidance_vi_kp = 95;
-		guidance_vi_kd = 75;
-		guidance_vi_ki = 25;
-	}
-	else
-	{
-		guidance_v_kp = 288;
-		guidance_v_kd = 280;
-		guidance_v_ki = 195;
-		guidance_vi_kp = 77;
-		guidance_vi_kd = 77;
-		guidance_vi_ki = 49;
-	}
-#endif
 }
 
 bool_t guidance_v_set_guided_z(float z)
