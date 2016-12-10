@@ -119,7 +119,10 @@ static inline void pid_reset(struct _s_pid *pid)
 // using PID controller build in derivative calculation and simple 1 order filter
 static inline float pid_loop_calc_1(struct _s_pid *pid, float ref, float fb)
 {
-	float Usum, limit;
+	float Usum;
+#ifdef DYNAMIC_INTEGRATOR_CLAMPING
+	float limit;
+#endif
 
 	pid->ref = ref;
 	pid->fb = fb;
@@ -193,7 +196,10 @@ static inline float pid_loop_calc_1(struct _s_pid *pid, float ref, float fb)
 static inline float pid_loop_calc_2(struct _s_pid *pid, float ref, float fb,
 		float d_ref, float d_fb)
 {
-	float Usum, limit;
+	float Usum;
+#ifdef DYNAMIC_INTEGRATOR_CLAMPING
+	float limit;
+#endif
 
 	pid->ref = ref;
 	pid->fb = fb;
