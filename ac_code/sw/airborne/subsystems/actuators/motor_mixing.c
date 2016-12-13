@@ -28,6 +28,9 @@
 #include "subsystems/actuators/motor_mixing.h"
 #include "paparazzi.h"
 #include "subsystems/datalink/telemetry.h"
+#ifdef ESC_CALIBRATION
+#include "subsystems/radio_control.h"
+#endif
 //#include <stdint.h>
 #ifndef INT32_MIN
 #define INT32_MIN (-2147483647-1)
@@ -285,26 +288,41 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
     bound_commands_step();
 
 #ifdef ESC_CALIBRATION
-    if(esc_cali_status == 0)
-	{
-		if(in_cmd[COMMAND_THRUST] > (MOTOR_MIXING_MAX_MOTOR/2))
+		if(esc_cali_status == 0)
 		{
-			value = MOTOR_MIXING_MAX_MOTOR;
-			esc_cali_status = 1;
+			if(radio_control.values[RADIO_THROTTLE] > (MOTOR_MIXING_MAX_MOTOR/2))
+			{
+				value = MOTOR_MIXING_MAX_MOTOR;
+				esc_cali_status = 1;
+			}
 		}
-	}
-	else if(esc_cali_status == 1)
-	{
-		if(in_cmd[COMMAND_THRUST] < (MOTOR_MIXING_MAX_MOTOR/4))
+		else if(esc_cali_status == 1)
 		{
-			value = MOTOR_MIXING_STOP_MOTOR;
-			esc_cali_status = 2;
+			if(radio_control.values[RADIO_THROTTLE] < (MOTOR_MIXING_MAX_MOTOR/4))
+			{
+				value = MOTOR_MIXING_STOP_MOTOR;
+				esc_cali_status = 2;
+			}
 		}
-	}
-	for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
-	{
-		motor_mixing.commands[i] = value;
-	}
+		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+		{
+			motor_mixing.commands[i] = value;
+		}
+
+		if(esc_cali_status == 2)
+		{
+			if( radio_control.values[RADIO_ROLL] < -(MAX_PPRZ/2) )
+			{
+				uint8_t num = radio_control.values[RADIO_THROTTLE]/(MOTOR_MIXING_MAX_MOTOR/6);
+				Bound(num, 0, 5);
+				for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+				{
+					motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
+				}
+				motor_mixing.commands[num] = MOTOR_MIXING_MIN_MOTOR;
+			}
+		}
+
 #endif
 
   } else {
