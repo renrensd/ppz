@@ -188,7 +188,7 @@ void send_aircraft_info_state(void)
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
-	char     ac_sn[10]="EFA150";	 //fix info
+	char     ac_sn[10]="EFA151";	 //fix info
 	char     ac_sv[25]="";
 	char     ops_sv[25]="";
 	char     bbox_sv[25]="";
