@@ -37,6 +37,12 @@
       <message name="MCU_FAULT"              period="5.0"/>
     </mode>
 
+    <mode name="gps2">
+      <message name="DL_VALUE"               period="0.5"/>
+      <message name="ALIVE"                  period="2.1"/>
+      <message name="GPS2_UBLOX"             period="0.2"/>
+    </mode>
+
     <mode name="ins">
       <message name="DL_VALUE"               period="0.5"/>
       <message name="ALIVE"                  period="2.1"/>

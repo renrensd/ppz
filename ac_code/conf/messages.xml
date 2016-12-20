@@ -367,12 +367,24 @@
     <field name="grab_y" type="float[]"/>
   </message>
 
-  <message name="BARO_BMP85" id="39">
-    <field name="UT"  type="int32"/>
-    <field name="UP"  type="int32"/>
-    <field name="P"  type="uint32"/>
-    <field name="T"  type="float"/>
-    <field name="MSL"  type="float"/>
+  <message name="GPS2_UBLOX" id="39">
+  	<field name="tow"     type="uint32"/>
+  	<field name="numsv"   type="uint8"/>
+    <field name="fix"     type="uint8" values="NONE|NA|2D|3D|DGPS|RTK"/>
+    <field name="ecef_x"  type="int32" unit="cm"/>
+    <field name="ecef_y"  type="int32" unit="cm"/>
+    <field name="ecef_z"  type="int32" unit="cm"/>
+    <field name="pacc"    type="uint32" unit="cm"/>
+    <field name="pdop"    type="uint16"/>
+    <field name="ecef_xd" type="int32" unit="cm/s"/>
+    <field name="ecef_yd" type="int32" unit="cm/s"/>
+    <field name="ecef_zd" type="int32" unit="cm/s"/>
+    <field name="sacc"    type="uint32" unit="cm/s"/>
+    <field name="ned_xd" 	type="int32" unit="cm/s"/>
+    <field name="ned_yd" 	type="int32" unit="cm/s"/>
+    <field name="ned_zd" 	type="int32" unit="cm/s"/>
+    <field name="course" 	type="int32" unit="rad*1e-7"/>
+    <field name="cacc" 		type="int32" unit="rad*1e-7"/>
   </message>
 
   <message name="SPEED_LOOP" id="40">

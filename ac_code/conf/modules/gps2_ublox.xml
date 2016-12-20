@@ -1,0 +1,31 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="gps2_ublox" dir="gps">
+  <doc>
+    <description>
+      gps2 ublox
+    </description>
+  </doc>
+  <!--settings>
+    <dl_settings>
+      <dl_settings name="gps2_ublox">
+      </dl_settings>
+    </dl_settings>
+  </settings-->
+  <header>
+    <file name="gps2_ublox.h"/>
+  </header>
+  <init fun="gps2_ublox_init()"/>
+  <periodic fun="gps2_ublox_periodic()" freq="50"/>
+  <event fun="gps2_ublox_event()"/>
+  <makefile target="ap|nps">
+    <file name="gps2_ublox.c"/>
+			<raw>
+				GPS2_UBLOX_PORT_LOWER=$(shell echo $(GPS2_UBLOX_PORT) | tr A-Z a-z)
+				ap.CFLAGS += -DGPS2_UBLOX_LINK=$(GPS2_UBLOX_PORT_LOWER)
+				ap.CFLAGS += -DUSE_$(GPS2_UBLOX_PORT)
+				ap.CFLAGS += -D$(GPS2_UBLOX_PORT)_BAUD=$(GPS2_UBLOX_BAUD)
+			</raw>
+  </makefile>
+</module>
+

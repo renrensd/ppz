@@ -101,6 +101,11 @@
       <field name="stamp" type="uint32_t" unit="us"/>
       <field name="gps_s" type="struct GpsState *"/>
     </message>
+    
+    <message name="GPS_UBX" id="19">
+      <field name="stamp" type="uint32_t" unit="us"/>
+      <field name="gps_s" type="struct GpsState *"/>
+    </message>
   </msg_class>
 
 </protocol>
