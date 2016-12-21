@@ -496,27 +496,75 @@ static void guidance_h_ublox_state_update(void)
 	guidance_h.ned_vel_rc_y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
 }
 
-static void guidance_h_ublox_run(void)
+static void guidance_h_ublox_run(bool_t in_flight)
 {
-	if(guidance_h.pid_loop_mode_running == POS_VEL)
-	{
-		pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref_x, ins_ublox.ned_pos.x, 0, ins_ublox.ned_vel.x);
-		pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref_y, ins_ublox.ned_pos.y, 0, ins_ublox.ned_vel.y);
+	static enum _e_h_pid_loop_mode mode_last = VEL;
+	static bool_t in_flight_last = FALSE;
 
-		guidance_h.ned_vel_ref_x = guidance_h.pos_x_pid.out;
-		guidance_h.ned_vel_ref_y = guidance_h.pos_y_pid.out;
+	if(ins_ublox.ublox_stable)
+	{
+		if(guidance_h.pid_loop_mode_gcs == VEL)
+		{
+			guidance_h.pid_loop_mode_running = VEL;
+		}
+		else
+		{
+			if((guidance_h.sp.speed.x == 0) && (guidance_h.sp.speed.y == 0))
+			{
+				guidance_h.pid_loop_mode_running = POS_VEL;
+			}
+			else
+			{
+				guidance_h.pid_loop_mode_running = VEL;
+			}
+
+			if((mode_last == VEL) && (guidance_h.pid_loop_mode_running == POS_VEL))
+			{
+				guidance_h.ned_pos_ref_x = ins_ublox.ned_pos.x;
+				guidance_h.ned_pos_ref_y = ins_ublox.ned_pos.y;
+			}
+			mode_last = guidance_h.pid_loop_mode_running;
+
+			if(in_flight)
+			{
+				if(!in_flight_last)
+				{
+					guidance_h.ned_pos_ref_x = ins_ublox.ned_pos.x;
+					guidance_h.ned_pos_ref_y = ins_ublox.ned_pos.y;
+				}
+			}
+			else
+			{
+				guidance_h.pid_loop_mode_running = VEL;
+			}
+			in_flight_last = in_flight;
+		}
+
+		if(guidance_h.pid_loop_mode_running == POS_VEL)
+		{
+			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref_x, ins_ublox.ned_pos.x, 0, ins_ublox.ned_vel.x);
+			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref_y, ins_ublox.ned_pos.y, 0, ins_ublox.ned_vel.y);
+
+			guidance_h.ned_vel_ref_x = guidance_h.pos_x_pid.out;
+			guidance_h.ned_vel_ref_y = guidance_h.pos_y_pid.out;
+		}
+		else
+		{
+			guidance_h.ned_vel_ref_x = guidance_h.ned_vel_rc_x;
+			guidance_h.ned_vel_ref_y = guidance_h.ned_vel_rc_y;
+		}
+
+		pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref_x, ins_ublox.ned_vel.x, 0, guidance_h.ned_acc_x);
+		pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref_y, ins_ublox.ned_vel.y, 0, guidance_h.ned_acc_y);
+
+		guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
+		guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
 	}
 	else
 	{
-		guidance_h.ned_vel_ref_x = guidance_h.ned_vel_rc_x;
-		guidance_h.ned_vel_ref_y = guidance_h.ned_vel_rc_y;
+		guidance_h_cmd_earth.x = 0;
+		guidance_h_cmd_earth.y = 0;
 	}
-
-	pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref_x, ins_ublox.ned_vel.x, 0, guidance_h.ned_acc_x);
-	pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref_y, ins_ublox.ned_vel.y, 0, guidance_h.ned_acc_y);
-
-	guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
-	guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
 }
 
 static inline void reset_guidance_reference_from_current_position(void)
@@ -1116,7 +1164,7 @@ static void guidance_h_traj_run(bool_t in_flight)
   if(guidance_h.use_ublox)
 	{
   	guidance_h_ublox_state_update();
-		guidance_h_ublox_run();
+		guidance_h_ublox_run(in_flight);
 	}
 
   VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 30` limited  
