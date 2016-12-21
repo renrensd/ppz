@@ -41,6 +41,8 @@
 
 /* for guidance_v_thrust_coeff */
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
+#include "math/my_math.h"
+#include "modules/ins/ins_ublox.h"
 
 #include "state.h"
 
@@ -272,7 +274,7 @@ void Tracking_differntiator_hy(float signal)
 //                define done here                                                    //
 
 
-#if PERIODIC_TELEMETRY
+#ifdef PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_gh(struct transport_tx *trans, struct link_device *dev)
@@ -305,12 +307,8 @@ static void send_hover_loop(struct transport_tx *trans, struct link_device *dev)
                            &(accel.x), &(accel.y),
                            &guidance_h_pos_err.x,
                            &guidance_h_pos_err.y,
-                           //&guidance_hf_speed_err.x,
-                           //&guidance_hf_speed_err.y,
                            &speed_err_x,
                            &speed_err_y,
-                           //&guidance_h_trim_att_integrator.x,
-                           //&guidance_h_trim_att_integrator.y,
                            &sum_inter_x,
                            &sum_inter_y,
                            &guidance_h_cmd_earth.x,
@@ -339,16 +337,17 @@ static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
 { 
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_TUNE_HOVER(trans, dev, AC_ID,
-                                      &radio_control.values[RADIO_ROLL],
-                                      &radio_control.values[RADIO_PITCH],
-                                      &radio_control.values[RADIO_YAW],
-                                      &stabilization_cmd[COMMAND_ROLL],
-                                      &stabilization_cmd[COMMAND_PITCH],
-                                      &stabilization_cmd[COMMAND_YAW],
-                                      &stabilization_cmd[COMMAND_THRUST],
-                                      &(stateGetNedToBodyEulers_i()->phi),
-                                      &(stateGetNedToBodyEulers_i()->theta),
-                                      &(stateGetNedToBodyEulers_i()->psi));
+                                      &guidance_h.ned_acc_x,
+																			&guidance_h.ned_acc_y,
+																			&ins_ublox.ned_vel.x,
+																			&ins_ublox.ned_vel.y,
+																			&ins_ublox.ned_pos.x,
+																			&ins_ublox.ned_pos.y,
+																			&guidance_h.ned_vel_ref_x,
+																			&guidance_h.ned_vel_ref_y,
+																			&guidance_h.ned_pos_ref_x,
+																			&guidance_h.ned_pos_ref_y
+                                      );
 }
 
 #endif
@@ -387,6 +386,40 @@ void guidance_h_init(void)
   init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, guidance_h.NED_xy_speed_filter_fc,
     															1.0f/512.0f, 0);
 
+#define UBLOX_LOOP_MAX_TILT	(my_math_deg_to_rad * 10.0f)
+  pid_ini(&guidance_h.vel_x_pid, PERIODIC_FREQUENCY);
+  pid_ini(&guidance_h.vel_y_pid, PERIODIC_FREQUENCY);
+  pid_ini(&guidance_h.pos_x_pid, PERIODIC_FREQUENCY);
+  pid_ini(&guidance_h.pos_y_pid, PERIODIC_FREQUENCY);
+	pid_set_out_range(&guidance_h.vel_x_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
+	pid_set_Ui_range(&guidance_h.vel_x_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
+	pid_set_out_range(&guidance_h.vel_y_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
+	pid_set_Ui_range(&guidance_h.vel_y_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
+	pid_set_out_range(&guidance_h.pos_x_pid, -3, +3);
+	pid_set_Ui_range(&guidance_h.pos_x_pid, -0.5, +0.5);
+	pid_set_out_range(&guidance_h.pos_y_pid, -3, +3);
+	pid_set_Ui_range(&guidance_h.pos_y_pid, -0.5, +0.5);
+
+	guidance_h.vel_x_pid.Kp = 0.5f;
+	guidance_h.vel_x_pid.Ki = 0.2f;
+	guidance_h.vel_x_pid.Kd = 0.1f;
+
+	guidance_h.vel_y_pid.Kp = 0.5f;
+	guidance_h.vel_y_pid.Ki = 0.2f;
+	guidance_h.vel_y_pid.Kd = 0.1f;
+
+	guidance_h.pos_x_pid.Kp = 0.1f;
+	guidance_h.pos_x_pid.Ki = 0.01f;
+	guidance_h.pos_x_pid.Kd = 0.0f;
+
+	guidance_h.pos_y_pid.Kp = 0.1f;
+	guidance_h.pos_y_pid.Ki = 0.01f;
+	guidance_h.pos_y_pid.Kd = 0.0f;
+
+	guidance_h.use_ublox = TRUE;
+	guidance_h.pid_loop_mode_running = VEL;
+	guidance_h.pid_loop_mode_gcs = VEL;
+
   transition_percentage = 0;
   transition_theta_offset = 0;
   rc_turn_rate = 0;
@@ -397,7 +430,7 @@ void guidance_h_init(void)
   guidance_h_module_init();
 #endif
 
-#if PERIODIC_TELEMETRY
+#ifdef PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_H_INT, send_gh);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HOVER_LOOP, send_hover_loop);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_H_REF_INT, send_href);
@@ -409,6 +442,42 @@ void guidance_h_init(void)
 #endif
 }
 
+void guidance_h_SetVelKp(float Kp)
+{
+	guidance_h.vel_x_pid.Kp = Kp;
+	guidance_h.vel_y_pid.Kp = Kp;
+}
+
+void guidance_h_SetVelKi(float Ki)
+{
+	guidance_h.vel_x_pid.Ki = Ki;
+	guidance_h.vel_y_pid.Ki = Ki;
+}
+
+void guidance_h_SetVelKd(float Kd)
+{
+	guidance_h.vel_x_pid.Kd = Kd;
+	guidance_h.vel_y_pid.Kd = Kd;
+}
+
+void guidance_h_SetPosKp(float Kp)
+{
+	guidance_h.pos_x_pid.Kp = Kp;
+	guidance_h.pos_y_pid.Kp = Kp;
+}
+
+void guidance_h_SetPosKi(float Ki)
+{
+	guidance_h.pos_x_pid.Ki = Ki;
+	guidance_h.pos_y_pid.Ki = Ki;
+}
+
+void guidance_h_SetPosKd(float Kd)
+{
+	guidance_h.pos_x_pid.Kd = Kd;
+	guidance_h.pos_y_pid.Kd = Kd;
+}
+
 void guidance_h_SetSpeedCutoff(float fc)
 {
 	guidance_h.NED_xy_speed_filter_fc = fc;
@@ -416,6 +485,38 @@ void guidance_h_SetSpeedCutoff(float fc)
 	  																1.0f/512.0f, guidance_h.NED_x_speed_filter.i[0]);
 	init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, fc,
 																		1.0f/512.0f, guidance_h.NED_y_speed_filter.i[0]);
+}
+
+static void guidance_h_ublox_state_update(void)
+{
+	guidance_h.ned_acc_x = stateGetAccelNed_f()->x;
+	guidance_h.ned_acc_y = stateGetAccelNed_f()->y;
+
+	guidance_h.ned_vel_rc_x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
+	guidance_h.ned_vel_rc_y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
+}
+
+static void guidance_h_ublox_run(void)
+{
+	if(guidance_h.pid_loop_mode_running == POS_VEL)
+	{
+		pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref_x, ins_ublox.ned_pos.x, 0, ins_ublox.ned_vel.x);
+		pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref_y, ins_ublox.ned_pos.y, 0, ins_ublox.ned_vel.y);
+
+		guidance_h.ned_vel_ref_x = guidance_h.pos_x_pid.out;
+		guidance_h.ned_vel_ref_y = guidance_h.pos_y_pid.out;
+	}
+	else
+	{
+		guidance_h.ned_vel_ref_x = guidance_h.ned_vel_rc_x;
+		guidance_h.ned_vel_ref_y = guidance_h.ned_vel_rc_y;
+	}
+
+	pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref_x, ins_ublox.ned_vel.x, 0, guidance_h.ned_acc_x);
+	pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref_y, ins_ublox.ned_vel.y, 0, guidance_h.ned_acc_y);
+
+	guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
+	guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
 }
 
 static inline void reset_guidance_reference_from_current_position(void)
@@ -600,6 +701,7 @@ void guidance_h_run(bool_t  in_flight)
 #else
       /* compute x,y earth commands */
       guidance_h_traj_run(in_flight);
+
       /* set final attitude setpoint */
       stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
 #endif
@@ -1010,6 +1112,12 @@ static void guidance_h_traj_run(bool_t in_flight)
 	integrator_x_flag = 0;
 	integrator_y_flag = 0;
   }  //angle is 3deg limited
+
+  if(guidance_h.use_ublox)
+	{
+  	guidance_h_ublox_state_update();
+		guidance_h_ublox_run();
+	}
 
   VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 30` limited  
 }

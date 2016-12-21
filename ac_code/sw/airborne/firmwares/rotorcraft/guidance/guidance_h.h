@@ -34,6 +34,7 @@
 #include "generated/airframe.h"
 #include "std.h"
 #include "filters/low_pass_filter.h"
+#include "controllers/pid.h"
 
 /** Use horizontal guidance reference trajectory.
  * Default is TRUE, define to FALSE to always disable it.
@@ -97,7 +98,11 @@ struct HorizontalGuidanceGains_f {
 };
 
 
-
+enum _e_h_pid_loop_mode
+{
+	VEL = 0,
+	POS_VEL
+};
 
 struct HorizontalGuidance {
   uint8_t mode;
@@ -116,6 +121,25 @@ struct HorizontalGuidance {
   float NED_xy_speed_filter_fc;
   Butterworth2LowPass_int NED_x_speed_filter;
   Butterworth2LowPass_int NED_y_speed_filter;
+
+  // ublox pos pid loop
+  struct _s_pid vel_x_pid;
+  struct _s_pid vel_y_pid;
+  struct _s_pid pos_x_pid;
+  struct _s_pid pos_y_pid;
+
+  float ned_acc_x;
+  float ned_acc_y;
+  float ned_vel_rc_x;
+  float ned_vel_rc_y;
+  float ned_vel_ref_x;
+  float ned_vel_ref_y;
+  float ned_pos_ref_x;
+  float ned_pos_ref_y;
+
+  bool_t use_ublox;
+  enum _e_h_pid_loop_mode pid_loop_mode_running;
+  enum _e_h_pid_loop_mode pid_loop_mode_gcs;
 };
 
 struct position_float 
@@ -150,6 +174,13 @@ extern void guidance_h_set_igain(uint32_t igain);
 extern void guidance_h_nav_rc_enter(void); //use when nav_rc_mode enter
 
 extern void guidance_h_SetSpeedCutoff(float fc);
+extern void guidance_h_SetVelKp(float Kp);
+extern void guidance_h_SetVelKi(float Ki);
+extern void guidance_h_SetVelKd(float Kd);
+extern void guidance_h_SetPosKp(float Kp);
+extern void guidance_h_SetPosKi(float Ki);
+extern void guidance_h_SetPosKd(float Kd);
+
 
 /** Set horizontal position setpoint in GUIDED mode.
  * @param x North position (local NED frame) in meters.

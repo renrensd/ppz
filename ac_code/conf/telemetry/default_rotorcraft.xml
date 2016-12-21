@@ -42,6 +42,7 @@
       <message name="ALIVE"                  period="2.1"/>
       <message name="GPS2_UBLOX"             period="0.2"/>
       <message name="INS_UBLOX"              period="0.2"/>
+      <message name="ROTORCRAFT_TUNE_HOVER"  period="0.05"/>
     </mode>
 
     <mode name="ins">

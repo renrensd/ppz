@@ -1400,16 +1400,16 @@
   </message>
 
   <message name="ROTORCRAFT_TUNE_HOVER" id="150">
-    <field name="rc_roll"    type="int16"/>
-    <field name="rc_pitch"   type="int16"/>
-    <field name="rc_yaw"     type="int16"/>
-    <field name="cmd_roll"   type="int32"/>
-    <field name="cmd_pitch"  type="int32"/>
-    <field name="cmd_yaw"    type="int32"/>
-    <field name="cmd_thrust" type="int32"/>
-    <field name="body_phi"   type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
-    <field name="body_theta" type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
-    <field name="body_psi"   type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
+    <field name="ned_acc_x"    type="float"/>
+    <field name="ned_acc_y"    type="float"/>
+    <field name="ned_vel_x"    type="float"/>
+    <field name="ned_vel_y"    type="float"/>
+    <field name="ned_pos_x"    type="float"/>
+    <field name="ned_pos_y"    type="float"/>
+    <field name="ned_vel_ref_x"    type="float"/>
+    <field name="ned_vel_ref_y"    type="float"/>
+    <field name="ned_pos_ref_x"    type="float"/>
+    <field name="ned_pos_ref_y"    type="float"/>
   </message>
 
   <message name="INS_Z" id="151">
