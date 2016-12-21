@@ -396,11 +396,13 @@
     <field name="east_sp" type="float" unit="rad"/>
   </message>
 
-  <message name="ALT_KALMAN" id="41">
-    <field name="p00" type="float"/>
-    <field name="p01" type="float"/>
-    <field name="p10" type="float"/>
-    <field name="p11" type="float"/>
+  <message name="INS_UBLOX" id="41">
+    <field name="ublox_xd" type="float"/>
+    <field name="ublox_yd" type="float"/>
+    <field name="ublox_zd" type="float"/>
+    <field name="est_xd" type="float"/>
+    <field name="est_yd" type="float"/>
+    <field name="est_zd" type="float"/>
   </message>
 
   <message name="ESTIMATOR" id="42">

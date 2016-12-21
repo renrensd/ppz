@@ -41,6 +41,7 @@
       <message name="DL_VALUE"               period="0.5"/>
       <message name="ALIVE"                  period="2.1"/>
       <message name="GPS2_UBLOX"             period="0.2"/>
+      <message name="INS_UBLOX"              period="0.2"/>
     </mode>
 
     <mode name="ins">

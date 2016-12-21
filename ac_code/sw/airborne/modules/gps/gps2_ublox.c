@@ -7,7 +7,6 @@
 
 #include "mcu_periph/link_device.h"
 #include "subsystems/gps.h"
-//#include "ubx_protocol.h"
 #include "subsystems/abi.h"
 #include "gps2_ublox.h"
 

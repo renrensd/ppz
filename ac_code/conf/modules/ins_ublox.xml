@@ -1,0 +1,25 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ins_ublox" dir="ins">
+  <doc>
+    <description>
+      ins ublox
+    </description>
+  </doc>
+  <!--settings>
+    <dl_settings>
+      <dl_settings name="ins_ublox">
+      </dl_settings>
+    </dl_settings>
+  </settings-->
+  <header>
+    <file name="ins_ublox.h"/>
+  </header>
+  <init fun="ins_ublox_init()"/>
+  <periodic fun="ins_ublox_periodic()" freq="50"/>
+  <event fun="ins_ublox_event()"/>
+  <makefile target="ap|nps">
+    <file name="ins_ublox.c"/>
+  </makefile>
+</module>
+
