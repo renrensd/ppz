@@ -20,6 +20,10 @@ static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_INS_UBLOX(trans, dev, AC_ID,
+			&ins_ublox.ublox_stable,
+			&ins_ublox.ned_pos.x,
+			&ins_ublox.ned_pos.y,
+			&ins_ublox.ned_pos.z,
 			&ins_ublox.ublox_ned_vel.x,
 			&ins_ublox.ublox_ned_vel.y,
 			&ins_ublox.ublox_ned_vel.z,
@@ -38,7 +42,7 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 	{
 		float dt = (float) (stamp - last_stamp) * 1e-6;
 
-		ins_ublox.ublox_signal_stable = ((gps_s->fix >= GPS_FIX_3D) && (gps_s->num_sv > 7));
+		ins_ublox.ublox_signal_stable = ((gps_s->fix >= GPS_FIX_3D) && (gps_s->num_sv > 6));
 		ins_ublox.ublox_update = TRUE;
 
 		// get ecef pos (cm) and scale to unit(m)
@@ -109,11 +113,11 @@ void ins_ublox_periodic(void)
 		{
 			if(ins_ublox.ublox_stable_first_time)
 			{
-				stable_tick = 10 * INS_UBLOX_PERIODIC_FREQ;
+				stable_tick = 10 * 5;
 			}
 			else
 			{
-				stable_tick = INS_UBLOX_PERIODIC_FREQ;
+				stable_tick = 5;
 			}
 
 			if(++ins_ublox.ublox_stable_count > stable_tick)

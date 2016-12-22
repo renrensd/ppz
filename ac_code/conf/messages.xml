@@ -397,6 +397,10 @@
   </message>
 
   <message name="INS_UBLOX" id="41">
+  	<field name="stable" type="uint8"/>
+  	<field name="est_x" type="float"/>
+  	<field name="est_y" type="float"/>
+  	<field name="est_z" type="float"/>
     <field name="ublox_xd" type="float"/>
     <field name="ublox_yd" type="float"/>
     <field name="ublox_zd" type="float"/>
