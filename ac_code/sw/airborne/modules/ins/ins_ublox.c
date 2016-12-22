@@ -42,7 +42,7 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 	{
 		float dt = (float) (stamp - last_stamp) * 1e-6;
 
-		ins_ublox.ublox_signal_stable = ((gps_s->fix >= GPS_FIX_3D) && (gps_s->num_sv > 6));
+		ins_ublox.ublox_signal_stable = ((gps_s->fix >= GPS_FIX_3D) && (gps_s->num_sv > 5));
 		ins_ublox.ublox_update = TRUE;
 
 		// get ecef pos (cm) and scale to unit(m)
@@ -69,8 +69,12 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 		// estimate ned vel from ned pos diff
 		if ((dt < 0.5f) && (dt > 0.05f))
 		{
-			VECT3_DIFF(ins_ublox.ned_vel ,ins_ublox.ned_pos, ins_ublox.ned_pos_last);
-			VECT3_SDIV(ins_ublox.ned_vel, ins_ublox.ned_vel, dt);
+			update_sgdf_dT(&ins_ublox.vel_x_sgdf, dt, ins_ublox.ned_pos.x);
+			update_sgdf_dT(&ins_ublox.vel_y_sgdf, dt, ins_ublox.ned_pos.y);
+			update_sgdf_dT(&ins_ublox.vel_z_sgdf, dt, ins_ublox.ned_pos.z);
+
+			//VECT3_DIFF(ins_ublox.ned_vel ,ins_ublox.ned_pos, ins_ublox.ned_pos_last);
+			//VECT3_SDIV(ins_ublox.ned_vel, ins_ublox.ned_vel, dt);
 		}
 		ins_ublox.ned_pos_last = ins_ublox.ned_pos;
 	}
@@ -83,6 +87,10 @@ void ins_ublox_init(void)
 #ifdef PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_UBLOX, send_ins_ublox);
 #endif
+
+  INIT_SGDF(ins_ublox.vel_x_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
+  INIT_SGDF(ins_ublox.vel_y_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
+  INIT_SGDF(ins_ublox.vel_z_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
 
   ins_ublox.ltpDef_initialized = FALSE;
   ins_ublox.ublox_stable = FALSE;

@@ -10,6 +10,8 @@
 
 #include "ubx_parser.h"
 
+#define GPS2_UBLOX_UPDATE_FERQ	(5)
+
 struct _s_gps2_ublox
 {
   struct _s_ubx_parser parser;

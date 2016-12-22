@@ -10,6 +10,9 @@
 
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_geodetic_float.h"
+#include "filters/sgdf_filter.h"
+
+#define NED_VEL_SGDF_WIN_SIZE	(3)
 
 struct _s_ins_ublox
 {
@@ -18,6 +21,9 @@ struct _s_ins_ublox
 	struct NedCoor_f ned_vel;
 	struct NedCoor_f ned_pos;
 	struct NedCoor_f ned_pos_last;
+	DECLARE_SGDF(vel_x_sgdf, NED_VEL_SGDF_WIN_SIZE);
+	DECLARE_SGDF(vel_y_sgdf, NED_VEL_SGDF_WIN_SIZE);
+	DECLARE_SGDF(vel_z_sgdf, NED_VEL_SGDF_WIN_SIZE);
 	struct LtpDef_f ltpDef;
 	bool_t ltpDef_initialized;
 	bool_t ublox_stable;
