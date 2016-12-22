@@ -443,6 +443,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 		if(!ins_int.baro_initialized)
 		{
 			init_first_order_low_pass(&ins_int.baro_z_filter, low_pass_filter_get_tau(1.0f), 0.05f, ins_int.baro_z);
+			vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
 			ins_int.baro_initialized = TRUE;
 		}
 		else
