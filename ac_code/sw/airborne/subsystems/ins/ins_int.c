@@ -281,7 +281,7 @@ void ins_int_init(void)
   ins_int.baro_initialized = FALSE;
   ins_int.R_baro = R_BARO;
   ins_int.R_baro_offset = R_BARO_OFFSET;
-  ins_int.ekf_state = INS_EKF_GPS;
+  ins_int.ekf_state = INS_EKF_BARO;
   ins_int.virtual_p_stable = 1;
 #endif
 

@@ -12,6 +12,7 @@
 
 struct _s_ins_ublox ins_ublox;
 abi_event ublox_ev;
+abi_event accel_ev;
 
 #ifdef PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -32,6 +33,33 @@ static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 			&ins_ublox.ned_vel.z);
 }
 #endif
+
+static void ins_ublox_propagate(struct Int32Vect3 *accel, float dt)
+{
+  struct Int32Vect3 accel_meas_body;
+  struct Int32Vect3 accel_meas_ltp;
+  struct Int32RMat *body_to_imu_rmat = orientationGetRMat_i(&imu.body_to_imu);
+
+  int32_rmat_transp_vmult(&accel_meas_body, body_to_imu_rmat, accel);
+  int32_rmat_transp_vmult(&accel_meas_ltp, stateGetNedToBodyRMat_i(), &accel_meas_body);
+
+  accel_meas_ltp.z += ACCEL_BFP_OF_REAL(9.81);
+
+  ACCELS_FLOAT_OF_BFP(ins_ublox.ned_acc, accel_meas_ltp);
+}
+
+static void accel_cb(uint8_t sender_id __attribute__((unused)),
+                     uint32_t stamp, struct Int32Vect3 *accel)
+{
+  static uint32_t last_stamp = 0;
+
+  if (last_stamp > 0)
+  {
+    float dt = (float)(stamp - last_stamp) * 1e-6;
+    ins_ublox_propagate(accel, dt);
+  }
+  last_stamp = stamp;
+}
 
 static void ublox_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
@@ -69,14 +97,10 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 		// estimate ned vel from ned pos diff
 		if ((dt < 0.5f) && (dt > 0.05f))
 		{
-			update_sgdf_dT(&ins_ublox.vel_x_sgdf, dt, ins_ublox.ned_pos.x);
-			update_sgdf_dT(&ins_ublox.vel_y_sgdf, dt, ins_ublox.ned_pos.y);
-			update_sgdf_dT(&ins_ublox.vel_z_sgdf, dt, ins_ublox.ned_pos.z);
-
-			//VECT3_DIFF(ins_ublox.ned_vel ,ins_ublox.ned_pos, ins_ublox.ned_pos_last);
-			//VECT3_SDIV(ins_ublox.ned_vel, ins_ublox.ned_vel, dt);
+			ins_ublox.ned_vel.x = update_sgdf_dT(&ins_ublox.vel_x_sgdf, dt, ins_ublox.ned_pos.x);
+			ins_ublox.ned_vel.y = update_sgdf_dT(&ins_ublox.vel_y_sgdf, dt, ins_ublox.ned_pos.y);
+			ins_ublox.ned_vel.z = update_sgdf_dT(&ins_ublox.vel_z_sgdf, dt, ins_ublox.ned_pos.z);
 		}
-		ins_ublox.ned_pos_last = ins_ublox.ned_pos;
 	}
 	last_stamp = stamp;
 }
@@ -84,6 +108,8 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 void ins_ublox_init(void)
 {
 	AbiBindMsgGPS_UBX(ABI_BROADCAST, &ublox_ev, ublox_cb);
+	AbiBindMsgIMU_ACCEL_INT32(ABI_BROADCAST, &accel_ev, accel_cb);
+
 #ifdef PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_UBLOX, send_ins_ublox);
 #endif

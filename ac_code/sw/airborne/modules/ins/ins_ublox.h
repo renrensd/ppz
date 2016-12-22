@@ -16,6 +16,7 @@
 
 struct _s_ins_ublox
 {
+	struct NedCoor_f ned_acc;
 	struct NedCoor_f ublox_ned_vel;
 	struct EcefCoor_f ublox_ecef_pos;
 	struct NedCoor_f ned_vel;
