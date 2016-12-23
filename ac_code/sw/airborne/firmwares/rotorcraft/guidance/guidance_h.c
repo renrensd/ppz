@@ -386,13 +386,14 @@ void guidance_h_init(void)
   init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, guidance_h.NED_xy_speed_filter_fc,
     															1.0f/512.0f, 0);
 
-#define UBLOX_LOOP_MAX_TILT	(my_math_deg_to_rad * 10.0f)
+#define UBLOX_LOOP_MAX_TILT	(my_math_deg_to_rad * 20.0f)
+#define UBLOX_LOOP_I_MAX_TILT	(my_math_deg_to_rad * 15.0f)
   pid_ini(&guidance_h.vel_x_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.vel_y_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.pos_x_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.pos_y_pid, PERIODIC_FREQUENCY);
 	pid_set_out_range(&guidance_h.vel_x_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
-	pid_set_Ui_range(&guidance_h.vel_x_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
+	pid_set_Ui_range(&guidance_h.vel_x_pid, -UBLOX_LOOP_I_MAX_TILT, +UBLOX_LOOP_I_MAX_TILT);
 	pid_set_out_range(&guidance_h.vel_y_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
 	pid_set_Ui_range(&guidance_h.vel_y_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
 	pid_set_out_range(&guidance_h.pos_x_pid, -3, +3);
@@ -400,9 +401,9 @@ void guidance_h_init(void)
 	pid_set_out_range(&guidance_h.pos_y_pid, -3, +3);
 	pid_set_Ui_range(&guidance_h.pos_y_pid, -0.5, +0.5);
 
-	guidance_h.vel_x_pid.Kp = 0.5f;
-	guidance_h.vel_x_pid.Ki = 0.2f;
-	guidance_h.vel_x_pid.Kd = 0.1f;
+	guidance_h.vel_x_pid.Kp = 0.1f;
+	guidance_h.vel_x_pid.Ki = 0.1f;
+	guidance_h.vel_x_pid.Kd = 0.05f;
 
 	guidance_h.vel_y_pid.Kp = 0.5f;
 	guidance_h.vel_y_pid.Ki = 0.2f;
