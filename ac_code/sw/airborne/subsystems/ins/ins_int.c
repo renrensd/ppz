@@ -215,7 +215,7 @@ static void ins_update_from_vff(void);
 static void ins_update_from_hff(void);
 #endif
 
-#if PERIODIC_TELEMETRY
+#ifdef PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_ins(struct transport_tx *trans, struct link_device *dev)
@@ -272,9 +272,6 @@ void ins_int_init(void)
   ins_int.ltp_initialized  = FALSE;  //via NavSetGroundReferenceHere() set true
 #endif
 
-  /* we haven't had any measurement updates yet, so set the counter to max */
-  ins_int.propagation_cnt = INS_MAX_PROPAGATION_STEPS;
-
   // Bind to BARO_ABS message,not default
 #if USE_BARO_BOARD
   AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
@@ -309,7 +306,7 @@ void ins_int_init(void)
   INT32_VECT3_ZERO(ins_int.ltp_speed);
   INT32_VECT3_ZERO(ins_int.ltp_accel);
 
-#if PERIODIC_TELEMETRY
+#ifdef PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
@@ -368,30 +365,15 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
   int32_rmat_transp_vmult(&accel_meas_body, body_to_imu_rmat, accel);
   struct Int32Vect3 accel_meas_ltp;
   int32_rmat_transp_vmult(&accel_meas_ltp, stateGetNedToBodyRMat_i(), &accel_meas_body);
+  struct FloatVect3 accel_meas_ltp_f;
+  ACCELS_FLOAT_OF_BFP(accel_meas_ltp_f, accel_meas_ltp);
 
-  float z_accel_meas_float = ACCEL_FLOAT_OF_BFP(accel_meas_ltp.z);
-
-  /* Propagate only if we got any measurement during the last INS_MAX_PROPAGATION_STEPS.
-   * Otherwise halt the propagation to not diverge and only set the acceleration.
-   * This should only be relevant in the startup phase when the baro is not yet initialized
-   * and there is no gps fix yet...
-   */
-  if (1)//ins_int.propagation_cnt < INS_MAX_PROPAGATION_STEPS) 
-  {
-    vff_propagate(z_accel_meas_float, dt);
-	ins_update_from_vff();	
-  } 
-  else 
-  {
-    // feed accel from the sensors
-    // subtract -9.81m/s2 (acceleration measured due to gravity,
-    // but vehicle not accelerating in ltp)
-    ins_int.ltp_accel.z = accel_meas_ltp.z + ACCEL_BFP_OF_REAL(9.81);
-  }
+	vff_propagate(accel_meas_ltp_f.z, dt);
+	ins_update_from_vff();
 
 #if USE_HFF
   /* propagate horizontal filter */
-  b2_hff_propagate();
+  b2_hff_propagate(accel_meas_ltp_f.x, accel_meas_ltp_f.y);
   /* convert and copy result to ins_int */
   ins_update_from_hff();
 #else
@@ -400,11 +382,6 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
 #endif /* USE_HFF */
 
   ins_ned_to_state();
-
-  /* increment the propagation counter, while making sure it doesn't overflow */
-  if (ins_int.propagation_cnt < 10 * INS_MAX_PROPAGATION_STEPS) {
-    ins_int.propagation_cnt++;
-  }
 
   /*filter rate information*/
   ins_body_rate_z = (ins_body_rate_z*9 + stateGetBodyRates_i()->r)/10;
@@ -471,7 +448,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 /**********************************************/
 /*************here is gps cb function**********/
 /**********************************************/
-#if USE_GPS
+#ifdef USE_GPS
 
 #ifdef GPS_INSTALL_BIAS
 /*unit :cm, body frame*/
@@ -505,7 +482,7 @@ static bool_t gps_speed_inspect(struct NedCoor_i data)
 
 void ins_int_update_gps(struct GpsState *gps_s)
 {
-  if (!ins_int.ltp_initialized && gps.p_stable)
+  if (!ins_int.ltp_initialized && gps_s->p_stable)
   {
     ins_reset_local_origin();
   }
@@ -570,7 +547,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
   r_unstable = r_unstable * r_unstable;
   bool_t p_stable_v = (r_unstable < 3.0f);//(gps_nmea.pos_type > PSRDIFF);
 
-  if(gps.p_stable && ins_int.vf_realign)
+  if(gps_s->p_stable && ins_int.vf_realign)
   {
   		ins_int.vf_realign = FALSE;
 		vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
@@ -601,7 +578,7 @@ void ins_int_update_gps(struct GpsState *gps_s)
 	}
 	else if(ins_int.ekf_state == INS_EKF_GPS)
 	{
-		if(gps.p_stable)
+		if(gps_s->p_stable)
 		{
 			if(r_unstable < gps_noise_debug)
 			{
@@ -668,9 +645,6 @@ void ins_int_update_gps(struct GpsState *gps_s)
      #endif /* USE_HFF */
 
 	  ins_ned_to_state();
-
-	  /* reset the counter to indicate we just had a measurement update */
-	  ins_int.propagation_cnt = 0;
   }
   else
   {
@@ -678,11 +652,11 @@ void ins_int_update_gps(struct GpsState *gps_s)
   }
   /****************end of horizontal infomation fuse*****************/
 
- #if PERIODIC_TELEMETRY
+ #ifdef PERIODIC_TELEMETRY
 
 ins_int.gps_qual = gps_nmea.gps_qual;
-  ins_int.p_stable = gps.p_stable;
-  ins_int.gps_heading = gps.heading;
+  ins_int.p_stable = gps_s->p_stable;
+  ins_int.gps_heading = gps_s->heading;
   ins_int.gps_speed_z = gps_speed_cm_s_ned.z * 0.01f;
   struct FloatEulers ltp_to_imu_euler;
   float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
@@ -696,9 +670,9 @@ ins_int.gps_qual = gps_nmea.gps_qual;
   		&ins_int.gps_qual,
 			&gps_nmea.pos_type,
 			&ins_int.p_stable,
-			&gps.num_sv,
+			&gps_s->num_sv,
 			&gps_nmea.sol_tatus,
-			&gps.head_stanum,
+			&gps_s->head_stanum,
 			&ins_int.gps_heading,
 			&ins_int.mag_heading,
   		&gps_pos_cm_ned.x,
@@ -985,9 +959,6 @@ static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
 #endif
 
   ins_ned_to_state();
-
-  /* reset the counter to indicate we just had a measurement update */
-  ins_int.propagation_cnt = 0;
 }
 
 #if USE_FLOW

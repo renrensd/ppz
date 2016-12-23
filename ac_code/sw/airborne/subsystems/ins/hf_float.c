@@ -53,7 +53,7 @@
 
 #ifndef HFF_PRESCALER
 #if AHRS_PROPAGATE_FREQUENCY == 512
-#define HFF_PRESCALER 16
+#define HFF_PRESCALER 1
 #elif AHRS_PROPAGATE_FREQUENCY == 500
 #define HFF_PRESCALER 10
 #else
@@ -478,7 +478,7 @@ static void b2_hff_propagate_past(struct HfilterFloat *hff_past)
 #endif /* GPS_LAG */
 
 
-void b2_hff_propagate(void)
+void b2_hff_propagate(float xdd_meas, float ydd_meas)
 {
   if (b2_hff_lost_counter < b2_hff_lost_limit) {
     b2_hff_lost_counter++;
@@ -491,25 +491,14 @@ void b2_hff_propagate(void)
   }
 #endif
 
-  /* rotate imu accel measurement to body frame and filter */
-  struct Int32Vect3 acc_meas_body;
-  struct Int32RMat *body_to_imu_rmat = orientationGetRMat_i(&imu.body_to_imu);
-  int32_rmat_transp_vmult(&acc_meas_body, body_to_imu_rmat, &imu.accel);
-
-  struct Int32Vect3 acc_body_filtered;
-  acc_body_filtered.x = acc_meas_body.x;//update_butterworth_2_low_pass_int(&filter_x, acc_meas_body.x);
-  acc_body_filtered.y = acc_meas_body.y;//update_butterworth_2_low_pass_int(&filter_y, acc_meas_body.y);
-  acc_body_filtered.z = acc_meas_body.z;//update_butterworth_2_low_pass_int(&filter_z, acc_meas_body.z);
-
   /* propagate current state if it is time */
-  if (b2_hff_ps_counter == HFF_PRESCALER) {
+  if (b2_hff_ps_counter == HFF_PRESCALER)
+  {
     b2_hff_ps_counter = 1;
-    if (b2_hff_lost_counter < b2_hff_lost_limit) {
-      struct Int32Vect3 filtered_accel_ltp;
-      struct Int32RMat *ltp_to_body_rmat = stateGetNedToBodyRMat_i();
-      int32_rmat_transp_vmult(&filtered_accel_ltp, ltp_to_body_rmat, &acc_body_filtered);
-      b2_hff_xdd_meas = ACCEL_FLOAT_OF_BFP(filtered_accel_ltp.x);
-      b2_hff_ydd_meas = ACCEL_FLOAT_OF_BFP(filtered_accel_ltp.y);
+    if (b2_hff_lost_counter < b2_hff_lost_limit)
+    {
+      b2_hff_xdd_meas = xdd_meas;
+      b2_hff_ydd_meas = ydd_meas;
 #ifdef GPS_LAG
       b2_hff_store_accel_ltp(b2_hff_xdd_meas, b2_hff_ydd_meas);
 #endif

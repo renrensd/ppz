@@ -69,6 +69,9 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 struct VffExtended vff;
 float acc_noise_debug = 0.1f;
 
+static uint16_t vff_lost_counter;
+static uint16_t vff_lost_limit;
+
 static void update_speed_conf(float zd_meas, float conf);
 
 #if PERIODIC_TELEMETRY
@@ -103,6 +106,9 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
     vff.P[i][i] = VFF_EXTENDED_INIT_PXX;
   }
 
+  vff_lost_counter = 0;
+  vff_lost_limit = 2000;
+
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
 #endif
@@ -133,6 +139,16 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
  */
 void vff_propagate(float accel, float dt)
 {
+	if (vff_lost_counter < vff_lost_limit)
+	{
+		vff_lost_counter++;
+	}
+	else
+	{
+		vff.zdotdot = accel + 9.81;
+		return;
+	}
+
   /* update state */
   vff.zdotdot = accel + 9.81 - vff.bias;
   vff.z = vff.z + dt * vff.zdot;
@@ -182,6 +198,8 @@ void vff_propagate(float accel, float dt)
  */
 static void update_baro_conf(float z_meas, float conf)
 {
+	vff_lost_counter = 0;
+
   vff.z_meas_baro = z_meas;
 
   const float y = z_meas - vff.z + vff.offset;
@@ -246,6 +264,8 @@ void vff_update_baro_conf(float z_meas, float conf)
  */
 static void update_alt_conf(float z_meas, float conf)
 {
+	vff_lost_counter = 0;
+
   vff.z_meas = z_meas;
 
   const float y = z_meas - vff.z;
