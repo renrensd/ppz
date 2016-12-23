@@ -30,7 +30,10 @@ static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 			&ins_ublox.ublox_ned_vel.z,
 			&ins_ublox.ned_vel.x,
 			&ins_ublox.ned_vel.y,
-			&ins_ublox.ned_vel.z);
+			&ins_ublox.ned_vel.z,
+			&ins_ublox.ecef_to_ned_vel.x,
+			&ins_ublox.ecef_to_ned_vel.y,
+			&ins_ublox.ecef_to_ned_vel.z);
 }
 #endif
 
@@ -81,6 +84,10 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 		VECT3_COPY(ins_ublox.ublox_ned_vel, gps_s->ned_vel);
 		VECT3_SDIV(ins_ublox.ublox_ned_vel, ins_ublox.ublox_ned_vel, 100.0f);
 
+		// get ecef vel (cm/s) and scale to unit(m/s)
+		VECT3_COPY(ins_ublox.ublox_ecef_vel, gps_s->ecef_vel);
+		VECT3_SDIV(ins_ublox.ublox_ecef_vel, ins_ublox.ublox_ecef_vel, 100.0f);
+
 		if(!ins_ublox.ltpDef_initialized)
 		{
 			if(ins_ublox.ublox_stable)
@@ -92,6 +99,7 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 		else
 		{
 			ned_of_ecef_point_f(&ins_ublox.ned_pos, &ins_ublox.ltpDef, &ins_ublox.ublox_ecef_pos);
+			ned_of_ecef_vect_f(&ins_ublox.ecef_to_ned_vel, &ins_ublox.ltpDef, &ins_ublox.ublox_ecef_vel);
 		}
 
 		// estimate ned vel from ned pos diff

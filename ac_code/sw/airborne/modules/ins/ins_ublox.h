@@ -12,14 +12,16 @@
 #include "math/pprz_geodetic_float.h"
 #include "filters/sgdf_filter.h"
 
-#define NED_VEL_SGDF_WIN_SIZE	(3)
+#define NED_VEL_SGDF_WIN_SIZE	(5)
 
 struct _s_ins_ublox
 {
 	struct NedCoor_f ned_acc;
 	struct NedCoor_f ublox_ned_vel;
 	struct EcefCoor_f ublox_ecef_pos;
+	struct EcefCoor_f ublox_ecef_vel;
 	struct NedCoor_f ned_vel;
+	struct NedCoor_f ecef_to_ned_vel;
 	struct NedCoor_f ned_pos;
 	struct NedCoor_f ned_pos_last;
 	DECLARE_SGDF(vel_x_sgdf, NED_VEL_SGDF_WIN_SIZE);

@@ -407,6 +407,9 @@
     <field name="est_xd" type="float"/>
     <field name="est_yd" type="float"/>
     <field name="est_zd" type="float"/>
+    <field name="ecef_to_ned_xd" type="float"/>
+    <field name="ecef_to_ned_yd" type="float"/>
+    <field name="ecef_to_ned_zd" type="float"/>
   </message>
 
   <message name="ESTIMATOR" id="42">
