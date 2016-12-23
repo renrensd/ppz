@@ -22,14 +22,16 @@ struct _s_sgdf_filter
 	unsigned short win_size;
 	unsigned short data_index;
 	float *data;
+	float *dT;
+	unsigned short dT_index;
 	float *coefs; // first coef is corresponding to newest data
 	float Fs;
-	float dT;
 	float out;
 };
 
 #define DECLARE_SGDF(name, size)		struct _s_sgdf_filter name;\
-																		float name##_##data[size];
+																		float name##_##data[size];\
+																		float name##_##dT[size];
 #define INIT_SGDF(name, size, Fs)		init_sgdf(&name, name##_##data, size, Fs);
 #define UPDATE_SGDF(name, in)		update_sgdf(&name, in);
 
@@ -40,7 +42,6 @@ static inline void init_sgdf(struct _s_sgdf_filter *sgdf, float *data, unsigned 
 	sgdf->win_size = win_size;
 	sgdf->data_index = 0;
 	sgdf->Fs = Fs;
-	sgdf->dT = 1.0f/Fs;
 
 	switch (win_size)
 	{
@@ -116,10 +117,19 @@ static inline float update_sgdf(struct _s_sgdf_filter *sgdf, float in)
 
 static inline float update_sgdf_dT(struct _s_sgdf_filter *sgdf, float dT, float in)
 {
+	float dT_sum = 0;
 	if(dT > 0)
 	{
-		sgdf->dT = dT;
-		sgdf->Fs = 1.0f/dT;
+		sgdf->dT[sgdf->dT_index] = dT;
+		if(++sgdf->dT_index >= sgdf->win_size)
+		{
+			sgdf->dT_index = 0;
+		}
+		for (unsigned short i = 0; i < sgdf->win_size; ++i)
+		{
+			dT_sum += sgdf->dT[i];
+		}
+		sgdf->Fs = 1.0f/(dT_sum/(float)sgdf->win_size);
 	}
 	return update_sgdf(sgdf, in);
 }
