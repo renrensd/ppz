@@ -28,9 +28,9 @@ static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 			&ins_ublox.ublox_ned_vel.x,
 			&ins_ublox.ublox_ned_vel.y,
 			&ins_ublox.ublox_ned_vel.z,
-			&ins_ublox.ned_vel.x,
-			&ins_ublox.ned_vel.y,
-			&ins_ublox.ned_vel.z,
+			&ins_ublox.sgdf_ned_vel.x,
+			&ins_ublox.sgdf_ned_vel.y,
+			&ins_ublox.sgdf_ned_vel.z,
 			&ins_ublox.ecef_to_ned_vel.x,
 			&ins_ublox.ecef_to_ned_vel.y,
 			&ins_ublox.ecef_to_ned_vel.z);
@@ -88,6 +88,11 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 		VECT3_COPY(ins_ublox.ublox_ecef_vel, gps_s->ecef_vel);
 		VECT3_SDIV(ins_ublox.ublox_ecef_vel, ins_ublox.ublox_ecef_vel, 100.0f);
 
+		// select vel
+		VECT3_COPY(ins_ublox.ned_vel, ins_ublox.ublox_ned_vel);
+		//VECT3_COPY(ins_ublox.ned_vel, ins_ublox.ecef_to_ned_vel);
+		//VECT3_COPY(ins_ublox.ned_vel, ins_ublox.sgdf_ned_vel);
+
 		if(!ins_ublox.ltpDef_initialized)
 		{
 			if(ins_ublox.ublox_stable)
@@ -105,9 +110,9 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
 		// estimate ned vel from ned pos diff
 		if ((dt < 0.5f) && (dt > 0.05f))
 		{
-			ins_ublox.ned_vel.x = update_sgdf_dT(&ins_ublox.vel_x_sgdf, dt, ins_ublox.ned_pos.x);
-			ins_ublox.ned_vel.y = update_sgdf_dT(&ins_ublox.vel_y_sgdf, dt, ins_ublox.ned_pos.y);
-			ins_ublox.ned_vel.z = update_sgdf_dT(&ins_ublox.vel_z_sgdf, dt, ins_ublox.ned_pos.z);
+			ins_ublox.sgdf_ned_vel.x = update_sgdf_dT(&ins_ublox.vel_x_sgdf, dt, ins_ublox.ned_pos.x);
+			ins_ublox.sgdf_ned_vel.y = update_sgdf_dT(&ins_ublox.vel_y_sgdf, dt, ins_ublox.ned_pos.y);
+			ins_ublox.sgdf_ned_vel.z = update_sgdf_dT(&ins_ublox.vel_z_sgdf, dt, ins_ublox.ned_pos.z);
 		}
 	}
 	last_stamp = stamp;
@@ -129,6 +134,8 @@ void ins_ublox_init(void)
   ins_ublox.ltpDef_initialized = FALSE;
   ins_ublox.ublox_stable = FALSE;
   ins_ublox.ublox_stable_first_time = TRUE;
+
+  ins_ublox.use_ublox = FALSE;
 }
 
 void ins_ublox_event(void)
@@ -179,5 +186,15 @@ void ins_ublox_periodic(void)
 		}
 	}
 	ins_ublox.ublox_update = FALSE;
+}
+
+bool_t ins_ublox_is_using(void)
+{
+	return ins_ublox.use_ublox;
+}
+
+void ins_ublox_set_using(bool_t use)
+{
+	ins_ublox.use_ublox = use;
 }
 

@@ -137,7 +137,6 @@ struct HorizontalGuidance {
   float ned_pos_ref_x;
   float ned_pos_ref_y;
 
-  bool_t use_ublox;
   enum _e_h_pid_loop_mode pid_loop_mode_running;
   enum _e_h_pid_loop_mode pid_loop_mode_gcs;
 };

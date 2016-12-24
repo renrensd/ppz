@@ -417,7 +417,6 @@ void guidance_h_init(void)
 	guidance_h.pos_y_pid.Ki = 0.01f;
 	guidance_h.pos_y_pid.Kd = 0.0f;
 
-	guidance_h.use_ublox = TRUE;
 	guidance_h.pid_loop_mode_running = VEL;
 	guidance_h.pid_loop_mode_gcs = VEL;
 
@@ -490,8 +489,9 @@ void guidance_h_SetSpeedCutoff(float fc)
 
 static void guidance_h_ublox_state_update(void)
 {
-	guidance_h.ned_acc_x = ins_ublox.ned_acc.x;
-	guidance_h.ned_acc_y = ins_ublox.ned_acc.y;
+	struct NedCoor_f *ned_acc = stateGetAccelNed_f();
+	guidance_h.ned_acc_x = ned_acc->x;
+	guidance_h.ned_acc_y = ned_acc->y;
 
 	guidance_h.ned_vel_rc_x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
 	guidance_h.ned_vel_rc_y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
@@ -543,8 +543,8 @@ static void guidance_h_ublox_run(bool_t in_flight)
 
 		if(guidance_h.pid_loop_mode_running == POS_VEL)
 		{
-			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref_x, ins_ublox.ned_pos.x, 0, ins_ublox.ublox_ned_vel.x);
-			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref_y, ins_ublox.ned_pos.y, 0, ins_ublox.ublox_ned_vel.y);
+			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref_x, ins_ublox.ned_pos.x, 0, ins_ublox.ned_vel.x);
+			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref_y, ins_ublox.ned_pos.y, 0, ins_ublox.ned_vel.y);
 
 			guidance_h.ned_vel_ref_x = guidance_h.pos_x_pid.out;
 			guidance_h.ned_vel_ref_y = guidance_h.pos_y_pid.out;
@@ -555,8 +555,8 @@ static void guidance_h_ublox_run(bool_t in_flight)
 			guidance_h.ned_vel_ref_y = guidance_h.ned_vel_rc_y;
 		}
 
-		pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref_x, ins_ublox.ublox_ned_vel.x, 0, guidance_h.ned_acc_x);
-		pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref_y, ins_ublox.ublox_ned_vel.y, 0, guidance_h.ned_acc_y);
+		pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref_x, ins_ublox.ned_vel.x, 0, guidance_h.ned_acc_x);
+		pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref_y, ins_ublox.ned_vel.y, 0, guidance_h.ned_acc_y);
 
 		guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
 		guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
@@ -1162,7 +1162,7 @@ static void guidance_h_traj_run(bool_t in_flight)
 	integrator_y_flag = 0;
   }  //angle is 3deg limited
 
-  if(guidance_h.use_ublox)
+  if(ins_ublox_is_using())
 	{
   	guidance_h_ublox_state_update();
 		guidance_h_ublox_run(in_flight);

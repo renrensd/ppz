@@ -80,6 +80,10 @@ struct InsInt {
   float baro_to_gps_z_step;
   int32_t virtual_p_stable;
 
+  //
+  float R_ublox_pos;
+  float R_ublox_vel;
+
   // gps telemetry
   uint8_t gps_qual;
   uint8_t p_stable;
