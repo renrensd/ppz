@@ -21,6 +21,7 @@ struct _s_gps2_ublox
 };
 
 extern struct _s_gps2_ublox gps2_ublox;
+extern struct GpsState gps2;;
 
 void gps2_ublox_init(void);
 void gps2_ublox_event(void);

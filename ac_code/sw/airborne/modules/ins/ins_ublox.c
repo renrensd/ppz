@@ -21,7 +21,7 @@ static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_INS_UBLOX(trans, dev, AC_ID,
-			&ins_ublox.ublox_stable,
+			&gps2.p_stable,
 			&ins_ublox.ned_pos.x,
 			&ins_ublox.ned_pos.y,
 			&ins_ublox.ned_pos.z,
@@ -68,54 +68,7 @@ static void ublox_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
                    struct GpsState *gps_s)
 {
-	static uint32_t last_stamp = 0;
-	if (last_stamp > 0)
-	{
-		float dt = (float) (stamp - last_stamp) * 1e-6;
 
-		ins_ublox.ublox_signal_stable = ((gps_s->fix >= GPS_FIX_3D) && (gps_s->num_sv > 5));
-		ins_ublox.ublox_update = TRUE;
-
-		// get ecef pos (cm) and scale to unit(m)
-		VECT3_COPY(ins_ublox.ublox_ecef_pos, gps_s->ecef_pos);
-		VECT3_SDIV(ins_ublox.ublox_ecef_pos, ins_ublox.ublox_ecef_pos, 100.0f);
-
-		// get ned vel (cm/s) and scale to unit(m/s)
-		VECT3_COPY(ins_ublox.ublox_ned_vel, gps_s->ned_vel);
-		VECT3_SDIV(ins_ublox.ublox_ned_vel, ins_ublox.ublox_ned_vel, 100.0f);
-
-		// get ecef vel (cm/s) and scale to unit(m/s)
-		VECT3_COPY(ins_ublox.ublox_ecef_vel, gps_s->ecef_vel);
-		VECT3_SDIV(ins_ublox.ublox_ecef_vel, ins_ublox.ublox_ecef_vel, 100.0f);
-
-		// select vel
-		VECT3_COPY(ins_ublox.ned_vel, ins_ublox.ublox_ned_vel);
-		//VECT3_COPY(ins_ublox.ned_vel, ins_ublox.ecef_to_ned_vel);
-		//VECT3_COPY(ins_ublox.ned_vel, ins_ublox.sgdf_ned_vel);
-
-		if(!ins_ublox.ltpDef_initialized)
-		{
-			if(ins_ublox.ublox_stable)
-			{
-				ltp_def_from_ecef_f(&ins_ublox.ltpDef, &ins_ublox.ublox_ecef_pos);
-				ins_ublox.ltpDef_initialized = TRUE;
-			}
-		}
-		else
-		{
-			ned_of_ecef_point_f(&ins_ublox.ned_pos, &ins_ublox.ltpDef, &ins_ublox.ublox_ecef_pos);
-			ned_of_ecef_vect_f(&ins_ublox.ecef_to_ned_vel, &ins_ublox.ltpDef, &ins_ublox.ublox_ecef_vel);
-		}
-
-		// estimate ned vel from ned pos diff
-		if ((dt < 0.5f) && (dt > 0.05f))
-		{
-			ins_ublox.sgdf_ned_vel.x = update_sgdf_dT(&ins_ublox.vel_x_sgdf, dt, ins_ublox.ned_pos.x);
-			ins_ublox.sgdf_ned_vel.y = update_sgdf_dT(&ins_ublox.vel_y_sgdf, dt, ins_ublox.ned_pos.y);
-			ins_ublox.sgdf_ned_vel.z = update_sgdf_dT(&ins_ublox.vel_z_sgdf, dt, ins_ublox.ned_pos.z);
-		}
-	}
-	last_stamp = stamp;
 }
 
 void ins_ublox_init(void)
@@ -132,15 +85,66 @@ void ins_ublox_init(void)
   INIT_SGDF(ins_ublox.vel_z_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
 
   ins_ublox.ltpDef_initialized = FALSE;
-  ins_ublox.ublox_stable = FALSE;
   ins_ublox.ublox_stable_first_time = TRUE;
-
-  ins_ublox.use_ublox = FALSE;
 }
 
 void ins_ublox_event(void)
 {
+	if(gps2_ublox_check_update())
+	{
+		static uint32_t last_stamp = 0;
+		uint32_t stamp = get_sys_time_usec();
 
+		if (last_stamp > 0)
+		{
+			float dt = (float) (stamp - last_stamp) * 1e-6;
+
+			ins_ublox.ublox_signal_stable = ((gps2.fix >= GPS_FIX_3D) && (gps2.num_sv >= 5));
+			ins_ublox.ublox_update = TRUE;
+
+			// get ecef pos (cm) and scale to unit(m)
+			VECT3_COPY(ins_ublox.ublox_ecef_pos, gps2.ecef_pos);
+			VECT3_SDIV(ins_ublox.ublox_ecef_pos, ins_ublox.ublox_ecef_pos, 100.0f);
+
+			// get ned vel (cm/s) and scale to unit(m/s)
+			VECT3_COPY(ins_ublox.ublox_ned_vel, gps2.ned_vel);
+			VECT3_SDIV(ins_ublox.ublox_ned_vel, ins_ublox.ublox_ned_vel, 100.0f);
+
+			// get ecef vel (cm/s) and scale to unit(m/s)
+			VECT3_COPY(ins_ublox.ublox_ecef_vel, gps2.ecef_vel);
+			VECT3_SDIV(ins_ublox.ublox_ecef_vel, ins_ublox.ublox_ecef_vel, 100.0f);
+
+			if (!ins_ublox.ltpDef_initialized)
+			{
+				if (gps2.p_stable)
+				{
+					ltp_def_from_ecef_f(&ins_ublox.ltpDef, &ins_ublox.ublox_ecef_pos);
+					ins_ublox.ltpDef_initialized = TRUE;
+				}
+			}
+			else
+			{
+				ned_of_ecef_point_f(&ins_ublox.ned_pos, &ins_ublox.ltpDef, &ins_ublox.ublox_ecef_pos);
+				ned_of_ecef_vect_f(&ins_ublox.ecef_to_ned_vel, &ins_ublox.ltpDef, &ins_ublox.ublox_ecef_vel);
+			}
+
+			// estimate ned vel from ned pos diff
+			if ((dt < 0.5f) && (dt > 0.05f))
+			{
+				ins_ublox.sgdf_ned_vel.x = update_sgdf_dT(&ins_ublox.vel_x_sgdf, dt, ins_ublox.ned_pos.x);
+				ins_ublox.sgdf_ned_vel.y = update_sgdf_dT(&ins_ublox.vel_y_sgdf, dt, ins_ublox.ned_pos.y);
+				ins_ublox.sgdf_ned_vel.z = update_sgdf_dT(&ins_ublox.vel_z_sgdf, dt, ins_ublox.ned_pos.z);
+			}
+
+			// select vel
+			//VECT3_COPY(ins_ublox.ned_vel, ins_ublox.ublox_ned_vel);
+			VECT3_COPY(ins_ublox.ned_vel, ins_ublox.ecef_to_ned_vel);
+			//VECT3_COPY(ins_ublox.ned_vel, ins_ublox.sgdf_ned_vel);
+		}
+		last_stamp = stamp;
+
+		AbiSendMsgGPS_UBX(GPS_UBX_ID, stamp, &gps2);
+	}
 }
 
 void ins_ublox_periodic(void)
@@ -151,7 +155,7 @@ void ins_ublox_periodic(void)
 	{
 		if(++ins_ublox.ublox_update_lost_count > INS_UBLOX_PERIODIC_FREQ)
 		{
-			ins_ublox.ublox_stable = FALSE;
+			gps2.p_stable = FALSE;
 			ins_ublox.ublox_update_lost_count = 0;
 		}
 	}
@@ -171,7 +175,7 @@ void ins_ublox_periodic(void)
 
 			if(++ins_ublox.ublox_stable_count > stable_tick)
 			{
-				ins_ublox.ublox_stable = TRUE;
+				gps2.p_stable = TRUE;
 				if (ins_ublox.ublox_stable_first_time)
 				{
 					ins_ublox.ublox_stable_first_time = FALSE;
@@ -181,7 +185,7 @@ void ins_ublox_periodic(void)
 		}
 		else
 		{
-			ins_ublox.ublox_stable = FALSE;
+			gps2.p_stable = FALSE;
 			ins_ublox.ublox_stable_count = 0;
 		}
 	}

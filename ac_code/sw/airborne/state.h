@@ -456,6 +456,21 @@ static inline void stateSetLocalOrigin_i(struct LtpDef_i *ltp_def)
   state.ned_initialized_f = TRUE;
 }
 
+/// Set the local (flat earth) coordinate frame origin (int).
+static inline void stateSetLocalOrigin_f(struct LtpDef_f *ltp_def)
+{
+  state.ned_origin_f = *ltp_def;
+
+  /* clear bits for all local frame representations */
+  state.pos_status &= ~(POS_LOCAL_COORD);
+  state.speed_status &= ~(SPEED_LOCAL_COORD);
+  ClearBit(state.accel_status, ACCEL_NED_I);
+  ClearBit(state.accel_status, ACCEL_NED_F);
+
+  state.ned_initialized_i = TRUE;
+  state.ned_initialized_f = TRUE;
+}
+
 /// Set the local (flat earth) coordinate frame origin from UTM (float).
 static inline void stateSetLocalUtmOrigin_f(struct UtmCoor_f *utm_def)
 {

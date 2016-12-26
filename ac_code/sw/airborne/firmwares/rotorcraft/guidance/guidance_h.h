@@ -130,6 +130,10 @@ struct HorizontalGuidance {
 
   float ned_acc_x;
   float ned_acc_y;
+	float ned_vel_x;
+	float ned_vel_y;
+	float ned_pos_x;
+	float ned_pos_y;
   float ned_vel_rc_x;
   float ned_vel_rc_y;
   float ned_vel_ref_x;

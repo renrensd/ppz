@@ -183,6 +183,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 #endif
 static abi_event accel_ev;
 static abi_event gps_ev;
+static abi_event gps2_ev;
 
 #if USE_RADAR24
 abi_event radar24_ev;
@@ -215,6 +216,12 @@ static void ins_update_from_vff(void);
 #if USE_HFF
 static void ins_update_from_hff(void);
 #endif
+
+static void ins_int_init(void);
+static void ins_int_propagate(struct Int32Vect3 *accel, float dt);
+static void ins_int_update_gps(struct GpsState *gps_s);
+static void ins_int_update_gps2(struct GpsState *gps_s);
+static void ins_int_gps_switch(enum _e_ins_gps_type type);
 
 #ifdef PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -263,7 +270,7 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
-void ins_int_init(void)
+static void ins_int_init(void)
 {
 
 #if USE_INS_NAV_INIT
@@ -314,8 +321,10 @@ void ins_int_init(void)
 #endif
 
   ins_int.R_gps = gps_noise_debug;
-  ins_int.R_ublox_pos = 100;
-	ins_int.R_ublox_vel = 100;
+  ins_int.R_ublox_pos = 0.1f;
+	ins_int.R_ublox_vel = 0.1f;
+
+	ins_int_gps_switch(GPS_UBLOX);
 }
 
 void ins_reset_local_origin(void)
@@ -357,7 +366,7 @@ void ins_reset_altitude_ref(void)
 }
 
 //TODOM: start delay time to avoid without accel only caculate G 
-void ins_int_propagate(struct Int32Vect3 *accel, float dt)
+static void ins_int_propagate(struct Int32Vect3 *accel, float dt)
 { 
   /*not propagate until system time > 6s*/
   if( get_sys_time_msec()< 6000 )  return;  
@@ -483,7 +492,7 @@ static bool_t gps_speed_inspect(struct NedCoor_i data)
 	return TRUE;
 }
 
-void ins_int_update_gps(struct GpsState *gps_s)
+static void ins_int_update_gps(struct GpsState *gps_s)
 {
   if (!ins_int.ltp_initialized && gps_s->p_stable)
   {
@@ -633,24 +642,8 @@ void ins_int_update_gps(struct GpsState *gps_s)
 	  /*run horizontal filter*/
 	  float pos_r =((float)gps_pos_sd.x /10000.0) * ((float)gps_pos_sd.y /10000.0);
 	  pos_r = fabs(pos_r);
-	  if(ins_ublox_is_using())
-	  {
-	  	b2_hff_set_gps_r(ins_int.R_ublox_pos, ins_int.R_ublox_vel);
-	  	gps_pos_m_ned.x = ins_ublox.ned_pos.x;
-	  	gps_pos_m_ned.y = ins_ublox.ned_pos.y;
-	  	gps_speed_m_s_ned.x = ins_ublox.ned_vel.x;
-	  	gps_speed_m_s_ned.y = ins_ublox.ned_vel.y;
-	  	if()
-	  	{
-	  		b2_hff_realign(&gps_pos_m_ned, &gps_speed_m_s_ned);
-	  	}
-	  	b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
-	  }
-	  else
-	  {
-	  	b2_hff_update_gps_r(pos_r);
-	  	b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
-	  }
+		b2_hff_update_gps_r(pos_r);
+		b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
 	  // convert and copy result to ins_int
 	  ins_update_from_hff();
 
@@ -947,7 +940,65 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 	}
 	last_stamp = stamp;
 
-	ins_int_update_gps(gps_s);
+	if(!ins_ublox_is_using())
+	{
+		ins_int_update_gps(gps_s);
+	}
+}
+
+static void gps2_cb(uint8_t sender_id __attribute__((unused)),
+                   uint32_t stamp __attribute__((unused)),
+                   struct GpsState *gps_s)
+{
+  static uint32_t last_stamp = 0;
+
+	if (last_stamp > 0)
+	{
+		float dt = (float)(stamp - last_stamp) * 1e-6;
+
+		ins_int_update_gps2(gps_s);
+	}
+	last_stamp = stamp;
+}
+
+static void ins_int_update_gps2(struct GpsState *gps_s)
+{
+	if (gps_s->p_stable && ins_ublox.ltpDef_initialized)
+	{
+		if (ins_ublox_is_using())
+		{
+			struct FloatVect2 gps_pos_m_ned;
+			struct FloatVect2 gps_speed_m_s_ned;
+			b2_hff_set_gps_r(ins_int.R_ublox_pos, ins_int.R_ublox_vel);
+			gps_pos_m_ned.x = ins_ublox.ned_pos.x;
+			gps_pos_m_ned.y = ins_ublox.ned_pos.y;
+			gps_speed_m_s_ned.x = ins_ublox.ned_vel.x;
+			gps_speed_m_s_ned.y = ins_ublox.ned_vel.y;
+			if (ins_int.ublox_hf_realign)
+			{
+				ins_int.ublox_hf_realign = FALSE;
+				stateSetLocalOrigin_f(&ins_ublox.ltpDef);
+				b2_hff_realign(gps_pos_m_ned, gps_speed_m_s_ned);
+			}
+			b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
+		}
+	}
+}
+
+static void ins_int_gps_switch(enum _e_ins_gps_type type)
+{
+	if(type == GPS_RTK)
+	{
+		ins_ublox_set_using(FALSE);
+	}
+	else
+	{
+		if(!ins_ublox_is_using())
+		{
+			ins_int.ublox_hf_realign = TRUE;
+			ins_ublox_set_using(TRUE);
+		}
+	}
 }
 
 static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
@@ -994,6 +1045,7 @@ void ins_int_register(void)
    */
   AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgGPS_POS(ABI_BROADCAST, &gps_ev, gps_cb);
+  AbiBindMsgGPS_UBX(ABI_BROADCAST, &gps2_ev, gps2_cb);
   AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
   #if USE_FLOW
   AbiBindMsgFLOW(ABI_BROADCAST, &flow_ev, flow_cb);

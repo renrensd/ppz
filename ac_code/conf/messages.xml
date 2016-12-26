@@ -401,12 +401,12 @@
   	<field name="est_x" type="float"/>
   	<field name="est_y" type="float"/>
   	<field name="est_z" type="float"/>
-    <field name="ublox_xd" type="float"/>
-    <field name="ublox_yd" type="float"/>
-    <field name="ublox_zd" type="float"/>
-    <field name="est_xd" type="float"/>
-    <field name="est_yd" type="float"/>
-    <field name="est_zd" type="float"/>
+    <field name="ublox_ned_xd" type="float"/>
+    <field name="ublox_ned_yd" type="float"/>
+    <field name="ublox_ned_zd" type="float"/>
+    <field name="est_ned_xd" type="float"/>
+    <field name="est_ned_yd" type="float"/>
+    <field name="est_ned_zd" type="float"/>
     <field name="ecef_to_ned_xd" type="float"/>
     <field name="ecef_to_ned_yd" type="float"/>
     <field name="ecef_to_ned_zd" type="float"/>

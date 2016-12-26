@@ -15,6 +15,8 @@ static void gps2_ublox_update(struct _s_ubx_parser *parser, struct GpsState *gps
 struct _s_gps2_ublox gps2_ublox;
 struct GpsState gps2;
 
+static bool_t update = FALSE;
+
 #ifdef PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
@@ -67,6 +69,19 @@ void gps2_ublox_periodic(void)
 
 }
 
+bool_t gps2_ublox_check_update(void)
+{
+	if (update)
+	{
+		update = FALSE;
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
 static void gps2_ublox_update(struct _s_ubx_parser *parser, struct GpsState *gps_s)
 {
 	if (parser->POSLLH_available)
@@ -93,7 +108,8 @@ static void gps2_ublox_update(struct _s_ubx_parser *parser, struct GpsState *gps
 		gps_s->num_sv = parser->SOL.numSV;
 
 		parser->SOL_available = FALSE;
-		AbiSendMsgGPS_UBX(GPS_UBX_ID, get_sys_time_usec(), gps_s);
+
+		update = TRUE;
 	}
 	if (parser->VELNED_available)
 	{

@@ -32,13 +32,14 @@ struct _s_sgdf_filter
 #define DECLARE_SGDF(name, size)		struct _s_sgdf_filter name;\
 																		float name##_##data[size];\
 																		float name##_##dT[size];
-#define INIT_SGDF(name, size, Fs)		init_sgdf(&name, name##_##data, size, Fs);
+#define INIT_SGDF(name, size, Fs)		init_sgdf(&name, name##_##data, name##_##dT, size, Fs);
 #define UPDATE_SGDF(name, in)		update_sgdf(&name, in);
 
-static inline void init_sgdf(struct _s_sgdf_filter *sgdf, float *data, unsigned char win_size, float Fs)
+static inline void init_sgdf(struct _s_sgdf_filter *sgdf, float *data, float *dT_data, unsigned char win_size, float Fs)
 {
 	sgdf->coefs = 0;
 	sgdf->data = data;
+	sgdf->dT = dT_data;
 	sgdf->win_size = win_size;
 	sgdf->data_index = 0;
 	sgdf->Fs = Fs;
