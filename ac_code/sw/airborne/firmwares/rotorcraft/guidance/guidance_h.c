@@ -338,16 +338,16 @@ static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
 { 
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_TUNE_HOVER(trans, dev, AC_ID,
-                                      &guidance_h.ned_acc_x,
-																			&guidance_h.ned_acc_y,
-																			&guidance_h.ned_vel_x,
-																			&guidance_h.ned_vel_y,
-																			&guidance_h.ned_pos_x,
-																			&guidance_h.ned_pos_y,
-																			&guidance_h.ned_vel_ref_x,
-																			&guidance_h.ned_vel_ref_y,
-																			&guidance_h.ned_pos_ref_x,
-																			&guidance_h.ned_pos_ref_y
+                                      &guidance_h.ned_acc.x,
+																			&guidance_h.ned_acc.y,
+																			&guidance_h.ned_vel.x,
+																			&guidance_h.ned_vel.y,
+																			&guidance_h.ned_pos.x,
+																			&guidance_h.ned_pos.y,
+																			&guidance_h.ned_vel_ref.x,
+																			&guidance_h.ned_vel_ref.y,
+																			&guidance_h.ned_pos_ref.x,
+																			&guidance_h.ned_pos_ref.y
                                       );
 }
 
@@ -387,8 +387,8 @@ void guidance_h_init(void)
   init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, guidance_h.NED_xy_speed_filter_fc,
     															1.0f/512.0f, 0);
 
-#define UBLOX_LOOP_MAX_TILT	(my_math_deg_to_rad * 20.0f)
-#define UBLOX_LOOP_I_MAX_TILT	(my_math_deg_to_rad * 15.0f)
+#define UBLOX_LOOP_MAX_TILT	(my_math_deg_to_rad * 10.0f)
+#define UBLOX_LOOP_I_MAX_TILT	(my_math_deg_to_rad * 10.0f)
   pid_ini(&guidance_h.vel_x_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.vel_y_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.pos_x_pid, PERIODIC_FREQUENCY);
@@ -402,12 +402,12 @@ void guidance_h_init(void)
 	pid_set_out_range(&guidance_h.pos_y_pid, -3, +3);
 	pid_set_Ui_range(&guidance_h.pos_y_pid, -0.5, +0.5);
 
-	guidance_h.vel_x_pid.Kp = 0.15f;
-	guidance_h.vel_x_pid.Ki = 0.1f;
+	guidance_h.vel_x_pid.Kp = 0.2f;
+	guidance_h.vel_x_pid.Ki = 0.03f;
 	guidance_h.vel_x_pid.Kd = 0.0f;
 
-	guidance_h.vel_y_pid.Kp = 0.15f;
-	guidance_h.vel_y_pid.Ki = 0.1f;
+	guidance_h.vel_y_pid.Kp = 0.2f;
+	guidance_h.vel_y_pid.Ki = 0.03f;
 	guidance_h.vel_y_pid.Kd = 0.0f;
 
 	guidance_h.pos_x_pid.Kp = 0.2f;
@@ -488,84 +488,57 @@ void guidance_h_SetSpeedCutoff(float fc)
 																		1.0f/512.0f, guidance_h.NED_y_speed_filter.i[0]);
 }
 
-static void guidance_h_ublox_state_update(void)
+static void guidance_h_ublox_state_update(bool_t in_flight)
 {
+	static bool_t in_flight_last = FALSE;
+
 	struct NedCoor_f *ned_acc = stateGetAccelNed_f();
-	guidance_h.ned_acc_x = ned_acc->x;
-	guidance_h.ned_acc_y = ned_acc->y;
+	VECT2_COPY(guidance_h.ned_acc, *ned_acc);
 
 	struct NedCoor_f *ned_vel = stateGetSpeedNed_f();
-	guidance_h.ned_vel_x = ned_vel->x;
-	guidance_h.ned_vel_y = ned_vel->y;
+	VECT2_COPY(guidance_h.ned_vel, *ned_vel);
 
 	struct NedCoor_f *ned_pos = stateGetPositionNed_f();
-	guidance_h.ned_pos_x = ned_pos->x;
-	guidance_h.ned_pos_y = ned_pos->y;
+	VECT2_COPY(guidance_h.ned_pos, *ned_pos);
 
-	guidance_h.ned_vel_rc_x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
-	guidance_h.ned_vel_rc_y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
+	guidance_h.ned_vel_rc.x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
+	guidance_h.ned_vel_rc.y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
+
+	guidance_h.ned_pos_rc.x += guidance_h.ned_vel_rc.x * (1.0f/(float)PERIODIC_FREQUENCY);
+	guidance_h.ned_pos_rc.y += guidance_h.ned_vel_rc.y * (1.0f/(float)PERIODIC_FREQUENCY);
+
+	if(in_flight)
+	{
+		if (!in_flight_last)
+		{
+			guidance_h.ned_pos_rc = guidance_h.ned_pos;
+		}
+	}
+	in_flight_last = in_flight;
 }
 
 static void guidance_h_ublox_run(bool_t in_flight)
 {
-	static enum _e_h_pid_loop_mode mode_last = VEL;
-	static bool_t in_flight_last = FALSE;
-
 	if(gps2.p_stable)
 	{
-		if(guidance_h.pid_loop_mode_gcs == VEL)
-		{
-			guidance_h.pid_loop_mode_running = VEL;
-		}
-		else
-		{
-			if((guidance_h.sp.speed.x == 0) && (guidance_h.sp.speed.y == 0))
-			{
-				guidance_h.pid_loop_mode_running = POS_VEL;
-			}
-			else
-			{
-				guidance_h.pid_loop_mode_running = VEL;
-			}
-
-			if((mode_last == VEL) && (guidance_h.pid_loop_mode_running == POS_VEL))
-			{
-				guidance_h.ned_pos_ref_x = guidance_h.ned_pos_x;
-				guidance_h.ned_pos_ref_y = guidance_h.ned_pos_y;
-			}
-			mode_last = guidance_h.pid_loop_mode_running;
-
-			if(in_flight)
-			{
-				if(!in_flight_last)
-				{
-					guidance_h.ned_pos_ref_x = guidance_h.ned_pos_x;
-					guidance_h.ned_pos_ref_y = guidance_h.ned_pos_y;
-				}
-			}
-			else
-			{
-				guidance_h.pid_loop_mode_running = VEL;
-			}
-			in_flight_last = in_flight;
-		}
-
+		guidance_h.pid_loop_mode_running = guidance_h.pid_loop_mode_gcs;
 		if(guidance_h.pid_loop_mode_running == POS_VEL)
 		{
-			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref_x, guidance_h.ned_pos_x, 0, guidance_h.ned_vel_x);
-			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref_y, guidance_h.ned_pos_y, 0, guidance_h.ned_vel_y);
+			guidance_h.ned_pos_ref = guidance_h.ned_pos_rc;
 
-			guidance_h.ned_vel_ref_x = guidance_h.pos_x_pid.out;
-			guidance_h.ned_vel_ref_y = guidance_h.pos_y_pid.out;
+			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
+			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
+
+			guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
+			guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
 		}
 		else
 		{
-			guidance_h.ned_vel_ref_x = guidance_h.ned_vel_rc_x;
-			guidance_h.ned_vel_ref_y = guidance_h.ned_vel_rc_y;
+			guidance_h.ned_vel_ref =  guidance_h.ned_vel_rc;
 		}
 
-		pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref_x, guidance_h.ned_vel_x, 0, guidance_h.ned_acc_x);
-		pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref_y, guidance_h.ned_vel_y, 0, guidance_h.ned_acc_y);
+		pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
+		pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
 
 		guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
 		guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
@@ -724,7 +697,7 @@ void guidance_h_run(bool_t  in_flight)
 {
 	if(ins_ublox_is_using())
 	{
-		guidance_h_ublox_state_update();
+		guidance_h_ublox_state_update(in_flight);
 	}
 
   switch (guidance_h.mode) {
@@ -1178,7 +1151,6 @@ static void guidance_h_traj_run(bool_t in_flight)
 
   if(ins_ublox_is_using())
 	{
-  	//guidance_h_ublox_state_update();
 		guidance_h_ublox_run(in_flight);
 	}
 
@@ -1195,6 +1167,8 @@ static void guidance_h_hover_enter(void)
   reset_guidance_reference_from_current_position();
   guidance_h.sp.heading = stateGetNedToBodyEulers_i()->psi;
   guidance_h.rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
+
+  guidance_h.ned_pos_rc = guidance_h.ned_pos;
 
   #if USE_FLOW  
   flow_hff_init(0.0, 0.0, 0.0, 0.0);//zero to pos and vel,later flow filter update when hover running

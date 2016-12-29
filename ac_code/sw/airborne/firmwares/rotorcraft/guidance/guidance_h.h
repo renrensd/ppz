@@ -128,18 +128,13 @@ struct HorizontalGuidance {
   struct _s_pid pos_x_pid;
   struct _s_pid pos_y_pid;
 
-  float ned_acc_x;
-  float ned_acc_y;
-	float ned_vel_x;
-	float ned_vel_y;
-	float ned_pos_x;
-	float ned_pos_y;
-  float ned_vel_rc_x;
-  float ned_vel_rc_y;
-  float ned_vel_ref_x;
-  float ned_vel_ref_y;
-  float ned_pos_ref_x;
-  float ned_pos_ref_y;
+  struct FloatVect2 ned_acc;
+  struct FloatVect2 ned_vel;
+  struct FloatVect2 ned_pos;
+  struct FloatVect2 ned_vel_rc;
+  struct FloatVect2 ned_pos_rc;
+  struct FloatVect2 ned_vel_ref;
+  struct FloatVect2 ned_pos_ref;
 
   enum _e_h_pid_loop_mode pid_loop_mode_running;
   enum _e_h_pid_loop_mode pid_loop_mode_gcs;
