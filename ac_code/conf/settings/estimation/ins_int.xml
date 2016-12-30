@@ -8,6 +8,7 @@
        <dl_setting var="ins_int.R_baro" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_baro" type="float"/>
        <dl_setting var="ins_int.R_baro_offset" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_baro_offset" type="float"/>      
        <dl_setting var="ins_int.virtual_p_stable" type="int32" step="1" shortname="vps" module="subsystems/ins/ins_int" min="0" max="1"/>
+       <dl_setting var="ins_int.gps_type" type="uint8" min="0" max="1" step="1" values="RTK|UBLOX" module="subsystems/ins/ins_int" shortname="gps_type" handler="SetType"/>
     </dl_settings>
   </dl_settings>
 </settings>

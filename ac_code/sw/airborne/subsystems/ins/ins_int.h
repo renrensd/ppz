@@ -57,7 +57,7 @@ struct InsInt {
   /** request to realign horizontal filter.
    * Sets to current position (local origin unchanged).
    */
-  bool_t hf_realign;
+  bool_t rtk_hf_realign;
 
   /** request to reset vertical filter.
    * Sets the z-position to zero and resets the the z-reference to current altitude.
@@ -90,6 +90,7 @@ struct InsInt {
   float R_ublox_pos;
   float R_ublox_vel;
   bool_t ublox_hf_realign;
+  enum _e_ins_gps_type gps_type;
 
   // gps telemetry
   uint8_t gps_qual;
@@ -125,5 +126,6 @@ extern float gps_noise_debug;
 #endif
 
 extern void ins_int_register(void);
+void ins_int_SetType(enum _e_ins_gps_type type);
 
 #endif /* INS_INT_H */

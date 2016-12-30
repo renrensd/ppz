@@ -301,7 +301,7 @@ static void ins_int_init(void)
 #endif
 
   ins_int.vf_realign = FALSE;
-  ins_int.hf_realign = FALSE;
+  ins_int.rtk_hf_realign = FALSE;
   ins_int.vf_stable = FALSE;
 
   /* init vertical and horizontal filters   all set 0 */
@@ -325,6 +325,12 @@ static void ins_int_init(void)
 	ins_int.R_ublox_vel = 0.1f;
 
 	ins_int_gps_switch(GPS_UBLOX);
+	//ins_int_gps_switch(GPS_RTK);
+}
+
+void ins_int_SetType(enum _e_ins_gps_type type)
+{
+	ins_int_gps_switch(type);
 }
 
 void ins_reset_local_origin(void)
@@ -345,7 +351,7 @@ void ins_reset_local_origin(void)
 #endif
 
 #if USE_HFF
-  ins_int.hf_realign = TRUE;
+  ins_int.rtk_hf_realign = TRUE;
 #endif
   ins_int.vf_realign = TRUE;
 }
@@ -633,8 +639,8 @@ static void ins_int_update_gps(struct GpsState *gps_s)
 	  VECT2_ASSIGN(gps_speed_m_s_ned, gps_speed_cm_s_ned.x, gps_speed_cm_s_ned.y);
 	  VECT2_SDIV(gps_speed_m_s_ned, gps_speed_m_s_ned, 100.);
 
-	  if (ins_int.hf_realign) {
-	    ins_int.hf_realign = FALSE;
+	  if (ins_int.rtk_hf_realign) {
+	    ins_int.rtk_hf_realign = FALSE;
 	    const struct FloatVect2 zero = {0.0f, 0.0f};
 	    b2_hff_realign(gps_pos_m_ned, zero);
 	  }
@@ -676,7 +682,8 @@ ins_int.gps_qual = gps_nmea.gps_qual;
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
   		&ins_int.ekf_state,
-			&ahrs_mlkf.mlkf_state,
+			&ahrs_mlkf.heading_state,
+			&ins_int.gps_type,
   		&ins_int.gps_qual,
 			&gps_nmea.pos_type,
 			&ins_int.p_stable,
@@ -987,9 +994,12 @@ static void ins_int_update_gps2(struct GpsState *gps_s)
 
 static void ins_int_gps_switch(enum _e_ins_gps_type type)
 {
+	ins_int.gps_type = type;
+
 	if(type == GPS_RTK)
 	{
 		ins_ublox_set_using(FALSE);
+		ins_int.rtk_hf_realign = TRUE;
 	}
 	else
 	{

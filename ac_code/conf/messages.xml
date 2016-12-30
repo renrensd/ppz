@@ -237,8 +237,9 @@
   </message>
 
   <message name="DEBUG_GPS" id="26">
-    <field name="baro_sw"    type="uint8"/>
-    <field name="mag_sw"     type="uint8"/>
+    <field name="baro_sw"    type="uint8" values="INS_Z_EKF_GPS|INS_Z_EKF_BARO|INS_Z_EKF_BARO_TO_GPS"/>
+    <field name="mag_sw"     type="uint8" values="AMHS_GPS|AMHS_MAG|AMHS_SWITCHING"/>
+    <field name="gps_sw"     type="uint8" values="RTK|UBLOX"/>
     <field name="gps_qual"    type="uint8"/>
     <field name="pos_type"    type="uint8"/>
     <field name="p_stable"    type="uint8"/>

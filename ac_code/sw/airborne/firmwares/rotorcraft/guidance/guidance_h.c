@@ -410,13 +410,13 @@ void guidance_h_init(void)
 	guidance_h.vel_y_pid.Ki = 0.03f;
 	guidance_h.vel_y_pid.Kd = 0.0f;
 
-	guidance_h.pos_x_pid.Kp = 0.2f;
+	guidance_h.pos_x_pid.Kp = 0.8f;
 	guidance_h.pos_x_pid.Ki = 0.0f;
-	guidance_h.pos_x_pid.Kd = 0.0f;
+	guidance_h.pos_x_pid.Kd = 0.13f;
 
-	guidance_h.pos_y_pid.Kp = 0.2f;
+	guidance_h.pos_y_pid.Kp = 0.8f;
 	guidance_h.pos_y_pid.Ki = 0.0f;
-	guidance_h.pos_y_pid.Kd = 0.0f;
+	guidance_h.pos_y_pid.Kd = 0.13f;
 
 	guidance_h.pid_loop_mode_running = VEL;
 	guidance_h.pid_loop_mode_gcs = VEL;
