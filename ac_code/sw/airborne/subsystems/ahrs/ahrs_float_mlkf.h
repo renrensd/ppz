@@ -63,6 +63,7 @@ struct AhrsMlkf {
   struct Int32Vect3  lp_accel_ini;
 
   struct FloatVect3  mag_h;
+  struct FloatVect3  mag_h_cali;
 
   struct FloatVect3  mag_noise;
   struct FloatVect3  gps_heading_noise;
