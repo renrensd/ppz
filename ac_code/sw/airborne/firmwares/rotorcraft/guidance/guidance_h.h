@@ -136,6 +136,17 @@ struct HorizontalGuidance {
   struct FloatVect2 ned_vel_ref;
   struct FloatVect2 ned_pos_ref;
 
+  float ned_acc_filter_fc;
+  float ned_vel_filter_fc;
+  struct FloatVect2 ned_acc_filter;
+  struct FloatVect2 ned_vel_filter;
+  Butterworth2LowPass ned_acc_x_filter;
+  Butterworth2LowPass ned_acc_y_filter;
+  Butterworth2LowPass ned_vel_x_filter;
+  Butterworth2LowPass ned_vel_y_filter;
+
+  bool_t ned_pos_rc_reset;
+
   enum _e_h_pid_loop_mode pid_loop_mode_running;
   enum _e_h_pid_loop_mode pid_loop_mode_gcs;
 };
@@ -172,6 +183,8 @@ extern void guidance_h_set_igain(uint32_t igain);
 extern void guidance_h_nav_rc_enter(void); //use when nav_rc_mode enter
 
 extern void guidance_h_SetSpeedCutoff(float fc);
+extern void guidance_h_SetNedAccFc(float Fc);
+extern void guidance_h_SetNedVelFc(float Fc);
 extern void guidance_h_SetVelKp(float Kp);
 extern void guidance_h_SetVelKi(float Ki);
 extern void guidance_h_SetVelKd(float Kd);

@@ -34,6 +34,8 @@
             
     <dl_settings NAME="Horiz Loop">
       <dl_setting var="guidance_h.pid_loop_mode_gcs" min="0" step="1" max="1" module="guidance/guidance_h" shortname="pid_mode" values="VEL|POS_VEL"/>
+      <dl_setting var="guidance_h.ned_acc_filter_fc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="ned_acc_fc" handler="SetNedAccFc"/>
+      <dl_setting var="guidance_h.ned_vel_filter_fc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="ned_vel_fc" handler="SetNedVelFc"/>
       <dl_setting var="guidance_h.vel_x_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_Kp" handler="SetVelKp"/>
       <dl_setting var="guidance_h.vel_x_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_Ki" handler="SetVelKi"/>
       <dl_setting var="guidance_h.vel_x_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_Kd" handler="SetVelKd"/>
