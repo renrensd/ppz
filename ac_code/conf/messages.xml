@@ -364,7 +364,6 @@
     <field name="gain_y" type="float"/>
     <field name="offset_x" type="float"/>
     <field name="offset_y" type="float"/>
-    <field name="declination" type="float"/>
     <field name="grab_x" type="float[]"/>
     <field name="grab_y" type="float[]"/>
   </message>

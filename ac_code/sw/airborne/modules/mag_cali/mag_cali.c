@@ -17,7 +17,6 @@
 #include "subsystems/ins/ins_int.h"
 #include "subsystems/fram/fram_if.h"
 #include "data_check/crc16.h"
-#include "subsystems/ahrs/ahrs_float_mlkf.h"
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 #endif
@@ -64,12 +63,6 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 			return;
 		}
 
-		if( mag_cali.grab_tick[mag_cali.grab_index] == 0 )
-		{
-			mag_cali.grab_heading_pair[mag_cali.grab_index][0] = mag_cali.gps_heading;
-			mag_cali.grab_heading_pair[mag_cali.grab_index][1] = (float)imu.mag_unscaled.x/(float)MAG_SENSITIVITY;
-			mag_cali.grab_heading_pair[mag_cali.grab_index][2] = (float)imu.mag_unscaled.y/(float)MAG_SENSITIVITY;
-		}
 		if( mag_cali.grab_tick[mag_cali.grab_index] < MAG_CALI_GRAB_COUNT_MAX )
 		{
 			mag_cali.grab_tick[mag_cali.grab_index]++;
@@ -95,9 +88,6 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
-	mag_cali.gps_heading = gps_s->heading * my_math_deg_to_rad;
-	mag_cali.gps_heading = LimitAngleTo_0_2pi(mag_cali.gps_heading);
-
 	if(mag_cali.state == MAG_CALI_IDLE)
 	{
 		return;
@@ -119,7 +109,9 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 	}
 	else if(mag_cali.state == MAG_CALI_GRAB)
 	{
-		uint8_t index = mag_cali.gps_heading/(my_math_2pi/(float)MAG_CALI_CIRCLE_SPLITE_NUM);
+		float gps_heading_rad = gps_s->heading * my_math_deg_to_rad;
+		gps_heading_rad = LimitAngleTo_0_2pi(gps_heading_rad);
+		uint8_t index = gps_heading_rad/(my_math_2pi/(float)MAG_CALI_CIRCLE_SPLITE_NUM);
 		if(index > 9)
 		{
 			index = 0;
@@ -152,7 +144,6 @@ static void mag_cali_persistent_read(void)
 	mag_cali.gain[1] = temp_MagCaliFramData.gain[1];
 	mag_cali.offset[0] = temp_MagCaliFramData.offset[0];
 	mag_cali.offset[1] = temp_MagCaliFramData.offset[1];
-	mag_cali.mag_declination = temp_MagCaliFramData.mag_declination;
 	mag_cali.cali_ok = temp_MagCaliFramData.cali_ok;
 
 
@@ -183,7 +174,6 @@ static void mag_cali_persistent_write(void)
 	temp_MagCaliFramData.gain[1] = mag_cali.gain[1];
 	temp_MagCaliFramData.offset[0] = mag_cali.offset[0];
 	temp_MagCaliFramData.offset[1] = mag_cali.offset[1];
-	temp_MagCaliFramData.mag_declination = mag_cali.mag_declination;
 	temp_MagCaliFramData.cali_ok = mag_cali.cali_ok;
 	temp_MagCaliFramData.crc16 = Crc16_normal(ptemp, 0, MAG_CALI_PERS_DATA_STRUCT_LENGTH - 4);
 
@@ -265,10 +255,6 @@ static bool_t mag_cali_load_to_imu(void)
 	{
 		err++;
 	}
-	if( fabsf(mag_cali.mag_declination) > 20.0f )
-	{
-		err++;
-	}
 
 	if(err)
 	{
@@ -282,11 +268,6 @@ static bool_t mag_cali_load_to_imu(void)
 		imu.mag_sens.x = mag_cali.gain[0];
 		imu.mag_sens.y = mag_cali.gain[1];
 		imu.mag_sens.z = mag_cali.gain[1];
-
-		// mag declination
-		ahrs_mlkf.mag_h_cali.x = cosf(mag_cali.mag_declination);
-		ahrs_mlkf.mag_h_cali.y = sinf(mag_cali.mag_declination);
-		ahrs_mlkf.mag_h_cali.z = 0;
 
 		return TRUE;
 	}
@@ -471,32 +452,21 @@ void mag_cali_periodic(void)
 		mag_cali.offset[0] = p.data[2];
 		mag_cali.offset[1] = p.data[3];
 
-		float x,y,mag_heading,declination = 0;
-		for(int i=0;i<MAG_CALI_GRAB_NUM;++i)
-		{
-			x = (mag_cali.grab_heading_pair[i][1] - mag_cali.offset[0]) * mag_cali.gain[0];
-			y = (mag_cali.grab_heading_pair[i][2] - mag_cali.offset[1]) * mag_cali.gain[1];
-			mag_heading = LimitAngleTo_0_2pi(atan2f(-y, x));
-			declination += mag_heading - mag_cali.grab_heading_pair[i][0];
-		}
-		mag_cali.mag_declination = declination / (float)MAG_CALI_GRAB_NUM;
-
 		// check and load
 		mag_cali_stop(mag_cali_load_to_imu());
 	}
 
-#ifdef PERIODIC_TELEMETRY
+float grab_x[MAG_CALI_GRAB_NUM];
+float grab_y[MAG_CALI_GRAB_NUM];
+
+for(int i=0;i<MAG_CALI_GRAB_NUM;++i)
+{
+	grab_x[i] = mag_cali.grab_sum[i][0];
+	grab_y[i] = mag_cali.grab_sum[i][1];
+}
+
+#if PERIODIC_TELEMETRY
 		RunOnceEvery(25,   {
-
-			float grab_x[MAG_CALI_GRAB_NUM];
-			float grab_y[MAG_CALI_GRAB_NUM];
-
-			for(int i=0;i<MAG_CALI_GRAB_NUM;++i)
-			{
-				grab_x[i] = mag_cali.grab_sum[i][0];
-				grab_y[i] = mag_cali.grab_sum[i][1];
-			}
-
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_MAG_CALI(DefaultChannel, DefaultDevice,
 				&mag_cali.state,
@@ -508,7 +478,6 @@ void mag_cali_periodic(void)
 				&mag_cali.gain[1],
 				&mag_cali.offset[0],
 				&mag_cali.offset[1],
-				&mag_cali.mag_declination,
 				MAG_CALI_GRAB_NUM,
 				grab_x,
 				MAG_CALI_GRAB_NUM,

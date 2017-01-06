@@ -37,7 +37,6 @@ struct MagCaliPersData
 	struct EcefCoor_i cali_ecef_pos_i;
 	float gain[2];
 	float offset[2];
-	float mag_declination;
 	uint32_t cali_ok;
 	uint32_t crc16;
 }__attribute((aligned (4)));
@@ -61,15 +60,11 @@ struct MagCali
 
   uint8_t grab_tick[MAG_CALI_GRAB_NUM];
   float grab_sum[MAG_CALI_GRAB_NUM][2];
-  float grab_heading_pair[MAG_CALI_GRAB_NUM][3]; // column 0 is gps_heading , column 1~2 are mag x y
   uint8_t grab_index;
   uint8_t grab_index_lock;
   uint16_t convergence_tick;
   float gain[2];
   float offset[2];
-  float mag_declination;
-
-  float gps_heading;
 };
 
 extern void mag_cali_init(void);
