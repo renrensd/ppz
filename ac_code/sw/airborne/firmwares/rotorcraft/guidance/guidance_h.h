@@ -146,6 +146,7 @@ struct HorizontalGuidance {
   Butterworth2LowPass ned_vel_y_filter;
 
   bool_t ned_pos_rc_reset;
+  bool_t hover_pos_reset;
 
   enum _e_h_pid_loop_mode pid_loop_mode_running;
   enum _e_h_pid_loop_mode pid_loop_mode_gcs;
@@ -192,6 +193,8 @@ extern void guidance_h_SetPosKp(float Kp);
 extern void guidance_h_SetPosKi(float Ki);
 extern void guidance_h_SetPosKd(float Kd);
 
+extern void guidance_h_ned_pos_rc_need_reset(void); // ublox rc pos ref reset
+extern void guidance_h_hover_pos_need_reset(void);  // rtk rc pos ref reset
 
 /** Set horizontal position setpoint in GUIDED mode.
  * @param x North position (local NED frame) in meters.

@@ -44,6 +44,7 @@
 #include "math/my_math.h"
 #include "modules/ins/ins_ublox.h"
 #include "subsystems/gps.h"
+#include "subsystems/ins/ins_int.h"
 
 #include "state.h"
 
@@ -434,7 +435,8 @@ void guidance_h_init(void)
 	init_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter, low_pass_filter_get_tau(guidance_h.ned_vel_filter_fc),
 			1.0f / (float) PERIODIC_FREQUENCY, 0);
 
-	guidance_h.ned_pos_rc_reset = TRUE;
+	guidance_h_ned_pos_rc_need_reset();
+	guidance_h_hover_pos_need_reset();
 	guidance_h.pid_loop_mode_running = POS_VEL;
 	guidance_h.pid_loop_mode_gcs = POS_VEL;
 
@@ -556,16 +558,24 @@ static void guidance_h_ublox_state_update(bool_t in_flight)
 	{
 		if (!in_flight_last)
 		{
-			guidance_h.ned_pos_rc_reset = TRUE;
+			guidance_h_ned_pos_rc_need_reset();
 		}
 	}
 	in_flight_last = in_flight;
 
 	if(guidance_h.ned_pos_rc_reset)
 	{
-		guidance_h.ned_pos_rc_reset = FALSE;
-		guidance_h.ned_pos_rc = guidance_h.ned_pos;
+		if(!ins_int.ublox_hf_realign)
+		{
+			guidance_h.ned_pos_rc_reset = FALSE;
+			guidance_h.ned_pos_rc = guidance_h.ned_pos;
+		}
 	}
+}
+
+void guidance_h_ned_pos_rc_need_reset(void)
+{
+	guidance_h.ned_pos_rc_reset = TRUE;
 }
 
 static void guidance_h_ublox_run(bool_t in_flight)
@@ -749,6 +759,16 @@ void guidance_h_run(bool_t  in_flight)
 	if(ins_ublox_is_using())
 	{
 		guidance_h_ublox_state_update(in_flight);
+	}
+
+	if(guidance_h.hover_pos_reset)
+	{
+		if(!ins_int.rtk_hf_realign)
+		{
+			guidance_h.hover_pos_reset = FALSE;
+			VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
+			reset_guidance_reference_from_current_position();
+		}
 	}
 
   switch (guidance_h.mode) {
@@ -1210,16 +1230,20 @@ static void guidance_h_traj_run(bool_t in_flight)
 #endif
 
 
+void guidance_h_hover_pos_need_reset(void)
+{
+	guidance_h.hover_pos_reset = TRUE;
+}
+
 static void guidance_h_hover_enter(void)
 {
   /* set horizontal setpoint to current position */
-  VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
+	guidance_h_hover_pos_need_reset();
 
-  reset_guidance_reference_from_current_position();
   guidance_h.sp.heading = stateGetNedToBodyEulers_i()->psi;
   guidance_h.rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
 
-  guidance_h.ned_pos_rc_reset = TRUE;
+  guidance_h_ned_pos_rc_need_reset();
 
   #if USE_FLOW  
   flow_hff_init(0.0, 0.0, 0.0, 0.0);//zero to pos and vel,later flow filter update when hover running
@@ -1239,9 +1263,7 @@ static void guidance_h_nav_enter(void)
 void guidance_h_nav_rc_enter(void)
 {
   /* set horizontal setpoint to current position */
-  VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
-
-  reset_guidance_reference_from_current_position();
+	guidance_h_hover_pos_need_reset();
 
   //nav_heading = stateGetNedToBodyEulers_i()->psi;
   horizontal_mode = HORIZONTAL_MODE_RC;    //request to set mode

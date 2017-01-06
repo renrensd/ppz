@@ -988,6 +988,8 @@ static void ins_int_update_gps2(struct GpsState *gps_s)
 				b2_hff_realign(gps_pos_m_ned, gps_speed_m_s_ned);
 			}
 			b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
+			ins_update_from_hff();
+			ins_ned_to_state();
 		}
 	}
 }
@@ -1000,12 +1002,14 @@ static void ins_int_gps_switch(enum _e_ins_gps_type type)
 	{
 		ins_ublox_set_using(FALSE);
 		ins_int.rtk_hf_realign = TRUE;
+		guidance_h_hover_pos_need_reset();
 	}
 	else
 	{
 		if(!ins_ublox_is_using())
 		{
 			ins_int.ublox_hf_realign = TRUE;
+			guidance_h_ned_pos_rc_need_reset();
 			ins_ublox_set_using(TRUE);
 		}
 	}
