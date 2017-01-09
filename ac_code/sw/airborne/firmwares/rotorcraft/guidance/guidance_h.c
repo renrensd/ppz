@@ -423,7 +423,7 @@ void guidance_h_init(void)
 	guidance_h.pos_y_pid.Ki = 0.0f;
 	guidance_h.pos_y_pid.Kd = 0.3f;
 
-	guidance_h.ned_acc_filter_fc = 5;
+	guidance_h.ned_acc_filter_fc = 1;
 	guidance_h.ned_vel_filter_fc = 5;
 
 	init_butterworth_2_low_pass(&guidance_h.ned_acc_x_filter, low_pass_filter_get_tau(guidance_h.ned_acc_filter_fc),
@@ -1215,7 +1215,7 @@ static void guidance_h_traj_run(bool_t in_flight)
 
   if(stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30.0)
   {    
-  	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);  
+  	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);
 	integrator_x_flag = 0;
 	integrator_y_flag = 0;
   }  //angle is 3deg limited
@@ -1223,6 +1223,8 @@ static void guidance_h_traj_run(bool_t in_flight)
   if(ins_ublox_is_using())
 	{
 		guidance_h_ublox_run(in_flight);
+		guidance_h_sum_integrator.x = 0;
+		guidance_h_sum_integrator.y = 0;
 	}
 
   VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 30` limited  
