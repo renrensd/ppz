@@ -160,9 +160,9 @@ static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool_t in_flig
 float fsg_h(float x,float d);
 int32_t fhan_control(float pos,float vel,  float repul, float h1);
 float fhan_h(float signal,float x1,float x2);
-void Tracking_differntiator_hx(float signal);
-void Tracking_differntiator_hy(float signal);
-
+static void Tracking_differntiator_hx(float signal);
+static void Tracking_differntiator_hy(float signal);
+static void Tracking_differntiator_reset(void);
 /*
 ******************************************************
 -------------------new functions defined here-----------
@@ -254,7 +254,7 @@ float fhan_h(float signal,float x1,float x2)
 	return out;
 }
 
-void Tracking_differntiator_hx(float signal)
+static void Tracking_differntiator_hx(float signal)
 {
 	float fh;
 	fh = fhan_h(signal,xh1,xh2);
@@ -263,13 +263,21 @@ void Tracking_differntiator_hx(float signal)
 	xh1 = xh1 + hh*xh2;
 }
 
-void Tracking_differntiator_hy(float signal)
+static void Tracking_differntiator_hy(float signal)
 {
 	float fh;
 	fh = fhan_h(signal,yh1,yh2);
 	
 	yh2 = yh2 + hh*fh;
 	yh1 = yh1 + hh*yh2;
+}
+
+static void Tracking_differntiator_reset(void)
+{
+	xh1 = 0;
+	xh2 = 0;
+	yh1 = 0;
+	yh2 = 0;
 }
 
 //*****************************************************//
@@ -768,6 +776,7 @@ void guidance_h_run(bool_t  in_flight)
 			guidance_h.hover_pos_reset = FALSE;
 			VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
 			reset_guidance_reference_from_current_position();
+			Tracking_differntiator_reset();
 		}
 	}
 
