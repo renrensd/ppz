@@ -324,8 +324,8 @@ static void ins_int_init(void)
   ins_int.R_ublox_pos = 0.1f;
 	ins_int.R_ublox_vel = 0.1f;
 
-	ins_int_gps_switch(GPS_UBLOX);
-	//ins_int_gps_switch(GPS_RTK);
+	//ins_int_gps_switch(GPS_UBLOX);
+	ins_int_gps_switch(GPS_RTK);
 }
 
 void ins_int_SetType(enum _e_ins_gps_type type)

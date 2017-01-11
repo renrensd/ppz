@@ -194,7 +194,9 @@ void ins_ublox_periodic(void)
 
 bool_t ins_ublox_is_using(void)
 {
-	return ins_ublox.use_ublox;
+	//return ins_ublox.use_ublox;
+	//TEST_CASE : always use pos2loop
+	return TRUE;
 }
 
 void ins_ublox_set_using(bool_t use)
