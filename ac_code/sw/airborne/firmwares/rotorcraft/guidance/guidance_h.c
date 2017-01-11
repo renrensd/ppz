@@ -417,19 +417,19 @@ void guidance_h_init(void)
 
 	guidance_h.vel_x_pid.Kp = 0.2f;
 	guidance_h.vel_x_pid.Ki = 0.03f;
-	guidance_h.vel_x_pid.Kd = 0.0f;
+	guidance_h.vel_x_pid.Kd = 0.05f;
 
 	guidance_h.vel_y_pid.Kp = 0.2f;
 	guidance_h.vel_y_pid.Ki = 0.03f;
-	guidance_h.vel_y_pid.Kd = 0.0f;
+	guidance_h.vel_y_pid.Kd = 0.05f;
 
-	guidance_h.pos_x_pid.Kp = 0.8f;
+	guidance_h.pos_x_pid.Kp = 0.6f;
 	guidance_h.pos_x_pid.Ki = 0.0f;
-	guidance_h.pos_x_pid.Kd = 0.3f;
+	guidance_h.pos_x_pid.Kd = 0.2f;
 
-	guidance_h.pos_y_pid.Kp = 0.8f;
+	guidance_h.pos_y_pid.Kp = 0.6f;
 	guidance_h.pos_y_pid.Ki = 0.0f;
-	guidance_h.pos_y_pid.Kd = 0.3f;
+	guidance_h.pos_y_pid.Kd = 0.2f;
 
 	guidance_h.ned_acc_filter_fc = 1;
 	guidance_h.ned_vel_filter_fc = 5;
@@ -577,6 +577,8 @@ static void guidance_h_ublox_state_update(bool_t in_flight)
 		{
 			guidance_h.ned_pos_rc_reset = FALSE;
 			guidance_h.ned_pos_rc = guidance_h.ned_pos;
+			pid_reset(&guidance_h.vel_x_pid);
+			pid_reset(&guidance_h.vel_y_pid);
 		}
 	}
 }
@@ -590,27 +592,47 @@ static void guidance_h_ublox_run(bool_t in_flight)
 {
 	if(gps2.p_stable)
 	{
-		guidance_h.pid_loop_mode_running = guidance_h.pid_loop_mode_gcs;
-		if(guidance_h.pid_loop_mode_running == POS_VEL)
+		if( guidance_h.mode == GUIDANCE_H_MODE_NAV )
 		{
-			guidance_h.ned_pos_ref = guidance_h.ned_pos_rc;
+			guidance_h.ned_pos_ref.x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
+			guidance_h.ned_pos_ref.y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
 
 			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
 			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
 
 			guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
 			guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
+
+			pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
+			pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
+
+			guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
+			guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
 		}
 		else
 		{
-			guidance_h.ned_vel_ref =  guidance_h.ned_vel_rc;
+			guidance_h.pid_loop_mode_running = guidance_h.pid_loop_mode_gcs;
+			if (guidance_h.pid_loop_mode_running == POS_VEL)
+			{
+				guidance_h.ned_pos_ref = guidance_h.ned_pos_rc;
+
+				pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
+				pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
+
+				guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
+				guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
+			}
+			else
+			{
+				guidance_h.ned_vel_ref = guidance_h.ned_vel_rc;
+			}
+
+			pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
+			pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
+
+			guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
+			guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
 		}
-
-		pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
-		pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
-
-		guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
-		guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
 	}
 	else
 	{

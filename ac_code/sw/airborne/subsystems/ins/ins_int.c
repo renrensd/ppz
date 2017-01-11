@@ -947,10 +947,10 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 	}
 	last_stamp = stamp;
 
-	if(!ins_ublox_is_using())
-	{
+//	if(!ins_ublox_is_using())
+//	{
 		ins_int_update_gps(gps_s);
-	}
+//	}
 }
 
 static void gps2_cb(uint8_t sender_id __attribute__((unused)),
@@ -963,7 +963,10 @@ static void gps2_cb(uint8_t sender_id __attribute__((unused)),
 	{
 		float dt = (float)(stamp - last_stamp) * 1e-6;
 
-		ins_int_update_gps2(gps_s);
+//		if (ins_ublox_is_using())
+//		{
+//			ins_int_update_gps2(gps_s);
+//		}
 	}
 	last_stamp = stamp;
 }
@@ -972,25 +975,22 @@ static void ins_int_update_gps2(struct GpsState *gps_s)
 {
 	if (gps_s->p_stable && ins_ublox.ltpDef_initialized)
 	{
-		if (ins_ublox_is_using())
+		struct FloatVect2 gps_pos_m_ned;
+		struct FloatVect2 gps_speed_m_s_ned;
+		b2_hff_set_gps_r(ins_int.R_ublox_pos, ins_int.R_ublox_vel);
+		gps_pos_m_ned.x = ins_ublox.ned_pos.x;
+		gps_pos_m_ned.y = ins_ublox.ned_pos.y;
+		gps_speed_m_s_ned.x = ins_ublox.ned_vel.x;
+		gps_speed_m_s_ned.y = ins_ublox.ned_vel.y;
+		if (ins_int.ublox_hf_realign)
 		{
-			struct FloatVect2 gps_pos_m_ned;
-			struct FloatVect2 gps_speed_m_s_ned;
-			b2_hff_set_gps_r(ins_int.R_ublox_pos, ins_int.R_ublox_vel);
-			gps_pos_m_ned.x = ins_ublox.ned_pos.x;
-			gps_pos_m_ned.y = ins_ublox.ned_pos.y;
-			gps_speed_m_s_ned.x = ins_ublox.ned_vel.x;
-			gps_speed_m_s_ned.y = ins_ublox.ned_vel.y;
-			if (ins_int.ublox_hf_realign)
-			{
-				ins_int.ublox_hf_realign = FALSE;
-				stateSetLocalOrigin_f(&ins_ublox.ltpDef);
-				b2_hff_realign(gps_pos_m_ned, gps_speed_m_s_ned);
-			}
-			b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
-			ins_update_from_hff();
-			ins_ned_to_state();
+			ins_int.ublox_hf_realign = FALSE;
+			stateSetLocalOrigin_f(&ins_ublox.ltpDef);
+			b2_hff_realign(gps_pos_m_ned, gps_speed_m_s_ned);
 		}
+		b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
+		ins_update_from_hff();
+		ins_ned_to_state();
 	}
 }
 
