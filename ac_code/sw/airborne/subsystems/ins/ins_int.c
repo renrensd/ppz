@@ -71,12 +71,15 @@
 #include "subsystems/ahrs/ahrs_float_mlkf.h"
 #include "math/my_math.h"
 #include "modules/ins/ins_ublox.h"
-//float   sonar_distance,sonar_distance_i;
+#include "mcu_periph/sys_time.h"
 
 #define R_BARO					(1000.0f)
 #define R_BARO_OFFSET		(10.0f)
-#define R_GPS						(0.0004f)
-float gps_noise_debug = R_GPS;
+#define R_RTK_POS_Z			(0.0004f)
+#define R_UBLOX					(0.1f)
+
+#define RTK_GPS		gps
+#define UBLOX_GPS	gps2
 
 #if USE_SONAR
 #if !USE_VFF_EXTENDED
@@ -219,8 +222,6 @@ static void ins_update_from_hff(void);
 
 static void ins_int_init(void);
 static void ins_int_propagate(struct Int32Vect3 *accel, float dt);
-static void ins_int_update_gps(struct GpsState *gps_s);
-static void ins_int_update_gps2(struct GpsState *gps_s);
 static void ins_int_gps_switch(enum _e_ins_gps_type type);
 
 #ifdef PERIODIC_TELEMETRY
@@ -237,24 +238,20 @@ static void send_ins(struct transport_tx *trans, struct link_device *dev)
 
 static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
 {
+	float gps_speed_z = ins_int.rtk_gps_speed_cm_ned.z * 0.01f;
+	float raw_baro_offset = ins_int.gps_body_z - ins_int.baro_z;
 	float baro_filter = get_first_order_low_pass(&ins_int.baro_z_filter);
-	struct FloatEulers ltp_to_imu_euler;
-	float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
-	float mlkf_heading = ltp_to_imu_euler.psi * (180.0f/3.1415926f);
 
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_INS_Z(trans, dev, AC_ID,
-  					&mlkf_heading,
-  					&ins_int.gps_qual,
-  		  		&ins_int.p_stable,
   		  		&ins_int.baro_z,
   					&baro_filter,
   					&ins_int.gps_body_z,
   					&vff.z,
-						&ins_int.gps_speed_z,
+						&gps_speed_z,
 						&vff.zdot,
 						&vff.bias,
-						&ins_int.raw_baro_offset,
+						&raw_baro_offset,
 						&vff.offset);
 }
 
@@ -268,6 +265,29 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
                           &ins_int.ltp_def.hmsl);
   }
 }
+
+static void send_debug_gps(struct transport_tx *trans, struct link_device *dev)
+{
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
+	  		&ins_int.gpss_state,
+	  		&ins_int.ekf_state,
+				&ahrs_mlkf.heading_state,
+				&ins_int.gps_type,
+	  		&gps_nmea.gps_qual,
+				&gps_nmea.pos_type,
+				&RTK_GPS.p_stable,
+				&RTK_GPS.num_sv,
+				&gps_nmea.sol_tatus,
+				&RTK_GPS.head_stanum,
+				&RTK_GPS.heading,
+				&ahrs_mlkf.mag_heading,
+				&ahrs_mlkf.mlkf_heading,
+				&ins_int.rtk_gps_sd_ned.x,
+				&ins_int.rtk_gps_sd_ned.y,
+				&ins_int.rtk_gps_sd_ned.z);
+}
+
 #endif
 
 static void ins_int_init(void)
@@ -287,7 +307,8 @@ static void ins_int_init(void)
   ins_int.R_baro = R_BARO;
   ins_int.R_baro_offset = R_BARO_OFFSET;
   ins_int.ekf_state = INS_EKF_BARO;
-  ins_int.virtual_p_stable = 1;
+  ins_int.virtual_rtk_v_valid = TRUE;
+  ins_int.virtual_rtk_h_valid = TRUE;
 #endif
 
 #if USE_SONAR
@@ -318,14 +339,197 @@ static void ins_int_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG_GPS, send_debug_gps);
 #endif
 
-  ins_int.R_gps = gps_noise_debug;
-  ins_int.R_ublox_pos = 0.1f;
-	ins_int.R_ublox_vel = 0.1f;
+  ins_int.R_rtk_pos_z = R_RTK_POS_Z;
+  ins_int.R_rtk_pos_z_setting = R_RTK_POS_Z;
+  ins_int.R_ublox_pos = R_UBLOX;
+	ins_int.R_ublox_vel = R_UBLOX;
 
 	//ins_int_gps_switch(GPS_UBLOX);
 	ins_int_gps_switch(GPS_RTK);
+}
+
+void ins_int_task(void)
+{
+	if(gps_nmea.pos_type != TIME_OUT )
+	{
+		if(UBLOX_GPS.p_stable)
+		{
+			ins_int.gpss_state = RTK_UBLOX_VALID;
+		}
+		else
+		{
+			ins_int.gpss_state = RTK_VALID;
+		}
+	}
+	else
+	{
+		if(UBLOX_GPS.p_stable)
+		{
+			ins_int.gpss_state = UBLOX_VALID;
+		}
+		else
+		{
+			ins_int.gpss_state = RTK_UBLOX_INVALID;
+		}
+	}
+
+	if((ins_int.gpss_state == RTK_VALID) || (ins_int.gpss_state == RTK_UBLOX_VALID)) // RTK valid
+	{
+		if (ins_int.rtk_gps_update)
+		{
+			ins_int.rtk_gps_update = FALSE;
+
+#if INS_USE_GPS_ALT
+#define BARO_TO_GPS_TIME	(10)
+
+			float r_unstable = (float) ins_int.rtk_gps_sd_ned.z / 10000.0;
+			r_unstable = r_unstable * r_unstable;
+			bool_t p_stable_v = (r_unstable < 3.0f);  //(gps_nmea.pos_type > PSRDIFF);
+
+			if (RTK_GPS.p_stable && ins_int.vf_realign)
+			{
+				ins_int.vf_realign = FALSE;
+				vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
+				ins_int.vf_stable = TRUE;
+			}
+
+			if (p_stable_v && ins_int.vf_stable && ins_int.virtual_rtk_v_valid)
+			{
+				if (ins_int.ekf_state == INS_EKF_BARO)
+				{
+					ins_int.baro_to_gps_count = 0;
+					ins_int.baro_to_gps_offset_step = ((ins_int.gps_body_z - get_first_order_low_pass(&ins_int.baro_z_filter))
+							- vff.offset) / (float) BARO_TO_GPS_TIME;
+					ins_int.baro_to_gps_z_step = (ins_int.gps_body_z - vff.z) / (float) BARO_TO_GPS_TIME;
+					ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
+				}
+				else if (ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
+				{
+					vff.offset += ins_int.baro_to_gps_offset_step;
+					vff.z += ins_int.baro_to_gps_z_step;
+					//vff_update_z_conf(ins_int.gps_body_z, 10.0f);
+					ins_update_from_vff();
+					if (++ins_int.baro_to_gps_count == BARO_TO_GPS_TIME) // 2s
+					{
+						ins_int.ekf_state = INS_EKF_GPS;
+					}
+				}
+				else if (ins_int.ekf_state == INS_EKF_GPS)
+				{
+					if (RTK_GPS.p_stable)
+					{
+						if (r_unstable < ins_int.R_rtk_pos_z_setting)
+						{
+							r_unstable = ins_int.R_rtk_pos_z_setting;
+						}
+					}
+					ins_int.R_rtk_pos_z = r_unstable;
+
+					vff_update_z_conf(ins_int.gps_body_z, ins_int.R_rtk_pos_z);
+					vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
+					ins_update_from_vff();
+				}
+			}
+			else
+			{
+				if (ins_int.ekf_state != INS_EKF_BARO)
+				{
+					ins_int.ekf_state = INS_EKF_BARO;
+				}
+			}
+
+#endif
+			/****************end of vertical infomation fuse*****************/
+
+
+			/****************start of horizontal infomation fuse*****************/
+			if ( (gps_nmea.pos_type > SINGLE) && ins_int.virtual_rtk_h_valid )
+			{
+				if (ins_int.gps_type != GPS_RTK)
+				{
+					ins_int_gps_switch(GPS_RTK);
+				}
+
+#if USE_HFF
+				VECT2_COPY(ins_int.gps_pos_m_ned, ins_int.rtk_gps_pos_cm_ned);
+				VECT2_SDIV(ins_int.gps_pos_m_ned, ins_int.gps_pos_m_ned, 100.0f);
+
+				VECT2_COPY(ins_int.gps_speed_m_ned, ins_int.rtk_gps_speed_cm_ned);
+				VECT2_SDIV(ins_int.gps_speed_m_ned, ins_int.gps_speed_m_ned, 100.0f);
+
+				if (ins_int.rtk_hf_realign)
+				{
+					ins_int.rtk_hf_realign = FALSE;
+					b2_hff_realign(ins_int.gps_pos_m_ned, ins_int.gps_speed_m_ned);
+				}
+
+				/*run horizontal filter*/
+				float pos_r = ((float) ins_int.rtk_gps_sd_ned.x / 10000.0) * ((float) ins_int.rtk_gps_sd_ned.y / 10000.0);
+				pos_r = fabs(pos_r);
+				//TEST_CASE : need to add speed_sd
+				b2_hff_set_gps_r(pos_r, 5.0f * pos_r);
+				b2_hff_update_gps(&ins_int.gps_pos_m_ned, &ins_int.gps_speed_m_ned);
+				// convert and copy result to ins_int
+				ins_update_from_hff();
+				ins_ned_to_state();
+
+#else  /* hff not used */
+				/* simply copy horizontal pos/speed from gps */
+				INT32_VECT2_SCALE_2(ins_int.ltp_pos, gps_pos_cm_ned,
+						INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
+				INT32_VECT2_SCALE_2(ins_int.ltp_speed, gps_speed_cm_s_ned,
+						INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
+#endif /* USE_HFF */
+			}
+			else
+			{
+				if (ins_int.gps_type != GPS_UBLOX)
+				{
+					ins_int_gps_switch(GPS_UBLOX);
+				}
+			}
+		}
+	}
+	else
+	{
+		if (ins_int.ekf_state != INS_EKF_BARO)
+		{
+			ins_int.ekf_state = INS_EKF_BARO;
+		}
+	}
+
+	if((ins_int.gpss_state == UBLOX_VALID) || (ins_int.gpss_state == RTK_UBLOX_VALID))	// UBLOX valid
+	{
+		if (ins_int.ublox_gps_update)
+		{
+			ins_int.ublox_gps_update = FALSE;
+
+			if (ins_int.gps_type == GPS_UBLOX)
+			{
+				VECT2_COPY(ins_int.gps_pos_m_ned, ins_ublox.ned_pos);
+				VECT2_COPY(ins_int.gps_speed_m_ned, ins_ublox.ned_vel);
+
+				if (ins_int.ublox_hf_realign)
+				{
+					ins_int.ublox_hf_realign = FALSE;
+					//stateSetLocalOrigin_f(&ins_ublox.ltpDef);
+					b2_hff_realign(ins_int.gps_pos_m_ned, ins_int.gps_speed_m_ned);
+				}
+
+				b2_hff_set_gps_r(ins_int.R_ublox_pos, ins_int.R_ublox_vel);
+				b2_hff_update_gps(&ins_int.gps_pos_m_ned, &ins_int.gps_speed_m_ned);
+				ins_update_from_hff();
+				ins_ned_to_state();
+			}
+		}
+	}
+	else	// no GPS
+	{
+
+	}
 }
 
 void ins_int_SetType(enum _e_ins_gps_type type)
@@ -336,39 +540,38 @@ void ins_int_SetType(enum _e_ins_gps_type type)
 void ins_reset_local_origin(void)
 {
 #ifdef USE_GPS  //called by flightplan init,set gps's postion as local ins (ltp_def is base point of ins)
-  if (GpsFixValid()) {
-    ltp_def_from_ecef_i(&ins_int.ltp_def, &gps.ecef_pos);
-    ins_int.ltp_def.lla.alt = gps.lla_pos.alt;
-    ins_int.ltp_def.hmsl = gps.hmsl;
-    ins_int.ltp_initialized = TRUE;
-    stateSetLocalOrigin_i(&ins_int.ltp_def);
-  }
-  else {
-    ins_int.ltp_initialized = FALSE;
-  }
+	if(RTK_GPS.p_stable)
+	{
+		ltp_def_from_ecef_i(&ins_int.ltp_def, &RTK_GPS.ecef_pos);
+		ins_int.ltp_def.lla.alt = RTK_GPS.lla_pos.alt;
+		ins_int.ltp_def.hmsl = RTK_GPS.hmsl;
+		ins_int.ltp_initialized = TRUE;
+		stateSetLocalOrigin_i(&ins_int.ltp_def);
+	}
+	else
+	{
+		ins_int.ltp_initialized = FALSE;
+	}
 #else
-  ins_int.ltp_initialized = FALSE;
+	ins_int.ltp_initialized = FALSE;
 #endif
 
 #if USE_HFF
-  ins_int.rtk_hf_realign = TRUE;
+	ins_int.rtk_hf_realign = TRUE;
 #endif
-  ins_int.vf_realign = TRUE;
+	ins_int.vf_realign = TRUE;
 }
 
 void ins_reset_altitude_ref(void)
 {
 #ifdef USE_GPS //using state.ned_origin to set ins origin
-  struct LlaCoor_i lla = {
-    .lat = state.ned_origin_i.lla.lat,
-    .lon = state.ned_origin_i.lla.lon,
-    .alt = gps.lla_pos.alt
-  };
-  ltp_def_from_lla_i(&ins_int.ltp_def, &lla);
-  ins_int.ltp_def.hmsl = gps.hmsl;
-  stateSetLocalOrigin_i(&ins_int.ltp_def);
+	struct LlaCoor_i lla =
+	{ .lat = state.ned_origin_i.lla.lat, .lon = state.ned_origin_i.lla.lon, .alt = RTK_GPS.lla_pos.alt };
+	ltp_def_from_lla_i(&ins_int.ltp_def, &lla);
+	ins_int.ltp_def.hmsl = RTK_GPS.hmsl;
+	stateSetLocalOrigin_i(&ins_int.ltp_def);
 #endif
-  ins_int.vf_realign = TRUE;
+	ins_int.vf_realign = TRUE;
 }
 
 //TODOM: start delay time to avoid without accel only caculate G 
@@ -466,14 +669,6 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 /**********************************************/
 /*************here is gps cb function**********/
 /**********************************************/
-#ifdef USE_GPS
-
-#ifdef GPS_INSTALL_BIAS
-/*unit :cm, body frame*/
-  #define  INS_BODY_TO_GPS_X  0
-  #define  INS_BODY_TO_GPS_Y  33
-  #define  INS_BODY_TO_GPS_Z  0
-#endif
 static bool_t gps_pos_inspect(struct NedCoor_i data)
 {
 	static struct NedCoor_i last_pos;
@@ -497,215 +692,6 @@ static bool_t gps_speed_inspect(struct NedCoor_i data)
 	}
 	return TRUE;
 }
-
-static void ins_int_update_gps(struct GpsState *gps_s)
-{
-  if (!ins_int.ltp_initialized && gps_s->p_stable)
-  {
-    ins_reset_local_origin();
-  }
-
-  /****************start of gps informations caculate and convert***********/
-  /*get relative postion*/
-  struct NedCoor_i gps_pos_cm_ned;
-  ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_int.ltp_def, &gps_s->ecef_pos);
-  /*add pos diff inspect, request pos diff <10m*/
-  if( !gps_pos_inspect(gps_pos_cm_ned) ) 
-  {
-  	return;  
-  }
-
-   /*get relative speed*/
-  struct NedCoor_i gps_speed_cm_s_ned;
-  ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_int.ltp_def, &gps_s->ecef_vel);
-  /* add gps speed inspect,request speed <20m/s*/
-  if( !gps_speed_inspect(gps_speed_cm_s_ned) ) 
-  {
-  	return;
-  }
-
-  /*get pos standard deviation*/
-  struct NedCoor_i gps_pos_sd;   //unit 1000*m
-  ned_of_ecef_vect_i(&gps_pos_sd, &ins_int.ltp_def, &gps_s->ecef_pos_sd);
-  
-  /* calculate body frame position taking BODY_TO_GPS translation (in cm) into account */
-#ifdef GPS_INSTALL_BIAS
-  /* body2gps translation in body frame */
-  struct Int32Vect3 b2g_b = {
-    .x = INS_BODY_TO_GPS_X,
-    .y = INS_BODY_TO_GPS_Y,
-    .z = INS_BODY_TO_GPS_Z
-  };
-  /* rotate offset given in body frame to navigation/ltp frame using current attitude */
-  struct Int32Quat q_b2n = *stateGetNedToBodyQuat_i();
-  QUAT_INVERT(q_b2n, q_b2n);
-  struct Int32Vect3 b2g_n;
-  int32_quat_vmult(&b2g_n, &q_b2n, &b2g_b);
-  /* subtract body2gps translation in ltp from gps position */
-  VECT3_SUB(gps_pos_cm_ned, b2g_n);
-
-  struct Int32Vect3 delta_speed_b, delta_speed_n;
-  delta_speed_b.x = (ins_body_rate_z * (-b2g_b.y)) >>INT32_RATE_FRAC;
-  delta_speed_b.y = 0;
-  delta_speed_b.z = 0;
-  int32_quat_vmult(&delta_speed_n, &q_b2n, &delta_speed_b);
-  VECT3_SUB(gps_speed_cm_s_ned, delta_speed_n);  
-#endif
-
- /*add AC relative height*/
- ins_int.gps_body_z = (float)gps_pos_cm_ned.z * 0.01f + (- GPS_B2G_DISTANCE);
- gps_pos_cm_ned.z = gps_pos_cm_ned.z - (int32_t)(GPS_B2G_DISTANCE*100);  
- /****************end of gps informations caculate and convert***********/
-
- /****************start of vertical infomation fuse*****************/
-#if INS_USE_GPS_ALT
-#define BARO_TO_GPS_TIME	(10)
-
-  float r_unstable =(float)gps_pos_sd.z /10000.0;
-  r_unstable = r_unstable * r_unstable;
-  bool_t p_stable_v = (r_unstable < 3.0f);//(gps_nmea.pos_type > PSRDIFF);
-
-  if(gps_s->p_stable && ins_int.vf_realign)
-  {
-  		ins_int.vf_realign = FALSE;
-		vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
-		ins_int.vf_stable = TRUE;
-  }
-
-  if( p_stable_v && ins_int.vf_stable && ins_int.virtual_p_stable )
-  {
-		if (ins_int.ekf_state == INS_EKF_BARO)
-		{
-			ins_int.baro_to_gps_count = 0;
-			ins_int.baro_to_gps_offset_step = ((ins_int.gps_body_z - get_first_order_low_pass(&ins_int.baro_z_filter))
-					- vff.offset) / (float) BARO_TO_GPS_TIME;
-			ins_int.baro_to_gps_z_step = (ins_int.gps_body_z - vff.z) / (float) BARO_TO_GPS_TIME;
-			ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
-		}
-		else if (ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
-		{
-			vff.offset += ins_int.baro_to_gps_offset_step;
-			vff.z += ins_int.baro_to_gps_z_step;
-			//vff_update_z_conf(ins_int.gps_body_z, 10.0f);
-			ins_update_from_vff();
-			if (++ins_int.baro_to_gps_count == BARO_TO_GPS_TIME) // 2s
-			{
-				ins_int.ekf_state = INS_EKF_GPS;
-			}
-		}
-		else if (ins_int.ekf_state == INS_EKF_GPS)
-		{
-			if (gps_s->p_stable)
-			{
-				if (r_unstable < gps_noise_debug)
-				{
-					r_unstable = gps_noise_debug;
-				}
-			}
-			ins_int.R_gps = r_unstable;
-
-			vff_update_z_conf(ins_int.gps_body_z, ins_int.R_gps);
-			vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
-			ins_update_from_vff();
-		}
-	}
-	else
-	{
-		if (ins_int.ekf_state != INS_EKF_BARO)
-		{
-			ins_int.ekf_state = INS_EKF_BARO;
-		}
-	}
-
-
-#endif
-  /****************end of vertical infomation fuse*****************/
-
-  /****************start of horizontal infomation fuse*****************/
-  if(
-  	#ifdef USE_GPS_NMEA 
-	 gps_nmea.pos_type > SINGLE
-	#else
-	 gps_s->fix >= GPS_FIX_3D
-	#endif
-	                            )
-  {	 
-  	 #if USE_HFF
-	  struct FloatVect2 gps_pos_m_ned;
-	  VECT2_ASSIGN(gps_pos_m_ned, gps_pos_cm_ned.x, gps_pos_cm_ned.y);
-	  VECT2_SDIV(gps_pos_m_ned, gps_pos_m_ned, 100.0f);
-
-	  struct FloatVect2 gps_speed_m_s_ned;
-	  VECT2_ASSIGN(gps_speed_m_s_ned, gps_speed_cm_s_ned.x, gps_speed_cm_s_ned.y);
-	  VECT2_SDIV(gps_speed_m_s_ned, gps_speed_m_s_ned, 100.);
-
-	  if (ins_int.rtk_hf_realign) {
-	    ins_int.rtk_hf_realign = FALSE;
-	    const struct FloatVect2 zero = {0.0f, 0.0f};
-	    b2_hff_realign(gps_pos_m_ned, zero);
-	  }
-	  
-	  /*run horizontal filter*/
-	  float pos_r =((float)gps_pos_sd.x /10000.0) * ((float)gps_pos_sd.y /10000.0);
-	  pos_r = fabs(pos_r);
-		b2_hff_update_gps_r(pos_r);
-		b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
-	  // convert and copy result to ins_int
-	  ins_update_from_hff();
-
-     #else  /* hff not used */
-	  /* simply copy horizontal pos/speed from gps */
-	  INT32_VECT2_SCALE_2(ins_int.ltp_pos, gps_pos_cm_ned,
-	                      INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
-	  INT32_VECT2_SCALE_2(ins_int.ltp_speed, gps_speed_cm_s_ned,
-	                      INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
-     #endif /* USE_HFF */
-  }
-  else
-  {
-		//add: gps pos lost handle
-  }
-  ins_ned_to_state();
-  /****************end of horizontal infomation fuse*****************/
-
- #ifdef PERIODIC_TELEMETRY
-
-ins_int.gps_qual = gps_nmea.gps_qual;
-  ins_int.p_stable = gps_s->p_stable;
-  ins_int.gps_heading = gps_s->heading;
-  ins_int.gps_speed_z = gps_speed_cm_s_ned.z * 0.01f;
-  struct FloatEulers ltp_to_imu_euler;
-  float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
-  ins_int.mag_heading = ltp_to_imu_euler.psi * (180.0f/3.1415926f);
-  ins_int.raw_baro_offset = ins_int.gps_body_z - ins_int.baro_z;
-
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
-  		&ins_int.ekf_state,
-			&ahrs_mlkf.heading_state,
-			&ins_int.gps_type,
-  		&ins_int.gps_qual,
-			&gps_nmea.pos_type,
-			&ins_int.p_stable,
-			&gps_s->num_sv,
-			&gps_nmea.sol_tatus,
-			&gps_s->head_stanum,
-			&ins_int.gps_heading,
-			&ins_int.mag_heading,
-  		&gps_pos_cm_ned.x,
-			&gps_pos_cm_ned.y,
-			&gps_pos_cm_ned.z,
-			&gps_pos_sd.x,
-			&gps_pos_sd.y,
-			&gps_pos_sd.z);
- #endif
-}
-
-#else
-void ins_int_update_gps(struct GpsState *gps_s __attribute__((unused))) {}
-#endif /* USE_GPS */
-
-
 
 #if USE_FLOW
 /**** predic convert flow coords pos to NED *****/
@@ -868,7 +854,6 @@ static void radar24_cb(uint8_t __attribute__((unused)) sender_id, float distance
 /** initialize the local origin (ltp_def) from flight plan position */
 static void ins_init_origin_from_flightplan(void)
 {
-
   struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
   llh_nav0.lat = NAV_LAT0;
   llh_nav0.lon = NAV_LON0;
@@ -881,7 +866,6 @@ static void ins_init_origin_from_flightplan(void)
   ltp_def_from_ecef_i(&ins_int.ltp_def, &ecef_nav0);
   ins_int.ltp_def.hmsl = NAV_ALT0;
   stateSetLocalOrigin_i(&ins_int.ltp_def);
-
 }
 
 /** copy position and speed to state interface */
@@ -935,6 +919,13 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
   last_stamp = stamp;
 }
 
+#ifdef GPS_INSTALL_BIAS
+/*unit :cm, body frame*/
+  #define  INS_BODY_TO_GPS_X  0
+  #define  INS_BODY_TO_GPS_Y  33
+  #define  INS_BODY_TO_GPS_Z  0
+#endif
+
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
@@ -947,10 +938,61 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 	}
 	last_stamp = stamp;
 
-//	if(!ins_ublox_is_using())
-//	{
-		ins_int_update_gps(gps_s);
-//	}
+	if(gps_s->p_stable)
+	{
+		if (!ins_int.ltp_initialized)
+		{
+			ins_reset_local_origin();
+		}
+		else
+		{
+			struct NedCoor_i gps_pos_cm_ned;
+			ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_int.ltp_def, &gps_s->ecef_pos);
+			/*add pos diff inspect, request pos diff <10m*/
+			if (gps_pos_inspect(gps_pos_cm_ned))
+			{
+				VECT3_COPY(ins_int.rtk_gps_pos_cm_ned, gps_pos_cm_ned);
+			}
+
+			/*add AC relative height*/
+			ins_int.rtk_gps_pos_cm_ned.z = ins_int.rtk_gps_pos_cm_ned.z - (int32_t) (GPS_B2G_DISTANCE * 100);
+
+			struct NedCoor_i gps_speed_cm_ned;
+			ned_of_ecef_vect_i(&gps_speed_cm_ned, &ins_int.ltp_def, &gps_s->ecef_vel);
+			/* add gps speed inspect,request speed <20m/s*/
+			if (gps_speed_inspect(gps_speed_cm_ned))
+			{
+				VECT3_COPY(ins_int.rtk_gps_speed_cm_ned, gps_speed_cm_ned);
+			}
+
+			ned_of_ecef_vect_i(&ins_int.rtk_gps_sd_ned, &ins_int.ltp_def, &gps_s->ecef_pos_sd);
+
+			/* calculate body frame position taking BODY_TO_GPS translation (in cm) into account */
+#ifdef GPS_INSTALL_BIAS
+			/* body2gps translation in body frame */
+			struct Int32Vect3 b2g_b =
+			{ .x = INS_BODY_TO_GPS_X, .y = INS_BODY_TO_GPS_Y, .z = INS_BODY_TO_GPS_Z };
+			/* rotate offset given in body frame to navigation/ltp frame using current attitude */
+			struct Int32Quat q_b2n = *stateGetNedToBodyQuat_i();
+			QUAT_INVERT(q_b2n, q_b2n);
+			struct Int32Vect3 b2g_n;
+			int32_quat_vmult(&b2g_n, &q_b2n, &b2g_b);
+			/* subtract body2gps translation in ltp from gps position */
+			VECT3_SUB(ins_int.rtk_gps_pos_cm_ned, b2g_n);
+
+			struct Int32Vect3 delta_speed_b, delta_speed_n;
+			delta_speed_b.x = (ins_body_rate_z * (-b2g_b.y)) >> INT32_RATE_FRAC;
+			delta_speed_b.y = 0;
+			delta_speed_b.z = 0;
+			int32_quat_vmult(&delta_speed_n, &q_b2n, &delta_speed_b);
+			VECT3_SUB(ins_int.rtk_gps_speed_cm_ned, delta_speed_n);
+#endif
+
+			ins_int.gps_body_z = (float) ins_int.rtk_gps_pos_cm_ned.z * 0.01f;
+
+			ins_int.rtk_gps_update = TRUE;
+		}
+	}
 }
 
 static void gps2_cb(uint8_t sender_id __attribute__((unused)),
@@ -962,35 +1004,12 @@ static void gps2_cb(uint8_t sender_id __attribute__((unused)),
 	if (last_stamp > 0)
 	{
 		float dt = (float)(stamp - last_stamp) * 1e-6;
-
-//		if (ins_ublox_is_using())
-//		{
-//			ins_int_update_gps2(gps_s);
-//		}
 	}
 	last_stamp = stamp;
-}
 
-static void ins_int_update_gps2(struct GpsState *gps_s)
-{
 	if (gps_s->p_stable && ins_ublox.ltpDef_initialized)
 	{
-		struct FloatVect2 gps_pos_m_ned;
-		struct FloatVect2 gps_speed_m_s_ned;
-		b2_hff_set_gps_r(ins_int.R_ublox_pos, ins_int.R_ublox_vel);
-		gps_pos_m_ned.x = ins_ublox.ned_pos.x;
-		gps_pos_m_ned.y = ins_ublox.ned_pos.y;
-		gps_speed_m_s_ned.x = ins_ublox.ned_vel.x;
-		gps_speed_m_s_ned.y = ins_ublox.ned_vel.y;
-		if (ins_int.ublox_hf_realign)
-		{
-			ins_int.ublox_hf_realign = FALSE;
-			stateSetLocalOrigin_f(&ins_ublox.ltpDef);
-			b2_hff_realign(gps_pos_m_ned, gps_speed_m_s_ned);
-		}
-		b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
-		ins_update_from_hff();
-		ins_ned_to_state();
+		ins_int.ublox_gps_update = TRUE;
 	}
 }
 
@@ -1000,19 +1019,13 @@ static void ins_int_gps_switch(enum _e_ins_gps_type type)
 
 	if(type == GPS_RTK)
 	{
-		ins_ublox_set_using(FALSE);
 		ins_int.rtk_hf_realign = TRUE;
-		guidance_h_hover_pos_need_reset();
 	}
 	else
 	{
-		if(!ins_ublox_is_using())
-		{
-			ins_int.ublox_hf_realign = TRUE;
-			guidance_h_ned_pos_rc_need_reset();
-			ins_ublox_set_using(TRUE);
-		}
+		ins_int.ublox_hf_realign = TRUE;
 	}
+	guidance_h_ned_pos_rc_need_reset();
 }
 
 static void vel_est_cb(uint8_t sender_id __attribute__((unused)),

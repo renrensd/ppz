@@ -237,6 +237,7 @@
   </message>
 
   <message name="DEBUG_GPS" id="26">
+  	<field name="gpss"    	 type="uint8" values="RTK_UBLOX_INVALID|UBLOX_VALID|RTK_VALID|RTK_UBLOX_VALID"/>
     <field name="baro_sw"    type="uint8" values="INS_Z_EKF_GPS|INS_Z_EKF_BARO|INS_Z_EKF_BARO_TO_GPS"/>
     <field name="mag_sw"     type="uint8" values="AMHS_GPS|AMHS_MAG|AMHS_SWITCHING"/>
     <field name="gps_sw"     type="uint8" values="RTK|UBLOX"/>
@@ -248,12 +249,10 @@
     <field name="heading_sv_num"    type="uint8"/>
     <field name="gps_heading"    type="float" unit="deg"/>
     <field name="mag_heading"    type="float" unit="deg"/>
-    <field name="gps_pos_cm_x"    type="int32" unit="deg"/>
-    <field name="gps_pos_cm_y"    type="int32" unit="deg"/>
-    <field name="gps_pos_cm_z"    type="int32" unit="deg"/>
-    <field name="gps_pos_sd_x"    type="int32" unit="deg"/>
-    <field name="gps_pos_sd_y"    type="int32" unit="deg"/>
-    <field name="gps_pos_sd_z"    type="int32" unit="deg"/>
+    <field name="mlkf_heading"    type="float" unit="deg"/>
+    <field name="gps_pos_sd_x"    type="int32" unit="m*10000"/>
+    <field name="gps_pos_sd_y"    type="int32" unit="m*10000"/>
+    <field name="gps_pos_sd_z"    type="int32" unit="m*10000"/>
   </message>
 
   <message name="SURVEY" id="27">
@@ -1425,9 +1424,6 @@
   </message>
 
   <message name="INS_Z" id="151">
-    <field name="mlkf_heading"    type="float"/>
-    <field name="gps_qual"    type="uint8"/>
-    <field name="p_stable"    type="uint8"/>
     <field name="baro_z"    type="float" unit="m"/>
     <field name="baro_z_filter"    type="float" unit="m"/>
     <field name="gps_z"    type="float" unit="m"/>

@@ -36,8 +36,6 @@ struct _s_ins_ublox
 	bool_t ublox_stable_first_time;
 	bool_t ublox_update;
 	uint16_t ublox_update_lost_count;
-
-	bool_t use_ublox;
 };
 
 extern struct _s_ins_ublox ins_ublox;
@@ -45,7 +43,5 @@ extern struct _s_ins_ublox ins_ublox;
 void ins_ublox_init(void);
 void ins_ublox_event(void);
 void ins_ublox_periodic(void);
-bool_t ins_ublox_is_using(void);
-void ins_ublox_set_using(bool_t use);
 
 #endif /* SW_AIRBORNE_MODULES_INS_INS_UBLOX_H_ */

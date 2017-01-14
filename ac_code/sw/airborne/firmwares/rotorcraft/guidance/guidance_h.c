@@ -69,6 +69,8 @@
 #error "ALL control gains have to be positive!!!"
 #endif
 
+#define PID_LOOP_MAX_TILT		(my_math_deg_to_rad * 10.0f)
+
 #ifndef GUIDANCE_H_MAX_BANK
 #define GUIDANCE_H_MAX_BANK RadOfDeg(20)
 #endif
@@ -89,65 +91,12 @@ struct HorizontalGuidance guidance_h;
 int32_t transition_percentage;
 int32_t transition_theta_offset;
 
-//uint8_t guidance_h_mode;
-//bool_t guidance_h_use_ref;
-//bool_t guidance_h_approx_force_by_thrust;
-
-//struct Int32Vect2 guidance_h_pos_sp;
-//struct Int32Vect2 guidance_h_pos_ref;
-//struct Int32Vect2 guidance_h_speed_ref;
-//struct Int32Vect2 guidance_h_accel_ref;
-//#if GUIDANCE_H_USE_SPEED_REF
-//struct Int32Vect2 guidance_h_speed_sp;
-//#endif
-
-/*
- * internal variables
- */
-struct Int32Vect2 guidance_h_pos_err;
-struct Int32Vect2 guidance_h_speed_err;
 struct Int32Vect2 guidance_h_trim_att_integrator;
-
-struct position_float guidance_hf_pos_err;  //waihuan weizhi  wucha 
-struct position_float guidance_hf_speed_err;//nei huan sudu  wu cha 
-struct position_float guidance_h_ref_pos_pre;
-
-struct position_float sum_err; //wai huan jifen 
-struct position_float sum_in_err;// nie huan ji fen 
-
-struct position_float i_term; //wai huan jifen xiang 
-struct position_float ii_term;//nei huan ji fen xiang 
-
-struct position_float d_term;//wai huan weifen 
-struct position_float in_d_term;//nei huan wei fen 
-
-struct position_float desire_speed;//nei huan su du gei ding 
-struct position_float desire_speed_pre;//nei huan qian yi shike su du gei ding 
-
-#define I_SUM 2.5  //wai huan ji fen xian fu 
-#define I_SUM_I 0.26 // nei huan ji fen xian fu 
-#define dt_512 512
-bool_t onto_position = TRUE;
-
-struct Int32Vect2 h_speed_fl;
-/** horizontal guidance command.
- * In north/east with #INT32_ANGLE_FRAC
- * @todo convert to real force command
- */
 struct Int32Vect2  guidance_h_cmd_earth;
-//struct Int32Eulers guidance_h_rc_sp;
-//int32_t guidance_h_heading_sp;
+
 int32_t rc_turn_rate;    //using in HORIZONTAL_MODE_RC,cmd of psi rate
 
-//int32_t guidance_h_pgain;
-//int32_t guidance_h_dgain;
-//int32_t guidance_h_igain;
-//int32_t guidance_h_again;
-//int32_t guidance_h_vgain;
 
-//add in bouble control loop
-struct Int32Vect2 guidance_h_sum_integrator;
-//add
 static void guidance_h_update_reference(void);
 #if !GUIDANCE_INDI
 static void guidance_h_traj_run(bool_t in_flight);
@@ -163,44 +112,9 @@ float fhan_h(float signal,float x1,float x2);
 static void Tracking_differntiator_hx(float signal);
 static void Tracking_differntiator_hy(float signal);
 static void Tracking_differntiator_reset(void);
-/*
-******************************************************
--------------------new functions defined here-----------
-\/ \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/
-*/
+
+
 #define Sign(_x) ((_x) > 0 ? 1 : (-1))
-
-/*
-int inner_PID_x(int error,int sumerror, int d_error, int kp, int ki, int kd){
-	int manipulate;
-	manipulate = (error*kp) + (d_error*kd) + (sumerror*ki);
-	return manipulate;
-}
-
-int inner_PID_y(int error, int sumerror, int d_error, int kp, int ki, int kd){
-	int manipulate;
-	manipulate = (error*kp) + (d_error*kd) + (sumerror*ki);
-	return manipulate;
-}
-*/
-
-
-int32_t c_x = 0;
-int32_t c_y = 0;
-/*
-void test_signal(void)
-{
-	static uint16_t time=0;
-	time++;
-	if(time>5000)
-	{
-		time = 0;
-		c_x = -1000000*Sign(c_x);
-		c_y = -1000000*Sign(c_y);
-	}
-}
-*/
-
 
 /*here is define the variables that do the differentiation of my control signal in inner loop*/
 //*****************************************************//
@@ -300,35 +214,7 @@ static void send_gh(struct transport_tx *trans, struct link_device *dev)
 
 static void send_hover_loop(struct transport_tx *trans, struct link_device *dev)
 {
-  struct NedCoor_i pos = *stateGetPositionNed_i();
-  struct NedCoor_i speed = *stateGetSpeedNed_i();
-  struct NedCoor_i accel = *stateGetAccelNed_i();
-  int32_t sum_inter_x = guidance_h_sum_integrator.x>>3;
-  int32_t sum_inter_y = guidance_h_sum_integrator.y>>3;
-  int32_t speed_err_x = guidance_h_speed_err.x;
-  int32_t speed_err_y = guidance_h_speed_err.y;
 
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  pprz_msg_send_HOVER_LOOP(trans, dev, AC_ID,
-                           &guidance_h.sp.pos.x,
-                           &guidance_h.sp.pos.y,
-                           &(pos.x), &(pos.y),
-                           &(speed.x), &(speed.y),
-                           &(accel.x), &(accel.y),
-                           &guidance_h_pos_err.x,
-                           &guidance_h_pos_err.y,
-                           &speed_err_x,
-                           &speed_err_y,
-                           &sum_inter_x,
-                           &sum_inter_y,
-                           &guidance_h_cmd_earth.x,
-                           &guidance_h_cmd_earth.y,
-                           &c_x,
-                           &c_y,
-                           &xh1,
-                           &yh1,
-                           &xh2,
-                           &yh2);
 }
 
 static void send_href(struct transport_tx *trans, struct link_device *dev)
@@ -375,21 +261,9 @@ void guidance_h_init(void)
 
   INT_VECT2_ZERO(guidance_h.sp.pos);
   INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  guidance_h_sum_integrator.x=0;
-  guidance_h_sum_integrator.y=0;
   INT_EULERS_ZERO(guidance_h.rc_sp);
   guidance_h.sp.heading = 0;
-  guidance_h.gains.p = GUIDANCE_H_PGAIN;
-  guidance_h.gains.i = GUIDANCE_H_IGAIN;
-  guidance_h.gains.d = GUIDANCE_H_DGAIN;
-  guidance_h.gains.a = GUIDANCE_H_AGAIN;
-  guidance_h.gains.v = GUIDANCE_H_VGAIN;
-  guidance_h.gains_f.p=GUIDANCE_H_FPGAIN;
-  guidance_h.gains_f.i=GUIDANCE_H_FIGAIN;
-  guidance_h.gains_f.d=GUIDANCE_H_FDGAIN;
-  guidance_h.gains_f.in_p=GUIDANCE_H_FIPGAIN;
-  guidance_h.gains_f.in_i=GUIDANCE_H_FIIGAIN;
-  guidance_h.gains_f.in_d=GUIDANCE_H_FIDGAIN;
+
   hh0 = GUIDANCE_H_TD_H0;
   hh = GUIDANCE_H_TD_H;
   r_h = GUIDANCE_H_TD_R;
@@ -400,16 +274,14 @@ void guidance_h_init(void)
   init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, guidance_h.NED_xy_speed_filter_fc,
     															1.0f/512.0f, 0);
 
-#define UBLOX_LOOP_MAX_TILT	(my_math_deg_to_rad * 10.0f)
-#define UBLOX_LOOP_I_MAX_TILT	(my_math_deg_to_rad * 10.0f)
   pid_ini(&guidance_h.vel_x_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.vel_y_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.pos_x_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.pos_y_pid, PERIODIC_FREQUENCY);
-	pid_set_out_range(&guidance_h.vel_x_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
-	pid_set_Ui_range(&guidance_h.vel_x_pid, -UBLOX_LOOP_I_MAX_TILT, +UBLOX_LOOP_I_MAX_TILT);
-	pid_set_out_range(&guidance_h.vel_y_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
-	pid_set_Ui_range(&guidance_h.vel_y_pid, -UBLOX_LOOP_MAX_TILT, +UBLOX_LOOP_MAX_TILT);
+	pid_set_out_range(&guidance_h.vel_x_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
+	pid_set_Ui_range(&guidance_h.vel_x_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
+	pid_set_out_range(&guidance_h.vel_y_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
+	pid_set_Ui_range(&guidance_h.vel_y_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
 	pid_set_out_range(&guidance_h.pos_x_pid, -5, +5);
 	pid_set_Ui_range(&guidance_h.pos_x_pid, -0.5, +0.5);
 	pid_set_out_range(&guidance_h.pos_y_pid, -5, +5);
@@ -444,7 +316,6 @@ void guidance_h_init(void)
 			1.0f / (float) PERIODIC_FREQUENCY, 0);
 
 	guidance_h_ned_pos_rc_need_reset();
-	guidance_h_hover_pos_need_reset();
 	guidance_h.pid_loop_mode_running = POS_VEL;
 	guidance_h.pid_loop_mode_gcs = POS_VEL;
 
@@ -573,7 +444,23 @@ static void guidance_h_ublox_state_update(bool_t in_flight)
 
 	if(guidance_h.ned_pos_rc_reset)
 	{
-		if(!ins_int.ublox_hf_realign)
+		bool_t realign_done = FALSE;
+		if(ins_int.gps_type == GPS_RTK)
+		{
+			if(!ins_int.rtk_hf_realign)
+			{
+				realign_done = TRUE;
+			}
+		}
+		else
+		{
+			if (!ins_int.ublox_hf_realign)
+			{
+				realign_done = TRUE;
+			}
+		}
+
+		if(realign_done)
 		{
 			guidance_h.ned_pos_rc_reset = FALSE;
 			guidance_h.ned_pos_rc = guidance_h.ned_pos;
@@ -588,7 +475,7 @@ void guidance_h_ned_pos_rc_need_reset(void)
 	guidance_h.ned_pos_rc_reset = TRUE;
 }
 
-static void guidance_h_ublox_run(bool_t in_flight)
+static void guidance_h_pos2loop_run(bool_t in_flight)
 {
 	if(gps2.p_stable)
 	{
@@ -649,8 +536,8 @@ static inline void reset_guidance_reference_from_current_position(void)
   gh_set_ref(guidance_h.ref.pos, guidance_h.ref.speed, guidance_h.ref.accel);
 
   INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  guidance_h_sum_integrator.x = 0;
-  guidance_h_sum_integrator.y = 0;
+  pid_reset(&guidance_h.vel_x_pid);
+  pid_reset(&guidance_h.vel_y_pid);
 }
 
 void guidance_h_mode_changed(uint8_t new_mode)
@@ -786,21 +673,7 @@ void guidance_h_read_rc(bool_t  in_flight)
 
 void guidance_h_run(bool_t  in_flight)
 {
-	if(ins_ublox_is_using())
-	{
-		guidance_h_ublox_state_update(in_flight);
-	}
-
-	if(guidance_h.hover_pos_reset)
-	{
-		if(!ins_int.rtk_hf_realign)
-		{
-			guidance_h.hover_pos_reset = FALSE;
-			VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
-			reset_guidance_reference_from_current_position();
-			Tracking_differntiator_reset();
-		}
-	}
+	guidance_h_ublox_state_update(in_flight);
 
   switch (guidance_h.mode) {
 
@@ -964,261 +837,10 @@ static void guidance_h_update_reference(void)
 #include "firmwares/rotorcraft/nav_flight.h"
 static void guidance_h_traj_run(bool_t in_flight)
 {
-  /* maximum bank angle: default 20 deg, max 40 deg*/
-  //static const int32_t traj_max_bank = Min(BFP_OF_REAL(GUIDANCE_H_MAX_BANK, INT32_ANGLE_FRAC),
-  //                                     BFP_OF_REAL(RadOfDeg(40), INT32_ANGLE_FRAC));
   static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(15), INT32_ANGLE_FRAC);
   static const int32_t total_limit_bank = BFP_OF_REAL(RadOfDeg(3), INT32_ANGLE_FRAC);	//add by whp.
 
-  static int32_t integrator_x_flag = 1;
-  static int32_t integrator_y_flag = 1;
- 
-  /* compute position error    */
-  struct NedCoor_i speed_now = *stateGetSpeedNed_i();
-  h_speed_fl.x = speed_now.x;
-  h_speed_fl.y = speed_now.y;
-  //h_speed_fl.x = update_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, speed_now.x);
-  //h_speed_fl.y = update_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, speed_now.y);
-  
-  VECT2_DIFF(guidance_h_pos_err, guidance_h.ref.pos, *stateGetPositionNed_i());
-  /* saturate it               */
-  VECT2_STRIM(guidance_h_pos_err, -MAX_POS_ERR, MAX_POS_ERR);
-
-  /* compute speed error    */
-  VECT2_DIFF(guidance_h_speed_err, guidance_h.ref.speed, h_speed_fl);
-  /* saturate it               */
-  VECT2_STRIM(guidance_h_speed_err, -MAX_SPEED_ERR, MAX_SPEED_ERR);
-#if 0
-//**********pid_double_loop****
-  struct position_float d_term_temp; //wia huan wen fen 
-  struct position_float in_d_term_temp;// nei huan wei fen 
-  struct position_float control_temp;// kongzhi bian liang 
-
-//********position
-	if (1)
-	{
-		if (1)//(guidance_h.sp.speed.x == 0) && (guidance_h.sp.speed.y == 0))
-		{
-			//if (onto_position)
-			//{
-				//guidance_h_hover_enter();
-			//}
-			//onto_position = FALSE;
-			guidance_hf_pos_err.x = POS_FLOAT_OF_BFP(
-					guidance_h.ref.pos.x - stateGetPositionNed_i()->x);
-			guidance_hf_pos_err.y = POS_FLOAT_OF_BFP(
-					guidance_h.ref.pos.y - stateGetPositionNed_i()->y);
-
-			VECT2_STRIM(guidance_hf_pos_err, -2.0, 2.0);
-
-			sum_err.x += integrator_x_flag * (guidance_hf_pos_err.x)
-					* (1.0f / 512.0f);
-			sum_err.y += integrator_y_flag * (guidance_hf_pos_err.y)
-					* (1.0f / 512.0f);
-
-			i_term.x = (sum_err.x) * (guidance_h.gains_f.i);
-			i_term.y = (sum_err.y) * (guidance_h.gains_f.i);
-
-			BoundAbs(i_term.x, I_SUM);
-			BoundAbs(i_term.y, I_SUM);
-
-            d_term_temp.x =-(SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->x));
-			d_term_temp.y =-(SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->y));
-
-			//d_term_temp.x = (POS_FLOAT_OF_BFP(guidance_h.ref.pos.x)-guidance_h_ref_pos_pre.x)*512.0f-(SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->x));
-			//d_term_temp.y = (POS_FLOAT_OF_BFP(guidance_h.ref.pos.y)-guidance_h_ref_pos_pre.y)*512.0f-(SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->y));
-
-			//guidance_h_ref_pos_pre.x=POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
-			//guidance_h_ref_pos_pre.y=POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
-
-			d_term.x = d_term.x
-					+ (d_term_temp.x - d_term.x) * guid_v.speed_filter_coef;
-			d_term.y = d_term.y
-					+ (d_term_temp.y - d_term.y) * guid_v.speed_filter_coef;
-
-			desire_speed.x = (guidance_hf_pos_err.x) * (guidance_h.gains_f.p)
-					+ i_term.x + (d_term.x) * (guidance_h.gains_f.d);
-			desire_speed.y = (guidance_hf_pos_err.y) * (guidance_h.gains_f.p)
-					+ i_term.y + (d_term.y) * (guidance_h.gains_f.d);
-		}
-		else
-		{
-			onto_position = TRUE;
-			desire_speed.x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
-			desire_speed.y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
-		}
-	}
-	else
-	{
-		desire_speed.x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
-		desire_speed.y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
-	}
-
-
-  BoundAbs(desire_speed.x,5.0);
-  BoundAbs(desire_speed.y,5.0);
-
-
-
-//********position****speed
- guidance_hf_speed_err.x=desire_speed.x-(SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->x));
- guidance_hf_speed_err.y=desire_speed.y-(SPEED_FLOAT_OF_BFP(stateGetSpeedNed_i()->y));
-
- VECT2_STRIM(guidance_hf_speed_err,-5.0,5.0);
-
- sum_in_err.x+=integrator_x_flag*(guidance_hf_speed_err.x)*(1.0f/512.0f);
- sum_in_err.y+=integrator_y_flag*(guidance_hf_speed_err.y)*(1.0f/512.0f);
-
- ii_term.x=(sum_in_err.x)*(guidance_h.gains_f.in_i);
- ii_term.y=(sum_in_err.y)*(guidance_h.gains_f.in_i);
-
- BoundAbs(ii_term.x, I_SUM_I*1000);
- BoundAbs(ii_term.y, I_SUM_I*1000);
-
- in_d_term_temp.x=(desire_speed.x-desire_speed_pre.x)*dt_512-(ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->x));
- in_d_term_temp.y=(desire_speed.y-desire_speed_pre.y)*dt_512-(ACCEL_FLOAT_OF_BFP(stateGetAccelNed_i()->y));
-
- desire_speed_pre.x = desire_speed.x;
- desire_speed_pre.y = desire_speed.y;
- 
- in_d_term.x=in_d_term.x+(in_d_term_temp.x-in_d_term.x)* guid_v.accd_filter_coef;
- in_d_term.y=in_d_term.y+(in_d_term_temp.y-in_d_term.y)* guid_v.accd_filter_coef;
-
- control_temp.x=(guidance_hf_speed_err.x)*(guidance_h.gains_f.in_p)+ii_term.x+(in_d_term.x)*(guidance_h.gains_f.in_d);
- control_temp.y=(guidance_hf_speed_err.y)*(guidance_h.gains_f.in_p)+ii_term.y+(in_d_term.y)*(guidance_h.gains_f.in_d);
-
- guidance_h_cmd_earth.x=(int32_t)(control_temp.x*4096);
- guidance_h_cmd_earth.y=(int32_t)(control_temp.y*4096);
- guidance_h_cmd_earth.x=(guidance_h_cmd_earth.x/1000);
- guidance_h_cmd_earth.y=(guidance_h_cmd_earth.y/1000);
-
- VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);
-#endif
- 
-#if 1
-#if 0
-  //old PID loop from pprz
-  int32_t pd_x =
-    ((guidance_h_pgain * guidance_h_pos_err.x) >> (INT32_POS_FRAC - GH_GAIN_SCALE)) +
-    ((guidance_h_dgain * (guidance_h_speed_err.x >> 2)) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE - 2));
-  int32_t pd_y =
-    ((guidance_h_pgain * guidance_h_pos_err.y) >> (INT32_POS_FRAC - GH_GAIN_SCALE)) +
-    ((guidance_h_dgain * (guidance_h_speed_err.y >> 2)) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE - 2));
-  guidance_h_cmd_earth.x =
-    pd_x +
-    ((guidance_h_vgain * guidance_h_speed_ref.x) >> 17) + 
-    ((guidance_h_again * guidance_h_accel_ref.x) >> 8);   
-  guidance_h_cmd_earth.y =
-    pd_y +
-    ((guidance_h_vgain * guidance_h_speed_ref.y) >> 17) + 
-    ((guidance_h_again * guidance_h_accel_ref.y) >> 8);   
-
-  /* trim max bank angle from PD */
-  //  VECT2_STRIM(guidance_h_cmd_earth, -traj_max_bank, traj_max_bank);
-
-  /* Update pos & speed error integral, zero it if not in_flight.
-   * Integrate twice as fast when not only POS but also SPEED are wrong,
-   * but do not integrate POS errors when the SPEED is already catching up.
-   */
-
-   
-  if (in_flight) {
-    
-    guidance_h_trim_att_integrator.x += (guidance_h_igain * pd_x);
-    guidance_h_trim_att_integrator.y += (guidance_h_igain * pd_y);
-
-    VECT2_STRIM(guidance_h_trim_att_integrator, -(traj_max_bank << 16), (traj_max_bank << 16));
-   
-    guidance_h_cmd_earth.x += (guidance_h_trim_att_integrator.x >> 16);
-    guidance_h_cmd_earth.y += (guidance_h_trim_att_integrator.y >> 16);
-  } else {
-    INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  }
-#endif
-
-/*-------------------new functions run below-----------*/
-
-/*outer PID here*/
-  static uint32_t i_sum_counter = 0;
-  if(ac_config_info.spray_convert_type != WAYPOINT_P2P)
-  {
-	  if(flight_state == landing)
-	  {
-	  	i_sum_counter++;
-		i_sum_counter%=100;
-		if(i_sum_counter==1)
-		{
-			guidance_h.gains.i++;
-			Bound(guidance_h.gains.i, 0, 5);
-		}
-	  }
-	  else
-	  {
-	  	i_sum_counter = 0;
-		guidance_h.gains.i = 1;
-	  }
-  }
-  else
-  {
-  	guidance_h.gains.i = 5;
-  }
-
-  guidance_h_sum_integrator.x += integrator_x_flag * guidance_h.gains.i * guidance_h_pos_err.x;
-  guidance_h_sum_integrator.y += integrator_y_flag * guidance_h.gains.i * guidance_h_pos_err.y;
-
-  if(!in_flight || guidance_h.gains.i==0)
-  {
-  	  guidance_h_sum_integrator.x = 0;
-	  guidance_h_sum_integrator.y = 0;
-  }
-
-/*
-  c_x = guidance_h.ref.speed.x 
-  	    + guidance_h_pos_err.x*12*guidance_h.gains.a
-  	    + (guidance_h_speed_err.x>>6)*guidance_h.gains.v
-  	    + (guidance_h_sum_integrator.x>>7)*guidance_h.gains.i;
-
-  c_y = guidance_h.ref.speed.y 
-  	    + guidance_h_pos_err.y*12*guidance_h.gains.a
-  	    + (guidance_h_speed_err.y>>6)*guidance_h.gains.v
-  	    + (guidance_h_sum_integrator.y>>7)*guidance_h.gains.i;
-*/
-  int32_t px = (guidance_h_pos_err.x<<5)*guidance_h.gains.a;   //Qa = (Q19-Q8)-5 = 6   (64 scaled)
-  int32_t dx = (guidance_h_speed_err.x>>6)*guidance_h.gains.v; //Qv = 6                (64 scaled)
-  int32_t ix = guidance_h_sum_integrator.x>>3;                                   //Qi = (Q19-Q8)+11 = 22 (4194304 scalde)
-  int32_t py = (guidance_h_pos_err.y<<5)*guidance_h.gains.a;
-  int32_t dy = (guidance_h_speed_err.y>>6)*guidance_h.gains.v;
-  int32_t iy = guidance_h_sum_integrator.y>>3;                 //set Qi = 64, i = 64,1m error pos continual 1s generate 2m/s gain
-
-  c_x = guidance_h.ref.speed.x + px + dx + ix;
-  c_y = guidance_h.ref.speed.y + py + dy + iy;
-
-/*
-  c_x = guidance_h.ref.speed.x 
-  	    + (guidance_h_pos_err.x<<5)*guidance_h.gains.a
-  	    + (guidance_h_speed_err.x>>6)*guidance_h.gains.v
-  	    + (guidance_h_sum_integrator.x>>11);
-
-  c_y = guidance_h.ref.speed.y 
-  	    + (guidance_h_pos_err.y<<5)*guidance_h.gains.a
-  	    + (guidance_h_speed_err.y>>6)*guidance_h.gains.v
-  	    + (guidance_h_sum_integrator.y>>11);
-*/
-  int32_t error_x= c_x - h_speed_fl.x;
-  int32_t error_y= c_y - h_speed_fl.y;
-
-  Tracking_differntiator_hx( (float)(error_x) );
-  Tracking_differntiator_hy( (float)(error_y) );	
-
-	
-/*inner PID here*/	
-
-  guidance_h_cmd_earth.x = -fhan_control( (float)error_x, xh2/256.0, 100.0*(float)(guidance_h.gains.p), 0.2*(float)(guidance_h.gains.d) );
-  guidance_h_cmd_earth.y = -fhan_control( (float)error_y, yh2/256.0, 100.0*(float)(guidance_h.gains.p), 0.2*(float)(guidance_h.gains.d) );	
-#endif
-
-/*-------------------new functions run end-----------*/
-
+  guidance_h_pos2loop_run(in_flight);
 
   /* compute a better approximation of force commands by taking thrust into account */
   if (guidance_h.approx_force_by_thrust && in_flight)
@@ -1233,46 +855,18 @@ static void guidance_h_traj_run(bool_t in_flight)
                              thrust_cmd_filt));
   }
   
-  integrator_x_flag = 1;
-  integrator_y_flag = 1;
-  if(abs(guidance_h_cmd_earth.x) >= (total_max_bank))
-  {
-	integrator_x_flag = 0;
-  }
-  if(abs(guidance_h_cmd_earth.y) >= (total_max_bank))
-  {
-	integrator_y_flag = 0;
-  }	
-
-  if(stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG) || stateGetHorizontalSpeedNorm_f()>30.0)
+  if((stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG)) || stateGetHorizontalSpeedNorm_f() > 30.0)
   {    
   	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);
-	integrator_x_flag = 0;
-	integrator_y_flag = 0;
-  }  //angle is 3deg limited
+  }
 
-  if(ins_ublox_is_using())
-	{
-		guidance_h_ublox_run(in_flight);
-		guidance_h_sum_integrator.x = 0;
-		guidance_h_sum_integrator.y = 0;
-	}
-
-  VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);  //angle is 30` limited  
+  VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);
 }
 #endif
-
-
-void guidance_h_hover_pos_need_reset(void)
-{
-	guidance_h.hover_pos_reset = TRUE;
-}
 
 static void guidance_h_hover_enter(void)
 {
   /* set horizontal setpoint to current position */
-	guidance_h_hover_pos_need_reset();
-
   guidance_h.sp.heading = stateGetNedToBodyEulers_i()->psi;
   guidance_h.rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
 
@@ -1296,7 +890,7 @@ static void guidance_h_nav_enter(void)
 void guidance_h_nav_rc_enter(void)
 {
   /* set horizontal setpoint to current position */
-	guidance_h_hover_pos_need_reset();
+	guidance_h_ned_pos_rc_need_reset();
 
   //nav_heading = stateGetNedToBodyEulers_i()->psi;
   horizontal_mode = HORIZONTAL_MODE_RC;    //request to set mode
@@ -1343,14 +937,6 @@ static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool_t in_flig
     speed_sp->x = 0;
     speed_sp->y = 0;
   }
-}
-
-void guidance_h_set_igain(uint32_t igain)
-{
-  guidance_h.gains.i = igain;
-  INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  guidance_h_sum_integrator.x = 0;
-  guidance_h_sum_integrator.y = 0;
 }
 
 bool_t guidance_h_set_guided_pos(float x, float y)

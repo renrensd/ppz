@@ -167,7 +167,7 @@ void gps_flight_check(void)
 {  
     if( GpsFixValid() && gps.flag_rtk)
 	{
-		if( gps.p_stable && ins_int.virtual_p_stable)
+		if( gps.p_stable && ins_int.virtual_rtk_v_valid)
         {   //could be recovered
 			em[GPS_ACC].active =0;
 			em[GPS_ACC].finished =0;
@@ -202,7 +202,7 @@ void gps_flight_check(void)
 		#endif
 	}
    #ifdef USE_GPS_HEADING
-	if(gps.h_stable && ahrs_mlkf.virtual_h_stable)
+	if(gps.h_stable && ahrs_mlkf.virtual_rtk_h_valid)
 	{
 		em[IMU_MAG_EMI].active = 0;
 		em[IMU_MAG_EMI].finished = 0;

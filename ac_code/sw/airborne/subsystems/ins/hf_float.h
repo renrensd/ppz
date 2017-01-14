@@ -59,6 +59,5 @@ extern void b2_hff_update_pos(struct FloatVect2 pos, struct FloatVect2 Rpos);
 extern void b2_hff_update_vel(struct FloatVect2 vel, struct FloatVect2 Rvel);
 extern void b2_hff_realign(struct FloatVect2 pos, struct FloatVect2 vel);
 extern void b2_hff_set_gps_r(float pos_r, float vel_r);
-extern void b2_hff_update_gps_r(float pos_r);
 
 #endif /* HF_FLOAT_H */

@@ -531,21 +531,22 @@ void b2_hff_propagate(float xdd_meas, float ydd_meas)
 
 void b2_hff_set_gps_r(float pos_r, float vel_r)
 {
-	Rgps_pos = pos_r;
-	Rgps_vel= vel_r;
-}
-
-void b2_hff_update_gps_r(float pos_r)
-{
 	if( pos_r < HFF_R_POS )
 	{
 		Rgps_pos = HFF_R_POS;
-		Rgps_vel = HFF_R_SPEED;
 	}
 	else
 	{
 		Rgps_pos = pos_r;
-		Rgps_vel = 5.0f*pos_r;
+	}
+
+	if (vel_r < HFF_R_SPEED)
+	{
+		Rgps_vel = HFF_R_SPEED;
+	}
+	else
+	{
+		Rgps_vel= vel_r;
 	}
 }
 

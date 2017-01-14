@@ -71,7 +71,7 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #if USE_AHRS_ALIGNER
 #include "subsystems/ahrs/ahrs_aligner.h"
 #endif
-#include "subsystems/ins.h"
+#include "subsystems/ins/ins_int.h"
 
 #include "state.h"
 
@@ -161,6 +161,8 @@ tid_t monitor_tid;         ///< id for monitoring_periodic() timer
 #ifdef ENG_OPTION
 tid_t eng_tid;           ///< id for eng_task() timer
 #endif	/* ENG_OPTION */
+tid_t ins_tid;
+tid_t ahrs_tid;
 
 #ifndef SITL
 int main(void)
@@ -305,6 +307,9 @@ STATIC_INLINE void main_init(void)
   eng_tid = sys_time_register_timer(1. / ENG_PERIODIC_FREQUENCY, NULL);
 #endif	/* ENG_OPTION */
 
+  ins_tid = sys_time_register_timer(1. / PERIODIC_FREQUENCY, NULL);
+  ahrs_tid = sys_time_register_timer(1. / PERIODIC_FREQUENCY, NULL);
+
 #ifdef MONITORING_OPTION
   monitor_tid = sys_time_register_timer(1. /MONITORING_FREQUENCY, NULL);
 #endif
@@ -367,6 +372,16 @@ STATIC_INLINE void handle_periodic_tasks(void)
     eng_task();
   }
 #endif	/* ENG_OPTION */
+
+	if (sys_time_check_and_ack_timer(ins_tid))
+	{
+		ins_int_task();
+	}
+
+	if (sys_time_check_and_ack_timer(ahrs_tid))
+	{
+		ahrs_mlkf_task();
+	}
 
 #ifdef MONITORING_OPTION
   if (sys_time_check_and_ack_timer(monitor_tid)) 

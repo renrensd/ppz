@@ -36,6 +36,14 @@
 #include "math/pprz_algebra_float.h"
 #include "filters/low_pass_filter.h"
 
+enum _e_ins_gpss_status
+{
+	RTK_UBLOX_INVALID = 0,
+	UBLOX_VALID,
+	RTK_VALID,
+	RTK_UBLOX_VALID
+};
+
 enum _e_ins_ekf_status
 {
 	INS_EKF_GPS = 0,
@@ -50,7 +58,8 @@ enum _e_ins_gps_type
 };
 
 /** Ins implementation state (fixed point) */
-struct InsInt {
+struct InsInt
+{
   struct LtpDef_i  ltp_def;
   bool_t           ltp_initialized;
 
@@ -79,25 +88,30 @@ struct InsInt {
   bool_t baro_initialized;
   bool_t baro_valid;// not used !!!
   float R_baro;
-  float R_gps;
   float R_baro_offset;
   uint32_t baro_to_gps_count;
   float baro_to_gps_offset_step;
   float baro_to_gps_z_step;
-  int32_t virtual_p_stable;
-
+  bool_t virtual_rtk_v_valid;
+  bool_t virtual_rtk_h_valid;
   //
+  float R_rtk_pos_z_setting;
+  float R_rtk_pos_z;
   float R_ublox_pos;
   float R_ublox_vel;
   bool_t ublox_hf_realign;
   enum _e_ins_gps_type gps_type;
+  enum _e_ins_gpss_status gpss_state;
 
-  // gps telemetry
-  uint8_t gps_qual;
-  uint8_t p_stable;
-  float gps_heading;
-  float mag_heading;
-  float gps_speed_z;
+  //
+  struct NedCoor_i rtk_gps_pos_cm_ned;
+  struct NedCoor_i rtk_gps_speed_cm_ned;
+  struct NedCoor_i rtk_gps_sd_ned;
+  bool_t rtk_gps_update;
+  bool_t ublox_gps_update;
+
+  struct FloatVect2 gps_pos_m_ned;
+  struct FloatVect2 gps_speed_m_ned;
 
 #if 1 //USE_SONAR
   bool_t update_on_agl; ///< use sonar to update agl if available
@@ -107,19 +121,8 @@ struct InsInt {
 #endif
 };
 
-struct _s_move_filter
-{
-	unsigned short win_size;
-	unsigned short data_index;
-	float *data;
-	float sum;
-	float out;
-};
-
 /** global INS state */
 extern struct InsInt ins_int;
-extern float gps_noise_debug;
-
 
 #ifndef DefaultInsImpl
 #define DefaultInsImpl ins_int
@@ -127,5 +130,6 @@ extern float gps_noise_debug;
 
 extern void ins_int_register(void);
 void ins_int_SetType(enum _e_ins_gps_type type);
+void ins_int_task(void);
 
 #endif /* INS_INT_H */

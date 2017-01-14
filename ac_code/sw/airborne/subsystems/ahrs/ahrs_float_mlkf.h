@@ -35,17 +35,7 @@
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_orientation_conversion.h"
 
-//*********cpz-gps-heading
-
 #include "subsystems/gps.h"
-
-//*********cpz-gps-heading
-
-
-enum AhrsMlkfStatus {
-  AHRS_MLKF_UNINIT,
-  AHRS_MLKF_RUNNING
-};
 
 enum _e_ahrs_mlkf_heading_status
 {
@@ -74,10 +64,12 @@ struct AhrsMlkf {
   /** body_to_imu rotation */
   struct OrientationReps body_to_imu;
 
-  enum AhrsMlkfStatus mlkf_state;
   bool_t is_aligned;
-  int32_t virtual_h_stable;
+  bool_t virtual_rtk_h_valid;
+  bool_t rtk_gps_update;
   enum _e_ahrs_mlkf_heading_status heading_state;
+  float mag_heading;
+  float mlkf_heading;
 };
 
 extern struct AhrsMlkf ahrs_mlkf;
@@ -88,20 +80,16 @@ extern void ahrs_mlkf_set_body_to_imu(struct OrientationReps *body_to_imu);
 extern void ahrs_mlkf_set_body_to_imu_quat(struct FloatQuat *q_b2i);
 extern bool_t ahrs_mlkf_align(struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
                               struct Int32Vect3 *lp_mag);
+extern void ahrs_mlkf_update_mag(struct Int32Vect3 *mag);
 extern void ahrs_mlkf_propagate(struct Int32Rates *gyro, float dt);
 extern void ahrs_mlkf_update_accel(struct Int32Vect3 *accel);
-extern void ahrs_mlkf_update_mag(struct Int32Vect3 *mag);
-extern void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag);
-extern void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag);
-extern void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag);
+
 extern void ahrs_float_mlkf_SetMagNoise(float noise);
 extern void ahrs_float_mlkf_SetGpsHeadingNoise(float noise);
 
-//*********cpz-gps-heading
+void ahrs_mlkf_task(void);
 #ifdef USE_GPS_HEADING
 extern void ahrs_mlkf_update_gps(struct GpsState *gps_s);
-
-extern void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s);
 #endif
 
 

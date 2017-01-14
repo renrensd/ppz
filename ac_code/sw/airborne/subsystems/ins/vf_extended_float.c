@@ -67,7 +67,6 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 #define R_OFFSET 1.
 
 struct VffExtended vff;
-float acc_noise_debug = 0.1f;
 
 static uint16_t vff_lost_counter;
 static uint16_t vff_lost_limit;
@@ -165,11 +164,11 @@ void vff_propagate(float accel, float dt)
   const float FPF22 = vff.P[2][2];
   const float FPF33 = vff.P[3][3];
 
-  vff.P[0][0] = FPF00 + acc_noise_debug * dt * dt / 2.;
+  vff.P[0][0] = FPF00 + 0.1f * dt * dt / 2.;
   vff.P[0][1] = FPF01;
   vff.P[0][2] = FPF02;
   vff.P[1][0] = FPF10;
-  vff.P[1][1] = FPF11 + acc_noise_debug * dt;
+  vff.P[1][1] = FPF11 + 0.1f * dt;
   vff.P[1][2] = FPF12;
   vff.P[2][0] = FPF20;
   vff.P[2][1] = FPF21;

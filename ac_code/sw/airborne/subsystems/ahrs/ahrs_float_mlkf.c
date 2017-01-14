@@ -67,6 +67,11 @@ static inline void reset_state(void);
 static inline float leadlag_filter(float in_now, float in_last, float out_last, float dt);
 #endif
 
+static void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag);
+static void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag);
+static void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag);
+static void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s);
+
 struct AhrsMlkf ahrs_mlkf;
 
 #ifdef AHRS_GYRO_BW_FILTER
@@ -121,7 +126,7 @@ void ahrs_mlkf_init(void)
   init_butterworth_2_low_pass(&filter_r, 0.00885, (1. / 512), 0.);
 #endif
 
-  ahrs_mlkf.virtual_h_stable = 1;
+  ahrs_mlkf.virtual_rtk_h_valid = TRUE;
   ahrs_mlkf.heading_state = AMHS_MAG;
 }
 
@@ -184,6 +189,10 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
   struct FloatVect3 g_noise = {1. + dn, 1. + dn, 1. + dn};
   update_state(&earth_g, &imu_g, &g_noise);
   reset_state();
+
+  struct FloatEulers ltp_to_imu_euler;
+  float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
+  ahrs_mlkf.mlkf_heading = LimitAngleTo_0_2pi(ltp_to_imu_euler.psi) * (180.0f/3.1415926f);
 }
 
 /*mag update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)*/
@@ -200,7 +209,7 @@ void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 	}
 }
 
-void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
+static void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
 {
   struct FloatVect3 mag_bm;
   struct FloatVect3 mag_bmv;
@@ -230,9 +239,11 @@ void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
   // update mlkf
   update_state(&mag_ic, &mag_bmv, &ahrs_mlkf.mag_noise);
   reset_state();
+
+  ahrs_mlkf.mag_heading = LimitAngleTo_0_2pi(atan2f(-mag_bm.y, mag_bm.x)) * (180.0f/3.1415926f);
 }
 
-void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag)
+static void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag)
 {
   struct FloatVect3 imu_h;
   MAGS_FLOAT_OF_BFP(imu_h, *mag);
@@ -240,7 +251,7 @@ void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag)
   reset_state();
 }
 
-void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag)
+static void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag)
 {
   struct FloatVect3 imu_h;
   MAGS_FLOAT_OF_BFP(imu_h, *mag);
@@ -493,41 +504,51 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 
 }
 
-#ifdef USE_GPS_HEADING
-void ahrs_mlkf_update_gps(struct GpsState *gps_s)
+void ahrs_mlkf_task(void)
 {
 	static bool_t gps_heading_aligned = FALSE;
 
-	if (gps_s->h_stable && ahrs_mlkf.virtual_h_stable)
+	if (gps.h_stable && ahrs_mlkf.virtual_rtk_h_valid)
 	{
-		if(ahrs_mlkf.heading_state == AMHS_MAG)
+		if(ahrs_mlkf.rtk_gps_update)
 		{
-			ahrs_mlkf.heading_state = AMHS_GPS;
-		}
-		else if(ahrs_mlkf.heading_state == AMHS_GPS)
-		{
-			if(!gps_heading_aligned)
+			ahrs_mlkf.rtk_gps_update = FALSE;
+
+			if (ahrs_mlkf.heading_state == AMHS_MAG)
 			{
-				gps_heading_aligned = TRUE;
-				ahrs_float_get_quat_from_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, gps_s->heading);
+				ahrs_mlkf.heading_state = AMHS_GPS;
 			}
-			ahrs_mlkf_update_gps_heading(gps_s);
-		}
-		else if(ahrs_mlkf.heading_state == AMHS_SWITCHING)
-		{
+			else if (ahrs_mlkf.heading_state == AMHS_GPS)
+			{
+				if (!gps_heading_aligned)
+				{
+					gps_heading_aligned = TRUE;
+					ahrs_float_get_quat_from_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, gps.heading);
+				}
+				ahrs_mlkf_update_gps_heading(&gps);
+			}
+			else if (ahrs_mlkf.heading_state == AMHS_SWITCHING)
+			{
+			}
 		}
 	}
 	else
 	{
-		if(ahrs_mlkf.heading_state != AMHS_MAG)
+		if (ahrs_mlkf.heading_state != AMHS_MAG)
 		{
 			ahrs_mlkf.heading_state = AMHS_MAG;
 		}
 	}
 }
 
+#ifdef USE_GPS_HEADING
+void ahrs_mlkf_update_gps(struct GpsState *gps_s)
+{
+	ahrs_mlkf.rtk_gps_update = TRUE;
+}
+
 #define MAG_OFFSET_ANGLE 2.7
-void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s)
+static void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s)
 {
 //	struct FloatVect3 imu_h;
 //	float gps_psi_rad;

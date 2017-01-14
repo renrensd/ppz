@@ -11,8 +11,8 @@
 #include "ins_ublox.h"
 
 struct _s_ins_ublox ins_ublox;
-abi_event ublox_ev;
-abi_event accel_ev;
+//abi_event ublox_ev;
+//abi_event accel_ev;
 
 #ifdef PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -37,6 +37,7 @@ static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
+/*
 static void ins_ublox_propagate(struct Int32Vect3 *accel, float dt)
 {
   struct Int32Vect3 accel_meas_body;
@@ -64,17 +65,19 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
   last_stamp = stamp;
 }
 
+
 static void ublox_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
                    struct GpsState *gps_s)
 {
 
 }
+*/
 
 void ins_ublox_init(void)
 {
-	AbiBindMsgGPS_UBX(ABI_BROADCAST, &ublox_ev, ublox_cb);
-	AbiBindMsgIMU_ACCEL_INT32(ABI_BROADCAST, &accel_ev, accel_cb);
+	//AbiBindMsgGPS_UBX(ABI_BROADCAST, &ublox_ev, ublox_cb);
+	//AbiBindMsgIMU_ACCEL_INT32(ABI_BROADCAST, &accel_ev, accel_cb);
 
 #ifdef PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_UBLOX, send_ins_ublox);
@@ -190,17 +193,5 @@ void ins_ublox_periodic(void)
 		}
 	}
 	ins_ublox.ublox_update = FALSE;
-}
-
-bool_t ins_ublox_is_using(void)
-{
-	//return ins_ublox.use_ublox;
-	//TEST_CASE : always use pos2loop
-	return TRUE;
-}
-
-void ins_ublox_set_using(bool_t use)
-{
-	ins_ublox.use_ublox = use;
 }
 

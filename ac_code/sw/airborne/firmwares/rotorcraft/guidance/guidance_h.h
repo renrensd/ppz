@@ -109,9 +109,6 @@ struct HorizontalGuidance {
   /* configuration options */
   bool_t use_ref;
   bool_t approx_force_by_thrust;
-  /* gains */
-  struct HorizontalGuidanceGains gains;
-  struct HorizontalGuidanceGains_f gains_f;
 
   struct HorizontalGuidanceSetpoint sp; ///< setpoints
   struct HorizontalGuidanceReference ref; ///< reference calculated from setpoints
@@ -146,19 +143,10 @@ struct HorizontalGuidance {
   Butterworth2LowPass ned_vel_y_filter;
 
   bool_t ned_pos_rc_reset;
-  bool_t hover_pos_reset;
 
   enum _e_h_pid_loop_mode pid_loop_mode_running;
   enum _e_h_pid_loop_mode pid_loop_mode_gcs;
 };
-
-struct position_float 
-{
-	float x;
-	float y;
-}; 
-
-
 
 extern int32_t rc_turn_rate;                        ///< with #INT32_RATE_FRAC
 
@@ -180,7 +168,6 @@ extern void guidance_h_mode_changed(uint8_t new_mode);
 extern void guidance_h_read_rc(bool_t in_flight);
 extern void guidance_h_run(bool_t in_flight);
 
-extern void guidance_h_set_igain(uint32_t igain);
 extern void guidance_h_nav_rc_enter(void); //use when nav_rc_mode enter
 
 extern void guidance_h_SetSpeedCutoff(float fc);
@@ -193,8 +180,7 @@ extern void guidance_h_SetPosKp(float Kp);
 extern void guidance_h_SetPosKi(float Ki);
 extern void guidance_h_SetPosKd(float Kd);
 
-extern void guidance_h_ned_pos_rc_need_reset(void); // ublox rc pos ref reset
-extern void guidance_h_hover_pos_need_reset(void);  // rtk rc pos ref reset
+extern void guidance_h_ned_pos_rc_need_reset(void);
 
 /** Set horizontal position setpoint in GUIDED mode.
  * @param x North position (local NED frame) in meters.
