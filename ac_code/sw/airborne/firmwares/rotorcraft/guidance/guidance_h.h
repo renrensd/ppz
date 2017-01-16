@@ -27,7 +27,6 @@
 #ifndef GUIDANCE_H_H
 #define GUIDANCE_H_H
 
-
 #include "math/pprz_algebra_int.h"
 
 #include "firmwares/rotorcraft/guidance/guidance_h_ref.h"
@@ -35,6 +34,7 @@
 #include "std.h"
 #include "filters/low_pass_filter.h"
 #include "controllers/pid.h"
+#include "math/dim2_algebra.h"
 
 /** Use horizontal guidance reference trajectory.
  * Default is TRUE, define to FALSE to always disable it.
@@ -104,7 +104,35 @@ enum _e_h_pid_loop_mode
 	POS_VEL
 };
 
-struct HorizontalGuidance {
+struct _s_trajectory_tracking
+{
+	// tracking segment start and end point in LTP NED (i coordinate)
+	struct FloatVect2 start;
+	struct FloatVect2 end;
+	// tracking segment along direction and cross direction (orthogonal) in LTP NED
+	struct FloatVect2 seg_along;
+	struct FloatVect2 seg_cross;
+	// coordinate rotation matrix between i-t-b (LEP NED, segment, body)
+	struct _s_matrix22 R_i2t;
+	struct _s_matrix22 R_t2i;
+	struct _s_matrix22 R_i2b;
+	struct _s_matrix22 R_b2i;
+	struct _s_matrix22 R_t2b;
+	struct _s_matrix22 R_b2t;
+
+	// controller decomposition
+	struct _s_pid vel_along_pid;
+	struct _s_pid vel_cross_pid;
+	struct _s_pid pos_along_pid;
+	struct _s_pid pos_cross_pid;
+
+	struct FloatVect2 acc_t;
+	struct FloatVect2 vel_t;
+	struct FloatVect2 pos_t;
+};
+
+struct HorizontalGuidance
+{
   uint8_t mode;
   /* configuration options */
   bool_t use_ref;
@@ -132,6 +160,7 @@ struct HorizontalGuidance {
   struct FloatVect2 ned_pos_rc;
   struct FloatVect2 ned_vel_ref;
   struct FloatVect2 ned_pos_ref;
+  float psi;
 
   float ned_acc_filter_fc;
   float ned_vel_filter_fc;
