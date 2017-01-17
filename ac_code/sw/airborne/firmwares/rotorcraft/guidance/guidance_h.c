@@ -113,6 +113,8 @@ static void Tracking_differntiator_hx(float signal);
 static void Tracking_differntiator_hy(float signal);
 static void Tracking_differntiator_reset(void);
 
+static void guidance_h_trajectory_tracking_loop(void);
+static void guidance_h_trajectory_tracking_ini(void);
 
 #define Sign(_x) ((_x) > 0 ? 1 : (-1))
 
@@ -324,6 +326,7 @@ void guidance_h_init(void)
   rc_turn_rate = 0;
 
   gh_ref_init();
+  guidance_h_trajectory_tracking_ini();
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
   guidance_h_module_init();
@@ -484,14 +487,14 @@ struct _s_trajectory_tracking traj;
 static void traj_point_i2t(struct FloatVect2 *vt, struct FloatVect2 *vi)
 {
 	VECT2_COPY(*vt, *vi);
-	VECT2_DIFF(*vt, *vt, traj.start);
+	VECT2_DIFF(*vt, *vt, traj.segment.start);
 	Rotate_vect2(vt, &traj.R_i2t, vt);
 }
 
 static void traj_point_t2i(struct FloatVect2 *vi, struct FloatVect2 *vt)
 {
 	Rotate_vect2(vi, &traj.R_t2i, vt);
-	VECT2_SUM(*vi, *vi, traj.start);
+	VECT2_SUM(*vi, *vi, traj.segment.start);
 }
 
 static void traj_vect_i2t(struct FloatVect2 *vt, struct FloatVect2 *vi)
@@ -516,8 +519,9 @@ static void traj_vect_t2b(struct FloatVect2 *vb, struct FloatVect2 *vt)
 
 void guidance_h_trajectory_tracking_set_hover(void)
 {
-	VECT2_ASSIGN(traj.start, 0 ,0);
-	VECT2_ASSIGN(traj.end, 0 ,0);
+	VECT2_ASSIGN(traj.segment.start, 0 ,0);
+	VECT2_ASSIGN(traj.segment.end, 0 ,0);
+	traj.segment.length = 0;
 	Matrix22_set_i(&traj.R_t2i);
 	Matrix22_set_i(&traj.R_i2t);
 }
@@ -527,26 +531,26 @@ void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct 
 	struct FloatVect2 segment;
 
 	VECT2_DIFF(segment, end, start);
-	float len = float_vect2_norm(&segment);
-	if(len < 0.01f)
+	traj.segment.length = float_vect2_norm(&segment);
+	if(traj.segment.length < 0.01f)
 	{
 		guidance_h_trajectory_tracking_set_hover();
 		return;
 	}
 	else
 	{
-		VECT2_SDIV(segment, segment, len);
+		VECT2_SDIV(segment, segment, traj.segment.length);
 	}
-	VECT2_COPY(traj.start, start);
-	VECT2_COPY(traj.end, end);
+	VECT2_COPY(traj.segment.start, start);
+	VECT2_COPY(traj.segment.end, end);
 
-	VECT2_COPY(traj.seg_along, segment);
-	traj.seg_cross.x = - segment.y;
-	traj.seg_cross.y = + segment.x;
+	VECT2_COPY(traj.segment.along, segment);
+	traj.segment.cross.x = - segment.y;
+	traj.segment.cross.y = + segment.x;
 
 	//float theta_i2t = atan2f(traj.seg_along.y, traj.seg_along.x);
-	float cos = traj.seg_along.x;
-	float sin = traj.seg_along.y;
+	float cos = traj.segment.along.x;
+	float sin = traj.segment.along.y;
 
 	traj.R_t2i.m11 = +cos; traj.R_t2i.m12 = +sin;
 	traj.R_t2i.m21 = -sin; traj.R_t2i.m22 = +cos;
@@ -554,7 +558,7 @@ void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct 
 	Matrix22_trans(&traj.R_i2t, &traj.R_t2i);
 }
 
-void guidance_h_trajectory_tracking_ini(void)
+static void guidance_h_trajectory_tracking_ini(void)
 {
 	pid_ini(&traj.vel_along_pid, PERIODIC_FREQUENCY);
 	pid_ini(&traj.vel_cross_pid, PERIODIC_FREQUENCY);
@@ -584,9 +588,52 @@ void guidance_h_trajectory_tracking_ini(void)
 	traj.pos_cross_pid.Kp = 0.6f;
 	traj.pos_cross_pid.Ki = 0.0f;
 	traj.pos_cross_pid.Kd = 0.2f;
+
+	//TEST_CASE: test all traj function
+	struct _s_matrix22 A = {3,4,5,6};
+	struct _s_matrix22 B = {2,3,4,5};
+	struct _s_matrix22 C;
+	struct FloatVect2 start = {1, 2};
+	struct FloatVect2 end = {4, 8};
+	struct FloatVect2 v = {2, 1};
+	float theta = 60 * my_math_deg_to_rad;
+	float cos = cosf(theta);
+	float sin = sinf(theta);
+
+	Matrix22_copy(&C, &A);
+	Matrix22_trans(&C, &C);
+	Matrix22_set_i(&C);
+	Matrix22_mult(&C,&A,&B);
+	C.m11 = cos; C.m12 = -sin;
+	C.m21 = +sin; C.m22 = cos;
+	Rotate_vect2(&v, &C, &v);
+
+	guidance_h_trajectory_tracking_set_hover();
+	guidance_h_trajectory_tracking_set_segment(start, end);
+
+	v.x = 0;v.y=0;
+	traj_point_i2t(&v, &v);
+	traj_point_t2i(&v, &v);
+	v.x = 0;v.y=0;
+	traj_point_t2i(&v, &v);
+	traj_point_i2t(&v, &v);
+
+	v.x = 1;v.y=0;
+	traj_vect_i2t(&v, &v);
+	traj_vect_t2i(&v, &v);
+
+	v.x = 1;v.y=0;
+	traj_vect_t2i(&v, &v);
+	traj_vect_i2t(&v, &v);
+
+
+	traj_vect_b2t(&v, &v);
+	traj_vect_t2b(&v, &v);
+
+	guidance_h_trajectory_tracking_loop();
 }
 
-void guidance_h_trajectory_tracking_loop(void)
+static void guidance_h_trajectory_tracking_loop(void)
 {
 	// get all rotation matrix between 3 coordinate
 	guidance_h.psi = stateGetNedToBodyEulers_f()->psi;

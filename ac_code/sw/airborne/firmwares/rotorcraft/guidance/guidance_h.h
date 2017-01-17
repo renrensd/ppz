@@ -104,14 +104,21 @@ enum _e_h_pid_loop_mode
 	POS_VEL
 };
 
-struct _s_trajectory_tracking
+struct _s_segment
 {
 	// tracking segment start and end point in LTP NED (i coordinate)
 	struct FloatVect2 start;
 	struct FloatVect2 end;
-	// tracking segment along direction and cross direction (orthogonal) in LTP NED
-	struct FloatVect2 seg_along;
-	struct FloatVect2 seg_cross;
+	//
+	float length;
+	// tracking segment along direction and cross direction (orthogonal unit vector) in LTP NED
+	struct FloatVect2 along;
+	struct FloatVect2 cross;
+};
+
+struct _s_trajectory_tracking
+{
+	struct _s_segment segment;
 	// coordinate rotation matrix between i-t-b (LEP NED, segment, body)
 	struct _s_matrix22 R_i2t;
 	struct _s_matrix22 R_t2i;
@@ -126,6 +133,7 @@ struct _s_trajectory_tracking
 	struct _s_pid pos_along_pid;
 	struct _s_pid pos_cross_pid;
 
+	// state in segment coordinate
 	struct FloatVect2 acc_t;
 	struct FloatVect2 vel_t;
 	struct FloatVect2 pos_t;
