@@ -463,6 +463,7 @@ void ins_int_task(void)
 				if (ins_int.rtk_hf_realign)
 				{
 					ins_int.rtk_hf_realign = FALSE;
+					ins_int.hf_realign_done = TRUE;
 					b2_hff_realign(ins_int.gps_pos_m_ned, ins_int.gps_speed_m_ned);
 				}
 
@@ -515,7 +516,7 @@ void ins_int_task(void)
 				if (ins_int.ublox_hf_realign)
 				{
 					ins_int.ublox_hf_realign = FALSE;
-					//stateSetLocalOrigin_f(&ins_ublox.ltpDef);
+					ins_int.hf_realign_done = TRUE;
 					b2_hff_realign(ins_int.gps_pos_m_ned, ins_int.gps_speed_m_ned);
 				}
 
@@ -529,6 +530,19 @@ void ins_int_task(void)
 	else	// no GPS
 	{
 
+	}
+}
+
+bool_t ins_int_check_realign(void)
+{
+	if(ins_int.hf_realign_done)
+	{
+		ins_int.hf_realign_done = FALSE;
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
 	}
 }
 
@@ -938,6 +952,8 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 	}
 	last_stamp = stamp;
 
+	ins_int.rtk_gps_update = TRUE;
+
 	if(gps_s->p_stable)
 	{
 		if (!ins_int.ltp_initialized)
@@ -989,8 +1005,6 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 #endif
 
 			ins_int.gps_body_z = (float) ins_int.rtk_gps_pos_cm_ned.z * 0.01f;
-
-			ins_int.rtk_gps_update = TRUE;
 		}
 	}
 }
@@ -1025,7 +1039,6 @@ static void ins_int_gps_switch(enum _e_ins_gps_type type)
 	{
 		ins_int.ublox_hf_realign = TRUE;
 	}
-	guidance_h_ned_pos_rc_need_reset();
 }
 
 static void vel_est_cb(uint8_t sender_id __attribute__((unused)),

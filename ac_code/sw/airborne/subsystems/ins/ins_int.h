@@ -100,6 +100,7 @@ struct InsInt
   float R_ublox_pos;
   float R_ublox_vel;
   bool_t ublox_hf_realign;
+  bool_t hf_realign_done;
   enum _e_ins_gps_type gps_type;
   enum _e_ins_gpss_status gpss_state;
 
@@ -129,6 +130,7 @@ extern struct InsInt ins_int;
 #endif
 
 extern void ins_int_register(void);
+bool_t ins_int_check_realign(void);
 void ins_int_SetType(enum _e_ins_gps_type type);
 void ins_int_task(void);
 
