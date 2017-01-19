@@ -81,6 +81,8 @@ PRINT_CONFIG_VAR(GUIDANCE_V_ADAPT_THROTTLE_ENABLED)
 #define GUIDANCE_V_MAX_RC_DESCENT_SPEED GUIDANCE_V_REF_MAX_ZD
 #endif
 
+#define GUIDANCE_V_MAX_THROTTLE_CMD	(0.8f)
+
 uint8_t guidance_v_mode;
 int32_t guidance_v_ff_cmd;
 int32_t guidance_v_fb_cmd;
@@ -342,7 +344,7 @@ void guidance_v_mode_changed(uint8_t new_mode)
 	case GUIDANCE_V_MODE_HOVER:
 	case GUIDANCE_V_MODE_GUIDED:
 		guid_v.rc_pos_z = guid_v.NED_z_pos;
-		guid_v.acc_z_pid.Ui = (float)guidance_v_rc_delta_t * (1.0f/(float)MAX_PPRZ) * (1.0f/0.8f);
+		guid_v.acc_z_pid.Ui = (float)guidance_v_rc_delta_t * (1.0f/(float)MAX_PPRZ) * (1.0f/GUIDANCE_V_MAX_THROTTLE_CMD);
 		guidance_v_z_sp = stateGetPositionNed_i()->z; // set current altitude as setpoint
 		GuidanceVSetRef(guidance_v_z_sp, 0, 0);
 		break;
@@ -573,8 +575,7 @@ static void state_update_loop(void)
 	}
 
 	guid_v.thrust_coef = FLOAT_OF_BFP(get_vertical_thrust_coeff(), INT32_TRIG_FRAC);
-	guid_v.thrust_coef = 1.0f / guid_v.thrust_coef;
-	Bound(guid_v.thrust_coef, 0, 1.2f);
+	Bound(guid_v.thrust_coef, 0.8f, 1.0f);
 }
 
 static void run_hover_loop(bool_t in_flight)
@@ -585,6 +586,8 @@ static void run_hover_loop(bool_t in_flight)
 	guidance_v_zd_ref = gv_zd_ref << (INT32_SPEED_FRAC - GV_ZD_REF_FRAC);
 	guidance_v_zdd_ref = gv_zdd_ref << (INT32_ACCEL_FRAC - GV_ZDD_REF_FRAC);
 	/* compute the error to our reference */
+
+	float normalized_cmd = 0;
 
 	if (autopilot_motors_on)
 	{
@@ -614,8 +617,7 @@ static void run_hover_loop(bool_t in_flight)
 			}
 			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
 
-			guidance_v_delta_t = guid_v.acc_z_pid.out * guid_v.thrust_coef * (0.8f * (float) MAX_PPRZ);
-			Bound(guidance_v_delta_t, 0, MAX_PPRZ);
+			normalized_cmd = guid_v.acc_z_pid.out;
 		}
 		else if (guidance_v_mode == GUIDANCE_V_MODE_NAV)
 		{
@@ -638,19 +640,21 @@ static void run_hover_loop(bool_t in_flight)
 			guid_v.ref_acc_z = guid_v.speed_z_pid.out;
 			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.NED_z_acc, 0, 0);
 
-			guidance_v_delta_t = guid_v.acc_z_pid.out * guid_v.thrust_coef * (0.8f * (float) MAX_PPRZ);
-			Bound(guidance_v_delta_t, 0, MAX_PPRZ);
+			normalized_cmd = guid_v.acc_z_pid.out;
 		}
 		else
 		{
-			guidance_v_delta_t = 0;
+			normalized_cmd = 0;
 		}
 	}
 	else
 	{
 		pid_reset(&guid_v.acc_z_pid);
-		guidance_v_delta_t = 0;
+		normalized_cmd = 0;
 	}
+
+	guidance_v_delta_t = (normalized_cmd / guid_v.thrust_coef) * (GUIDANCE_V_MAX_THROTTLE_CMD * (float) MAX_PPRZ);
+	Bound(guidance_v_delta_t, 0, (GUIDANCE_V_MAX_THROTTLE_CMD * (float) MAX_PPRZ));
 }
 
 bool_t guidance_v_set_guided_z(float z)
