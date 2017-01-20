@@ -149,19 +149,19 @@
 <define name="MAG_Y_SENS" value="0.357547482736" integer="16"/>
 <define name="MAG_Z_SENS" value="0.36603607012" integer="16"/-->
 	<!--no6 imu-->
-<!--define name="ACCEL_X_NEUTRAL" value="-5"/>
-<define name="ACCEL_Y_NEUTRAL" value="4"/>
-<define name="ACCEL_Z_NEUTRAL" value="-84"/>
-<define name="ACCEL_X_SENS" value="4.906804" integer="16"/>
-<define name="ACCEL_Y_SENS" value="4.907840" integer="16"/>
-<define name="ACCEL_Z_SENS" value="4.873094" integer="16"/>
+<define name="ACCEL_X_NEUTRAL" value="6"/>
+<define name="ACCEL_Y_NEUTRAL" value="2"/>
+<define name="ACCEL_Z_NEUTRAL" value="-68"/>
+<define name="ACCEL_X_SENS" value="4.907102" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.908358" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.876638" integer="16"/>
 
-<define name="MAG_X_NEUTRAL" value="2320"/>
-<define name="MAG_Y_NEUTRAL" value="1756"/>
-<define name="MAG_Z_NEUTRAL" value="-1884"/>
-<define name="MAG_X_SENS" value="0.34469166806" integer="16"/>
-<define name="MAG_Y_SENS" value="0.354649004464" integer="16"/>
-<define name="MAG_Z_SENS" value="0.360991869661" integer="16"/-->
+<define name="MAG_X_NEUTRAL" value="5110"/>
+<define name="MAG_Y_NEUTRAL" value="1240"/>
+<define name="MAG_Z_NEUTRAL" value="1935"/>
+<define name="MAG_X_SENS" value="0.329540164046" integer="16"/>
+<define name="MAG_Y_SENS" value="0.338999184082" integer="16"/>
+<define name="MAG_Z_SENS" value="0.350571050336" integer="16"/>
 
 	<!--no5 imu-->
 <!--define name="ACCEL_X_NEUTRAL" value="2"/>
@@ -239,7 +239,7 @@
 <define name="MAG_Z_SENS" value="0.328622737985" integer="16"/-->
 
 	<!--no3 onboard imu-->
-<define name="ACCEL_X_NEUTRAL" value="19"/>
+<!--define name="ACCEL_X_NEUTRAL" value="19"/>
 <define name="ACCEL_Y_NEUTRAL" value="16"/>
 <define name="ACCEL_Z_NEUTRAL" value="53"/>
 <define name="ACCEL_X_SENS" value="4.910085" integer="16"/>
@@ -251,7 +251,7 @@
 <define name="MAG_Z_NEUTRAL" value="108"/>
 <define name="MAG_X_SENS" value="0.335916852277" integer="16"/>
 <define name="MAG_Y_SENS" value="0.345843682885" integer="16"/>
-<define name="MAG_Z_SENS" value="0.356842356488" integer="16"/>
+<define name="MAG_Z_SENS" value="0.356842356488" integer="16"/-->
 
     			<!-- adiv1  -->
     <!--define name="GYRO_P_NEUTRAL" value="0"/>
@@ -456,7 +456,6 @@
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/>
-    <!--define name="MODE_AUTO1" value="AP_MODE_HOVER_DIRECT"/-->
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
   </section>
 
