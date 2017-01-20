@@ -113,9 +113,9 @@ static void Tracking_differntiator_hx(float signal);
 static void Tracking_differntiator_hy(float signal);
 static void Tracking_differntiator_reset(void);
 
-static void guidance_h_trajectory_tracking_update(void);
 static void guidance_h_trajectory_tracking_loop(bool_t in_flight);
 static void guidance_h_trajectory_tracking_ini(void);
+static void traj_pid_loop_reset(void);
 
 #define Sign(_x) ((_x) > 0 ? 1 : (-1))
 
@@ -250,6 +250,10 @@ static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
 																			&traj.vel_t.y,
 																			&traj.pos_t.x,
 																			&traj.pos_t.y,
+																			&traj.pos_along_pid.ref,
+																			&traj.pos_cross_pid.ref,
+																			&traj.vel_along_pid.ref,
+																			&traj.vel_cross_pid.ref,
 																			&traj.cmd_t.x,
 																			&traj.cmd_t.y,
 																			&traj.cmd_t_comp.x,
@@ -469,8 +473,7 @@ static void guidance_h_state_update(bool_t in_flight)
 	if (reset)
 	{
 		guidance_h.ned_pos_rc = guidance_h.ned_pos;
-		pid_reset(&guidance_h.vel_x_pid);
-		pid_reset(&guidance_h.vel_y_pid);
+		traj_pid_loop_reset();
 	}
 }
 
@@ -560,9 +563,9 @@ static bool_t traj_test_distance(void)
 {
 	bool_t ret = FALSE;
 
-	if (point2_distance(&guidance_h.ned_pos, &traj.segment.end) < 0.1f)
+	if (point2_distance(&guidance_h.ned_pos, &traj.segment.end) < 0.2f)
 	{
-		if (float_vect2_norm(&guidance_h.ned_vel) < 0.1f)
+		if (float_vect2_norm(&guidance_h.ned_vel) < 0.2f)
 		{
 			ret = TRUE;
 		}
@@ -621,30 +624,48 @@ static void traj_test_loop(void)
 	}
 }
 
+void guidance_h_SetTrajRefSpeed(float speed)
+{
+	guidance_h_trajectory_tracking_set_ref_speed(speed);
+}
+
 void guidance_h_SetTrajTest(uint8_t mode)
 {
 	traj.test_mode = mode;
 	if(mode == 1)
 	{
 		traj.test_line_start.x = guidance_h.ned_pos.x;
-		traj.test_line_start.y = guidance_h.ned_pos.y - 5.0f;
+		traj.test_line_start.y = guidance_h.ned_pos.y - traj.test_length;
 
 		traj.test_line_end.x = guidance_h.ned_pos.x;
-		traj.test_line_end.y = guidance_h.ned_pos.y + 5.0f;
+		traj.test_line_end.y = guidance_h.ned_pos.y + traj.test_length;
 
 		guidance_h_trajectory_tracking_set_segment(traj.test_line_start, traj.test_line_end);
 	}
 	else if(mode == 2)
 	{
-		traj.test_square_c1.x = traj.test_square_c2.x = guidance_h.ned_pos.x + 5.0f;
-		traj.test_square_c3.x = traj.test_square_c4.x = guidance_h.ned_pos.x - 5.0f;
+		traj.test_square_c1.x = traj.test_square_c2.x = guidance_h.ned_pos.x + traj.test_length;
+		traj.test_square_c3.x = traj.test_square_c4.x = guidance_h.ned_pos.x - traj.test_length;
 
-		traj.test_square_c2.y = traj.test_square_c3.y = guidance_h.ned_pos.y + 5.0f;
-		traj.test_square_c1.y = traj.test_square_c4.y = guidance_h.ned_pos.y - 5.0f;
+		traj.test_square_c2.y = traj.test_square_c3.y = guidance_h.ned_pos.y + traj.test_length;
+		traj.test_square_c1.y = traj.test_square_c4.y = guidance_h.ned_pos.y - traj.test_length;
 
 		guidance_h_trajectory_tracking_set_segment(traj.test_square_c1, traj.test_square_c2);
 		traj.test_square_index = 0;
 	}
+	else
+	{
+		guidance_h_trajectory_tracking_set_hover();
+		guidance_h_ned_pos_rc_need_reset();
+	}
+}
+
+void guidance_h_trajectory_tracking_set_ref_speed(float speed)
+{
+	traj.ref_speed = speed;
+	Bound(traj.ref_speed, 0.5f, 10.0f);
+	traj.brake_length = traj.ref_speed * (1 + traj.pos_along_pid.Kd)/traj.pos_along_pid.Kp;
+	Bound(traj.brake_length, 1.0f, 50.0f);
 }
 
 void guidance_h_trajectory_tracking_set_hover(void)
@@ -702,9 +723,6 @@ static void guidance_h_trajectory_tracking_ini(void)
 	Matrix22_set_i(&traj.segment.R_t2i);
 	Matrix22_set_i(&traj.segment.R_i2t);
 
-	traj.ref_speed = 1.0f;
-	traj.brake_length = 3.0f;
-
 	pid_ini(&traj.vel_along_pid, PERIODIC_FREQUENCY);
 	pid_ini(&traj.vel_cross_pid, PERIODIC_FREQUENCY);
 	pid_ini(&traj.pos_along_pid, PERIODIC_FREQUENCY);
@@ -719,11 +737,11 @@ static void guidance_h_trajectory_tracking_ini(void)
 	pid_set_Ui_range(&traj.pos_cross_pid, -0.5, +0.5);
 
 	traj.vel_along_pid.Kp = 0.2f;
-	traj.vel_along_pid.Ki = 0.03f;
+	traj.vel_along_pid.Ki = 0.06f;
 	traj.vel_along_pid.Kd = 0.05f;
 
 	traj.vel_cross_pid.Kp = 0.2f;
-	traj.vel_cross_pid.Ki = 0.03f;
+	traj.vel_cross_pid.Ki = 0.06f;
 	traj.vel_cross_pid.Kd = 0.05f;
 
 	traj.pos_along_pid.Kp = 0.6f;
@@ -735,6 +753,9 @@ static void guidance_h_trajectory_tracking_ini(void)
 	traj.pos_cross_pid.Kd = 0.2f;
 
 	init_first_order_low_pass(&traj.thrust_cmd_filter, low_pass_filter_get_tau(1.0f), PERIODIC_FREQUENCY, 0);
+
+	guidance_h_trajectory_tracking_set_ref_speed(3.0f);
+	traj.test_length = 10.0f;
 
 	//TEST_CASE: test all traj function
 //	struct _s_matrix22 A = {3,4,5,6};
@@ -788,15 +809,6 @@ static void guidance_h_trajectory_tracking_ini(void)
 
 }
 
-static void guidance_h_trajectory_tracking_update(void)
-{
-//	switch (guidance_h.mode)
-//		{
-//	case GUIDANCE_H_MODE_HOVER
-//	GUIDANCE_H_MODE_NAV
-//		}
-}
-
 static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 {
 	traj_update_R(stateGetNedToBodyEulers_f()->psi);
@@ -818,13 +830,19 @@ static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 		}
 		else
 		{
-			if ((traj.segment.length - traj.pos_t.x) < traj.brake_length)
+			if(traj.state == TRAJ_STATUS_POS_TRACKING)
 			{
-				traj.state = TRAJ_STATUS_POS_TRACKING;
+				if ((traj.segment.length - traj.pos_t.x) > (traj.brake_length + 0.1f))
+				{
+					traj.state = TRAJ_STATUS_SPEED_TRACKING;
+				}
 			}
 			else
 			{
-				traj.state = TRAJ_STATUS_SPEED_TRACKING;
+				if ((traj.segment.length - traj.pos_t.x) < (traj.brake_length - 0.1f))
+				{
+					traj.state = TRAJ_STATUS_POS_TRACKING;
+				}
 			}
 		}
 	}
@@ -895,8 +913,7 @@ static inline void reset_guidance_reference_from_current_position(void)
   gh_set_ref(guidance_h.ref.pos, guidance_h.ref.speed, guidance_h.ref.accel);
 
   INT_VECT2_ZERO(guidance_h_trim_att_integrator);
-  pid_reset(&guidance_h.vel_x_pid);
-  pid_reset(&guidance_h.vel_y_pid);
+  traj_pid_loop_reset();
 }
 
 void guidance_h_mode_changed(uint8_t new_mode)
@@ -1038,7 +1055,6 @@ void guidance_h_read_rc(bool_t in_flight)
 void guidance_h_run(bool_t  in_flight)
 {
 	guidance_h_state_update(in_flight);
-	guidance_h_trajectory_tracking_update();
 
 	switch (guidance_h.mode)
 	{

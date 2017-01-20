@@ -198,6 +198,8 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
 /*mag update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)*/
 void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 {
+	ahrs_mlkf.mag_heading = LimitAngleTo_0_2pi(atan2f(-mag->y, mag->x)) * (180.0f/3.1415926f);
+
 	if(ahrs_mlkf.heading_state == AMHS_MAG)
 	{
 #if AHRS_MAG_UPDATE_ALL_AXES
@@ -239,8 +241,6 @@ static void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
   // update mlkf
   update_state(&mag_ic, &mag_bmv, &ahrs_mlkf.mag_noise);
   reset_state();
-
-  ahrs_mlkf.mag_heading = LimitAngleTo_0_2pi(atan2f(-mag_bm.y, mag_bm.x)) * (180.0f/3.1415926f);
 }
 
 static void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag)

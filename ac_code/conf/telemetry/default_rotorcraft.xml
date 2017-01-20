@@ -17,6 +17,7 @@
       <message name="GPS_INT"                period="1.0"/>
       <message name="INS"                    period="1.0"/>
       <message name="RC"                     period="0.1"/>
+      <message name="DEBUG_GPS"  	     period="0.2"/>
       <!--message name="I2C_ERRORS"          period="2.0"/>
       <message name="UART_ERRORS"            period="3.1"/>
       <message name="SUPERBITRF"             period="3"/>
@@ -35,6 +36,14 @@
       <!--message name="INS_Z"               period="1.0"/>
       <message name="GUIDANCE_H_REF_INT"     period="0.5"/-->
       <message name="MCU_FAULT"              period="5.0"/>
+    </mode>
+
+    <mode name="traj_test">
+      <message name="DL_VALUE"               period="0.5"/>
+      <message name="ALIVE"                  period="2.1"/>
+      <message name="DEBUG_GPS"  	     period="0.2"/>
+      <message name="ROTORCRAFT_TUNE_HOVER"  period="0.05"/>
+      <message name="ROTORCRAFT_NAV_STATUS"  period="2.0"/>
     </mode>
 
     <mode name="gps2">

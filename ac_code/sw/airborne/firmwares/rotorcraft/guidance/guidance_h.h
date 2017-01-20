@@ -142,6 +142,7 @@ struct _s_trajectory_tracking
 	struct FloatVect2 test_square_c3;
 	struct FloatVect2 test_square_c4;
 	uint8_t test_square_index;
+	float test_length;
 
 	enum _e_traj_mode mode;
 	enum _e_traj_status state;
@@ -243,8 +244,11 @@ extern void guidance_h_run(bool_t in_flight);
 
 extern void guidance_h_nav_rc_enter(void); //use when nav_rc_mode enter
 
+extern void guidance_h_trajectory_tracking_set_hover(void);
 extern void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct FloatVect2 end);
+extern void guidance_h_trajectory_tracking_set_ref_speed(float speed);
 extern void guidance_h_SetTrajTest(uint8_t mode);
+extern void guidance_h_SetTrajRefSpeed(float speed);
 
 extern void guidance_h_SetNedAccFc(float Fc);
 extern void guidance_h_SetNedVelFc(float Fc);
@@ -256,8 +260,6 @@ extern void guidance_h_SetPosKi(float Ki);
 extern void guidance_h_SetPosKd(float Kd);
 
 extern void guidance_h_ned_pos_rc_need_reset(void);
-
-
 
 /** Set horizontal position setpoint in GUIDED mode.
  * @param x North position (local NED frame) in meters.
