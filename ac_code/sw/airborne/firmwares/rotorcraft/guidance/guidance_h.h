@@ -104,6 +104,18 @@ enum _e_h_pid_loop_mode
 	POS_VEL
 };
 
+enum _e_traj_mode
+{
+	TRAJ_MODE_HOVER = 0,
+	TRAJ_MODE_SEGMENT
+};
+
+enum _e_traj_status
+{
+	TRAJ_STATUS_POS_TRACKING = 0,
+	TRAJ_STATUS_SPEED_TRACKING
+};
+
 struct _s_segment
 {
 	// tracking segment start and end point in LTP NED (i coordinate)
@@ -114,14 +126,34 @@ struct _s_segment
 	// tracking segment along direction and cross direction (orthogonal unit vector) in LTP NED
 	struct FloatVect2 along;
 	struct FloatVect2 cross;
+	// coordinate rotation matrix between i-t (LEP NED, segment)
+	struct _s_matrix22 R_i2t;
+	struct _s_matrix22 R_t2i;
 };
 
 struct _s_trajectory_tracking
 {
+	// test
+	uint8_t test_mode;
+	struct FloatVect2 test_line_start;
+	struct FloatVect2 test_line_end;
+	struct FloatVect2 test_square_c1;
+	struct FloatVect2 test_square_c2;
+	struct FloatVect2 test_square_c3;
+	struct FloatVect2 test_square_c4;
+	uint8_t test_square_index;
+
+	enum _e_traj_mode mode;
+	enum _e_traj_status state;
+	float brake_length;
+	float ref_speed;
+
+	struct FloatVect2 hover_point;
+
 	struct _s_segment segment;
+	struct _s_segment segment_last;
+
 	// coordinate rotation matrix between i-t-b (LEP NED, segment, body)
-	struct _s_matrix22 R_i2t;
-	struct _s_matrix22 R_t2i;
 	struct _s_matrix22 R_i2b;
 	struct _s_matrix22 R_b2i;
 	struct _s_matrix22 R_t2b;
@@ -137,6 +169,15 @@ struct _s_trajectory_tracking
 	struct FloatVect2 acc_t;
 	struct FloatVect2 vel_t;
 	struct FloatVect2 pos_t;
+
+	//
+	float psi;
+
+	//
+	struct FirstOrderLowPass thrust_cmd_filter;
+	struct FloatVect2 cmd_t;
+	struct FloatVect2 cmd_t_comp;
+	struct FloatVect2 cmd_b;
 };
 
 struct HorizontalGuidance
@@ -151,10 +192,6 @@ struct HorizontalGuidance
 
   struct Int32Eulers rc_sp;    ///< with #INT32_ANGLE_FRAC
 
-  float NED_xy_speed_filter_fc;
-  Butterworth2LowPass_int NED_x_speed_filter;
-  Butterworth2LowPass_int NED_y_speed_filter;
-
   // ublox pos pid loop
   struct _s_pid vel_x_pid;
   struct _s_pid vel_y_pid;
@@ -168,7 +205,6 @@ struct HorizontalGuidance
   struct FloatVect2 ned_pos_rc;
   struct FloatVect2 ned_vel_ref;
   struct FloatVect2 ned_pos_ref;
-  float psi;
 
   float ned_acc_filter_fc;
   float ned_vel_filter_fc;
@@ -192,7 +228,7 @@ extern float hh0;
 extern float r_h;
 
 extern struct HorizontalGuidance guidance_h;
-
+extern struct _s_trajectory_tracking traj;
 //#if GUIDANCE_H_USE_SPEED_REF
 //extern struct Int32Vect2 guidance_h.sp.speed;
 //#endif
@@ -207,7 +243,9 @@ extern void guidance_h_run(bool_t in_flight);
 
 extern void guidance_h_nav_rc_enter(void); //use when nav_rc_mode enter
 
-extern void guidance_h_SetSpeedCutoff(float fc);
+extern void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct FloatVect2 end);
+extern void guidance_h_SetTrajTest(uint8_t mode);
+
 extern void guidance_h_SetNedAccFc(float Fc);
 extern void guidance_h_SetNedVelFc(float Fc);
 extern void guidance_h_SetVelKp(float Kp);
@@ -218,6 +256,8 @@ extern void guidance_h_SetPosKi(float Ki);
 extern void guidance_h_SetPosKd(float Kd);
 
 extern void guidance_h_ned_pos_rc_need_reset(void);
+
+
 
 /** Set horizontal position setpoint in GUIDED mode.
  * @param x North position (local NED frame) in meters.

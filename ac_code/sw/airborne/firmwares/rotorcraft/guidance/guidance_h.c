@@ -99,7 +99,7 @@ int32_t rc_turn_rate;    //using in HORIZONTAL_MODE_RC,cmd of psi rate
 
 static void guidance_h_update_reference(void);
 #if !GUIDANCE_INDI
-static void guidance_h_traj_run(bool_t in_flight);
+static void guidance_h_traj_run_old(bool_t in_flight);
 #endif
 static void guidance_h_hover_enter(void);
 static void guidance_h_nav_enter(void);
@@ -113,7 +113,8 @@ static void Tracking_differntiator_hx(float signal);
 static void Tracking_differntiator_hy(float signal);
 static void Tracking_differntiator_reset(void);
 
-static void guidance_h_trajectory_tracking_loop(void);
+static void guidance_h_trajectory_tracking_update(void);
+static void guidance_h_trajectory_tracking_loop(bool_t in_flight);
 static void guidance_h_trajectory_tracking_ini(void);
 
 #define Sign(_x) ((_x) > 0 ? 1 : (-1))
@@ -235,20 +236,24 @@ static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
 { 
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_TUNE_HOVER(trans, dev, AC_ID,
-                                      &guidance_h.ned_acc.x,
-																			&guidance_h.ned_acc.y,
-																			&guidance_h.ned_acc_filter.x,
-																			&guidance_h.ned_acc_filter.y,
-																			&guidance_h.ned_vel.x,
-																			&guidance_h.ned_vel.y,
-																			&guidance_h.ned_vel_filter.x,
-																			&guidance_h.ned_vel_filter.y,
-																			&guidance_h.ned_pos.x,
-																			&guidance_h.ned_pos.y,
-																			&guidance_h.ned_vel_ref.x,
-																			&guidance_h.ned_vel_ref.y,
-																			&guidance_h.ned_pos_ref.x,
-																			&guidance_h.ned_pos_ref.y
+                                      &traj.mode,
+																			&traj.state,
+																			&traj.hover_point.x,
+																			&traj.hover_point.y,
+																			&traj.segment.start.x,
+																			&traj.segment.start.y,
+																			&traj.segment.end.x,
+																			&traj.segment.end.y,
+																			&traj.acc_t.x,
+																			&traj.acc_t.y,
+																			&traj.vel_t.x,
+																			&traj.vel_t.y,
+																			&traj.pos_t.x,
+																			&traj.pos_t.y,
+																			&traj.cmd_t.x,
+																			&traj.cmd_t.y,
+																			&traj.cmd_t_comp.x,
+																			&traj.cmd_t_comp.y
                                       );
 }
 
@@ -269,12 +274,6 @@ void guidance_h_init(void)
   hh0 = GUIDANCE_H_TD_H0;
   hh = GUIDANCE_H_TD_H;
   r_h = GUIDANCE_H_TD_R;
-  
-  guidance_h.NED_xy_speed_filter_fc = 10;
-  init_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, guidance_h.NED_xy_speed_filter_fc,
-  																1.0f/512.0f, 0);
-  init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, guidance_h.NED_xy_speed_filter_fc,
-    															1.0f/512.0f, 0);
 
   pid_ini(&guidance_h.vel_x_pid, PERIODIC_FREQUENCY);
   pid_ini(&guidance_h.vel_y_pid, PERIODIC_FREQUENCY);
@@ -400,16 +399,7 @@ void guidance_h_SetPosKd(float Kd)
 	guidance_h.pos_y_pid.Kd = Kd;
 }
 
-void guidance_h_SetSpeedCutoff(float fc)
-{
-	guidance_h.NED_xy_speed_filter_fc = fc;
-	init_butterworth_2_low_pass_int(&guidance_h.NED_x_speed_filter, fc,
-	  																1.0f/512.0f, guidance_h.NED_x_speed_filter.i[0]);
-	init_butterworth_2_low_pass_int(&guidance_h.NED_y_speed_filter, fc,
-																		1.0f/512.0f, guidance_h.NED_y_speed_filter.i[0]);
-}
-
-static void guidance_h_ublox_state_update(bool_t in_flight)
+static void guidance_h_state_update(bool_t in_flight)
 {
 	static bool_t in_flight_last = FALSE;
 
@@ -445,9 +435,11 @@ static void guidance_h_ublox_state_update(bool_t in_flight)
 	}
 	in_flight_last = in_flight;
 
+	bool_t realign_done = FALSE;
+	bool_t reset = FALSE;
+
 	if(guidance_h.ned_pos_rc_reset)
 	{
-		bool_t realign_done = FALSE;
 		if(ins_int.gps_type == GPS_RTK)
 		{
 			if(!ins_int.rtk_hf_realign)
@@ -466,10 +458,19 @@ static void guidance_h_ublox_state_update(bool_t in_flight)
 		if(realign_done)
 		{
 			guidance_h.ned_pos_rc_reset = FALSE;
-			guidance_h.ned_pos_rc = guidance_h.ned_pos;
-			pid_reset(&guidance_h.vel_x_pid);
-			pid_reset(&guidance_h.vel_y_pid);
+			reset = TRUE;
 		}
+	}
+	else if(ins_int_check_realign())
+	{
+		reset = TRUE;
+	}
+
+	if (reset)
+	{
+		guidance_h.ned_pos_rc = guidance_h.ned_pos;
+		pid_reset(&guidance_h.vel_x_pid);
+		pid_reset(&guidance_h.vel_y_pid);
 	}
 }
 
@@ -484,27 +485,44 @@ void guidance_h_ned_pos_rc_need_reset(void)
 
 struct _s_trajectory_tracking traj;
 
+static void traj_update_R(float psi)
+{
+	// get all rotation matrix between 3 coordinate
+	traj.psi = psi;
+
+	float cos = cosf(psi);
+	float sin = sinf(psi);
+
+	traj.R_b2i.m11 = +cos; traj.R_b2i.m12 = -sin;
+	traj.R_b2i.m21 = +sin; traj.R_b2i.m22 = +cos;
+
+	Matrix22_trans(&traj.R_i2b, &traj.R_b2i);
+
+	Matrix22_mult(&traj.R_t2b, &traj.R_i2b, &traj.segment.R_t2i);
+	Matrix22_trans(&traj.R_b2t, &traj.R_t2b);
+}
+
 static void traj_point_i2t(struct FloatVect2 *vt, struct FloatVect2 *vi)
 {
 	VECT2_COPY(*vt, *vi);
 	VECT2_DIFF(*vt, *vt, traj.segment.start);
-	Rotate_vect2(vt, &traj.R_i2t, vt);
+	Rotate_vect2(vt, &traj.segment.R_i2t, vt);
 }
 
 static void traj_point_t2i(struct FloatVect2 *vi, struct FloatVect2 *vt)
 {
-	Rotate_vect2(vi, &traj.R_t2i, vt);
+	Rotate_vect2(vi, &traj.segment.R_t2i, vt);
 	VECT2_SUM(*vi, *vi, traj.segment.start);
 }
 
 static void traj_vect_i2t(struct FloatVect2 *vt, struct FloatVect2 *vi)
 {
-	Rotate_vect2(vt, &traj.R_i2t, vi);
+	Rotate_vect2(vt, &traj.segment.R_i2t, vi);
 }
 
 static void traj_vect_t2i(struct FloatVect2 *vi, struct FloatVect2 *vt)
 {
-	Rotate_vect2(vi, &traj.R_t2i, vt);
+	Rotate_vect2(vi, &traj.segment.R_t2i, vt);
 }
 
 static void traj_vect_b2t(struct FloatVect2 *vt, struct FloatVect2 *vb)
@@ -517,49 +535,176 @@ static void traj_vect_t2b(struct FloatVect2 *vb, struct FloatVect2 *vt)
 	Rotate_vect2(vb, &traj.R_t2b, vt);
 }
 
+static void traj_pid_loop_reset(void)
+{
+	pid_reset(&traj.vel_along_pid);
+	pid_reset(&traj.vel_cross_pid);
+}
+
+static void traj_pid_loop_i_term_transform(void)
+{
+	struct FloatVect2 icmd;
+	icmd.x = traj.vel_along_pid.Ui;
+	icmd.y = traj.vel_cross_pid.Ui;
+
+	struct _s_matrix22 R;
+	Matrix22_mult(&R, &traj.segment.R_i2t, &traj.segment_last.R_t2i);
+	Rotate_vect2(&icmd, &R, &icmd);
+
+	traj.vel_along_pid.Ui = icmd.x;
+	traj.vel_cross_pid.Ui = icmd.y;
+}
+
+
+static bool_t traj_test_distance(void)
+{
+	bool_t ret = FALSE;
+
+	if (point2_distance(&guidance_h.ned_pos, &traj.segment.end) < 0.1f)
+	{
+		if (float_vect2_norm(&guidance_h.ned_vel) < 0.1f)
+		{
+			ret = TRUE;
+		}
+	}
+
+	return ret;
+}
+
+static void traj_test_loop(void)
+{
+	if (traj.test_mode == 1)	//line
+	{
+		if (traj_test_distance())
+		{
+			guidance_h_trajectory_tracking_set_segment(traj.segment.end, traj.segment.start);
+		}
+	}
+	else if (traj.test_mode == 2)	//square
+	{
+		if(traj.test_square_index == 0)
+		{
+			if (traj_test_distance())
+			{
+				guidance_h_trajectory_tracking_set_segment(traj.test_square_c2, traj.test_square_c3);
+				traj.test_square_index = 1;
+			}
+		}
+		else if (traj.test_square_index == 1)
+		{
+			if (traj_test_distance())
+			{
+				guidance_h_trajectory_tracking_set_segment(traj.test_square_c3, traj.test_square_c4);
+				traj.test_square_index = 2;
+			}
+		}
+		else if (traj.test_square_index == 2)
+		{
+			if (traj_test_distance())
+			{
+				guidance_h_trajectory_tracking_set_segment(traj.test_square_c4, traj.test_square_c1);
+				traj.test_square_index = 3;
+			}
+		}
+		else if (traj.test_square_index == 3)
+		{
+			if (traj_test_distance())
+			{
+				guidance_h_trajectory_tracking_set_segment(traj.test_square_c1, traj.test_square_c2);
+				traj.test_square_index = 0;
+			}
+		}
+	}
+	else
+	{
+
+	}
+}
+
+void guidance_h_SetTrajTest(uint8_t mode)
+{
+	traj.test_mode = mode;
+	if(mode == 1)
+	{
+		traj.test_line_start.x = guidance_h.ned_pos.x;
+		traj.test_line_start.y = guidance_h.ned_pos.y - 5.0f;
+
+		traj.test_line_end.x = guidance_h.ned_pos.x;
+		traj.test_line_end.y = guidance_h.ned_pos.y + 5.0f;
+
+		guidance_h_trajectory_tracking_set_segment(traj.test_line_start, traj.test_line_end);
+	}
+	else if(mode == 2)
+	{
+		traj.test_square_c1.x = traj.test_square_c2.x = guidance_h.ned_pos.x + 5.0f;
+		traj.test_square_c3.x = traj.test_square_c4.x = guidance_h.ned_pos.x - 5.0f;
+
+		traj.test_square_c2.y = traj.test_square_c3.y = guidance_h.ned_pos.y + 5.0f;
+		traj.test_square_c1.y = traj.test_square_c4.y = guidance_h.ned_pos.y - 5.0f;
+
+		guidance_h_trajectory_tracking_set_segment(traj.test_square_c1, traj.test_square_c2);
+		traj.test_square_index = 0;
+	}
+}
+
 void guidance_h_trajectory_tracking_set_hover(void)
 {
-	VECT2_ASSIGN(traj.segment.start, 0 ,0);
-	VECT2_ASSIGN(traj.segment.end, 0 ,0);
-	traj.segment.length = 0;
-	Matrix22_set_i(&traj.R_t2i);
-	Matrix22_set_i(&traj.R_i2t);
+	struct FloatVect2 p = {0, 0};
+	guidance_h_trajectory_tracking_set_segment(p, p);
 }
 
 void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct FloatVect2 end)
 {
-	struct FloatVect2 segment;
+	struct FloatVect2 seg;
 
-	VECT2_DIFF(segment, end, start);
-	traj.segment.length = float_vect2_norm(&segment);
-	if(traj.segment.length < 0.01f)
+	traj.segment_last = traj.segment;
+
+	VECT2_COPY(traj.segment.start, start);
+	VECT2_COPY(traj.segment.end, end);
+	VECT2_DIFF(seg, end, start);
+	traj.segment.length = float_vect2_norm(&seg);
+
+	if(traj.segment.length < 0.1f)
 	{
-		guidance_h_trajectory_tracking_set_hover();
-		return;
+		Matrix22_set_i(&traj.segment.R_t2i);
+		Matrix22_set_i(&traj.segment.R_i2t);
+
+		traj.mode = TRAJ_MODE_HOVER;
 	}
 	else
 	{
-		VECT2_SDIV(segment, segment, traj.segment.length);
+		VECT2_SDIV(seg, seg, traj.segment.length);
+
+		VECT2_COPY(traj.segment.along, seg);
+		traj.segment.cross.x = -seg.y;
+		traj.segment.cross.y = +seg.x;
+
+		float cos = traj.segment.along.x;
+		float sin = traj.segment.along.y;
+
+		traj.segment.R_t2i.m11 = +cos;
+		traj.segment.R_t2i.m12 = -sin;
+		traj.segment.R_t2i.m21 = +sin;
+		traj.segment.R_t2i.m22 = +cos;
+
+		Matrix22_trans(&traj.segment.R_i2t, &traj.segment.R_t2i);
+
+		traj.mode = TRAJ_MODE_SEGMENT;
 	}
-	VECT2_COPY(traj.segment.start, start);
-	VECT2_COPY(traj.segment.end, end);
 
-	VECT2_COPY(traj.segment.along, segment);
-	traj.segment.cross.x = - segment.y;
-	traj.segment.cross.y = + segment.x;
-
-	//float theta_i2t = atan2f(traj.seg_along.y, traj.seg_along.x);
-	float cos = traj.segment.along.x;
-	float sin = traj.segment.along.y;
-
-	traj.R_t2i.m11 = +cos; traj.R_t2i.m12 = +sin;
-	traj.R_t2i.m21 = -sin; traj.R_t2i.m22 = +cos;
-
-	Matrix22_trans(&traj.R_i2t, &traj.R_t2i);
+	traj_pid_loop_i_term_transform();
 }
 
 static void guidance_h_trajectory_tracking_ini(void)
 {
+	VECT2_ASSIGN(traj.segment.start, 0, 0);
+	VECT2_ASSIGN(traj.segment.end, 0, 0);
+	Matrix22_set_i(&traj.segment.R_t2i);
+	Matrix22_set_i(&traj.segment.R_i2t);
+
+	traj.ref_speed = 1.0f;
+	traj.brake_length = 3.0f;
+
 	pid_ini(&traj.vel_along_pid, PERIODIC_FREQUENCY);
 	pid_ini(&traj.vel_cross_pid, PERIODIC_FREQUENCY);
 	pid_ini(&traj.pos_along_pid, PERIODIC_FREQUENCY);
@@ -589,139 +734,158 @@ static void guidance_h_trajectory_tracking_ini(void)
 	traj.pos_cross_pid.Ki = 0.0f;
 	traj.pos_cross_pid.Kd = 0.2f;
 
+	init_first_order_low_pass(&traj.thrust_cmd_filter, low_pass_filter_get_tau(1.0f), PERIODIC_FREQUENCY, 0);
+
 	//TEST_CASE: test all traj function
-	struct _s_matrix22 A = {3,4,5,6};
-	struct _s_matrix22 B = {2,3,4,5};
-	struct _s_matrix22 C;
-	struct FloatVect2 start = {1, 2};
-	struct FloatVect2 end = {4, 8};
-	struct FloatVect2 v = {2, 1};
-	float theta = 60 * my_math_deg_to_rad;
-	float cos = cosf(theta);
-	float sin = sinf(theta);
+//	struct _s_matrix22 A = {3,4,5,6};
+//	struct _s_matrix22 B = {2,3,4,5};
+//	struct _s_matrix22 C;
+//	struct FloatVect2 start = {1, 2};
+//	struct FloatVect2 end = {4, 8};
+//	struct FloatVect2 v = {2, 1};
+//	float theta = 60 * my_math_deg_to_rad;
+//	float cos = cosf(theta);
+//	float sin = sinf(theta);
+//
+//	Matrix22_copy(&C, &A);
+//	Matrix22_trans(&C, &C);
+//	Matrix22_set_i(&C);
+//	Matrix22_mult(&C,&A,&B);
+//	C.m11 = cos; C.m12 = -sin;
+//	C.m21 = +sin; C.m22 = cos;
+//	Rotate_vect2(&v, &C, &v);
+//
+//	struct FloatVect2 start,end;
+//	VECT2_ASSIGN(start, 0, 0);
+//	VECT2_ASSIGN(end, 2, 1);
+//	traj.vel_along_pid.Ui = 1;
+//	traj.vel_cross_pid.Ui = 1;
+//	guidance_h_trajectory_tracking_set_segment(start, end);
+//	VECT2_ASSIGN(end, 1, 2);
+//	guidance_h_trajectory_tracking_set_segment(start, end);
+//	guidance_h_trajectory_tracking_set_hover();
+//
+//	v.x = 0;v.y=0;
+//	traj_point_i2t(&v, &v);
+//	traj_point_t2i(&v, &v);
+//	v.x = 0;v.y=0;
+//	traj_point_t2i(&v, &v);
+//	traj_point_i2t(&v, &v);
+//
+//	v.x = 1;v.y=0;
+//	traj_vect_i2t(&v, &v);
+//	traj_vect_t2i(&v, &v);
+//
+//	v.x = 1;v.y=0;
+//	traj_vect_t2i(&v, &v);
+//	traj_vect_i2t(&v, &v);
+//
+//	guidance_h_trajectory_tracking_loop();
+//
+//	traj_vect_b2t(&v, &v);
+//	traj_vect_t2b(&v, &v);
 
-	Matrix22_copy(&C, &A);
-	Matrix22_trans(&C, &C);
-	Matrix22_set_i(&C);
-	Matrix22_mult(&C,&A,&B);
-	C.m11 = cos; C.m12 = -sin;
-	C.m21 = +sin; C.m22 = cos;
-	Rotate_vect2(&v, &C, &v);
 
-	guidance_h_trajectory_tracking_set_hover();
-	guidance_h_trajectory_tracking_set_segment(start, end);
-
-	v.x = 0;v.y=0;
-	traj_point_i2t(&v, &v);
-	traj_point_t2i(&v, &v);
-	v.x = 0;v.y=0;
-	traj_point_t2i(&v, &v);
-	traj_point_i2t(&v, &v);
-
-	v.x = 1;v.y=0;
-	traj_vect_i2t(&v, &v);
-	traj_vect_t2i(&v, &v);
-
-	v.x = 1;v.y=0;
-	traj_vect_t2i(&v, &v);
-	traj_vect_i2t(&v, &v);
-
-
-	traj_vect_b2t(&v, &v);
-	traj_vect_t2b(&v, &v);
-
-	guidance_h_trajectory_tracking_loop();
 }
 
-static void guidance_h_trajectory_tracking_loop(void)
+static void guidance_h_trajectory_tracking_update(void)
 {
-	// get all rotation matrix between 3 coordinate
-	guidance_h.psi = stateGetNedToBodyEulers_f()->psi;
+//	switch (guidance_h.mode)
+//		{
+//	case GUIDANCE_H_MODE_HOVER
+//	GUIDANCE_H_MODE_NAV
+//		}
+}
 
-	float cos = cosf(guidance_h.psi);
-	float sin = cosf(guidance_h.psi);
-
-	traj.R_b2i.m11 = +cos; traj.R_b2i.m12 = +sin;
-	traj.R_b2i.m21 = -sin; traj.R_b2i.m22 = +cos;
-
-	Matrix22_trans(&traj.R_i2b, &traj.R_b2i);
-
-	Matrix22_mult(&traj.R_t2b, &traj.R_i2b, &traj.R_t2i);
-	Matrix22_trans(&traj.R_b2t, &traj.R_t2b);
+static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
+{
+	traj_update_R(stateGetNedToBodyEulers_f()->psi);
 
 	// NED state to trajectory
 	traj_vect_i2t(&traj.acc_t, &guidance_h.ned_acc);
 	traj_vect_i2t(&traj.vel_t, &guidance_h.ned_vel);
 	traj_point_i2t(&traj.pos_t, &guidance_h.ned_pos);
 
-	//VECT2_DIFF(,traj.start,traj.pos_t)
-	//float err_cross_pos = VECT2_DOT_PRODUCT()
+	if(traj.mode == TRAJ_MODE_HOVER)
+	{
+		traj.state = TRAJ_STATUS_POS_TRACKING;
+	}
+	else if(traj.mode == TRAJ_MODE_SEGMENT)
+	{
+		if (traj.segment.length < 0.1f)
+		{
+			traj.state = TRAJ_STATUS_POS_TRACKING;
+		}
+		else
+		{
+			if ((traj.segment.length - traj.pos_t.x) < traj.brake_length)
+			{
+				traj.state = TRAJ_STATUS_POS_TRACKING;
+			}
+			else
+			{
+				traj.state = TRAJ_STATUS_SPEED_TRACKING;
+			}
+		}
+	}
+	else
+	{
+		traj.mode = TRAJ_MODE_HOVER;
+	}
 
-	// cross pid loop
-	pid_loop_calc_2(&traj.pos_cross_pid, 0, traj.pos_t.y, 0, traj.vel_t.y);
-	pid_loop_calc_2(&traj.vel_cross_pid, traj.pos_cross_pid.out, traj.vel_t.y, 0, traj.acc_t.y);
+	if (traj.mode == TRAJ_MODE_HOVER)
+	{
+		// along pid loop
+		pid_loop_calc_2(&traj.pos_along_pid, traj.hover_point.x, traj.pos_t.x, 0, traj.vel_t.x);
+		pid_loop_calc_2(&traj.vel_along_pid, traj.pos_along_pid.out, traj.vel_t.x, 0, traj.acc_t.x);
 
-	// along pid loop
+		// cross pid loop
+		pid_loop_calc_2(&traj.pos_cross_pid, traj.hover_point.y, traj.pos_t.y, 0, traj.vel_t.y);
+		pid_loop_calc_2(&traj.vel_cross_pid, traj.pos_cross_pid.out, traj.vel_t.y, 0, traj.acc_t.y);
+	}
+	else
+	{
+		// along pid loop
+		if (traj.state == TRAJ_STATUS_POS_TRACKING)
+		{
+			pid_loop_calc_2(&traj.pos_along_pid, traj.segment.length, traj.pos_t.x, 0, traj.vel_t.x);
+			pid_loop_calc_2(&traj.vel_along_pid, traj.pos_along_pid.out, traj.vel_t.x, 0, traj.acc_t.x);
+		}
+		else
+		{
+			pid_loop_calc_2(&traj.vel_along_pid, traj.ref_speed, traj.vel_t.x, 0, traj.acc_t.x);
+		}
+
+		// cross pid loop
+		pid_loop_calc_2(&traj.pos_cross_pid, 0, traj.pos_t.y, 0, traj.vel_t.y);
+		pid_loop_calc_2(&traj.vel_cross_pid, traj.pos_cross_pid.out, traj.vel_t.y, 0, traj.acc_t.y);
+	}
+
+	traj.cmd_t.x = traj.vel_along_pid.out;
+	traj.cmd_t.y = traj.vel_cross_pid.out;
+
+	float thrust = update_first_order_low_pass(&traj.thrust_cmd_filter, stabilization_cmd[COMMAND_THRUST]);
+	thrust = thrust / (float)MAX_PPRZ;
+	if (guidance_h.approx_force_by_thrust && in_flight)
+	{
+		traj.cmd_t_comp.x = atan2f((traj.cmd_t.x / (my_math_pi/2.0f)), thrust);
+		traj.cmd_t_comp.y = atan2f((traj.cmd_t.y / (my_math_pi/2.0f)), thrust);
+	}
+
+	traj_vect_t2b(&traj.cmd_b, &traj.cmd_t);
 
 
+	if ((stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG)) || stateGetHorizontalSpeedNorm_f() > 30.0)
+	{
+		VECT2_STRIM(traj.cmd_b, (-PID_LOOP_MAX_TILT/4.0f), (PID_LOOP_MAX_TILT/4.0f));
+	}
+
+	VECT2_STRIM(traj.cmd_b, -PID_LOOP_MAX_TILT, PID_LOOP_MAX_TILT);
 }
 
 /*
  * code end of trajectory tracking
  */
-
-static void guidance_h_pos2loop_run(bool_t in_flight)
-{
-	if(gps2.p_stable)
-	{
-		if( guidance_h.mode == GUIDANCE_H_MODE_NAV )
-		{
-			guidance_h.ned_pos_ref.x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
-			guidance_h.ned_pos_ref.y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
-
-			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
-			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
-
-			guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
-			guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
-
-			pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
-			pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
-
-			guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
-			guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
-		}
-		else
-		{
-			guidance_h.pid_loop_mode_running = guidance_h.pid_loop_mode_gcs;
-			if (guidance_h.pid_loop_mode_running == POS_VEL)
-			{
-				guidance_h.ned_pos_ref = guidance_h.ned_pos_rc;
-
-				pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
-				pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
-
-				guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
-				guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
-			}
-			else
-			{
-				guidance_h.ned_vel_ref = guidance_h.ned_vel_rc;
-			}
-
-			pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
-			pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
-
-			guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
-			guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
-		}
-	}
-	else
-	{
-		guidance_h_cmd_earth.x = 0;
-		guidance_h_cmd_earth.y = 0;
-	}
-}
 
 static inline void reset_guidance_reference_from_current_position(void)
 {
@@ -737,250 +901,266 @@ static inline void reset_guidance_reference_from_current_position(void)
 
 void guidance_h_mode_changed(uint8_t new_mode)
 {
-  if (new_mode == guidance_h.mode) {
-    return;
-  }
+	if (new_mode == guidance_h.mode)
+	{
+		return;
+	}
 
-  if (new_mode != GUIDANCE_H_MODE_FORWARD && new_mode != GUIDANCE_H_MODE_RATE) {
-    transition_percentage = 0;
-    transition_theta_offset = 0;
-  }
+	if (new_mode != GUIDANCE_H_MODE_FORWARD && new_mode != GUIDANCE_H_MODE_RATE)
+	{
+		transition_percentage = 0;
+		transition_theta_offset = 0;
+	}
 
-  switch (new_mode) {
-    case GUIDANCE_H_MODE_RC_DIRECT:
-      stabilization_none_enter();
-      break;
+	switch (new_mode)
+	{
+	case GUIDANCE_H_MODE_RC_DIRECT:
+		stabilization_none_enter();
+		break;
 
-    case GUIDANCE_H_MODE_RATE:
-      stabilization_rate_enter();
-      break;
+	case GUIDANCE_H_MODE_RATE:
+		stabilization_rate_enter();
+		break;
 
-    case GUIDANCE_H_MODE_CARE_FREE:
-      stabilization_attitude_reset_care_free_heading();
-    case GUIDANCE_H_MODE_FORWARD:
-    case GUIDANCE_H_MODE_ATTITUDE:
+	case GUIDANCE_H_MODE_CARE_FREE:
+		stabilization_attitude_reset_care_free_heading();
+	case GUIDANCE_H_MODE_FORWARD:
+	case GUIDANCE_H_MODE_ATTITUDE:
 #if NO_ATTITUDE_RESET_ON_MODE_CHANGE
-      /* reset attitude stabilization if previous mode was not using it */
-      if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
-          guidance_h.mode == GUIDANCE_H_MODE_RATE ||
-          guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
+		/* reset attitude stabilization if previous mode was not using it */
+		if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
+				guidance_h.mode == GUIDANCE_H_MODE_RATE ||
+				guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
-        stabilization_attitude_enter();
-      break;
+		stabilization_attitude_enter();
+		break;
 
-    case GUIDANCE_H_MODE_HOVER:
+	case GUIDANCE_H_MODE_HOVER:
 #if GUIDANCE_INDI
-      guidance_indi_enter();
+		guidance_indi_enter();
 #endif
-      guidance_h_hover_enter();
+		guidance_h_hover_enter();
 #if NO_ATTITUDE_RESET_ON_MODE_CHANGE
-      /* reset attitude stabilization if previous mode was not using it */
-      if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
-          guidance_h.mode == GUIDANCE_H_MODE_RATE ||
-          guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
+		/* reset attitude stabilization if previous mode was not using it */
+		if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
+				guidance_h.mode == GUIDANCE_H_MODE_RATE ||
+				guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
-        stabilization_attitude_enter();
-      break;
+		stabilization_attitude_enter();
+		break;
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
-    case GUIDANCE_H_MODE_MODULE:
-      guidance_h_module_enter();
-      break;
+		case GUIDANCE_H_MODE_MODULE:
+		guidance_h_module_enter();
+		break;
 #endif
 
-    case GUIDANCE_H_MODE_NAV:
-      guidance_h_nav_enter();
+	case GUIDANCE_H_MODE_NAV:
+		guidance_h_nav_enter();
 #if NO_ATTITUDE_RESET_ON_MODE_CHANGE
-      /* reset attitude stabilization if previous mode was not using it */
-      if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
-          guidance_h.mode == GUIDANCE_H_MODE_RATE ||
-          guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
+		/* reset attitude stabilization if previous mode was not using it */
+		if (guidance_h.mode == GUIDANCE_H_MODE_KILL ||
+				guidance_h.mode == GUIDANCE_H_MODE_RATE ||
+				guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
-        stabilization_attitude_enter();
-      break;
+		stabilization_attitude_enter();
+		break;
 
-    case GUIDANCE_H_MODE_FLIP:
-      guidance_flip_enter();
-      break;
+	case GUIDANCE_H_MODE_FLIP:
+		guidance_flip_enter();
+		break;
 
-    default:
-      break;
-  }
+	default:
+		break;
+	}
 
-  guidance_h.mode = new_mode;
+	guidance_h.mode = new_mode;
 
 }
 
-
-void guidance_h_read_rc(bool_t  in_flight)
+void guidance_h_read_rc(bool_t in_flight)
 {
 
-  switch (guidance_h.mode) {
+	switch (guidance_h.mode)
+	{
 
-    case GUIDANCE_H_MODE_RC_DIRECT:
-      stabilization_none_read_rc();
-      break;
+	case GUIDANCE_H_MODE_RC_DIRECT:
+		stabilization_none_read_rc();
+		break;
 
-    case GUIDANCE_H_MODE_RATE:
+	case GUIDANCE_H_MODE_RATE:
 #if SWITCH_STICKS_FOR_RATE_CONTROL
-      stabilization_rate_read_rc_switched_sticks();
+		stabilization_rate_read_rc_switched_sticks();
 #else
-      stabilization_rate_read_rc();
+		stabilization_rate_read_rc();
 #endif
-      break;
-    case GUIDANCE_H_MODE_CARE_FREE:
-      stabilization_attitude_read_rc(in_flight, TRUE, FALSE);
-      break;
-    case GUIDANCE_H_MODE_FORWARD:
-      stabilization_attitude_read_rc(in_flight, FALSE, TRUE);
-      break;
-    case GUIDANCE_H_MODE_ATTITUDE:
-      stabilization_attitude_read_rc(in_flight, FALSE, FALSE);
-      break;
-    case GUIDANCE_H_MODE_HOVER:
-      stabilization_attitude_read_rc_setpoint_eulers(&guidance_h.rc_sp, in_flight, FALSE, FALSE);
+		break;
+	case GUIDANCE_H_MODE_CARE_FREE:
+		stabilization_attitude_read_rc(in_flight, TRUE, FALSE);
+		break;
+	case GUIDANCE_H_MODE_FORWARD:
+		stabilization_attitude_read_rc(in_flight, FALSE, TRUE);
+		break;
+	case GUIDANCE_H_MODE_ATTITUDE:
+		stabilization_attitude_read_rc(in_flight, FALSE, FALSE);
+		break;
+	case GUIDANCE_H_MODE_HOVER:
+		stabilization_attitude_read_rc_setpoint_eulers(&guidance_h.rc_sp, in_flight, FALSE, FALSE);
 #if GUIDANCE_H_USE_SPEED_REF
-      read_rc_setpoint_speed_i(&guidance_h.sp.speed, in_flight);
+		read_rc_setpoint_speed_i(&guidance_h.sp.speed, in_flight);
 #endif
-      break;
+		break;
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
-    case GUIDANCE_H_MODE_MODULE:
-      guidance_h_module_read_rc();
-      break;
+		case GUIDANCE_H_MODE_MODULE:
+		guidance_h_module_read_rc();
+		break;
 #endif
 
-    case GUIDANCE_H_MODE_NAV:
-      if (radio_control.status == RC_OK) {
-        stabilization_attitude_read_rc_setpoint_eulers(&guidance_h.rc_sp, in_flight, FALSE, FALSE);
-      } else {
-        INT_EULERS_ZERO(guidance_h.rc_sp);
-      }
-      break;
-    case GUIDANCE_H_MODE_FLIP:
-      stabilization_attitude_read_rc(in_flight, FALSE, FALSE);
-      break;
-    default:
-      break;
-  }
-
+	case GUIDANCE_H_MODE_NAV:
+		if (radio_control.status == RC_OK)
+		{
+			stabilization_attitude_read_rc_setpoint_eulers(&guidance_h.rc_sp, in_flight, FALSE, FALSE);
+		}
+		else
+		{
+			INT_EULERS_ZERO(guidance_h.rc_sp);
+		}
+		break;
+	case GUIDANCE_H_MODE_FLIP:
+		stabilization_attitude_read_rc(in_flight, FALSE, FALSE);
+		break;
+	default:
+		break;
+	}
 }
 
 void guidance_h_run(bool_t  in_flight)
 {
-	guidance_h_ublox_state_update(in_flight);
+	guidance_h_state_update(in_flight);
+	guidance_h_trajectory_tracking_update();
 
-  switch (guidance_h.mode) {
+	switch (guidance_h.mode)
+	{
+	case GUIDANCE_H_MODE_RC_DIRECT:
+		stabilization_none_run(in_flight);
+		break;
 
-    case GUIDANCE_H_MODE_RC_DIRECT:
-      stabilization_none_run(in_flight);
-      break;
+	case GUIDANCE_H_MODE_RATE:
+		stabilization_rate_run(in_flight);
+		break;
 
-    case GUIDANCE_H_MODE_RATE:
-      stabilization_rate_run(in_flight);
-      break;
+	case GUIDANCE_H_MODE_FORWARD:
+		if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC))
+		{
+			transition_run();
+		}
+	case GUIDANCE_H_MODE_CARE_FREE:
+	case GUIDANCE_H_MODE_ATTITUDE:
+		stabilization_attitude_run(in_flight);
+		break;
 
-    case GUIDANCE_H_MODE_FORWARD:
-      if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
-        transition_run();
-      }
-    case GUIDANCE_H_MODE_CARE_FREE:
-    case GUIDANCE_H_MODE_ATTITUDE:
-      stabilization_attitude_run(in_flight);
-      break;
+	case GUIDANCE_H_MODE_HOVER:
+		/* set psi command from RC */
+		guidance_h.sp.heading = guidance_h.rc_sp.psi;
+		/* fall trough to GUIDED to update ref, run traj and set final attitude setpoint */
+		traj.hover_point = guidance_h.ned_pos_rc;
 
-    case GUIDANCE_H_MODE_HOVER:
-      /* set psi command from RC */
-      guidance_h.sp.heading = guidance_h.rc_sp.psi;  
-      /* fall trough to GUIDED to update ref, run traj and set final attitude setpoint */
+	case GUIDANCE_H_MODE_GUIDED:
+		/* guidance_h.sp.pos and guidance_h.sp.heading need to be set from external source */
+		if (!in_flight)
+		{
+			guidance_h_hover_enter();
+		}
 
-    case GUIDANCE_H_MODE_GUIDED:
-      /* guidance_h.sp.pos and guidance_h.sp.heading need to be set from external source */
-      if (!in_flight) {
-        guidance_h_hover_enter();
-      }
-
-      guidance_h_update_reference();
+		guidance_h_update_reference();
 
 #if GUIDANCE_INDI
-      guidance_indi_run(in_flight, guidance_h.sp.heading);
+		guidance_indi_run(in_flight, guidance_h.sp.heading);
 #else
-      /* compute x,y earth commands */
-      guidance_h_traj_run(in_flight);
 
-      /* set final attitude setpoint */
-      stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
+		traj_test_loop();
+		guidance_h_trajectory_tracking_loop(in_flight);
+		stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
+
+//		guidance_h_traj_run_old(in_flight);
+//		stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
 #endif
-      stabilization_attitude_run(in_flight);
-      break;
+		stabilization_attitude_run(in_flight);
+		break;
 
-    case GUIDANCE_H_MODE_NAV:
-      if (!in_flight) {
-        guidance_h_nav_enter();
-      }
+	case GUIDANCE_H_MODE_NAV:
+		if (!in_flight)
+		{
+			guidance_h_nav_enter();
+		}
 
-      if (horizontal_mode == HORIZONTAL_MODE_ATTITUDE) 
-      {
-	        struct Int32Eulers sp_cmd_i;
-	        sp_cmd_i.phi = nav_roll;
-	        sp_cmd_i.theta = nav_pitch;
-	        sp_cmd_i.psi = nav_heading;
-	        stabilization_attitude_set_rpy_setpoint_i(&sp_cmd_i);
-      } 
-	  /* add HORIZONTAL_MODE_RC for RC control functions ,similar to hover mode */
-       else if (horizontal_mode == HORIZONTAL_MODE_RC) 
-       {
-	        guidance_h_update_reference();
+		if (horizontal_mode == HORIZONTAL_MODE_ATTITUDE)
+		{
+			struct Int32Eulers sp_cmd_i;
+			sp_cmd_i.phi = nav_roll;
+			sp_cmd_i.theta = nav_pitch;
+			sp_cmd_i.psi = nav_heading;
+			stabilization_attitude_set_rpy_setpoint_i(&sp_cmd_i);
+		}
+		/* add HORIZONTAL_MODE_RC for RC control functions ,similar to hover mode */
+		else if (horizontal_mode == HORIZONTAL_MODE_RC)
+		{
+			guidance_h_update_reference();
 
-	        /* set psi command ,using rc_turn_rate from rc_turn_cmd*/
-	        nav_heading += (rc_turn_rate/PERIODIC_FREQUENCY); //add deta heading
-	        guidance_h.sp.heading = nav_heading;
-			
-	        INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
-	        /* compute x,y earth commands */
-	        guidance_h_traj_run(in_flight);
-	        /* set final attitude setpoint */
-	        stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
-      }
-	  /* in waypoint,route,circle mode*/
-      else 
-      {
-	        INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
+			/* set psi command ,using rc_turn_rate from rc_turn_cmd*/
+			nav_heading += (rc_turn_rate / PERIODIC_FREQUENCY); //add deta heading
+			guidance_h.sp.heading = nav_heading;
 
-	        guidance_h_update_reference();
+			INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
 
-	        /* set psi command */
-	        guidance_h.sp.heading = nav_heading;
-	        INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
-            #if GUIDANCE_INDI
-	        guidance_indi_run(in_flight, guidance_h.sp.heading);
-            #else
-	        /* compute x,y earth commands */
-	        guidance_h_traj_run(in_flight);
-	        /* set final attitude setpoint */
-	        stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth,  guidance_h.sp.heading);
-            #endif
-      }
-	 #if 0 //TODOM:use intergrater limit in take off,see above ground signal
-	  stabilization_attitude_run(above_ground);	  
-	 #else
-      stabilization_attitude_run(in_flight);
-	 #endif
-      break;
+			traj.hover_point.x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
+			traj.hover_point.y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
+
+			guidance_h_trajectory_tracking_loop(in_flight);
+			stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
+//			guidance_h_traj_run_old(in_flight);
+//			stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
+		}
+		/* in waypoint,route,circle mode*/
+		else
+		{
+			INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
+
+			guidance_h_update_reference();
+
+			/* set psi command */
+			guidance_h.sp.heading = nav_heading;
+			INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
+#if GUIDANCE_INDI
+			guidance_indi_run(in_flight, guidance_h.sp.heading);
+#else
+			guidance_h_trajectory_tracking_loop(in_flight);
+			stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
+//			guidance_h_traj_run_old(in_flight);
+//			stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
+#endif
+		}
+#if 0 //TODOM:use intergrater limit in take off,see above ground signal
+		stabilization_attitude_run(above_ground);
+#else
+		stabilization_attitude_run(in_flight);
+#endif
+		break;
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
-    case GUIDANCE_H_MODE_MODULE:
-      guidance_h_module_run(in_flight);
-      break;
+		case GUIDANCE_H_MODE_MODULE:
+		guidance_h_module_run(in_flight);
+		break;
 #endif
 
-    case GUIDANCE_H_MODE_FLIP:
-      guidance_flip_run();
-      break;
+	case GUIDANCE_H_MODE_FLIP:
+		guidance_flip_run();
+		break;
 
-    default:
-      break;
-  }
+	default:
+		break;
+	}
 }
 
 
@@ -1030,12 +1210,60 @@ static void guidance_h_update_reference(void)
 
 #if !GUIDANCE_INDI
 #include "firmwares/rotorcraft/nav_flight.h"
-static void guidance_h_traj_run(bool_t in_flight)
+static void guidance_h_traj_run_old(bool_t in_flight)
 {
   static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(15), INT32_ANGLE_FRAC);
   static const int32_t total_limit_bank = BFP_OF_REAL(RadOfDeg(3), INT32_ANGLE_FRAC);	//add by whp.
 
-  guidance_h_pos2loop_run(in_flight);
+	if (gps2.p_stable)
+	{
+		if (guidance_h.mode == GUIDANCE_H_MODE_NAV)
+		{
+			guidance_h.ned_pos_ref.x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
+			guidance_h.ned_pos_ref.y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
+
+			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
+			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
+
+			guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
+			guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
+
+			pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
+			pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
+
+			guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
+			guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
+		}
+		else
+		{
+			guidance_h.pid_loop_mode_running = guidance_h.pid_loop_mode_gcs;
+			if (guidance_h.pid_loop_mode_running == POS_VEL)
+			{
+				guidance_h.ned_pos_ref = guidance_h.ned_pos_rc;
+
+				pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
+				pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
+
+				guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
+				guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
+			}
+			else
+			{
+				guidance_h.ned_vel_ref = guidance_h.ned_vel_rc;
+			}
+
+			pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
+			pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
+
+			guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
+			guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
+		}
+	}
+	else
+	{
+		guidance_h_cmd_earth.x = 0;
+		guidance_h_cmd_earth.y = 0;
+	}
 
   /* compute a better approximation of force commands by taking thrust into account */
   if (guidance_h.approx_force_by_thrust && in_flight)
@@ -1066,6 +1294,7 @@ static void guidance_h_hover_enter(void)
   guidance_h.rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
 
   guidance_h_ned_pos_rc_need_reset();
+  guidance_h_trajectory_tracking_set_hover();
 
   #if USE_FLOW  
   flow_hff_init(0.0, 0.0, 0.0, 0.0);//zero to pos and vel,later flow filter update when hover running
@@ -1086,6 +1315,7 @@ void guidance_h_nav_rc_enter(void)
 {
   /* set horizontal setpoint to current position */
 	guidance_h_ned_pos_rc_need_reset();
+	guidance_h_trajectory_tracking_set_hover();
 
   //nav_heading = stateGetNedToBodyEulers_i()->psi;
   horizontal_mode = HORIZONTAL_MODE_RC;    //request to set mode

@@ -16,6 +16,13 @@ struct _s_matrix22
 	float m21;float m22;
 };
 
+static inline float point2_distance(struct FloatVect2 *p1, struct FloatVect2 *p2)
+{
+	struct FloatVect2 s;
+	VECT2_DIFF(s, *p1, *p2);
+	return float_vect2_norm(&s);
+}
+
 static inline void Rotate_vect2(struct FloatVect2 *vo, struct _s_matrix22 *R, struct FloatVect2 *vi)
 {
 	struct FloatVect2 vt;

@@ -190,6 +190,12 @@ void stabilization_attitude_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t head
   stab_att_sp_euler.psi = ANGLE_FLOAT_OF_BFP(heading);
 }
 
+void stabilization_attitude_set_body_cmd_f(float phi, float theta, float psi)
+{
+	stab_att_sp_euler.phi = phi;
+	stab_att_sp_euler.theta = theta;
+	stab_att_sp_euler.psi = psi;
+}
 
 
 #define MAX_SUM_ERR 1000
