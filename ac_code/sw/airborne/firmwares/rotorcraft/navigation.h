@@ -130,6 +130,7 @@ extern bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int3
 extern bool_t get_nav_route_mediacy(void);
 extern void set_stop_brake(uint8_t brake_grade);
 extern void release_stop_brake(void);
+extern void nav_set_flight_speed(float speed);
 
 extern void auto_nav_fp(void);
 

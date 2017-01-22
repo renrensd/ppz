@@ -1151,6 +1151,10 @@ void guidance_h_run(bool_t  in_flight)
 #if GUIDANCE_INDI
 			guidance_indi_run(in_flight, guidance_h.sp.heading);
 #else
+			if(horizontal_mode == HORIZONTAL_MODE_WAYPOINT)
+			{
+				traj.hover_point = traj.segment.start;
+			}
 			guidance_h_trajectory_tracking_loop(in_flight);
 			stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
 //			guidance_h_traj_run_old(in_flight);

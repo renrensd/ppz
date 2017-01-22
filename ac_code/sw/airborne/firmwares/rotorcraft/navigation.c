@@ -132,7 +132,7 @@ float   nav_shift;
 
 /** minimum horizontal distance to waypoint to mark as arrived */
 #ifndef ARRIVED_AT_WAYPOINT
-#define ARRIVED_AT_WAYPOINT 0.8
+#define ARRIVED_AT_WAYPOINT 0.3
 #endif
 
 #if PERIODIC_TELEMETRY
@@ -257,8 +257,20 @@ void nav_run(void)
 #else
   nav_advance_carrot();
 #endif
+  if(horizontal_mode == HORIZONTAL_MODE_WAYPOINT)
+  {
+  	struct FloatVect2 target_wp;
+  	target_wp.x = POS_FLOAT_OF_BFP(navigation_carrot.y);
+  	target_wp.y = POS_FLOAT_OF_BFP(navigation_carrot.x);
+  	guidance_h_trajectory_tracking_set_segment(target_wp, target_wp);
+  }
 
   nav_set_altitude();
+}
+
+void nav_set_flight_speed(float speed)
+{
+	guidance_h_trajectory_tracking_set_ref_speed(speed);
 }
 
 void nav_circle(struct EnuCoor_i *wp_center, int32_t radius)
@@ -413,6 +425,7 @@ bool_t nav_spray_convert(struct EnuCoor_i wp_center, int32_t radius, int32_t sp_
    return leave_flag;
 }
 
+#if 0
 void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 {
   //static uint8_t last_regulate_ratio = 2;
@@ -483,6 +496,19 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 	 );
 	#endif
 }
+#else
+void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
+{
+	struct FloatVect2 start_wp, end_wp;
+	start_wp.x = POS_FLOAT_OF_BFP(wp_star->y);
+	start_wp.y = POS_FLOAT_OF_BFP(wp_star->x);
+
+	end_wp.x = POS_FLOAT_OF_BFP(wp_end->y);
+	end_wp.y = POS_FLOAT_OF_BFP(wp_end->x);
+
+	guidance_h_trajectory_tracking_set_segment(start_wp, end_wp);
+}
+#endif
 
 //return arrive at wp/true or false,after using approaching_time later
 bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_t approaching_time)  

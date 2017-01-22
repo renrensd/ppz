@@ -614,10 +614,12 @@ static float set_path_flight_info(uint8_t type)
   {
   		case FLIGHT_PATH:
 			gh_set_max_speed(ac_config_info.max_flight_speed);
+			nav_set_flight_speed(ac_config_info.max_flight_speed);
 			return ac_config_info.max_flight_height;
 			
 		case SPRAY_PATH:
 			gh_set_max_speed(ac_config_info.spray_speed);
+			nav_set_flight_speed(ac_config_info.spray_speed);
 			return ac_config_info.spray_height;
 			
 		default:
@@ -650,7 +652,7 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 {
   struct EnuCoor_i target_wp = first_wp;
 
-  if (nav_approaching_target(&target_wp, NULL, 0.5)) 
+  if (nav_approaching_target(&target_wp, NULL, 0.2))
   {
     return FALSE;
   }
@@ -658,7 +660,7 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
   //Go to Target Waypoint
   horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
   VECT3_COPY(navigation_target, target_wp);
-  //NavVerticalAltitudeMode(ac_config_info.max_flight_height, 0.);
+
   
   return TRUE;
 }
