@@ -100,6 +100,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 			unsigned long int julian = yymmdd_to_julian_days(gps_s->gps_time.year, gps_s->gps_time.month, gps_s->gps_time.day);
 
 			float declination = SGMagVar(lat, lon, height, julian);
+			declination = declination * my_math_deg_to_rad;
 			if (fabsf(declination) < (20.0f * my_math_deg_to_rad))
 			{
 				mag_cali.declination = declination;
