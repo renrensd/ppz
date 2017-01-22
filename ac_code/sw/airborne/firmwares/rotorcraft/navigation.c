@@ -257,7 +257,7 @@ void nav_run(void)
 #else
   nav_advance_carrot();
 #endif
-  if(horizontal_mode == HORIZONTAL_MODE_WAYPOINT)
+  if((horizontal_mode == HORIZONTAL_MODE_WAYPOINT) && (guidance_h.mode == GUIDANCE_H_MODE_NAV))
   {
   	struct FloatVect2 target_wp;
   	target_wp.x = POS_FLOAT_OF_BFP(navigation_carrot.y);
@@ -507,6 +507,9 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 	end_wp.y = POS_FLOAT_OF_BFP(wp_end->x);
 
 	guidance_h_trajectory_tracking_set_segment(start_wp, end_wp);
+
+  nav_segment_start = *wp_star;
+  nav_segment_end = *wp_end;
 }
 #endif
 

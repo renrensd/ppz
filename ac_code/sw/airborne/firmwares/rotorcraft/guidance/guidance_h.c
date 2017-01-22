@@ -510,14 +510,20 @@ static void traj_update_R(float psi)
 static void traj_point_i2t(struct FloatVect2 *vt, struct FloatVect2 *vi)
 {
 	VECT2_COPY(*vt, *vi);
-	VECT2_DIFF(*vt, *vt, traj.segment.start);
+	if(traj.mode != TRAJ_MODE_HOVER)
+	{
+		VECT2_DIFF(*vt, *vt, traj.segment.start);
+	}
 	Rotate_vect2(vt, &traj.segment.R_i2t, vt);
 }
 
 static void traj_point_t2i(struct FloatVect2 *vi, struct FloatVect2 *vt)
 {
 	Rotate_vect2(vi, &traj.segment.R_t2i, vt);
-	VECT2_SUM(*vi, *vi, traj.segment.start);
+	if (traj.mode != TRAJ_MODE_HOVER)
+	{
+		VECT2_SUM(*vi, *vi, traj.segment.start);
+	}
 }
 
 static void traj_vect_i2t(struct FloatVect2 *vt, struct FloatVect2 *vi)
@@ -758,57 +764,6 @@ static void guidance_h_trajectory_tracking_ini(void)
 
 	guidance_h_trajectory_tracking_set_ref_speed(3.0f);
 	traj.test_length = 10.0f;
-
-	//TEST_CASE: test all traj function
-//	struct _s_matrix22 A = {3,4,5,6};
-//	struct _s_matrix22 B = {2,3,4,5};
-//	struct _s_matrix22 C;
-//	struct FloatVect2 start = {1, 2};
-//	struct FloatVect2 end = {4, 8};
-//	struct FloatVect2 v = {2, 1};
-//	float theta = 60 * my_math_deg_to_rad;
-//	float cos = cosf(theta);
-//	float sin = sinf(theta);
-//
-//	Matrix22_copy(&C, &A);
-//	Matrix22_trans(&C, &C);
-//	Matrix22_set_i(&C);
-//	Matrix22_mult(&C,&A,&B);
-//	C.m11 = cos; C.m12 = -sin;
-//	C.m21 = +sin; C.m22 = cos;
-//	Rotate_vect2(&v, &C, &v);
-//
-//	struct FloatVect2 start,end;
-//	VECT2_ASSIGN(start, 0, 0);
-//	VECT2_ASSIGN(end, 2, 1);
-//	traj.vel_along_pid.Ui = 1;
-//	traj.vel_cross_pid.Ui = 1;
-//	guidance_h_trajectory_tracking_set_segment(start, end);
-//	VECT2_ASSIGN(end, 1, 2);
-//	guidance_h_trajectory_tracking_set_segment(start, end);
-//	guidance_h_trajectory_tracking_set_hover();
-//
-//	v.x = 0;v.y=0;
-//	traj_point_i2t(&v, &v);
-//	traj_point_t2i(&v, &v);
-//	v.x = 0;v.y=0;
-//	traj_point_t2i(&v, &v);
-//	traj_point_i2t(&v, &v);
-//
-//	v.x = 1;v.y=0;
-//	traj_vect_i2t(&v, &v);
-//	traj_vect_t2i(&v, &v);
-//
-//	v.x = 1;v.y=0;
-//	traj_vect_t2i(&v, &v);
-//	traj_vect_i2t(&v, &v);
-//
-//	guidance_h_trajectory_tracking_loop();
-//
-//	traj_vect_b2t(&v, &v);
-//	traj_vect_t2b(&v, &v);
-
-
 }
 
 static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
