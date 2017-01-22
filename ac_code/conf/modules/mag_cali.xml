@@ -28,5 +28,6 @@
   <event fun="mag_cali_event()"/>
   <makefile target="ap|nps">
     <file name="mag_cali.c"/>
+    <file name="magfield.c"/>
   </makefile>
 </module>

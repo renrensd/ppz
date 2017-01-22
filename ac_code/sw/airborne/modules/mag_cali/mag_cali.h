@@ -65,6 +65,9 @@ struct MagCali
   uint16_t convergence_tick;
   float gain[2];
   float offset[2];
+  float declination;
+  bool_t declination_ok;
+  struct FloatVect3  mag_h_cali;
 };
 
 extern void mag_cali_init(void);

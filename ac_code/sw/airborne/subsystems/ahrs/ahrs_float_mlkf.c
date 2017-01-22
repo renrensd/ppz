@@ -40,6 +40,7 @@
 
 #include <math.h>
 #include "math/my_math.h"
+#include "modules/mag_cali/mag_cali.h"
 
 //#include <stdio.h>
 
@@ -227,9 +228,15 @@ static void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag)
   float_quat_vmult(&mag_bmv, &ahrs_mlkf.ltp_to_imu_quat, &mag_bm_i);
   //float_vect3_normalize(&mag_bm);
 
-
   // generate a virtual mag_ic that has the same length with mag_bm generated in last step
-  mag_ic = ahrs_mlkf.mag_h;
+	if (mag_cali.declination_ok)
+	{
+		mag_ic = mag_cali.mag_h_cali;
+	}
+	else
+	{
+		mag_ic = ahrs_mlkf.mag_h;
+	}
   mag_ic.z = 0;
   float_vect3_normalize(&mag_ic);
 

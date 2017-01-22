@@ -17,6 +17,7 @@
 #include "subsystems/ins/ins_int.h"
 #include "subsystems/fram/fram_if.h"
 #include "data_check/crc16.h"
+#include  "magfield.h"
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 #endif
@@ -88,6 +89,28 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
+	if(!mag_cali.declination_ok)
+	{
+		if(gps_s->p_stable)
+		{
+			double lat = (double) gps_s->lla_pos.lat / (double) 1e7;
+			double lon = (double) gps_s->lla_pos.lon / (double) 1e7;
+			double height = (double) gps_s->lla_pos.alt / (double) 1e6;
+
+			unsigned long int julian = yymmdd_to_julian_days(gps_s->gps_time.year, gps_s->gps_time.month, gps_s->gps_time.day);
+
+			float declination = SGMagVar(lat, lon, height, julian);
+			if (fabsf(declination) < (20.0f * my_math_deg_to_rad))
+			{
+				mag_cali.declination = declination;
+				mag_cali.mag_h_cali.x = cosf(mag_cali.declination);
+				mag_cali.mag_h_cali.y = sinf(mag_cali.declination);
+				mag_cali.mag_h_cali.z = 0;
+				mag_cali.declination_ok = TRUE;
+			}
+		}
+	}
+
 	if(mag_cali.state == MAG_CALI_IDLE)
 	{
 		return;
@@ -213,6 +236,7 @@ void mag_cali_init(void)
 	mag_cali.auto_cali = FALSE;
 	mag_cali.persistent_store = FALSE;
 	mag_cali.persistent_read = TRUE;
+	mag_cali.declination_ok = FALSE;
 
 	AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
 	AbiBindMsgGPS_HEADING(ABI_BROADCAST, &gps_ev, gps_cb);
@@ -465,7 +489,7 @@ for(int i=0;i<MAG_CALI_GRAB_NUM;++i)
 	grab_y[i] = mag_cali.grab_sum[i][1];
 }
 
-#if PERIODIC_TELEMETRY
+#ifdef PERIODIC_TELEMETRY
 		RunOnceEvery(25,   {
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_MAG_CALI(DefaultChannel, DefaultDevice,
@@ -478,10 +502,7 @@ for(int i=0;i<MAG_CALI_GRAB_NUM;++i)
 				&mag_cali.gain[1],
 				&mag_cali.offset[0],
 				&mag_cali.offset[1],
-				MAG_CALI_GRAB_NUM,
-				grab_x,
-				MAG_CALI_GRAB_NUM,
-				grab_y);}   );
+				&mag_cali.declination);}   );
 #endif
 }
 
