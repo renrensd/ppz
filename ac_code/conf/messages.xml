@@ -1415,12 +1415,14 @@
     <field name="start_y"    type="float"/>
     <field name="end_x"    type="float"/>
     <field name="end_y"    type="float"/>
-    <field name="acc_t_x"    type="float"/>
-    <field name="acc_t_y"    type="float"/>
     <field name="vel_t_x"    type="float"/>
     <field name="vel_t_y"    type="float"/>
     <field name="pos_t_x"    type="float"/>
     <field name="pos_t_y"    type="float"/>
+    <field name="vel_i_x"    type="float"/>
+    <field name="vel_i_y"    type="float"/>
+    <field name="pos_i_x"    type="float"/>
+    <field name="pos_i_y"    type="float"/>
     <field name="pos_t_x_ref"    type="float"/>
     <field name="pos_t_y_ref"    type="float"/>
     <field name="vel_t_x_ref"    type="float"/>  
