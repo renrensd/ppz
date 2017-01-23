@@ -652,7 +652,7 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 {
   struct EnuCoor_i target_wp = first_wp;
 
-  if (nav_approaching_target(&target_wp, NULL, 0.2))
+  if (nav_approaching_target(&target_wp, NULL, 0.3))
   {
     return FALSE;
   }

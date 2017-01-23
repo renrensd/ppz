@@ -663,7 +663,7 @@ void guidance_h_SetTrajTest(uint8_t mode)
 	}
 	else
 	{
-		guidance_h_trajectory_tracking_set_hover();
+		guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
 		guidance_h_ned_pos_rc_need_reset();
 	}
 }
@@ -676,10 +676,11 @@ void guidance_h_trajectory_tracking_set_ref_speed(float speed)
 	Bound(traj.brake_length, 1.0f, 50.0f);
 }
 
-void guidance_h_trajectory_tracking_set_hover(void)
+void guidance_h_trajectory_tracking_set_hover(struct FloatVect2 point)
 {
 	struct FloatVect2 p = {0, 0};
 	guidance_h_trajectory_tracking_set_segment(p, p);
+	traj.hover_point = point;
 }
 
 void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct FloatVect2 end)
@@ -744,11 +745,11 @@ static void guidance_h_trajectory_tracking_ini(void)
 	pid_set_out_range(&traj.pos_cross_pid, -5, +5);
 	pid_set_Ui_range(&traj.pos_cross_pid, -0.5, +0.5);
 
-	traj.vel_along_pid.Kp = 0.2f;
-	traj.vel_along_pid.Ki = 0.06f;
+	traj.vel_along_pid.Kp = 0.25f;
+	traj.vel_along_pid.Ki = 0.02f;
 	traj.vel_along_pid.Kd = 0.05f;
 
-	traj.vel_cross_pid.Kp = 0.2f;
+	traj.vel_cross_pid.Kp = 0.25f;
 	traj.vel_cross_pid.Ki = 0.06f;
 	traj.vel_cross_pid.Kd = 0.05f;
 
@@ -756,9 +757,9 @@ static void guidance_h_trajectory_tracking_ini(void)
 	traj.pos_along_pid.Ki = 0.0f;
 	traj.pos_along_pid.Kd = 0.2f;
 
-	traj.pos_cross_pid.Kp = 0.6f;
+	traj.pos_cross_pid.Kp = 0.8f;
 	traj.pos_cross_pid.Ki = 0.0f;
-	traj.pos_cross_pid.Kd = 0.2f;
+	traj.pos_cross_pid.Kd = 0.25f;
 
 	init_first_order_low_pass(&traj.thrust_cmd_filter, low_pass_filter_get_tau(1.0f), PERIODIC_FREQUENCY, 0);
 
@@ -1037,7 +1038,7 @@ void guidance_h_run(bool_t  in_flight)
 		/* set psi command from RC */
 		guidance_h.sp.heading = guidance_h.rc_sp.psi;
 		/* fall trough to GUIDED to update ref, run traj and set final attitude setpoint */
-		traj.hover_point = guidance_h.ned_pos_rc;
+		guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos_rc);
 
 	case GUIDANCE_H_MODE_GUIDED:
 		/* guidance_h.sp.pos and guidance_h.sp.heading need to be set from external source */
@@ -1087,8 +1088,10 @@ void guidance_h_run(bool_t  in_flight)
 
 			INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
 
-			traj.hover_point.x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
-			traj.hover_point.y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
+			struct FloatVect2 ref_point;
+			ref_point.x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
+			ref_point.y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
+			guidance_h_trajectory_tracking_set_hover(ref_point);
 
 			guidance_h_trajectory_tracking_loop(in_flight);
 			stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
@@ -1108,10 +1111,6 @@ void guidance_h_run(bool_t  in_flight)
 #if GUIDANCE_INDI
 			guidance_indi_run(in_flight, guidance_h.sp.heading);
 #else
-			if(horizontal_mode == HORIZONTAL_MODE_WAYPOINT)
-			{
-				traj.hover_point = traj.segment.start;
-			}
 			guidance_h_trajectory_tracking_loop(in_flight);
 			stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
 //			guidance_h_traj_run_old(in_flight);
@@ -1271,7 +1270,7 @@ static void guidance_h_hover_enter(void)
   guidance_h.rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
 
   guidance_h_ned_pos_rc_need_reset();
-  guidance_h_trajectory_tracking_set_hover();
+  guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
 
   #if USE_FLOW  
   flow_hff_init(0.0, 0.0, 0.0, 0.0);//zero to pos and vel,later flow filter update when hover running
@@ -1292,7 +1291,7 @@ void guidance_h_nav_rc_enter(void)
 {
   /* set horizontal setpoint to current position */
 	guidance_h_ned_pos_rc_need_reset();
-	guidance_h_trajectory_tracking_set_hover();
+	guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
 
   //nav_heading = stateGetNedToBodyEulers_i()->psi;
   horizontal_mode = HORIZONTAL_MODE_RC;    //request to set mode

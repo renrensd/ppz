@@ -132,7 +132,7 @@ float   nav_shift;
 
 /** minimum horizontal distance to waypoint to mark as arrived */
 #ifndef ARRIVED_AT_WAYPOINT
-#define ARRIVED_AT_WAYPOINT 0.3
+#define ARRIVED_AT_WAYPOINT 0.5
 #endif
 
 #if PERIODIC_TELEMETRY
@@ -262,7 +262,7 @@ void nav_run(void)
   	struct FloatVect2 target_wp;
   	target_wp.x = POS_FLOAT_OF_BFP(navigation_carrot.y);
   	target_wp.y = POS_FLOAT_OF_BFP(navigation_carrot.x);
-  	guidance_h_trajectory_tracking_set_segment(target_wp, target_wp);
+  	guidance_h_trajectory_tracking_set_hover(target_wp);
   }
 
   nav_set_altitude();
