@@ -676,11 +676,27 @@ void guidance_h_trajectory_tracking_set_ref_speed(float speed)
 	Bound(traj.brake_length, 1.0f, 50.0f);
 }
 
+void guidance_h_trajectory_tracking_set_emergency_brake_acc(float acc)
+{
+	traj.emergency_brake_acc = acc;
+	Bound(traj.emergency_brake_acc, 0.1f, 3.0f);
+}
+
+void guidance_h_trajectory_tracking_set_max_acc(float acc)
+{
+	traj.max_acc = acc;
+	Bound(traj.max_acc, 0.1f, 3.0f);
+}
+
+void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake)
+{
+	traj.emergency_brake = brake;
+}
+
 void guidance_h_trajectory_tracking_set_hover(struct FloatVect2 point)
 {
 	struct FloatVect2 p = {0, 0};
 	guidance_h_trajectory_tracking_set_segment(p, p);
-	traj.hover_point = point;
 }
 
 void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct FloatVect2 end)
@@ -698,6 +714,8 @@ void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct 
 	{
 		Matrix22_set_i(&traj.segment.R_t2i);
 		Matrix22_set_i(&traj.segment.R_i2t);
+
+		traj.hover_point = traj.segment.start;
 
 		traj.mode = TRAJ_MODE_HOVER;
 	}

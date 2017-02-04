@@ -146,8 +146,12 @@ struct _s_trajectory_tracking
 
 	enum _e_traj_mode mode;
 	enum _e_traj_status state;
+	bool_t emergency_brake;
 	float brake_length;
 	float ref_speed;
+	float max_acc;
+	float emergency_brake_acc;
+	float guid_speed;
 
 	struct FloatVect2 hover_point;
 
@@ -247,6 +251,9 @@ extern void guidance_h_nav_rc_enter(void); //use when nav_rc_mode enter
 extern void guidance_h_trajectory_tracking_set_hover(struct FloatVect2 point);
 extern void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct FloatVect2 end);
 extern void guidance_h_trajectory_tracking_set_ref_speed(float speed);
+extern void guidance_h_trajectory_tracking_set_max_acc(float acc);
+extern void guidance_h_trajectory_tracking_set_emergency_brake_acc(float acc);
+extern void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake);
 extern void guidance_h_SetTrajTest(uint8_t mode);
 extern void guidance_h_SetTrajRefSpeed(float speed);
 
