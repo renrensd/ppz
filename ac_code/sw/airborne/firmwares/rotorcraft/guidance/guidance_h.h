@@ -112,8 +112,9 @@ enum _e_traj_mode
 
 enum _e_traj_status
 {
-	TRAJ_STATUS_POS_TRACKING = 0,
-	TRAJ_STATUS_SPEED_TRACKING
+	TRAJ_STATUS_ACC = 0,
+	TRAJ_STATUS_BRAKE,
+	TRAJ_STATUS_POS
 };
 
 struct _s_segment
@@ -147,10 +148,11 @@ struct _s_trajectory_tracking
 	enum _e_traj_mode mode;
 	enum _e_traj_status state;
 	bool_t emergency_brake;
-	float brake_length;
 	float ref_speed;
 	float max_acc;
 	float emergency_brake_acc;
+	float min_brake_len;
+	float max_brake_speed;
 	float guid_speed;
 
 	struct FloatVect2 hover_point;

@@ -57,6 +57,8 @@ extern "C" {
  * Dimension 2 vectors
  */
 
+#define VECT2_IS_EQUAL(_a, _b)	((_a.x == _b.x)&&(_a.y == _b.y))
+
 /* a =  {x, y} */
 #define VECT2_ASSIGN(_a, _x, _y) {    \
     (_a).x = (_x);        \
