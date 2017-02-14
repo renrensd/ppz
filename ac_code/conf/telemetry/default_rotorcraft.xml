@@ -38,6 +38,13 @@
       <message name="MCU_FAULT"              period="5.0"/>
     </mode>
 
+    <mode name="LAND_CRASH">
+      <message name="DL_VALUE"               period="0.5"/>
+      <message name="ALIVE"                  period="2.1"/>
+      <message name="DEBUG_GPS"  	     period="0.2"/>
+      <message name="TUNE_VERT"              period="0.02"/>
+    </mode>
+
     <mode name="traj_test">
       <message name="DL_VALUE"               period="0.5"/>
       <message name="ALIVE"                  period="2.1"/>
