@@ -254,10 +254,15 @@ extern void guidance_h_trajectory_tracking_set_hover(struct FloatVect2 point);
 extern void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct FloatVect2 end);
 extern void guidance_h_trajectory_tracking_set_ref_speed(float speed);
 extern void guidance_h_trajectory_tracking_set_max_acc(float acc);
+extern void guidance_h_trajectory_tracking_set_min_brake_len(float len);
 extern void guidance_h_trajectory_tracking_set_emergency_brake_acc(float acc);
 extern void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake);
 extern void guidance_h_SetTrajTest(uint8_t mode);
 extern void guidance_h_SetTrajRefSpeed(float speed);
+extern void guidance_h_SetEmBrake(bool_t on);
+extern void guidance_h_SetMinBrakeLen(float len);
+extern void guidance_h_SetMaxAcc(float acc);
+extern void guidance_h_SetEmBrakeAcc(float acc);
 
 extern void guidance_h_SetNedAccFc(float Fc);
 extern void guidance_h_SetNedVelFc(float Fc);

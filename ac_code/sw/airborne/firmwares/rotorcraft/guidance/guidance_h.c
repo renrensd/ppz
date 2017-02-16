@@ -668,6 +668,26 @@ void guidance_h_SetTrajTest(uint8_t mode)
 	}
 }
 
+void guidance_h_SetEmBrake(bool_t on)
+{
+	guidance_h_trajectory_tracking_set_emergency_brake(on);
+}
+
+void guidance_h_SetMinBrakeLen(float len)
+{
+	guidance_h_trajectory_tracking_set_min_brake_len(len);
+}
+
+void guidance_h_SetMaxAcc(float acc)
+{
+	guidance_h_trajectory_tracking_set_max_acc(acc);
+}
+
+void guidance_h_SetEmBrakeAcc(float acc)
+{
+	guidance_h_trajectory_tracking_set_emergency_brake_acc(acc);
+}
+
 void guidance_h_trajectory_tracking_set_ref_speed(float speed)
 {
 	traj.ref_speed = speed;
@@ -763,32 +783,6 @@ void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct 
 
 	traj.segment_last = traj.segment;
 
-//	if(VECT2_IS_EQUAL(start, end))
-//	{
-//		if(point2_distance(&guidance_h.ned_pos, &end) < 0.5f)
-//		{
-//			traj.mode = TRAJ_MODE_HOVER;
-//		}
-//		else
-//		{
-//			VECT2_COPY(traj.segment.start, guidance_h.ned_pos);
-//			VECT2_COPY(traj.segment.end, end);
-//			traj.mode = TRAJ_MODE_SEGMENT;
-//		}
-//	}
-//	else
-//	{
-//		if(point2_distance(&start, &end) < 0.5f)
-//		{
-//			traj.mode = TRAJ_MODE_HOVER;
-//		}
-//		else
-//		{
-//			VECT2_COPY(traj.segment.start, start);
-//			VECT2_COPY(traj.segment.end, end);
-//			traj.mode = TRAJ_MODE_SEGMENT;
-//		}
-//	}
 	VECT2_COPY(traj.segment.start, start);
 	VECT2_COPY(traj.segment.end, end);
 	VECT2_DIFF(seg, end, start);
@@ -875,6 +869,9 @@ static void guidance_h_trajectory_tracking_ini(void)
 	init_first_order_low_pass(&traj.thrust_cmd_filter, low_pass_filter_get_tau(1.0f), PERIODIC_FREQUENCY, 0);
 
 	guidance_h_trajectory_tracking_set_ref_speed(3.0f);
+	guidance_h_trajectory_tracking_set_max_acc(1.0f);
+	guidance_h_trajectory_tracking_set_min_brake_len(2.0f);
+	guidance_h_trajectory_tracking_set_emergency_brake_acc(2.0f);
 	traj.test_length = 10.0f;
 }
 
@@ -1196,7 +1193,10 @@ void guidance_h_run(bool_t  in_flight)
 		/* set psi command from RC */
 		guidance_h.sp.heading = guidance_h.rc_sp.psi;
 		/* fall trough to GUIDED to update ref, run traj and set final attitude setpoint */
-		guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos_rc);
+		if(traj.test_mode == 0)
+		{
+			guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos_rc);
+		}
 
 	case GUIDANCE_H_MODE_GUIDED:
 		/* guidance_h.sp.pos and guidance_h.sp.heading need to be set from external source */

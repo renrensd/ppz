@@ -34,8 +34,11 @@
    <dl_settings NAME="Traj">
    		<dl_setting var="traj.test_mode" min="0" step="1" max="2" module="guidance/guidance_h" shortname="traj_test" values="OFF|LINE|SQUARE" handler="SetTrajTest"/>
    		<dl_setting var="traj.test_length"    min="0.5" step="0.1" max="50" module="guidance/guidance_h" shortname="test_length"/>
+   		<dl_setting var="traj.emergency_brake" min="0" step="1" max="1" module="guidance/guidance_h" shortname="em_brake" values="OFF|ON" handler="SetEmBrake"/>
    		<dl_setting var="traj.ref_speed"    min="0.5" step="0.1" max="10" module="guidance/guidance_h" shortname="ref_speed" handler="SetTrajRefSpeed"/>
-   		<dl_setting var="traj.min_brake_len"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="min_brake_len"/>
+   		<dl_setting var="traj.min_brake_len"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="min_brake_len" handler="SetMinBrakeLen"/>
+   		<dl_setting var="traj.max_acc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="max_acc" handler="SetMaxAcc"/>
+   		<dl_setting var="traj.emergency_brake_acc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="em_brake_acc" handler="SetEmBrakeAcc"/>
    		<dl_setting var="traj.vel_along_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Kp"/>
    		<dl_setting var="traj.vel_along_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Ki"/>
    		<dl_setting var="traj.vel_along_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Kd"/>
