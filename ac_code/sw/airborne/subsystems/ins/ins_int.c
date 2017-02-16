@@ -428,7 +428,8 @@ void ins_int_task(void)
 					}
 					ins_int.R_rtk_pos_z = r_unstable;
 
-					vff_update_z_conf(ins_int.gps_body_z, ins_int.R_rtk_pos_z);
+					//vff_update_z_conf(ins_int.gps_body_z, ins_int.R_rtk_pos_z);
+					vff_update_z_conf(ins_int.gps_body_z, ins_int.R_rtk_pos_z_setting);
 					vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
 					ins_update_from_vff();
 				}

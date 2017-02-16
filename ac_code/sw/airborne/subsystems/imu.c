@@ -252,10 +252,9 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
   	  gyro_offset_success = gyro_offset_caculate(_imu);
   }
 #endif
-
-  _imu->gyro.p = update_butterworth_2_low_pass_int(&(_imu->gyro_x_filter), _imu->gyro.p);
-  _imu->gyro.q = update_butterworth_2_low_pass_int(&(_imu->gyro_y_filter), _imu->gyro.q);
-  _imu->gyro.r = update_butterworth_2_low_pass_int(&(_imu->gyro_z_filter), _imu->gyro.r);
+  _imu->gyro.p = update_butterworth_2_low_pass_int(&(_imu->gyro_x_filter), _imu->gyro.p, INT32_RATE_FRAC);
+  _imu->gyro.q = update_butterworth_2_low_pass_int(&(_imu->gyro_y_filter), _imu->gyro.q, INT32_RATE_FRAC);
+  _imu->gyro.r = update_butterworth_2_low_pass_int(&(_imu->gyro_z_filter), _imu->gyro.r, INT32_RATE_FRAC);
 }
 
 void WEAK imu_scale_accel(struct Imu *_imu)
@@ -269,9 +268,9 @@ void WEAK imu_scale_accel(struct Imu *_imu)
                    IMU_ACCEL_Z_SENS_NUM) / IMU_ACCEL_Z_SENS_DEN;
   VECT3_COPY(_imu->accel_scaled, _imu->accel);
 
-   _imu->accel.x = update_butterworth_2_low_pass_int(&(_imu->acc_x_filter), _imu->accel.x);
-   _imu->accel.y = update_butterworth_2_low_pass_int(&(_imu->acc_y_filter), _imu->accel.y);
-   _imu->accel.z = update_butterworth_2_low_pass_int(&(_imu->acc_z_filter), _imu->accel.z);
+   _imu->accel.x = update_butterworth_2_low_pass_int(&(_imu->acc_x_filter), _imu->accel.x, INT32_ACCEL_FRAC);
+   _imu->accel.y = update_butterworth_2_low_pass_int(&(_imu->acc_y_filter), _imu->accel.y, INT32_ACCEL_FRAC);
+   _imu->accel.z = update_butterworth_2_low_pass_int(&(_imu->acc_z_filter), _imu->accel.z, INT32_ACCEL_FRAC);
 }
 
 #if defined IMU_MAG_X_CURRENT_COEF && defined IMU_MAG_Y_CURRENT_COEF && defined IMU_MAG_Z_CURRENT_COEF
@@ -303,9 +302,9 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 
 		VECT3_COPY(_imu->mag_scaled, _imu->mag);
 
-		_imu->mag.x = update_butterworth_2_low_pass_int(&(_imu->mag_x_filter), _imu->mag.x);
-		_imu->mag.y = update_butterworth_2_low_pass_int(&(_imu->mag_y_filter), _imu->mag.y);
-		_imu->mag.z = update_butterworth_2_low_pass_int(&(_imu->mag_z_filter), _imu->mag.z);
+		_imu->mag.x = update_butterworth_2_low_pass_int(&(_imu->mag_x_filter), _imu->mag.x, INT32_MAG_FRAC);
+		_imu->mag.y = update_butterworth_2_low_pass_int(&(_imu->mag_y_filter), _imu->mag.y, INT32_MAG_FRAC);
+		_imu->mag.z = update_butterworth_2_low_pass_int(&(_imu->mag_z_filter), _imu->mag.z, INT32_MAG_FRAC);
 	}
 	else
 	{

@@ -175,7 +175,7 @@ void Tracking_differntiator(float signal)
 //*****************************************************//
 //                define done here                                                    //
 
-#if PERIODIC_TELEMETRY
+#ifdef PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
@@ -193,14 +193,33 @@ static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
 			&guid_v.pos_z_pid.out);
 }
 
+#include "subsystems/ins/ins_int.h"
+#include "subsystems/imu.h"
+#include "subsystems/ins/vf_extended_float.h"
+
 static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
 {
+	float accel_scaled_z = -imu.accel_scaled.z;
+	float accel_z = -imu.accel.z;
+	float zdotdot = -vff.zdotdot;
+	float bias = -vff.bias;
+	float zdot = -vff.zdot;
+	float z = -vff.z;
+	float gps_body_z = -ins_int.gps_body_z;
+
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_TUNE_VERT(trans, dev, AC_ID,
-			&guidance_v_z_sp,
-			&(stateGetPositionNed_i()->z),
-			&guidance_v_z_ref,
-			&guidance_v_zd_ref);
+			&accel_scaled_z,
+			&accel_z,
+			&zdotdot,
+			&bias,
+			&zdot,
+			&z,
+			&gps_body_z,
+			&guid_v.ref_acc_z,
+			&guid_v.ref_speed_z,
+			&guid_v.ref_pos_z,
+			&guid_v.acc_z_pid.out);
 }
 #endif
 

@@ -149,7 +149,8 @@ void vff_propagate(float accel, float dt)
 	}
 
   /* update state */
-  vff.zdotdot = accel + 9.81 - vff.bias;
+  //vff.zdotdot = accel + 9.81 - vff.bias;
+	vff.zdotdot = accel + 9.81;
   vff.z = vff.z + dt * vff.zdot;
   vff.zdot = vff.zdot + dt * vff.zdotdot;
   /* update covariance */
