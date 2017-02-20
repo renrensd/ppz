@@ -144,15 +144,18 @@ struct _s_trajectory_tracking
 	struct FloatVect2 test_square_c4;
 	uint8_t test_square_index;
 	float test_length;
+	float pos_loop_vel;
+	float brake_len_coef;
 
 	enum _e_traj_mode mode;
 	enum _e_traj_status state;
+	uint8_t switch_reason;
 	bool_t emergency_brake;
 	float ref_speed;
 	float max_acc;
 	float emergency_brake_acc;
 	float min_brake_len;
-	float max_brake_speed;
+	//float max_brake_speed;
 	float guid_speed;
 
 	struct FloatVect2 hover_point;
