@@ -443,10 +443,11 @@ void imu_mpu9250_event(void)
 	if (imu_mpu9250.mag_qmc.data_available) 
 	{
 	  /*no 3/4/5*/
+		/*
 	  imu.mag_unscaled.x = +imu_mpu9250.mag_qmc.data.vect.y;
 	  imu.mag_unscaled.y = +imu_mpu9250.mag_qmc.data.vect.x;
 	  imu.mag_unscaled.z = -imu_mpu9250.mag_qmc.data.vect.z;
-
+*/
 	  /*no3 onboard*/
 /*
 		imu.mag_unscaled.x = +imu_mpu9250.mag_qmc.data.vect.x;
@@ -454,11 +455,10 @@ void imu_mpu9250_event(void)
 	  imu.mag_unscaled.z = -imu_mpu9250.mag_qmc.data.vect.z;
 */
       /*after no 6++*/
-/*
 	  imu.mag_unscaled.x = +imu_mpu9250.mag_qmc.data.vect.x;
 	  imu.mag_unscaled.y = -imu_mpu9250.mag_qmc.data.vect.y;
 	  imu.mag_unscaled.z = -imu_mpu9250.mag_qmc.data.vect.z;
-*/
+
 	    imu_mpu9250.mag_qmc.data_available = FALSE;
 	    imu_mpu9250.mag_valid = TRUE;
 		#ifdef CALIBRATION_OPTION

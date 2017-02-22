@@ -180,19 +180,19 @@
 <define name="MAG_Z_SENS" value="0.350571050336" integer="16"/-->
 
 	<!--no5 imu-->
-<!--define name="ACCEL_X_NEUTRAL" value="2"/>
-<define name="ACCEL_Y_NEUTRAL" value="-15"/>
-<define name="ACCEL_Z_NEUTRAL" value="160"/>
-<define name="ACCEL_X_SENS" value="4.922391" integer="16"/>
-<define name="ACCEL_Y_SENS" value="4.908957" integer="16"/>
-<define name="ACCEL_Z_SENS" value="4.889877" integer="16"/>
+<define name="ACCEL_X_NEUTRAL" value="11"/>
+<define name="ACCEL_Y_NEUTRAL" value="2"/>
+<define name="ACCEL_Z_NEUTRAL" value="139"/>
+<define name="ACCEL_X_SENS" value="4.908963" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.901205" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.891035" integer="16"/>
 
-<define name="MAG_X_NEUTRAL" value="-241"/>
-<define name="MAG_Y_NEUTRAL" value="3686"/>
-<define name="MAG_Z_NEUTRAL" value="-269"/>
+<define name="MAG_X_NEUTRAL" value="0"/>
+<define name="MAG_Y_NEUTRAL" value="0"/>
+<define name="MAG_Z_NEUTRAL" value="0"/>
 <define name="MAG_X_SENS" value="0.341552543729" integer="16"/>
 <define name="MAG_Y_SENS" value="0.365644633735" integer="16"/>
-<define name="MAG_Z_SENS" value="0.373745503946" integer="16"/-->
+<define name="MAG_Z_SENS" value="0.373745503946" integer="16"/>
 
 	<!--longarm imu-->
 <!--define name="ACCEL_X_NEUTRAL" value="-12"/>
@@ -270,7 +270,7 @@
 <define name="MAG_Z_SENS" value="0.356842356488" integer="16"/-->
 
 	<!--no1 imu-->
-<define name="ACCEL_X_NEUTRAL" value="147"/>
+<!--define name="ACCEL_X_NEUTRAL" value="147"/>
 <define name="ACCEL_Y_NEUTRAL" value="246"/>
 <define name="ACCEL_Z_NEUTRAL" value="388"/>
 <define name="ACCEL_X_SENS" value="4.867459" integer="16"/>
@@ -282,7 +282,7 @@
 <define name="MAG_Z_NEUTRAL" value="-1215"/>
 <define name="MAG_X_SENS" value="0.36094" integer="16"/>
 <define name="MAG_Y_SENS" value="0.36715" integer="16"/>
-<define name="MAG_Z_SENS" value="0.39158" integer="16"/>
+<define name="MAG_Z_SENS" value="0.39158" integer="16"/-->
 
     			<!-- adiv1  -->
     <!--define name="GYRO_P_NEUTRAL" value="0"/>
