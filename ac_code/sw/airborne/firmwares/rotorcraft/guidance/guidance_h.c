@@ -364,8 +364,11 @@ static void guidance_h_state_update(bool_t in_flight)
 	guidance_h.ned_vel_rc.x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
 	guidance_h.ned_vel_rc.y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
 
-	guidance_h.ned_pos_rc.x += guidance_h.ned_vel_rc.x * (1.0f/(float)PERIODIC_FREQUENCY);
-	guidance_h.ned_pos_rc.y += guidance_h.ned_vel_rc.y * (1.0f/(float)PERIODIC_FREQUENCY);
+	if((traj.mode == TRAJ_MODE_HOVER) && (traj.state == TRAJ_STATUS_POS))
+	{
+		guidance_h.ned_pos_rc.x += guidance_h.ned_vel_rc.x * (1.0f/(float)PERIODIC_FREQUENCY);
+		guidance_h.ned_pos_rc.y += guidance_h.ned_vel_rc.y * (1.0f/(float)PERIODIC_FREQUENCY);
+	}
 
 	if(in_flight)
 	{
@@ -651,7 +654,6 @@ void guidance_h_trajectory_tracking_set_min_brake_len(float len)
 {
 	traj.min_brake_len = len;
 	Bound(traj.min_brake_len, 1.0f, 5.0f);
-	//traj.max_brake_speed = traj.min_brake_len * traj.pos_along_pid.Kp / (1.0f + traj.pos_along_pid.Kd);
 }
 
 void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake)
@@ -673,6 +675,11 @@ void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake)
 				guidance_h_trajectory_tracking_set_segment(guidance_h.ned_pos, traj.hover_point);
 			}
 		}
+		traj.state = TRAJ_STATUS_BRAKE;
+	}
+	else
+	{
+		guidance_h_ned_pos_rc_need_reset();
 	}
 	traj.emergency_brake = brake;
 }
@@ -789,10 +796,10 @@ static void guidance_h_trajectory_tracking_ini(void)
 	init_first_order_low_pass(&traj.thrust_cmd_filter, low_pass_filter_get_tau(1.0f), PERIODIC_FREQUENCY, 0);
 
 	guidance_h_trajectory_tracking_set_ref_speed(3.0f);
-	guidance_h_trajectory_tracking_set_max_acc(1.0f);
+	guidance_h_trajectory_tracking_set_max_acc(2.0f);
 	guidance_h_trajectory_tracking_set_min_brake_len(2.0f);
-	guidance_h_trajectory_tracking_set_emergency_brake_acc(2.0f);
-	traj.test_length = 10.0f;
+	guidance_h_trajectory_tracking_set_emergency_brake_acc(3.0f);
+	traj.test_length = 20.0f;
 }
 
 static void guidance_h_trajectory_tracking_state_machine(void)
@@ -806,15 +813,6 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 		float left_len = traj.segment.length - traj.pos_t.x;
 		float vel_inc;
 
-		if(left_len < traj.min_brake_len)
-		{
-			traj.state = TRAJ_STATUS_POS;
-		}
-		else
-		{
-			traj.state = TRAJ_STATUS_VEL;
-		}
-
 		if(traj.emergency_brake)
 		{
 			vel_inc = traj.emergency_brake_acc / (float) PERIODIC_FREQUENCY;
@@ -822,6 +820,14 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 		else
 		{
 			vel_inc = traj.max_acc / (float) PERIODIC_FREQUENCY;
+			if(left_len < traj.min_brake_len)
+			{
+				traj.state = TRAJ_STATUS_POS;
+			}
+			else
+			{
+				traj.state = TRAJ_STATUS_VEL;
+			}
 		}
 
 		if (traj.state == TRAJ_STATUS_VEL)
@@ -946,7 +952,7 @@ static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 	}
 
 	traj_vect_t2b(&traj.cmd_b, &traj.cmd_t);
-
+	//traj_vect_t2b(&traj.cmd_b, &traj.cmd_t_comp);
 
 	if ((stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG)) || stateGetHorizontalSpeedNorm_f() > 30.0)
 	{
