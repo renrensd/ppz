@@ -34,7 +34,6 @@
    <dl_settings NAME="Traj">
    		<dl_setting var="traj.test_mode" min="0" step="1" max="2" module="guidance/guidance_h" shortname="traj_test" values="OFF|LINE|SQUARE" handler="SetTrajTest"/>
    		<dl_setting var="traj.test_length"    min="0.5" step="0.1" max="50" module="guidance/guidance_h" shortname="test_length"/>
-   		<dl_setting var="traj.brake_len_coef"    min="0.1" step="0.1" max="2" module="guidance/guidance_h" shortname="brake_len_coef"/>
    		<dl_setting var="traj.emergency_brake" min="0" step="1" max="1" module="guidance/guidance_h" shortname="em_brake" values="OFF|ON" handler="SetEmBrake"/>
    		<dl_setting var="traj.ref_speed"    min="0.5" step="0.1" max="10" module="guidance/guidance_h" shortname="ref_speed" handler="SetTrajRefSpeed"/>
    		<dl_setting var="traj.min_brake_len"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="min_brake_len" handler="SetMinBrakeLen"/>
@@ -58,12 +57,6 @@
       <dl_setting var="guidance_h.pid_loop_mode_gcs" min="0" step="1" max="1" module="guidance/guidance_h" shortname="pid_mode" values="VEL|POS_VEL"/>
       <dl_setting var="guidance_h.ned_acc_filter_fc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="ned_acc_fc" handler="SetNedAccFc"/>
       <dl_setting var="guidance_h.ned_vel_filter_fc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="ned_vel_fc" handler="SetNedVelFc"/>
-      <dl_setting var="guidance_h.vel_x_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_Kp" handler="SetVelKp"/>
-      <dl_setting var="guidance_h.vel_x_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_Ki" handler="SetVelKi"/>
-      <dl_setting var="guidance_h.vel_x_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_Kd" handler="SetVelKd"/>
-      <dl_setting var="guidance_h.pos_x_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_Kp" handler="SetPosKp"/>
-      <dl_setting var="guidance_h.pos_x_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_Ki" handler="SetPosKi"/>
-      <dl_setting var="guidance_h.pos_x_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_Kd" handler="SetPosKd"/>
       <dl_setting var="guidance_h.use_ref" min="0" step="1" max="1" module="guidance/guidance_h" shortname="use_ref" values="FALSE|TRUE" handler="SetUseRef" param="GUIDANCE_H_USE_REF" persistent="true"/>
       <dl_setting var="gh_ref.max_speed" min="0.1" step="0.1" max="15.0" module="guidance/guidance_h" shortname="max_speed" handler="SetMaxSpeed" param="GUIDANCE_H_REF_MAX_SPEED" type="float" persistent="true"/>
       <dl_setting var="guidance_h.approx_force_by_thrust" min="0" step="1" max="1" module="guidance/guidance_h" shortname="approx_force" values="FALSE|TRUE" param="GUIDANCE_H_APPROX_FORCE_BY_THRUST" type="uint8" persistent="true"/>

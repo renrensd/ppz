@@ -99,7 +99,6 @@ int32_t rc_turn_rate;    //using in HORIZONTAL_MODE_RC,cmd of psi rate
 
 static void guidance_h_update_reference(void);
 #if !GUIDANCE_INDI
-static void guidance_h_traj_run_old(bool_t in_flight);
 #endif
 static void guidance_h_hover_enter(void);
 static void guidance_h_nav_enter(void);
@@ -113,6 +112,7 @@ static void Tracking_differntiator_hx(float signal);
 static void Tracking_differntiator_hy(float signal);
 static void Tracking_differntiator_reset(void);
 
+static void guidance_h_trajectory_tracking_update_state(void);
 static void guidance_h_trajectory_tracking_loop(bool_t in_flight);
 static void guidance_h_trajectory_tracking_ini(void);
 static void traj_pid_loop_reset(void);
@@ -238,8 +238,6 @@ static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
   pprz_msg_send_ROTORCRAFT_TUNE_HOVER(trans, dev, AC_ID,
                                       &traj.mode,
 																			&traj.state,
-																			&traj.switch_reason,
-																			&traj.pos_loop_vel,
 																			&traj.hover_point.x,
 																			&traj.hover_point.y,
 																			&traj.segment.start.x,
@@ -282,35 +280,6 @@ void guidance_h_init(void)
   hh0 = GUIDANCE_H_TD_H0;
   hh = GUIDANCE_H_TD_H;
   r_h = GUIDANCE_H_TD_R;
-
-  pid_ini(&guidance_h.vel_x_pid, PERIODIC_FREQUENCY);
-  pid_ini(&guidance_h.vel_y_pid, PERIODIC_FREQUENCY);
-  pid_ini(&guidance_h.pos_x_pid, PERIODIC_FREQUENCY);
-  pid_ini(&guidance_h.pos_y_pid, PERIODIC_FREQUENCY);
-	pid_set_out_range(&guidance_h.vel_x_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
-	pid_set_Ui_range(&guidance_h.vel_x_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
-	pid_set_out_range(&guidance_h.vel_y_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
-	pid_set_Ui_range(&guidance_h.vel_y_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
-	pid_set_out_range(&guidance_h.pos_x_pid, -5, +5);
-	pid_set_Ui_range(&guidance_h.pos_x_pid, -0.5, +0.5);
-	pid_set_out_range(&guidance_h.pos_y_pid, -5, +5);
-	pid_set_Ui_range(&guidance_h.pos_y_pid, -0.5, +0.5);
-
-	guidance_h.vel_x_pid.Kp = 0.2f;
-	guidance_h.vel_x_pid.Ki = 0.03f;
-	guidance_h.vel_x_pid.Kd = 0.05f;
-
-	guidance_h.vel_y_pid.Kp = 0.2f;
-	guidance_h.vel_y_pid.Ki = 0.03f;
-	guidance_h.vel_y_pid.Kd = 0.05f;
-
-	guidance_h.pos_x_pid.Kp = 0.6f;
-	guidance_h.pos_x_pid.Ki = 0.0f;
-	guidance_h.pos_x_pid.Kd = 0.2f;
-
-	guidance_h.pos_y_pid.Kp = 0.6f;
-	guidance_h.pos_y_pid.Ki = 0.0f;
-	guidance_h.pos_y_pid.Kd = 0.2f;
 
 	guidance_h.ned_acc_filter_fc = 1;
 	guidance_h.ned_vel_filter_fc = 5;
@@ -369,42 +338,6 @@ void guidance_h_SetNedVelFc(float Fc)
 			1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_vel_x_filter));
 	init_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter, low_pass_filter_get_tau(Fc),
 			1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter));
-}
-
-void guidance_h_SetVelKp(float Kp)
-{
-	guidance_h.vel_x_pid.Kp = Kp;
-	guidance_h.vel_y_pid.Kp = Kp;
-}
-
-void guidance_h_SetVelKi(float Ki)
-{
-	guidance_h.vel_x_pid.Ki = Ki;
-	guidance_h.vel_y_pid.Ki = Ki;
-}
-
-void guidance_h_SetVelKd(float Kd)
-{
-	guidance_h.vel_x_pid.Kd = Kd;
-	guidance_h.vel_y_pid.Kd = Kd;
-}
-
-void guidance_h_SetPosKp(float Kp)
-{
-	guidance_h.pos_x_pid.Kp = Kp;
-	guidance_h.pos_y_pid.Kp = Kp;
-}
-
-void guidance_h_SetPosKi(float Ki)
-{
-	guidance_h.pos_x_pid.Ki = Ki;
-	guidance_h.pos_y_pid.Ki = Ki;
-}
-
-void guidance_h_SetPosKd(float Kd)
-{
-	guidance_h.pos_x_pid.Kd = Kd;
-	guidance_h.pos_y_pid.Kd = Kd;
 }
 
 static void guidance_h_state_update(bool_t in_flight)
@@ -731,34 +664,14 @@ void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake)
 
 	if(brake)
 	{
+		traj.emergency_brake_cnt = 0;
+		traj.emergency_brake_x = 0;
 		if(traj.mode == TRAJ_MODE_HOVER)
 		{
-			if(point2_distance(&traj.hover_point, &guidance_h.ned_pos) < traj.min_brake_len)
+			if(point2_distance(&traj.hover_point, &guidance_h.ned_pos) > traj.min_brake_len)
 			{
-				//just wait to hover point
+				guidance_h_trajectory_tracking_set_segment(guidance_h.ned_pos, traj.hover_point);
 			}
-			else
-			{
-				VECT2_DIFF(brake_vect, traj.hover_point, guidance_h.ned_pos);
-				float_vect2_normalize(&brake_vect);
-				vt = VECT2_DOT_PRODUCT(guidance_h.ned_vel, brake_vect);
-				brake_len = traj.emergency_brake_acc*vt*vt/2.0f;
-				VECT2_SMUL(brake_vect, brake_vect, brake_len);
-				VECT2_COPY(brake_start, guidance_h.ned_pos);
-				VECT2_SUM(brake_end, brake_start, brake_vect);
-
-				guidance_h_trajectory_tracking_set_segment(brake_start, brake_end);
-			}
-		}
-		else
-		{
-			brake_len = traj.emergency_brake_acc * traj.vel_t.x * traj.vel_t.x / 2.0f;
-			VECT2_SMUL(brake_vect, traj.segment.along, traj.pos_t.x);
-			VECT2_SUM(brake_start, traj.segment.start, brake_vect);
-			VECT2_SMUL(brake_vect, traj.segment.along, brake_len);
-			VECT2_SUM(brake_end, brake_start, brake_vect);
-
-			guidance_h_trajectory_tracking_set_segment(brake_start, brake_end);
 		}
 	}
 	traj.emergency_brake = brake;
@@ -823,9 +736,9 @@ void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct 
 
 		traj.mode = TRAJ_MODE_SEGMENT;
 	}
-	traj.state = TRAJ_STATUS_ACC;
-	traj.switch_reason = 0;
-	traj.guid_speed = 0;
+	traj.state = TRAJ_STATUS_VEL;
+	guidance_h_trajectory_tracking_update_state();
+	traj.guid_speed = traj.vel_t.x;
 
 	if(!ini)
 	{
@@ -852,7 +765,7 @@ static void guidance_h_trajectory_tracking_ini(void)
 	pid_set_Ui_range(&traj.vel_along_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
 	pid_set_out_range(&traj.vel_cross_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
 	pid_set_Ui_range(&traj.vel_cross_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
-	pid_set_out_range(&traj.pos_along_pid, -5, +5);
+	pid_set_out_range(&traj.pos_along_pid, -10, +10);
 	pid_set_Ui_range(&traj.pos_along_pid, -0.5, +0.5);
 	pid_set_out_range(&traj.pos_cross_pid, -5, +5);
 	pid_set_Ui_range(&traj.pos_cross_pid, -0.5, +0.5);
@@ -880,7 +793,6 @@ static void guidance_h_trajectory_tracking_ini(void)
 	guidance_h_trajectory_tracking_set_min_brake_len(2.0f);
 	guidance_h_trajectory_tracking_set_emergency_brake_acc(2.0f);
 	traj.test_length = 10.0f;
-	traj.brake_len_coef = 1.0f;
 }
 
 static void guidance_h_trajectory_tracking_state_machine(void)
@@ -888,72 +800,75 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 	if (traj.mode == TRAJ_MODE_HOVER)
 	{
 		traj.state = TRAJ_STATUS_POS;
-		traj.switch_reason = 1;
 	}
 	else if (traj.mode == TRAJ_MODE_SEGMENT)
 	{
 		float left_len = traj.segment.length - traj.pos_t.x;
-		float brake_acc;
+		float vel_inc;
 
-		if(traj.emergency_brake)
+		if(left_len < traj.min_brake_len)
 		{
-			brake_acc = traj.emergency_brake_acc;
 			traj.state = TRAJ_STATUS_POS;
-
-//			if(traj.state == TRAJ_STATUS_ACC)
-//			{
-//				traj.state = TRAJ_STATUS_BRAKE;
-//				traj.switch_reason = 2;
-//			}
 		}
 		else
 		{
-			brake_acc = traj.max_acc;
+			traj.state = TRAJ_STATUS_VEL;
 		}
 
-		if (traj.state == TRAJ_STATUS_ACC)
+		if(traj.emergency_brake)
 		{
-			float t = traj.vel_t.x / traj.max_acc;
-			float expected_brake_len = traj.vel_t.x * t - traj.max_acc * t * t / 2.0f;
-			expected_brake_len = expected_brake_len * traj.brake_len_coef;
+			vel_inc = traj.emergency_brake_acc / (float) PERIODIC_FREQUENCY;
+		}
+		else
+		{
+			vel_inc = traj.max_acc / (float) PERIODIC_FREQUENCY;
+		}
 
-			if (left_len < expected_brake_len)
+		if (traj.state == TRAJ_STATUS_VEL)
+		{
+			float ref_speed = traj.pos_along_pid.out;
+			Bound(ref_speed, traj.pos_along_pid.outMin, traj.ref_speed);
+			if(traj.guid_speed < ref_speed)
 			{
-				traj.state = TRAJ_STATUS_BRAKE;
-				traj.switch_reason = 3;
+				traj.guid_speed += vel_inc;
 			}
 			else
 			{
-				if (traj.guid_speed < traj.ref_speed)
-				{
-					traj.guid_speed += traj.max_acc / (float) PERIODIC_FREQUENCY;
-				}
-				else
-				{
-					traj.guid_speed = traj.ref_speed;
-				}
+				traj.guid_speed -= vel_inc;
 			}
 		}
 		else if (traj.state == TRAJ_STATUS_BRAKE)
 		{
-			traj.pos_loop_vel = left_len * traj.pos_along_pid.Kp - traj.vel_t.x * traj.pos_along_pid.Kd;
-			if(traj.vel_t.x > traj.pos_loop_vel)
-			//if(traj.vel_t.x < traj.max_brake_speed)
+			if (traj.guid_speed < 0)
 			{
-				traj.state = TRAJ_STATUS_POS;
-				traj.switch_reason = 4;
+				traj.guid_speed = 0;
 			}
-			else
+			else if(traj.guid_speed > 0)
 			{
-				if (traj.guid_speed > 0)
+				traj.guid_speed -= vel_inc;
+			}
+
+			if(fabsf(traj.vel_t.x) < 0.1f)
+			{
+				traj.emergency_brake_x += traj.pos_t.x;
+				if(++traj.emergency_brake_cnt >= (2*PERIODIC_FREQUENCY))
 				{
-					traj.guid_speed -= brake_acc / (float) PERIODIC_FREQUENCY;
-				}
-				else
-				{
-					traj.guid_speed = 0;
+					traj.state = TRAJ_STATUS_BRAKE_DONE;
+					traj.emergency_brake_x /= (float)(2*PERIODIC_FREQUENCY);
+					if(fabsf(traj.emergency_brake_x - traj.pos_t.x) > 1.0f)
+					{
+						traj.emergency_brake_x = traj.pos_t.x;
+					}
 				}
 			}
+			else if(fabsf(traj.vel_t.x) > 0.2f)
+			{
+				traj.emergency_brake_cnt = 0;
+			}
+		}
+		else if (traj.state == TRAJ_STATUS_BRAKE_DONE)
+		{
+
 		}
 		else if (traj.state == TRAJ_STATUS_POS)
 		{
@@ -962,12 +877,6 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 		else
 		{
 			traj.state = TRAJ_STATUS_POS;
-			traj.switch_reason = 6;
-		}
-		if (left_len < traj.min_brake_len)
-		{
-			traj.state = TRAJ_STATUS_POS;
-			traj.switch_reason = 5;
 		}
 	}
 	else
@@ -976,15 +885,19 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 	}
 }
 
-static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
+static void guidance_h_trajectory_tracking_update_state(void)
 {
-	traj_update_R(stateGetNedToBodyEulers_f()->psi);
-
 	// NED state to trajectory
 	traj_vect_i2t(&traj.acc_t, &guidance_h.ned_acc);
 	traj_vect_i2t(&traj.vel_t, &guidance_h.ned_vel);
 	traj_point_i2t(&traj.pos_t, &guidance_h.ned_pos);
+}
 
+static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
+{
+	traj_update_R(stateGetNedToBodyEulers_f()->psi);
+
+	guidance_h_trajectory_tracking_update_state();
 	guidance_h_trajectory_tracking_state_machine();
 
 	if (traj.mode == TRAJ_MODE_HOVER)
@@ -1005,8 +918,14 @@ static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 			pid_loop_calc_2(&traj.pos_along_pid, traj.segment.length, traj.pos_t.x, 0, traj.vel_t.x);
 			pid_loop_calc_2(&traj.vel_along_pid, traj.pos_along_pid.out, traj.vel_t.x, 0, traj.acc_t.x);
 		}
+		else if(traj.state == TRAJ_STATUS_BRAKE_DONE)
+		{
+			pid_loop_calc_2(&traj.pos_along_pid, traj.emergency_brake_x, traj.pos_t.x, 0, traj.vel_t.x);
+			pid_loop_calc_2(&traj.vel_along_pid, traj.pos_along_pid.out, traj.vel_t.x, 0, traj.acc_t.x);
+		}
 		else
 		{
+			pid_loop_calc_2(&traj.pos_along_pid, traj.segment.length, traj.pos_t.x, 0, traj.vel_t.x);
 			pid_loop_calc_2(&traj.vel_along_pid, traj.guid_speed, traj.vel_t.x, 0, traj.acc_t.x);
 		}
 
@@ -1237,9 +1156,6 @@ void guidance_h_run(bool_t  in_flight)
 		traj_test_loop();
 		guidance_h_trajectory_tracking_loop(in_flight);
 		stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
-
-//		guidance_h_traj_run_old(in_flight);
-//		stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
 #endif
 		stabilization_attitude_run(in_flight);
 		break;
@@ -1276,8 +1192,6 @@ void guidance_h_run(bool_t  in_flight)
 
 			guidance_h_trajectory_tracking_loop(in_flight);
 			stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
-//			guidance_h_traj_run_old(in_flight);
-//			stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
 		}
 		/* in waypoint,route,circle mode*/
 		else
@@ -1294,8 +1208,6 @@ void guidance_h_run(bool_t  in_flight)
 #else
 			guidance_h_trajectory_tracking_loop(in_flight);
 			stabilization_attitude_set_body_cmd_f(traj.cmd_b.y, -traj.cmd_b.x, ANGLE_FLOAT_OF_BFP(guidance_h.sp.heading));
-//			guidance_h_traj_run_old(in_flight);
-//			stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, guidance_h.sp.heading);
 #endif
 		}
 #if 0 //TODOM:use intergrater limit in take off,see above ground signal
@@ -1367,81 +1279,6 @@ static void guidance_h_update_reference(void)
 
 #if !GUIDANCE_INDI
 #include "firmwares/rotorcraft/nav_flight.h"
-static void guidance_h_traj_run_old(bool_t in_flight)
-{
-  static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(15), INT32_ANGLE_FRAC);
-  static const int32_t total_limit_bank = BFP_OF_REAL(RadOfDeg(3), INT32_ANGLE_FRAC);	//add by whp.
-
-	if (gps2.p_stable)
-	{
-		if (guidance_h.mode == GUIDANCE_H_MODE_NAV)
-		{
-			guidance_h.ned_pos_ref.x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
-			guidance_h.ned_pos_ref.y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
-
-			pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
-			pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
-
-			guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
-			guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
-
-			pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
-			pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
-
-			guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
-			guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
-		}
-		else
-		{
-			guidance_h.pid_loop_mode_running = guidance_h.pid_loop_mode_gcs;
-			if (guidance_h.pid_loop_mode_running == POS_VEL)
-			{
-				guidance_h.ned_pos_ref = guidance_h.ned_pos_rc;
-
-				pid_loop_calc_2(&guidance_h.pos_x_pid, guidance_h.ned_pos_ref.x, guidance_h.ned_pos.x, 0, guidance_h.ned_vel.x);
-				pid_loop_calc_2(&guidance_h.pos_y_pid, guidance_h.ned_pos_ref.y, guidance_h.ned_pos.y, 0, guidance_h.ned_vel.y);
-
-				guidance_h.ned_vel_ref.x = guidance_h.pos_x_pid.out;
-				guidance_h.ned_vel_ref.y = guidance_h.pos_y_pid.out;
-			}
-			else
-			{
-				guidance_h.ned_vel_ref = guidance_h.ned_vel_rc;
-			}
-
-			pid_loop_calc_2(&guidance_h.vel_x_pid, guidance_h.ned_vel_ref.x, guidance_h.ned_vel.x, 0, guidance_h.ned_acc.x);
-			pid_loop_calc_2(&guidance_h.vel_y_pid, guidance_h.ned_vel_ref.y, guidance_h.ned_vel.y, 0, guidance_h.ned_acc.y);
-
-			guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(guidance_h.vel_x_pid.out);
-			guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(guidance_h.vel_y_pid.out);
-		}
-	}
-	else
-	{
-		guidance_h_cmd_earth.x = 0;
-		guidance_h_cmd_earth.y = 0;
-	}
-
-  /* compute a better approximation of force commands by taking thrust into account */
-  if (guidance_h.approx_force_by_thrust && in_flight)
-  {
-    static int32_t thrust_cmd_filt;
-    int32_t vertical_thrust = (stabilization_cmd[COMMAND_THRUST] * guidance_v_thrust_coeff) >> INT32_TRIG_FRAC;
-    thrust_cmd_filt = (thrust_cmd_filt * GUIDANCE_H_THRUST_CMD_FILTER + vertical_thrust) /
-                      (GUIDANCE_H_THRUST_CMD_FILTER + 1);
-    guidance_h_cmd_earth.x = ANGLE_BFP_OF_REAL(atan2f((guidance_h_cmd_earth.x * MAX_PPRZ / INT32_ANGLE_PI_2),
-                             thrust_cmd_filt));
-    guidance_h_cmd_earth.y = ANGLE_BFP_OF_REAL(atan2f((guidance_h_cmd_earth.y * MAX_PPRZ / INT32_ANGLE_PI_2),
-                             thrust_cmd_filt));
-  }
-  
-  if((stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG)) || stateGetHorizontalSpeedNorm_f() > 30.0)
-  {    
-  	VECT2_STRIM(guidance_h_cmd_earth, -total_limit_bank, total_limit_bank);
-  }
-
-  VECT2_STRIM(guidance_h_cmd_earth, -total_max_bank, total_max_bank);
-}
 #endif
 
 static void guidance_h_hover_enter(void)

@@ -112,9 +112,10 @@ enum _e_traj_mode
 
 enum _e_traj_status
 {
-	TRAJ_STATUS_ACC = 0,
+	TRAJ_STATUS_VEL = 0,
+	TRAJ_STATUS_POS,
 	TRAJ_STATUS_BRAKE,
-	TRAJ_STATUS_POS
+	TRAJ_STATUS_BRAKE_DONE,
 };
 
 struct _s_segment
@@ -144,18 +145,16 @@ struct _s_trajectory_tracking
 	struct FloatVect2 test_square_c4;
 	uint8_t test_square_index;
 	float test_length;
-	float pos_loop_vel;
-	float brake_len_coef;
 
 	enum _e_traj_mode mode;
 	enum _e_traj_status state;
-	uint8_t switch_reason;
 	bool_t emergency_brake;
+	uint16_t emergency_brake_cnt;
+	float emergency_brake_x;
 	float ref_speed;
 	float max_acc;
 	float emergency_brake_acc;
 	float min_brake_len;
-	//float max_brake_speed;
 	float guid_speed;
 
 	struct FloatVect2 hover_point;
@@ -203,11 +202,6 @@ struct HorizontalGuidance
   struct Int32Eulers rc_sp;    ///< with #INT32_ANGLE_FRAC
 
   // ublox pos pid loop
-  struct _s_pid vel_x_pid;
-  struct _s_pid vel_y_pid;
-  struct _s_pid pos_x_pid;
-  struct _s_pid pos_y_pid;
-
   struct FloatVect2 ned_acc;
   struct FloatVect2 ned_vel;
   struct FloatVect2 ned_pos;
@@ -269,12 +263,6 @@ extern void guidance_h_SetEmBrakeAcc(float acc);
 
 extern void guidance_h_SetNedAccFc(float Fc);
 extern void guidance_h_SetNedVelFc(float Fc);
-extern void guidance_h_SetVelKp(float Kp);
-extern void guidance_h_SetVelKi(float Ki);
-extern void guidance_h_SetVelKd(float Kd);
-extern void guidance_h_SetPosKp(float Kp);
-extern void guidance_h_SetPosKi(float Ki);
-extern void guidance_h_SetPosKd(float Kd);
 
 extern void guidance_h_ned_pos_rc_need_reset(void);
 
