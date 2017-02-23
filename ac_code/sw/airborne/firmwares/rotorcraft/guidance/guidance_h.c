@@ -777,12 +777,12 @@ static void guidance_h_trajectory_tracking_ini(void)
 	pid_set_out_range(&traj.pos_cross_pid, -5, +5);
 	pid_set_Ui_range(&traj.pos_cross_pid, -0.5, +0.5);
 
-	traj.vel_along_pid.Kp = 0.25f;
+	traj.vel_along_pid.Kp = 0.2f;
 	traj.vel_along_pid.Ki = 0.02f;
 	traj.vel_along_pid.Kd = 0.05f;
 
-	traj.vel_cross_pid.Kp = 0.25f;
-	traj.vel_cross_pid.Ki = 0.06f;
+	traj.vel_cross_pid.Kp = 0.2f;
+	traj.vel_cross_pid.Ki = 0.04f;
 	traj.vel_cross_pid.Kd = 0.05f;
 
 	traj.pos_along_pid.Kp = 0.6f;
@@ -921,7 +921,7 @@ static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 		else
 		{
 			struct FloatVect2 vel_rc_t;
-			traj_vect_b2t(&vel_rc_t, &guidance_h.ned_vel_rc);
+			traj_vect_i2t(&vel_rc_t, &guidance_h.ned_vel_rc);
 
 			pid_loop_calc_2(&traj.vel_along_pid, vel_rc_t.x, traj.vel_t.x, 0, traj.acc_t.x);
 			pid_loop_calc_2(&traj.vel_cross_pid, vel_rc_t.y, traj.vel_t.y, 0, traj.acc_t.y);
@@ -962,8 +962,8 @@ static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 		traj.cmd_t_comp.y = atan2f((traj.cmd_t.y / (my_math_pi/2.0f)), thrust);
 	}
 
-	traj_vect_t2b(&traj.cmd_b, &traj.cmd_t);
-	//traj_vect_t2b(&traj.cmd_b, &traj.cmd_t_comp);
+	//traj_vect_t2b(&traj.cmd_b, &traj.cmd_t);
+	traj_vect_t2b(&traj.cmd_b, &traj.cmd_t_comp);
 
 	if ((stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG)) || stateGetHorizontalSpeedNorm_f() > 30.0)
 	{
