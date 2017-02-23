@@ -854,7 +854,7 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 				traj.guid_speed -= vel_inc;
 			}
 
-			if(fabsf(traj.vel_t.x) < 0.1f)
+			if(fabsf(traj.vel_t.x) < 0.2f)
 			{
 				traj.emergency_brake_x += traj.pos_t.x;
 				if(++traj.emergency_brake_cnt >= (2*PERIODIC_FREQUENCY))
