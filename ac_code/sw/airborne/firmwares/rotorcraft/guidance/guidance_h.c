@@ -908,13 +908,24 @@ static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 
 	if (traj.mode == TRAJ_MODE_HOVER)
 	{
-		// along pid loop
-		pid_loop_calc_2(&traj.pos_along_pid, traj.hover_point.x, traj.pos_t.x, 0, traj.vel_t.x);
-		pid_loop_calc_2(&traj.vel_along_pid, traj.pos_along_pid.out, traj.vel_t.x, 0, traj.acc_t.x);
+		if (traj.pid_loop_test_mode == 0)
+		{
+			// along pid loop
+			pid_loop_calc_2(&traj.pos_along_pid, traj.hover_point.x, traj.pos_t.x, 0, traj.vel_t.x);
+			pid_loop_calc_2(&traj.vel_along_pid, traj.pos_along_pid.out, traj.vel_t.x, 0, traj.acc_t.x);
 
-		// cross pid loop
-		pid_loop_calc_2(&traj.pos_cross_pid, traj.hover_point.y, traj.pos_t.y, 0, traj.vel_t.y);
-		pid_loop_calc_2(&traj.vel_cross_pid, traj.pos_cross_pid.out, traj.vel_t.y, 0, traj.acc_t.y);
+			// cross pid loop
+			pid_loop_calc_2(&traj.pos_cross_pid, traj.hover_point.y, traj.pos_t.y, 0, traj.vel_t.y);
+			pid_loop_calc_2(&traj.vel_cross_pid, traj.pos_cross_pid.out, traj.vel_t.y, 0, traj.acc_t.y);
+		}
+		else
+		{
+			struct FloatVect2 vel_rc_t;
+			traj_vect_b2t(&vel_rc_t, &guidance_h.ned_vel_rc);
+
+			pid_loop_calc_2(&traj.vel_along_pid, vel_rc_t.x, traj.vel_t.x, 0, traj.acc_t.x);
+			pid_loop_calc_2(&traj.vel_cross_pid, vel_rc_t.y, traj.vel_t.y, 0, traj.acc_t.y);
+		}
 	}
 	else
 	{

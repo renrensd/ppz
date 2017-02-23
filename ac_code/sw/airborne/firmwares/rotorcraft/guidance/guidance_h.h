@@ -145,6 +145,7 @@ struct _s_trajectory_tracking
 	struct FloatVect2 test_square_c4;
 	uint8_t test_square_index;
 	float test_length;
+	uint8_t pid_loop_test_mode;
 
 	enum _e_traj_mode mode;
 	enum _e_traj_status state;
