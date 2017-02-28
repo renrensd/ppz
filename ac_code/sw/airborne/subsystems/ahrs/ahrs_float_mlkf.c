@@ -72,6 +72,7 @@ static void ahrs_mlkf_update_mag_2d(struct Int32Vect3 *mag);
 static void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag);
 static void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag);
 static void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s);
+static void ahrs_mlkf_P_init(void);
 
 struct AhrsMlkf ahrs_mlkf;
 
@@ -87,6 +88,21 @@ struct AhrsMlkf ahrs_mlkf;
 	Butterworth2LowPass filter_r;
 #endif
 
+static void ahrs_mlkf_P_init(void)
+{
+	FLOAT_RATES_ZERO(ahrs_mlkf.gyro_bias);
+	const float P0_a = 1.;
+	const float P0_b = 1e-4;
+	float P0[6][6] = { { P0_a, 0.,   0.,   0.,   0.,   0.  },
+							{ 0.,   P0_a, 0.,   0.,   0.,   0.  },
+							{ 0.,   0.,   P0_a, 0.,   0.,   0.  },
+							{ 0.,   0.,   0.,   P0_b, 0.,   0.  },
+							{ 0.,   0.,   0.,   0.,   P0_b, 0.  },
+							{ 0.,   0.,   0.,   0.,   0.,   P0_b}
+	};
+	memcpy(ahrs_mlkf.P, P0, sizeof(P0));
+}
+
 void ahrs_mlkf_init(void)
 {
   ahrs_mlkf.is_aligned = FALSE;
@@ -100,20 +116,10 @@ void ahrs_mlkf_init(void)
   /*
    * Initialises our state
    */
-  FLOAT_RATES_ZERO(ahrs_mlkf.gyro_bias);
-  const float P0_a = 1.;
-  const float P0_b = 1e-4;
-  float P0[6][6] = { { P0_a, 0.,   0.,   0.,   0.,   0.  },
-					    { 0.,   P0_a, 0.,   0.,   0.,   0.  },
-					    { 0.,   0.,   P0_a, 0.,   0.,   0.  },
-					    { 0.,   0.,   0.,   P0_b, 0.,   0.  },
-					    { 0.,   0.,   0.,   0.,   P0_b, 0.  },
-					    { 0.,   0.,   0.,   0.,   0.,   P0_b}
-  };
-  memcpy(ahrs_mlkf.P, P0, sizeof(P0));
+  ahrs_mlkf_P_init();
 
   VECT3_ASSIGN(ahrs_mlkf.mag_noise, 10, 10, 10);
-  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 0.1f, 0.1f, 0.1f);
+  VECT3_ASSIGN(ahrs_mlkf.gps_heading_noise, 0.1, 0.1, 0.1);
 
 #ifdef AHRS_GYRO_BW_FILTER
   init_butterworth_2_low_pass_int(&filter_p, 18, (1. / 512), 0);
@@ -531,6 +537,7 @@ void ahrs_mlkf_task(void)
 				{
 					gps_heading_aligned = TRUE;
 					ahrs_float_get_quat_from_gps_heading(&ahrs_mlkf.ltp_to_imu_quat, gps.heading);
+					ahrs_mlkf_P_init();
 				}
 				ahrs_mlkf_update_gps_heading(&gps);
 			}
