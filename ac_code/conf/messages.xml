@@ -1408,6 +1408,7 @@
   <message name="ROTORCRAFT_TUNE_HOVER" id="150">
   	<field name="traj_mode"     type="uint8" values="HOVER|SEGMENT"/>
   	<field name="traj_state"     type="uint8" values="VEL|POS|BRAKE|BRAKE_DONE"/>
+  	<field name="realtime_Kp"    type="float"/>
     <field name="hover_x"    type="float"/>
     <field name="hover_y"    type="float"/>
     <field name="start_x"    type="float"/>

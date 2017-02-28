@@ -153,10 +153,14 @@ struct _s_trajectory_tracking
 	uint16_t emergency_brake_cnt;
 	float emergency_brake_x;
 	float ref_speed;
+	float pos_along_brake_len;
 	float max_acc;
 	float emergency_brake_acc;
 	float min_brake_len;
+	float brake_margin;
 	float guid_speed;
+	float pos_along_Kp;
+	float pos_along_Kd;
 
 	struct FloatVect2 hover_point;
 

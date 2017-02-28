@@ -238,6 +238,7 @@ static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
   pprz_msg_send_ROTORCRAFT_TUNE_HOVER(trans, dev, AC_ID,
                                       &traj.mode,
 																			&traj.state,
+																			&traj.pos_along_pid.Kp,
 																			&traj.hover_point.x,
 																			&traj.hover_point.y,
 																			&traj.segment.start.x,
@@ -364,7 +365,7 @@ static void guidance_h_state_update(bool_t in_flight)
 	guidance_h.ned_vel_rc.x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
 	guidance_h.ned_vel_rc.y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
 
-	if((traj.mode == TRAJ_MODE_HOVER) && (traj.state == TRAJ_STATUS_POS))
+	if((guidance_h.mode == GUIDANCE_H_MODE_HOVER) && (traj.mode == TRAJ_MODE_HOVER) && (traj.state == TRAJ_STATUS_POS))
 	{
 		guidance_h.ned_pos_rc.x += guidance_h.ned_vel_rc.x * (1.0f/(float)PERIODIC_FREQUENCY);
 		guidance_h.ned_pos_rc.y += guidance_h.ned_vel_rc.y * (1.0f/(float)PERIODIC_FREQUENCY);
@@ -636,6 +637,8 @@ void guidance_h_trajectory_tracking_set_ref_speed(float speed)
 {
 	traj.ref_speed = speed;
 	Bound(traj.ref_speed, 0.5f, 10.0f);
+	traj.pos_along_brake_len = traj.ref_speed * (1.0f + traj.pos_along_pid.Kd) / traj.pos_along_pid.Kp;
+	Bound(traj.pos_along_brake_len, traj.min_brake_len, 20.0f);
 }
 
 void guidance_h_trajectory_tracking_set_emergency_brake_acc(float acc)
@@ -793,6 +796,10 @@ static void guidance_h_trajectory_tracking_ini(void)
 	traj.pos_cross_pid.Ki = 0.0f;
 	traj.pos_cross_pid.Kd = 0.25f;
 
+	traj.pos_along_Kp = traj.pos_along_pid.Kp;
+	traj.pos_along_Kd = traj.pos_along_pid.Kd;
+	traj.brake_margin = 1.8f;
+
 	init_first_order_low_pass(&traj.thrust_cmd_filter, low_pass_filter_get_tau(1.0f), PERIODIC_FREQUENCY, 0);
 
 	guidance_h_trajectory_tracking_set_ref_speed(3.0f);
@@ -804,6 +811,9 @@ static void guidance_h_trajectory_tracking_ini(void)
 
 static void guidance_h_trajectory_tracking_state_machine(void)
 {
+	traj.pos_along_pid.Kp = traj.pos_along_Kp;
+	traj.pos_along_pid.Kd = traj.pos_along_Kd;
+
 	if (traj.mode == TRAJ_MODE_HOVER)
 	{
 		traj.state = TRAJ_STATUS_POS;
@@ -842,6 +852,21 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 			{
 				traj.guid_speed -= vel_inc;
 			}
+
+			if (left_len > (traj.pos_along_brake_len * traj.brake_margin))
+			{
+				traj.pos_along_pid.Kp = traj.pos_along_Kp;
+				traj.pos_along_pid.Kd = traj.pos_along_Kd;
+			}
+			else
+			{
+				traj.pos_along_pid.Kp = (1.0f - ((left_len / (traj.pos_along_brake_len * traj.brake_margin)) * 0.5f))
+						* traj.pos_along_Kp;
+				traj.pos_along_pid.Kd = (1.0f - ((left_len / (traj.pos_along_brake_len * traj.brake_margin)) * 0.5f))
+						* traj.pos_along_Kd;
+			}
+			Bound(traj.pos_along_pid.Kp, (traj.pos_along_Kp*0.5f), traj.pos_along_Kp);
+			Bound(traj.pos_along_pid.Kd, (traj.pos_along_Kd*0.5f), traj.pos_along_Kd);
 		}
 		else if (traj.state == TRAJ_STATUS_BRAKE)
 		{
@@ -962,7 +987,6 @@ static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 		traj.cmd_t_comp.y = atan2f((traj.cmd_t.y / (my_math_pi/2.0f)), thrust);
 	}
 
-	//traj_vect_t2b(&traj.cmd_b, &traj.cmd_t);
 	traj_vect_t2b(&traj.cmd_b, &traj.cmd_t_comp);
 
 	if ((stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG)) || stateGetHorizontalSpeedNorm_f() > 30.0)
