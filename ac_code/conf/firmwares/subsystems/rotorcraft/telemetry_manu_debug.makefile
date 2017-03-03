@@ -1,0 +1,18 @@
+# XBee modems in API mode
+#
+# Expected from board file or overriden as xml param :
+#
+$(TARGET).CFLAGS += -DUSE_MANU_DEBUG=1
+
+MANU_DEBUG_PORT_LOWER=$(shell echo $(MDEBUG_PORT) | tr A-Z a-z)
+MANU_DEBUG_PORT_UPPER=$(shell echo $(MDEBUG_PORT) | tr a-z A-Z)
+
+#$(TARGET).CFLAGS += -DUSE_UART3   
+#$(TARGET).CFLAGS += -DUART3_BAUD ?= B115200
+$(TARGET).CFLAGS += -DUSE_$(MANU_DEBUG_PORT_UPPER)
+$(TARGET).CFLAGS += -D$(MANU_DEBUG_PORT_UPPER)_BAUD=$(MDEBUG_BAUD)
+$(TARGET).CFLAGS += -DMDEBUG_UART=$(MANU_DEBUG_PORT_LOWER)
+$(TARGET).CFLAGS += -DDOWNLINK_MDEBUG_DEVICE=$(MANU_DEBUG_PORT_LOWER)
+$(TARGET).CFLAGS += -DDOWNLINK_MDEBUG_TP=mdebug_tp
+
+$(TARGET).srcs += subsystems/datalink/pprz_transport.c

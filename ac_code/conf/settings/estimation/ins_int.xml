@@ -3,8 +3,8 @@
 <settings target="ap|nps">
   <dl_settings>
     <dl_settings NAME="INS_INT">
-    	 <dl_setting var="ins_int.R_ublox_pos" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_ublox_pos" type="float"/>
-    	 <dl_setting var="ins_int.R_ublox_vel" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_ublox_vel" type="float"/>
+       <dl_setting var="ins_int.R_ublox_pos" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_ublox_pos" type="float"/>
+       <dl_setting var="ins_int.R_ublox_vel" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_ublox_vel" type="float"/>
        <dl_setting var="ins_int.R_baro" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_baro" type="float"/>
        <dl_setting var="ins_int.R_baro_offset" min="0.1" step="0.1" max="10000" module="subsystems/ins/ins_int" shortname="R_baro_offset" type="float"/>
        <dl_setting min="0" max="1" step="1" type="bool" values="OFF|ON" var="ins_int.virtual_rtk_v_valid" module="subsystems/ins/ins_int" shortname="virtual_rtk_v_valid"/>

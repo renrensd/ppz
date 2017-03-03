@@ -103,6 +103,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			{
 				gcs_task_cmd = GCS_CMD_PAUSE;
 				gcs_cmd_interrupt = TRUE;
+				manual_pause_flag = TRUE;
 			}
 			else
 			{
@@ -400,6 +401,15 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 			if( task_lla_to_enu_convert(&enu_home, &lla_home) )
 	   		{
 				VECT2_COPY(wp_home, enu_home);	
+				
+				/*replace current pos with wp_home, if pos error <1m*/
+				struct EnuCoor_i temp_pos = *stateGetPositionEnu_i();
+				struct EnuCoor_i diff_pos;
+				VECT2_DIFF(diff_pos, temp_pos, enu_home)
+				if( abs(diff_pos.x)<POS_BFP_OF_REAL(1.0) && abs(diff_pos.y)<POS_BFP_OF_REAL(1.0) )
+				{
+					VECT2_COPY(wp_home, temp_pos);
+				}
 				wp_home_useful = TRUE;  /*home waypoint receive success*/
 			}
 			else
@@ -502,6 +512,7 @@ int8_t command_delete_all_task(void)
 		response = 1;
 		return response;
 	}
+	next_wp.wp_id = 0;
 	nb_pending_wp = 0;	
 	from_wp_useful = FALSE;
 	return response;

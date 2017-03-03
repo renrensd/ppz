@@ -4,14 +4,14 @@
   <dl_settings>
 
     <dl_settings NAME="XBEE_SET">
-        <dl_setting var="xbee_con_info.rc_addr[0][0]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr0" type="uint8" persistent="true"/>
-	<dl_setting var="xbee_con_info.rc_addr[0][1]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr1" type="uint8" persistent="true"/>
-	<dl_setting var="xbee_con_info.rc_addr[0][2]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr2" type="uint8" persistent="true"/>
-	<dl_setting var="xbee_con_info.rc_addr[0][3]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr3" type="uint8" persistent="true"/>
-	<dl_setting var="xbee_con_info.rc_addr[0][4]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr4" type="uint8" persistent="true"/>
-	<dl_setting var="xbee_con_info.rc_addr[0][5]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr5" type="uint8" persistent="true"/>
-	<dl_setting var="xbee_con_info.rc_addr[0][6]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr6" type="uint8" persistent="true"/>
-	<dl_setting var="xbee_con_info.rc_addr[0][7]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr7" type="uint8" persistent="true"/>
+        <dl_setting var="xbee_con_info.rc_addr[0]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr0" type="uint8" persistent="true"/>
+	<dl_setting var="xbee_con_info.rc_addr[1]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr1" type="uint8" persistent="true"/>
+	<dl_setting var="xbee_con_info.rc_addr[2]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr2" type="uint8" persistent="true"/>
+	<dl_setting var="xbee_con_info.rc_addr[3]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr3" type="uint8" persistent="true"/>
+	<dl_setting var="xbee_con_info.rc_addr[4]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr4" type="uint8" persistent="true"/>
+	<dl_setting var="xbee_con_info.rc_addr[5]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr5" type="uint8" persistent="true"/>
+	<dl_setting var="xbee_con_info.rc_addr[6]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr6" type="uint8" persistent="true"/>
+	<dl_setting var="xbee_con_info.rc_addr[7]" min="0" step="1" max="255" module="subsystems/datalink/xbee" shortname="mr7" type="uint8" persistent="true"/>
 
     </dl_settings>
 

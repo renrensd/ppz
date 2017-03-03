@@ -58,7 +58,7 @@ static MANUFACTURE_INFO  manufacture_info;
 static uint32_t  checksum_result;
 static uint8_t *checksum_ptr;
 static uint16_t counter_rom_segment; 
-static uint8_t eng_con_flag = 0;
+static uint8_t eng_con_flag = 2;
 
 COMPONENT_VERSION_INFO eng_components_info;
 
@@ -80,6 +80,11 @@ void eng_task(void)
 		eng_con_flag = 0;
     	fram_write(CL_PRODUCT_SERIES_NUMBER, 0, cl_ac_serial_number_array);
 		fram_write(CL_HARDWARE_VERSION, 0, cl_ac_hw_version_array);
+		fram_write(CL_GCS_MAC_ADDR, 0, cl_gcs_mac_address);
+		fram_write(CL_RC_MAC_ADDR, 0, cl_rc_mac_address);
+		#ifdef UPGRADE_OPTION
+		fram_erase_swdl_mask();
+		#endif	/* UPGRADE_OPTION */
 	}
 	else if(eng_con_flag == 2)	//read
 	{
@@ -117,7 +122,7 @@ static void request_components_sv_version(void)
    #ifdef BBOX_OPTION
     static bool_t bbox_timer_creat = FALSE;
    
-   	if(!eng_components_info.bbox_sv.sv_update && !bbox_timer_creat)
+  if(!eng_components_info.bbox_sv.sv_update && !bbox_timer_creat)
 	{
 		tm_create_timer((uint8_t)TIMER_GET_BBOX_SV_VERSION,2 SECONDS,10,0);
 		bbox_timer_creat = TRUE;
@@ -163,11 +168,12 @@ static void get_components_sv_version(void)
 	if(!eng_components_info.ac_sv.sv_update)
 	{
 		uint8_t* ac_sv = eng_get_ac_version();
-		for(uint8_t i=0; i<SIZE_OF_AC_VERSION; i++)
+		uint8_t len = SIZE_OF_AC_VERSION + SIZE_OF_AC_PROJECT_NAME;
+		for(uint8_t i=0; i<len; i++)
 		{
 			eng_components_info.ac_sv.version[i] = *(ac_sv+i);
 		}
-		eng_components_info.ac_sv.sv_len = SIZE_OF_AC_VERSION;
+		eng_components_info.ac_sv.sv_len = len;
 		eng_components_info.ac_sv.sv_update = TRUE;
 	}
 }
@@ -180,8 +186,7 @@ static void get_components_sv_version(void)
 ***********************************************************************/
 void eng_init(void)
 {
-	//eng_get_ac_identification(ENG_GET_AC_CHECKSUM);
-	//eng_get_ac_identification(ENG_GET_AC_VERSION);
+	fram_read((uint8_t)CL_PRODUCT_SERIES_NUMBER,0,&manufacture_info.cl_product_sn[0]); 
 }
 
 /***********************************************************************
@@ -248,7 +253,7 @@ uint8_t* eng_get_ac_hardware_version(void)
 ***********************************************************************/
 uint8_t* eng_get_product_series_number(void)
 {
-	return 	&manufacture_info.cl_product_series_number[0];
+	return 	&manufacture_info.cl_product_sn[0];
 }
 
 /***********************************************************************
@@ -358,7 +363,7 @@ void eng_get_ac_identification(uint8_t val)
 	else if(ENG_GET_MANUFACTURE_INFO == val)
 	{
 		//request product_series_number
-		fram_read((uint8_t)CL_PRODUCT_SERIES_NUMBER,0,&manufacture_info.cl_product_series_number[0]); 
+		fram_read((uint8_t)CL_PRODUCT_SERIES_NUMBER,0,&manufacture_info.cl_product_sn[0]); 
 	}
 }
 

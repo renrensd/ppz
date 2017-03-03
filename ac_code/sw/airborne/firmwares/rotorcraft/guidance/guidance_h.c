@@ -48,9 +48,6 @@
 
 #include "state.h"
 
-#if USE_FLOW
-#include "subsystems/ins/flow_hf_float.h"  //add for inital flow filter when entering hover mode
-#endif
 
 #ifndef GUIDANCE_H_AGAIN
 #define GUIDANCE_H_AGAIN 0
@@ -110,7 +107,6 @@ int32_t fhan_control(float pos,float vel,  float repul, float h1);
 float fhan_h(float signal,float x1,float x2);
 static void Tracking_differntiator_hx(float signal);
 static void Tracking_differntiator_hy(float signal);
-static void Tracking_differntiator_reset(void);
 
 static void guidance_h_trajectory_tracking_update_state(void);
 static void guidance_h_trajectory_tracking_loop(bool_t in_flight);
@@ -176,8 +172,8 @@ static void Tracking_differntiator_hx(float signal)
 	float fh;
 	fh = fhan_h(signal,xh1,xh2);
 	
-	xh2 = xh2 + hh*fh;
 	xh1 = xh1 + hh*xh2;
+	xh2 = xh2 + hh*fh;
 }
 
 static void Tracking_differntiator_hy(float signal)
@@ -185,16 +181,8 @@ static void Tracking_differntiator_hy(float signal)
 	float fh;
 	fh = fhan_h(signal,yh1,yh2);
 	
-	yh2 = yh2 + hh*fh;
 	yh1 = yh1 + hh*yh2;
-}
-
-static void Tracking_differntiator_reset(void)
-{
-	xh1 = 0;
-	xh2 = 0;
-	yh1 = 0;
-	yh2 = 0;
+	yh2 = yh2 + hh*fh;
 }
 
 //*****************************************************//
@@ -1221,7 +1209,7 @@ void guidance_h_run(bool_t  in_flight)
 			guidance_h_update_reference();
 
 			/* set psi command ,using rc_turn_rate from rc_turn_cmd*/
-			nav_heading += (rc_turn_rate / PERIODIC_FREQUENCY); //add deta heading
+			nav_heading += (rc_turn_rate / PERIODIC_FREQUENCY); //add delta heading
 			guidance_h.sp.heading = nav_heading;
 
 			INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
@@ -1330,10 +1318,6 @@ static void guidance_h_hover_enter(void)
 
   guidance_h_ned_pos_rc_need_reset();
   guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
-
-  #if USE_FLOW  
-  flow_hff_init(0.0, 0.0, 0.0, 0.0);//zero to pos and vel,later flow filter update when hover running
-  #endif 
 }
 
 static void guidance_h_nav_enter(void)

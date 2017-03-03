@@ -44,6 +44,10 @@
 #include "ops_msg_if.h"   
 
 
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+#endif
+
 /*===VARIABLES========================================================*/
 struct OPS_INFO ops_info;
 struct OPS_CONFIG_PARAM ops_param;
@@ -187,6 +191,7 @@ void ops_init(void)
 	ops_param.drop_cm2 = OPS_DEFAULT_DROP_CM2;
 	ops_param.atom = OPS_DEFAULT_ATOM;
 	ops_param.spray_chal = OPS_DEFAULT_SPRAY_CHAL;
+	ops_param.spray_wide = OPS_DEFAULT_SPRAY_WIDE;
 	ops_info.init_status = OPS_CONF_NOT_CONNECT;
 	ops_info.con_flag = OPS_NOT_CONNECT;
 	ops_info.selfclean_flag = FALSE;
@@ -217,6 +222,7 @@ void ops_heart_beat_handler(uint8_t *param)
 	ops_info.o_bat_rep = (*(param+11) << 8 | *(param+10));
 	ops_info.o_bat_tem = (*(param+13) << 8 | *(param+12));
 	ops_info.sys_error = *(param+22);
+	ops_info.mcu_info = *(param+23);
 	if(ops_info.o_bat_cap < 1)
 	{
 		ops_info.o_bat_cap = 1;
@@ -232,6 +238,19 @@ void ops_heart_beat_handler(uint8_t *param)
 	}
 
 	tm_create_timer(TIMER_OPS_HB_POLL, (3000 MSECONDS), TIMER_ONE_SHOT,0);
+
+	#if defined (PERIODIC_TELEMETRY) && defined (BBOX_OPTION)
+    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+    DOWNLINK_SEND_OPS_INFO_BBOX(DefaultChannel, DefaultDevice, 
+		                         &ops_info.o_bat_mv,
+		                         &ops_info.o_bat_ma,
+		                         &ops_info.o_bat_cap,
+		                         &ops_info.o_bat_rep,
+		                         &ops_info.o_bat_tem,
+		                         &ops_info.sys_error,
+		                         &ops_info.mcu_info             );
+		                         
+	#endif
 }
 
 /***********************************************************************
@@ -244,7 +263,7 @@ void ops_update_aircraft_vel(void)
 {
 	float speed;
 	speed =	fabs( stateGetHorizontalSpeedNorm_f() ) * 1000;
-	if( speed<300 )
+	if( speed<200 )
 	{
 		speed = 0;  //set dead bound
 	}
@@ -269,7 +288,7 @@ void ops_heart_beat_lose_handler(void)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
-void ops_update_config_param(uint16_t param, uint8_t param_type)
+void ops_set_config_param(uint16_t param, uint8_t param_type)
 {
 	switch(param_type)
 	{
@@ -288,10 +307,15 @@ void ops_update_config_param(uint16_t param, uint8_t param_type)
 		case  PARAM_SPRAY_CHANNEL:
 			ops_param.spray_chal = (uint8_t)(param&0xFF);
 			break;
+		case  PARAM_SPRAY_WIDE:
+			ops_param.spray_wide = param;
 		default:
 			break;
 	}
-	
+}
+
+void ops_update_config_param(void)
+{
 	ops_msg_config_param();
 	tm_create_timer(TIMER_OPS_MSG_CONF_PARAM, (500 MSECONDS), 10,0);  //once get ack_msg,timer will be killed
 }
@@ -304,7 +328,8 @@ void ops_update_config_param(uint16_t param, uint8_t param_type)
 ***********************************************************************/
 void rc_update_ops_config_param(uint8_t grade)
 {
-	ops_update_config_param(OPS_DEFAULT_FLOW_M2 * grade, PARAM_FLOW_DENSITY);
+	ops_set_config_param(OPS_DEFAULT_FLOW_M2 * grade, PARAM_FLOW_DENSITY);
+	ops_update_config_param();
 }
 
 

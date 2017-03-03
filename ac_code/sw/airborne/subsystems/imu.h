@@ -58,6 +58,11 @@ struct Imu {
   struct OrientationReps body_to_imu; ///< rotation from body to imu frame
   struct FloatVect3 mag_sens;
 
+  struct FloatVect3 acc_sens;
+
+  bool_t acc_var_valid;
+  bool_t mag_var_valid;
+
   /** flag for adjusting body_to_imu via settings.
    * if FALSE, reset to airframe values, if TRUE set current roll/pitch
    */

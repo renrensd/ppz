@@ -22,6 +22,7 @@
     <file name="gps2_ublox.c"/>
 			<raw>
 				GPS2_UBLOX_PORT_LOWER=$(shell echo $(GPS2_UBLOX_PORT) | tr A-Z a-z)
+				ap.CFLASS += -DUSE_GPS2_UBLOX
 				ap.CFLAGS += -DGPS2_UBLOX_LINK=$(GPS2_UBLOX_PORT_LOWER)
 				ap.CFLAGS += -DUSE_$(GPS2_UBLOX_PORT)
 				ap.CFLAGS += -D$(GPS2_UBLOX_PORT)_BAUD=$(GPS2_UBLOX_BAUD)

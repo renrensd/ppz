@@ -31,8 +31,8 @@ MEMORY
     bkpram (rwx) : ORIGIN = 0x2001C000, LENGTH = 16K
     
     /* Leaving 128k of space at the end of rom for persistent settings */
-    /* rom (rx) : ORIGIN = 0x08004000, LENGTH = 880K*/
-    rom (rx) : ORIGIN = 0x08000000, LENGTH = 896K
+    rom_boot (rx) : ORIGIN = 0x08000000, LENGTH = 32K
+    rom (rx) : ORIGIN = 0x08008000, LENGTH = 864K
     ccmram : org = 0x10000000, len = 64k
     bkpsram : org = 0x40024000, len = 4k
 }

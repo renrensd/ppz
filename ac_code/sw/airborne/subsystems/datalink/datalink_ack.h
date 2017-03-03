@@ -49,9 +49,10 @@ enum Set_Command
 {
 	GCS_CMD = 1,
 	REQUEST_AC_INFO = 2,
-	DELETE_ALL = 3,
+	DELETE_ALL_TASK = 3,
 	OPS_SELFCLEAN = 4,
-	OPS_SPRAY_CONTROL = 5
+	OPS_SPRAY_CONTROL = 5,
+	OPS_CHANNEL_CONTROL = 6
 };
 
 /* task_ack_type: add = 0, update = 1, delete = 2, get = 3; */
@@ -63,7 +64,7 @@ enum Task_Ack_Type
 	TASK_GET =3
 };
 
-//extern uint8_t rc_set_cmd_pasre(uint8_t cmd);
+//extern uint8_t rc_set_cmd_parse(uint8_t cmd);
 extern void send_heart_beat_A2R_msg(void);
 extern void send_heart_beat_A2VR_msg(void);
 extern void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length);

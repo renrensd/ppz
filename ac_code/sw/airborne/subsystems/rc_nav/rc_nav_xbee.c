@@ -58,7 +58,9 @@
 #define RC_LOCK 0x06
 #define RC_UNLOCK 0x60
 #define RC_ADD_SPRAY 0x20
+#define RC_OPEN_SPRAY RC_ADD_SPRAY
 #define RC_REDUCE_SPRAY 0x02
+#define RC_CLOSE_SPRAY RC_REDUCE_SPRAY
 #define RC_MAINPOWER_ON 0x50
 #define RC_MAINPOWER_OFF 0x05
 #ifdef CALIBRATION_OPTION
@@ -83,7 +85,7 @@
 #define K_CCW        0x89
 #define K_HOVER      0
 
-#define RC_MAX_COUNT  4   //lost_time_out =4/(2hz)=2s
+#define RC_MAX_COUNT  10   //lost_time_out =10/(5hz)=2s
 
 struct rc_set rc_set_info;   //rc mode information
 struct rc_motion rc_motion_info;
@@ -96,11 +98,90 @@ bool_t  rc_lost;
 
 static uint8_t rc_motion_cmd_verify(uint8_t cmd);
 
+static void rc_motion_sign_update(void);
+static void rc_motion_speed_update(void);
+static void rc_setpoint_parse(void);
+
 
 void rc_nav_init(void)
 {
     rc_motion_info_init();
 	rc_set_info_init();
+}
+
+void rc_periodic_task(void)  //run 16hz
+{
+	rc_motion_sign_update();
+	rc_motion_speed_update();
+	rc_setpoint_parse();
+}
+
+static void rc_motion_sign_update(void) //run 16hz
+{
+	rc_motion_info.joystick_info.sign_counter = rc_motion_info.joystick_info.sign_counter<<1; 
+	if(rc_motion_info.joystick_info.received_flag)
+	{
+		rc_motion_info.joystick_info.sign_counter++;
+	}
+	uint8_t number_flag = 0;
+	for(uint8_t n=0; n<16; n++)
+	{
+		if( rc_motion_info.joystick_info.sign_counter&(1<<n) )
+		{
+			number_flag++;
+		}
+	}
+	rc_motion_info.joystick_info.percent_rssi = (float)number_flag/16.0f;
+}
+
+#define JOYSTICK_RATIO (1.0/125.0)
+#define JOYSTICK_RL_SPEED_RATIO (0.5)
+static void rc_motion_speed_update(void)
+{
+	rc_motion_info.max_speed_fb = ac_config_info.max_flight_speed;
+	rc_motion_info.max_speed_rl = JOYSTICK_RL_SPEED_RATIO*rc_motion_info.max_speed_fb;
+
+	float speed_limit;
+	if(rc_motion_info.joystick_info.percent_rssi>0.7f)
+	{
+		speed_limit = 1.0f;
+	}
+	else if(rc_motion_info.joystick_info.percent_rssi>0.5f)
+	{
+		speed_limit = rc_motion_info.joystick_info.percent_rssi+0.2f;
+	}
+	else if(rc_motion_info.joystick_info.percent_rssi>0.1f)
+	{
+		speed_limit = rc_motion_info.joystick_info.percent_rssi;
+	}
+	else
+	{
+		speed_limit = 0.0f;
+	}
+	
+	rc_motion_info.speed_fb = (float)rc_motion_info.joystick_info.smooth_stick_ratio[0]*JOYSTICK_RATIO*speed_limit*rc_motion_info.max_speed_fb;
+	rc_motion_info.speed_rl = (float)rc_motion_info.joystick_info.smooth_stick_ratio[1]*JOYSTICK_RATIO*speed_limit*rc_motion_info.max_speed_rl;
+	rc_motion_info.speed_v  = (float)rc_motion_info.joystick_info.smooth_stick_ratio[2]*JOYSTICK_RATIO*speed_limit*rc_motion_info.max_speed_v;
+
+	rc_motion_info.rotation_rate = (float)rc_motion_info.joystick_info.smooth_stick_ratio[3]*JOYSTICK_RATIO*speed_limit*rc_motion_info.max_rotation_rate;	
+
+}
+
+static void rc_setpoint_parse(void)
+{  
+   float psi= ANGLE_FLOAT_OF_BFP(nav_heading);
+   const float s_psi = sinf(psi);
+   const float c_psi = cosf(psi);   
+   float speed_x=c_psi * rc_motion_info.speed_fb - s_psi * rc_motion_info.speed_rl;
+   float speed_y=s_psi * rc_motion_info.speed_fb + c_psi * rc_motion_info.speed_rl;   
+   BoundAbs(speed_x,FB_Max_Speed);
+   BoundAbs(speed_y,FB_Max_Speed);   
+   guidance_h.sp.speed.x = SPEED_BFP_OF_REAL(speed_x);
+   guidance_h.sp.speed.y = SPEED_BFP_OF_REAL(speed_y);
+
+   rc_turn_rate = RATE_BFP_OF_REAL( rc_motion_info.rotation_rate );
+
+   NavVerticalClimbMode(rc_motion_info.speed_v);   
 }
 
 /***********************************************************************
@@ -227,6 +308,23 @@ static void rc_motion_orientation_parse(uint8_t cmd, int8_t *speed_grade)
 * INPUTS      : current cmd
 * RETURN      : unuseful
 ***********************************************************************/
+#ifdef VIRTUAL_JOYSTICK
+uint8_t rc_motion_cmd_execution( uint32_t cmd )
+{
+	rc_motion_info.joystick_info.received_flag = TRUE;   //get motion sign
+	for(uint8 i=0; i<4; i++)
+	{
+		rc_motion_info.joystick_info.current_stick_ratio[i] = (cmd>>(i*8))&&0xff;
+	}
+	for(i=0; i<4; i++)
+	{
+		rc_motion_info.joystick_info.smooth_stick_ratio[i] = 
+			(rc_motion_info.joystick_info.smooth_stick_ratio[i]+rc_motion_info.joystick_info.current_stick_ratio[i])/2;
+	}
+	
+	return 0;
+}
+#else
 uint8_t rc_motion_cmd_execution( uint8_t cmd )
 {   
 	static int8_t fb_grade = 0;
@@ -351,16 +449,17 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 	
 	return error_code=0;  //process success
 }
+#endif
 
 
 
 /***********************************************************************
-* FUNCTION    : rc_set_cmd_pasre
+* FUNCTION    : rc_set_cmd_parse
 * DESCRIPTION : leave take_off/mainpower/mode unused
 * INPUTS      : current cmd
 * RETURN      : unuseful
 ***********************************************************************/
- uint8_t rc_set_cmd_pasre(uint8_t cmd)
+ uint8_t rc_set_cmd_parse(uint8_t cmd)
  {    
  	  rc_set_cmd = cmd;
 
@@ -396,7 +495,26 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		   		}
 			   break;
 	   #endif
-		   
+
+	      #ifdef VIRTUAL_JOYSTICK
+		  case  RC_OPEN_SPRAY:
+		   	   if(flight_mode==nav_rc_mode) 
+		   	   {  
+			   	   #ifdef OPS_OPTION
+                    ops_start_spraying();  //make sure ops is opened
+			       #endif 
+		   	   }
+		   	   break;
+		   case  RC_CLOSE_SPRAY:
+		   	   if(flight_mode==nav_rc_mode) 
+		   	   {
+			   	   #ifdef OPS_OPTION
+                    ops_stop_spraying();  //make sure ops is opened
+			       #endif 
+		   	   }
+		   	   break;	
+		  
+		  #else
 		   case  RC_ADD_SPRAY:
 		   	#ifndef DEBUG_RC
 		   	   if(flight_mode==nav_rc_mode) 
@@ -438,7 +556,20 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 				     #endif 
 			   	   }
 		   	   }
-		   	   break;			   
+		   	   break;	
+		   #endif
+
+		   case RC_TAKE_OFF:
+		   	  if(flight_mode==nav_rc_mode 
+			  	 && !autopilot_in_flight
+			  	 && !rc_set_info.locked
+			  	 && rc_set_info.vtol==LOCKED
+			  	 && ground_check_pass         ) 
+			  {
+			  	  rc_set_info.vtol = TAKE_OFF;  /*generate take off cmd*/
+		   	  }
+			  break;
+				 
 
 		   case  RC_LAND:
 		   	   if(flight_mode==nav_rc_mode && autopilot_in_flight) 

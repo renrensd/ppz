@@ -37,13 +37,7 @@
  #include "subsystems/gps/gps_nmea.h"
 #endif
 
-#if USE_FLOW
-#include "modules/optical_flow/px4_flow_i2c.h"
-#include "subsystems/ins/flow_hf_float.h"
-#include "subsystems/ins/hf_float.h"
-#include "firmwares/rotorcraft/navigation.h"
-#include "firmwares/rotorcraft/guidance/guidance_h.h"
-#endif
+
 #include "generated/airframe.h"
 
 #if USE_VFF_EXTENDED
@@ -74,12 +68,12 @@
 #include "mcu_periph/sys_time.h"
 
 #define R_BARO					(1000.0f)
-#define R_BARO_OFFSET		(10.0f)
+#define R_BARO_OFFSET		    (10.0f)
 #define R_RTK_POS_Z			(0.0004f)
 #define R_UBLOX					(0.1f)
 
 #define RTK_GPS		gps
-#define UBLOX_GPS	gps2
+#define UBLOX_GPS	    gps2
 
 #if USE_SONAR
 #if !USE_VFF_EXTENDED
@@ -197,13 +191,6 @@ struct InsInt ins_int;
 
 int32_t ins_body_rate_z;
 
-#if USE_FLOW
-static abi_event flow_ev;  //add for flow
-static void flow_cb(uint8_t sender_id, struct Px4_flow_Data *flow_data);
-static void flow_to_state(struct HfilterFloat *flow_hff);
-#else
-void ins_int_update_flow(struct Px4_flow_Data *flow_data __attribute__((unused)));
-#endif
 /** ABI binding for VELOCITY_ESTIMATE.
  * Usually this is coming from opticflow.
  */
@@ -223,6 +210,7 @@ static void ins_update_from_hff(void);
 static void ins_int_init(void);
 static void ins_int_propagate(struct Int32Vect3 *accel, float dt);
 static void ins_int_gps_switch(enum _e_ins_gps_type type);
+static inline void gpss_state_update(void);
 
 #ifdef PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -248,11 +236,11 @@ static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
   					&baro_filter,
   					&ins_int.gps_body_z,
   					&vff.z,
-						&gps_speed_z,
-						&vff.zdot,
-						&vff.bias,
-						&raw_baro_offset,
-						&vff.offset);
+					&gps_speed_z,
+					&vff.zdot,
+					&vff.bias,
+					&raw_baro_offset,
+					&vff.offset            );
 }
 
 static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
@@ -345,13 +333,14 @@ static void ins_int_init(void)
   ins_int.R_rtk_pos_z = R_RTK_POS_Z;
   ins_int.R_rtk_pos_z_setting = R_RTK_POS_Z;
   ins_int.R_ublox_pos = R_UBLOX;
-	ins_int.R_ublox_vel = R_UBLOX;
+  ins_int.R_ublox_vel = R_UBLOX;
 
 	//ins_int_gps_switch(GPS_UBLOX);
-	ins_int_gps_switch(GPS_RTK);
+  //ins_int_gps_switch(GPS_RTK);
+  ins_int.gps_type = GPS_RTK;
 }
 
-void ins_int_task(void)
+static inline void gpss_state_update(void)
 {
 	if(gps_nmea.pos_type != TIME_OUT )
 	{
@@ -375,6 +364,11 @@ void ins_int_task(void)
 			ins_int.gpss_state = RTK_UBLOX_INVALID;
 		}
 	}
+}
+
+void ins_int_task(void)
+{
+	gpss_state_update();
 
 	if((ins_int.gpss_state == RTK_VALID) || (ins_int.gpss_state == RTK_UBLOX_VALID)) // RTK valid
 	{
@@ -387,7 +381,7 @@ void ins_int_task(void)
 
 			float r_unstable = (float) ins_int.rtk_gps_sd_ned.z / 10000.0;
 			r_unstable = r_unstable * r_unstable;
-			bool_t p_stable_v = (r_unstable < 3.0f);  //(gps_nmea.pos_type > PSRDIFF);
+			bool_t p_stable_v = (r_unstable < 0.04f);
 
 			if (RTK_GPS.p_stable && ins_int.vf_realign)
 			{
@@ -447,7 +441,7 @@ void ins_int_task(void)
 
 
 			/****************start of horizontal infomation fuse*****************/
-			if ( (gps_nmea.pos_type > SINGLE) && ins_int.virtual_rtk_h_valid )
+			if ( (gps_nmea.pos_type > PSRDIFF) && ins_int.virtual_rtk_h_valid )
 			{
 				if (ins_int.gps_type != GPS_RTK)
 				{
@@ -681,106 +675,6 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 }
 #endif
 
-/**********************************************/
-/*************here is gps cb function**********/
-/**********************************************/
-static bool_t gps_pos_inspect(struct NedCoor_i data)
-{
-	static struct NedCoor_i last_pos;
-	if(  abs(last_pos.x-data.x) > 1000 || abs(last_pos.y-data.y) > 1000)
-	{
-		VECT3_COPY(last_pos, data);
-		return FALSE;
-	}
-	else
-	{
-		VECT3_COPY(last_pos, data);
-		return TRUE;
-	}
-}
-
-static bool_t gps_speed_inspect(struct NedCoor_i data)
-{
-	if( abs(data.x) > 2000 || abs(data.y) >2000 )
-	{
-		return FALSE;
-	}
-	return TRUE;
-}
-
-#if USE_FLOW
-/**** predic convert flow coords pos to NED *****/
-static void flow_to_state(struct HfilterFloat *flow_hff)   
-{  
-   struct NedCoor_f pos_flow, speed_flow;
-   float psi= stateGetNedToBodyEulers_f()->psi; //yaw angle
-   float s_psi = sinf(psi);
-   float c_psi = cosf(psi);
-   pos_flow.x = c_psi * flow_hff->x - s_psi * flow_hff->y;
-   pos_flow.y = s_psi * flow_hff->x + c_psi * flow_hff->y;
-   speed_flow.x = c_psi * flow_hff->xdot - s_psi * flow_hff->ydot;
-   speed_flow.y = s_psi * flow_hff->xdot + c_psi * flow_hff->ydot;
-		   //pos_flow.z=stateGetPositionNed_f()->z;
-		   //speed_flow.z=stateGetSpeedNed_f()->z;	   
-   VECT2_ADD(pos_flow,local_flow_pos);  //add local pos to absolute
-#if 1
-   b2_hff_state.x = pos_flow.x;
-   b2_hff_state.y = pos_flow.y;
-   b2_hff_state.xdot=(b2_hff_state.xdot * 4.0 + speed_flow.x) /5.0; //smooth the speed
-   b2_hff_state.ydot=(b2_hff_state.ydot * 4.0 + speed_flow.y) /5.0;
-   ins_update_from_hff();
-   ins_ned_to_state();
-#else
-		   //stateSetPositionNed_f(&pos_flow);
-		   //stateSetSpeedNed_f(&speed_flow);  
-   #if PERIODIC_TELEMETRY
-   RunOnceEvery(10, (xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-       DOWNLINK_SEND_FLOW_NED(DefaultChannel, DefaultDevice, 
-         &pos_flow.x, &pos_flow.y, &speed_flow.x, &speed_flow.y) ));
-   #endif
-#endif
-}
-
-void ins_int_update_flow(struct Px4_flow_Data *flow_data)
-{ static uint8_t count_time=0;
-  
-  if(guidance_h_mode==GUIDANCE_H_MODE_HOVER||guidance_h_mode==GUIDANCE_H_MODE_ATTITUDE)  //running in hover mode
-  { 
-  	//if(flow_data->qual<50) return;  //flow quality lower,give up
-  	count_time++;
-#if 0//USE_HFF
-  /* horizontal gps transformed to NED in meters as float */
-   struct FloatVect2 *pos_flow, *speed_flow;
-   pos_flow->x=flow_data->sum_x;
-   pos_flow->y=flow_data->sum_y;
-   speed_flow->x=flow_data->flow_comp_m_x/1000.0;
-   speed_flow->y=flow_data->flow_comp_m_y/1000.0;  
-  // run horizontal filter
-   hff_update_flow(pos_flow, speed_flow, flow_data->qual);
-  
-#else  /* hff not used */
-  /* simply add horizontal pos/speed from flow */
-   if(!flow_hff_state.rollback) flow_hff_init(0.0, 0.0, 0.0, 0.0);  //init local point
-   flow_hff_state.x+=flow_data->sum_x;
-   flow_hff_state.y+=flow_data->sum_y;
-   flow_hff_state.xdot=flow_data->flow_comp_m_x/1000.0;
-   flow_hff_state.ydot=flow_data->flow_comp_m_y/1000.0;  
-#endif /* USE_HFF */
-
-  if(count_time==10)   //lower the fre calculate NED pos to 10Hzna
-  { count_time=0;
-    //conver flow coords to ned,and send pos to state
-    flow_to_state(&flow_hff_state);
-  }
-    /* reset the counter to indicate we just had a measurement update */
-  ins_int.propagation_cnt = 0;
-  }
-}
-
-#else
-void ins_int_update_flow(struct Px4_flow_Data *flow_data __attribute__((unused))) {}
-#endif/* USE_FLOW */
-
 
 #if USE_SONAR  //without default bar
 static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
@@ -934,6 +828,30 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
   last_stamp = stamp;
 }
 
+static bool_t gps_pos_inspect(struct NedCoor_i data)
+{
+	static struct NedCoor_i last_pos;
+	if(  abs(last_pos.x-data.x) > 1000 || abs(last_pos.y-data.y) > 1000)
+	{
+		VECT3_COPY(last_pos, data);
+		return FALSE;
+	}
+	else
+	{
+		VECT3_COPY(last_pos, data);
+		return TRUE;
+	}
+}
+
+static bool_t gps_speed_inspect(struct NedCoor_i data)
+{
+	if( abs(data.x) > 2000 || abs(data.y) >2000 )
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
 #ifdef GPS_INSTALL_BIAS
 /*unit :cm, body frame*/
   #define  INS_BODY_TO_GPS_X  0
@@ -1070,12 +988,6 @@ static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
   ins_ned_to_state();
 }
 
-#if USE_FLOW
-static void flow_cb(uint8_t sender_id __attribute__((unused)), struct Px4_flow_Data *flow_data)
-{
-  ins_int_update_flow(flow_data);
-}
-#endif
 
 void ins_int_register(void)
 {
@@ -1088,9 +1000,6 @@ void ins_int_register(void)
   AbiBindMsgGPS_POS(ABI_BROADCAST, &gps_ev, gps_cb);
   AbiBindMsgGPS_UBX(ABI_BROADCAST, &gps2_ev, gps2_cb);
   AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
-  #if USE_FLOW
-  AbiBindMsgFLOW(ABI_BROADCAST, &flow_ev, flow_cb);
-  #endif
 }
 
 

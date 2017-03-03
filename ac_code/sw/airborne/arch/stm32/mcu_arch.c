@@ -43,14 +43,15 @@
 
 void mcu_arch_init(void)
 {
-#if LUFTBOOT
+#ifdef UPGRADE_OPTION
   PRINT_CONFIG_MSG("We are running luftboot, the interrupt vector is being relocated.")
 #if defined STM32F4
-  SCB_VTOR = 0x00004000;
+  SCB_VTOR = 0x00008000;
 #else
   SCB_VTOR = 0x00002000;
 #endif
-#endif
+#endif	/* UPGRADE_OPTION */
+
 #if EXT_CLK == 8000000
 #if defined(STM32F1)
   PRINT_CONFIG_MSG("Using 8MHz external clock to PLL it to 72MHz.")

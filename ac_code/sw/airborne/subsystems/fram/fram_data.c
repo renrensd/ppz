@@ -41,7 +41,7 @@ const uint8_t project_number_array[] =
 /* software version */
 const uint8_t cl_software_version_array[SW_VERSION_LONGTH+1] =
 {
-    "22.01_161030_D  "  //for B2
+    "22.01_170124_m  "  //for B2
 };
 
 /* update flag flag *///CL_SOFTWARE_UPDATE_FLAG
@@ -65,6 +65,16 @@ const uint8_t cl_test_array[] =
     10,20,30,40,50,60,70,80,90,100
 };
 
+const uint8_t cl_gcs_mac_address[] = 
+{
+    0x00,0x13,0xA2,0x00,0x40,0xFB,0xA0,0x7E,
+};
+
+const uint8_t cl_rc_mac_address[] = 
+{
+    0x00,0x13,0xA2,0x00,0x40,0xFB,0xA0,0x7E,
+};
+
 const uint8_t cl_no_init_data_array[1] =//Just no need to change it after to user
 {
     0x00,
@@ -72,7 +82,7 @@ const uint8_t cl_no_init_data_array[1] =//Just no need to change it after to use
 
 const uint8_t cl_ac_serial_number_array[] =
 {
-    "AC1620000001"
+    "AC1620000007"
 };
 
 const uint8_t cl_ac_hw_version_array[] =

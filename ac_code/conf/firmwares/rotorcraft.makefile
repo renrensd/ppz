@@ -50,15 +50,17 @@ $(TARGET).CFLAGS += -DPERIPHERALS_AUTO_INIT
 ifndef NPS_OPTION
 $(TARGET).CFLAGS += -DFAULT_OPTION
 $(TARGET).CFLAGS += -DWDG_OPTION
-# $(TARGET).CFLAGS += -DUPGRADE_OPTION
-#  $(TARGET).CFLAGS += -DBBOX_OPTION=1
+$(TARGET).CFLAGS += -DUPGRADE_OPTION
+# $(TARGET).CFLAGS += -DBBOX_OPTION=1
 # $(TARGET).CFLAGS += -DOPEN_PC_DATALINK=1
 $(TARGET).CFLAGS += -DFRAM_OPTION
+$(TARGET).CFLAGS += -DENG_OPTION
 $(TARGET).CFLAGS += -DGCS_V1_OPTION
+# $(TARGET).CFLAGS += -DCOMM_DIRECT_CONNECT
 # $(TARGET).CFLAGS += -DCALIBRATION_OPTION
 $(TARGET).CFLAGS += -DSYS_TIMER_OPTION
 $(TARGET).CFLAGS += -DQMC5883_OPTION
-#$(TARGET).CFLAGS += -DHMC5983_OPTION
+# $(TARGET).CFLAGS += -DHMC5983_OPTION
 endif
 $(TARGET).srcs   += mcu.c
 $(TARGET).srcs   += $(SRC_ARCH)/mcu_arch.c
@@ -242,6 +244,10 @@ endif
 # add other subsystems to rotorcraft firmware in airframe file:
 #
 # telemetry
+
+# add debug port datalink for manufacture
+ include $(CFG_ROTORCRAFT)/telemetry_manu_debug.makefile 
+
 
 # include $(CFG_ROTORCRAFT)/telemetry_bbox.makefile
 

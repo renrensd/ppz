@@ -30,6 +30,7 @@ struct AccCali
 {
   bool_t enable;
   bool_t enable_prev;
+  bool_t cali_success;
   enum _e_acc_cali_state state;
   float acc_phy_nc[3];
   float acc_norm;

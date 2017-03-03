@@ -33,9 +33,14 @@
 ***********************************************************************/
 uint8_t get_max_pending_id(void)
 {
-	if(0 == nb_pending_wp) return 0;
-	
-	return task_wp[nb_pending_wp-1].wp_id;
+	if(0 == nb_pending_wp)
+	{
+		return next_wp.wp_id;
+	}
+	else
+	{
+		return task_wp[nb_pending_wp-1].wp_id;
+	}
 }
 
 /***********************************************************************

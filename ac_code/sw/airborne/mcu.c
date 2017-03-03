@@ -526,6 +526,7 @@ void mcu_write_file_fault(void)
   	{
 	
 	#ifndef BBOX_OPTION
+	 #if 0
 		sd_write_file_fault("<--- mcu_fault_info_start --->", 0, 1);
 		sd_write_file_fault("mcu_reset_source", mcu_fault_info.reset_src, 0);
 		sd_write_file_fault("mcu_reset_type", mcu_fault_info.reset_type, 0);
@@ -545,6 +546,7 @@ void mcu_write_file_fault(void)
 		}
 
 		sd_write_file_fault("<--- mcu_fault_info_end --->", 0, 2);
+	 #endif
 	#else
 		uint8_t len;
 	    char temp_buf[256];
@@ -553,7 +555,9 @@ void mcu_write_file_fault(void)
 	    bbox_write_file_fault(temp_buf, len);
 		len = sprintf(temp_buf, "type:%x", mcu_fault_info.reset_type);
 	    bbox_write_file_fault(temp_buf, len);
-		len = sprintf(temp_buf, "time:%x", sys_time.nb_sec);
+		//len = sprintf(temp_buf, "time:%x", sys_time.nb_sec);
+		uint32_t current_time = get_utc_time_decimal();
+		len = sprintf(temp_buf, "time:%x", current_time);
 	    bbox_write_file_fault(temp_buf, len);
 		#ifdef WDG_OPTION
 		len = sprintf(temp_buf, "wdg:%x", mcu_watchdog_flag);

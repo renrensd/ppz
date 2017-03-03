@@ -19,7 +19,7 @@
                   message broadcase between xbee communication initial and binded
     </description>
     <field name="serial_code"   type="char[10]"/>
-    <field name="ac_sn"         type="char[10]"/>
+    <field name="ac_sn"         type="char[12]"/>
   </message>
 
   <message name="AIRCRAFT_INFO_STATE" id="102">
@@ -37,7 +37,7 @@
     <field name="atomization_grade" type="uint8"/>              
     <field name="max_flight_speed"   type="uint16" unit="cm/s"/>
     <field name="spray_flight_speed"   type="uint16" unit="cm/s"/>
-    <field name="ac_sn"     type="char[10]"/>  
+    <field name="ac_sn"     type="char[12]"/>  
     <field name="ac_sv"     type="char[25]"/>        
     <field name="ops_sn"    type="char[25]"/>  
     <field name="bbox_sn"   type="char[25]"/>          
@@ -80,7 +80,11 @@
 			 TASK_PARSE           20
 			 TASK_BREAK           21    (auto_task break)
 			 MODE_CONVERT_A2M     22    (mode convert to manual,auto_task break)	
-                         reserve other bits keep 0	 	
+                         reserve other bits keep 0	
+                  selftest_code: express ac power on selftest information
+                         high8bit  1=battery_check;  2=board_check;  3=imu_check;  4=baro_check;   5=ops_check;   
+                                   6=gps_check;	     7=calibration;  8=ap_check;   9=link_check
+                         low8bit   0=pass   others=error
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
     <field name="link_gcs_quality" type="uint8" unit="percent"/>  <!--reserve-->
@@ -96,6 +100,7 @@
     <field name="battery_remain"  type="int8"  unit="percent"/>
     <field name="pesticides_remain" type="int8" unit="percent"/>   
     <field name="error_code" type="uint32"/>
+    <field name="selftest_code" type="uint16"/>
   </message>
 
   <message name="CURRENT_TASK_STATE" id="104">
@@ -302,6 +307,7 @@
                                2=request "AIRCRAFT_INFO_STATE" message, value=null  aircraft will ack with "SET_COMMAND_ACK_STATE" message
                                3=delete all task(if AC in_flight,gived gcs_cmd=pause before delete)
                                4=ops self clean(value: start=1; stop=0)
+                               5=ops channel control, bit of value express the channel, eg.0x0F set four channels open
     </description>
     <field name="command_id" type="uint8"/>
     <field name="command_value" type="uint8"/>
@@ -360,7 +366,7 @@
                 aircraft will ack with "AIRCRAFT_INFO_STATE" message
     </description>
     <field name="serial_code" type="char[10]"/>
-    <field name="sn_code"       type="char[10]"/>
+    <field name="sn_code"       type="char[12]"/>
   </message>
 
   <message name="LAND_TASK" id="8">
@@ -402,41 +408,25 @@
 	<field name="signal" type="uint8"/>
     </message>
 
-    <message name="GCS_VRC_MOTION_CMD" id="201">
+  <message name="GCS_VRC_MOTION_CMD" id="201">
     <description>link="G2A", no ack
-         <!--8bits:abcd efgh                     -->
-         <!-- abcd=0001: virtical control        -->
-         <!-- abcd=0010: for/back_ward control   -->
-         <!-- abcd=0100: right/left_side control -->
-         <!-- abcd=1000: rotation control        -->
-         <!-- abcd=0000: horizontal control stop -->
-         <!-- ef=01    : present orientation (up,  forward, right,clockwise)       -->
-         <!-- ef=10    : present orientation (down,backward,left, counterclockwise)-->
-         <!-- ef=00    : present orientation (stop status)                         -->
-         <!-- gh=xx    : present control speed grade(00/01)                  -->
-         <!--forward  00100101 0x25-->  
-         <!--backward 00101001 0x29--> 
-         <!--right    01000101 0x45--> 
-         <!--left     01001001 0x49--> 
-         <!--up       00010101 0x15--> 
-         <!--down     00011001 0x19--> 
-         <!--stop     00010000 0x10--> 
-         <!--r_turn   10000101 0x85--> 
-         <!--l_turn   10001001 0x89--> 
-         <!--hover    00000000 0x00 --> 
+                <!--byte1  forward/backward control, 0-125:up       -125-0:down-->
+		<!--byte2  right/left control,       0-125:right    -125-0:left-->
+		<!--byte3  up/down control,          0-125:up       -125-0:down-->
+		<!--byte4  CW/CCW control,           0-125:right    -125-0:left-->
     </description>
-    <field name="motion_cmd"  type="uint8"/>
+    <field name="motion_cmd"  type="uint32"/>
   </message>
   
   <message name="GCS_VRC_SET_CMD" id="202">
     <description>link="G2A", no ack
-         <!--reserve  flight_mode:        set_auto  =0x10;    set_manual =0x01   -->
-         <!--change   spray control:      add_spray=0x20;     reduce_spray =0x02 -->
-         <!--keep     VTOL  control:      (take_off  =0x30;)  land       =0x03   -->
-         <!--keep     home_mode:          home      =0x40;    stop_home  =0x04   -->
+         <!--         flight_mode:        set_auto  =0x10;    set_manual =0x01   -->
+         <!--         spray control:      open_spray=0x20;    stop_spray =0x02   -->
+         <!--         VTOL  control:      take_off  =0x30;    land       =0x03   -->
+         <!--         home_mode:          home      =0x40;    stop_home  =0x04   -->
          <!--reserve  mainpower control:  mainpower_on=0x50;  mainpower_off=0x05 -->
-         <!--add      lock control:       unlock=0x60;        lock=0x06          -->       
-         <!--mag      calibration:        calibrate_begin =0x70; calibrate_end = 0x07                      -->
+         <!--         lock control:       unlock=0x60;        lock=0x06          -->       
+         <!--reserve  calibration:        calibrate_begin =0x70; calibrate_end = 0x07 -->
          
     </description>
     <field name="set_cmd"  type="uint8"/>
@@ -480,7 +470,13 @@
   <message name="END_UPGRADE" id="225">
     <description>link="G2A"
     GCS end firmware upgrade:
-    type: AC=1, OPS=2, BBOX=3
+    DATA1:type: AC=1, OPS=2, BBOX=3
+    DATA2:bin checksum high byte
+    DATA3:bin checksum low byte
+    DATA4:bin length msb_1
+    DATA5:bin length 2
+    DATA6:bin length 3
+    DATA7:bin length lsb_4
     </description>
     <field name="type" type="uint8"/>
   </message>

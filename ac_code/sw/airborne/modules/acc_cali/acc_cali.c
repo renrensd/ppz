@@ -18,16 +18,22 @@
 #endif
 #include "subsystems/datalink/downlink.h"
 
+#include "subsystems/fram/fram_if.h"
+#include "subsystems/fram/fram_data.h"
+#include "data_check/crc16.h"
+
 struct AccCali acc_cali;
 
 static abi_event accel_ev;
 
 static void sensors_acc_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[6][3]);
 static void sensors_acc_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[6][3]);
+static bool_t acc_cali_var_verify(void);
+static void acc_cali_write_data(void);
 
 static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp __attribute__((unused)),
-                     struct Int32Vect3 *accel)
+                     struct Int32Vect3 *accel __attribute__((unused)) )
 {
 #define ACC_CALI_CHECK_MIN	(0.6f)
 #define ACC_CALI_CHECK_MAX	(1.4f)
@@ -82,58 +88,61 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 	}
 
 	if( acc_cali.state == ACC_CALI_INI )
+	{
+		for(i=0;i<6;++i)
 		{
-			for(i=0;i<6;++i)
+			for(j=0;j<3;++j)
 			{
-				for(j=0;j<3;++j)
-				{
-					acc_cali.acc_6point[i][j] = 0;
-				}
+				acc_cali.acc_6point[i][j] = 0;
 			}
-
-			acc_cali.acc_gain[0] = 1;
-			acc_cali.acc_gain[1] = 1;
-			acc_cali.acc_gain[2] = 1;
-			acc_cali.acc_offset[0] = 0;
-			acc_cali.acc_offset[1] = 0;
-			acc_cali.acc_offset[2] = 0;
-
-			acc_cali.acc_cali_tick = 0;
-			acc_cali.state = ACC_CALI_GRAB_PX;
 		}
-		else if( acc_cali.state == ACC_CALI_CALC )
+
+		acc_cali.acc_gain[0] = 1;
+		acc_cali.acc_gain[1] = 1;
+		acc_cali.acc_gain[2] = 1;
+		acc_cali.acc_offset[0] = 0;
+		acc_cali.acc_offset[1] = 0;
+		acc_cali.acc_offset[2] = 0;
+
+		acc_cali.acc_cali_tick = 0;
+		acc_cali.state = ACC_CALI_GRAB_PX;
+	}
+	
+	else if( acc_cali.state == ACC_CALI_CALC )
+	{
+		for(i=0;i<6;++i)
 		{
-			for(i=0;i<6;++i)
+			for(j=0;j<3;++j)
 			{
-				for(j=0;j<3;++j)
-				{
-					acc_cali.acc_6point[i][j] /= (float)ACC_CALI_GRAB_TIME;
-				}
+				acc_cali.acc_6point[i][j] /= (float)ACC_CALI_GRAB_TIME;
 			}
+		}
 
-			p.data[0] = 1.1f;
-			p.data[1] = 1.1f;
-			p.data[2] = 1.1f;
-			p.data[3] = 0.2f;
-			p.data[4] = 0.2f;
-			p.data[5] = 0.2f;
+		p.data[0] = 1.1f;
+		p.data[1] = 1.1f;
+		p.data[2] = 1.1f;
+		p.data[3] = 0.2f;
+		p.data[4] = 0.2f;
+		p.data[5] = 0.2f;
 
-			for(i=0;i<100;++i)
-			{
-				sensors_acc_cali_calc_F(&F, &p, acc_cali.acc_6point);
-				sensors_acc_cali_calc_JT(&JT, &p, acc_cali.acc_6point);
-				MatMult(&ev, &JT, &F);
-				MatScale(&ev, &ev, 0.1f);
-				MatSub(&p, &p, &ev);
-			}
+		for(i=0;i<100;++i)
+		{
+			sensors_acc_cali_calc_F(&F, &p, acc_cali.acc_6point);
+			sensors_acc_cali_calc_JT(&JT, &p, acc_cali.acc_6point);
+			MatMult(&ev, &JT, &F);
+			MatScale(&ev, &ev, 0.1f);
+			MatSub(&p, &p, &ev);
+		}
 
-			acc_cali.acc_gain[0] = fabsf(p.data[0]);
-			acc_cali.acc_gain[1] = fabsf(p.data[1]);
-			acc_cali.acc_gain[2] = fabsf(p.data[2]);
-			acc_cali.acc_offset[0] = p.data[3];
-			acc_cali.acc_offset[1] = p.data[4];
-			acc_cali.acc_offset[2] = p.data[5];
+		acc_cali.acc_gain[0] = fabsf(p.data[0]);
+		acc_cali.acc_gain[1] = fabsf(p.data[1]);
+		acc_cali.acc_gain[2] = fabsf(p.data[2]);
+		acc_cali.acc_offset[0] = p.data[3];
+		acc_cali.acc_offset[1] = p.data[4];
+		acc_cali.acc_offset[2] = p.data[5];
 
+		if( acc_cali_var_verify() )
+		{
 #define NEUTRAL_COEF ((float)IMU_ACCEL_SENS_SCALE_FACTOR)
 			acc_cali.acc_NEUTRAL[0] = acc_cali.acc_offset[0] * NEUTRAL_COEF;
 			acc_cali.acc_NEUTRAL[1] = acc_cali.acc_offset[1] * NEUTRAL_COEF;
@@ -143,73 +152,73 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 			acc_cali.acc_SENS[1] = acc_cali.acc_gain[1] * SENS_COEF;
 			acc_cali.acc_SENS[2] = acc_cali.acc_gain[2] * SENS_COEF;
 
-			acc_cali.state = ACC_CALI_IDLE;
+			acc_cali_write_data();   //auto write data to fram, need add data range inspect
 		}
 		else
 		{
-			grab_enable = 0;
-			if( acc_cali.is_body_static )
+			acc_cali.cali_success = FALSE;
+		}
+		acc_cali.state = ACC_CALI_IDLE;
+	}
+	
+	else
+	{
+		grab_enable = 0;
+		if( acc_cali.is_body_static )
+		{
+			if(acc_cali.state == ACC_CALI_GRAB_PX)
 			{
-				if(acc_cali.state == ACC_CALI_GRAB_PX)
+				if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[0], ACC_CALI_CHECK_MIN, ACC_CALI_CHECK_MAX ) )
 				{
-					if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[0], ACC_CALI_CHECK_MIN, ACC_CALI_CHECK_MAX ) )
-					{
-						grab_enable = 1;
-					}
+					grab_enable = 1;
 				}
-				else if(acc_cali.state == ACC_CALI_GRAB_NX)
+			}
+			else if(acc_cali.state == ACC_CALI_GRAB_NX)
+			{
+				if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[0], -ACC_CALI_CHECK_MAX, -ACC_CALI_CHECK_MIN ) )
 				{
-					if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[0], -ACC_CALI_CHECK_MAX, -ACC_CALI_CHECK_MIN ) )
-					{
-						grab_enable = 1;
-					}
+					grab_enable = 1;
 				}
-				else if(acc_cali.state == ACC_CALI_GRAB_PY)
+			}
+			else if(acc_cali.state == ACC_CALI_GRAB_PY)
+			{
+				if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[1], ACC_CALI_CHECK_MIN, ACC_CALI_CHECK_MAX ) )
 				{
-					if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[1], ACC_CALI_CHECK_MIN, ACC_CALI_CHECK_MAX ) )
-					{
-						grab_enable = 1;
-					}
+					grab_enable = 1;
 				}
-				else if(acc_cali.state == ACC_CALI_GRAB_NY)
+			}
+			else if(acc_cali.state == ACC_CALI_GRAB_NY)
+			{
+				if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[1], -ACC_CALI_CHECK_MAX, -ACC_CALI_CHECK_MIN ) )
 				{
-					if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[1], -ACC_CALI_CHECK_MAX, -ACC_CALI_CHECK_MIN ) )
-					{
-						grab_enable = 1;
-					}
+					grab_enable = 1;
 				}
-				else if(acc_cali.state == ACC_CALI_GRAB_NZ)
+			}
+			else if(acc_cali.state == ACC_CALI_GRAB_NZ)
+			{
+				if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[2], ACC_CALI_CHECK_MIN, ACC_CALI_CHECK_MAX ) )
 				{
-					if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[2], ACC_CALI_CHECK_MIN, ACC_CALI_CHECK_MAX ) )
-					{
-						grab_enable = 1;
-					}
+					grab_enable = 1;
 				}
-				else if(acc_cali.state == ACC_CALI_GRAB_PZ)
+			}
+			else if(acc_cali.state == ACC_CALI_GRAB_PZ)
+			{
+				if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[2], -ACC_CALI_CHECK_MAX, -ACC_CALI_CHECK_MIN ) )
 				{
-					if( IS_WITHIN_OPEN_RANGE(acc_cali.acc_phy_nc[2], -ACC_CALI_CHECK_MAX, -ACC_CALI_CHECK_MIN ) )
-					{
-						grab_enable = 1;
-					}
+					grab_enable = 1;
 				}
+			}
 
-				if(grab_enable)
-				{
-					acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][0] += acc_cali.acc_phy_nc[0];
-					acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][1] += acc_cali.acc_phy_nc[1];
-					acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][2] += acc_cali.acc_phy_nc[2];
+			if(grab_enable)
+			{
+				acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][0] += acc_cali.acc_phy_nc[0];
+				acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][1] += acc_cali.acc_phy_nc[1];
+				acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][2] += acc_cali.acc_phy_nc[2];
 
-					if(++acc_cali.acc_cali_tick == ACC_CALI_GRAB_TIME)
-					{
-						acc_cali.acc_cali_tick = 0;
-						acc_cali.state++;
-					}
-				}
-				else
+				if(++acc_cali.acc_cali_tick == ACC_CALI_GRAB_TIME)
 				{
-					acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][0] = 0;
-					acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][1] = 0;
-					acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][2] = 0;
+					acc_cali.acc_cali_tick = 0;
+					acc_cali.state++;
 				}
 			}
 			else
@@ -217,9 +226,35 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 				acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][0] = 0;
 				acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][1] = 0;
 				acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][2] = 0;
-				acc_cali.acc_cali_tick = 0;
 			}
 		}
+		else
+		{
+			acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][0] = 0;
+			acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][1] = 0;
+			acc_cali.acc_6point[acc_cali.state - ACC_CALI_GRAB_PX][2] = 0;
+			acc_cali.acc_cali_tick = 0;
+		}
+	}
+}
+
+static bool_t acc_cali_var_verify(void)
+{
+	bool_t data_ok = TRUE;
+	for (uint8_t i = 0; i < 3; ++i)
+	{
+		if ((acc_cali.acc_gain[i] < 0.7f) || (acc_cali.acc_gain[i] > 1.3f))
+		{
+			data_ok = FALSE;
+			break;
+		}
+		if ((acc_cali.acc_offset[i] < -0.3f) || (acc_cali.acc_offset[i] > 0.3f))
+		{
+			data_ok = FALSE;
+			break;
+		}
+	}
+	return data_ok;
 }
 
 void acc_cali_init(void)
@@ -230,6 +265,7 @@ void acc_cali_init(void)
 	acc_cali.acc_offset[0] = 0.038478f;
 	acc_cali.acc_offset[1] = 0.095785f;
 	acc_cali.acc_offset[2] = 0.12287f;
+	acc_cali.cali_success = FALSE;
 
 	AbiBindMsgIMU_ACCEL_INT32(ABI_BROADCAST, &accel_ev, acc_cali_cb);
 }
@@ -249,20 +285,38 @@ void acc_cali_periodic(void)
 	}
 	acc_cali.enable_prev = acc_cali.enable;
 
-#if PERIODIC_TELEMETRY
-		RunOnceEvery(5,   {
+
+    if(acc_cali.enable)
+    {
+		#if PERIODIC_TELEMETRY
+		RunOnceEvery(25,   {
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_ACC_CALI(DefaultChannel, DefaultDevice, &acc_cali.acc_norm,
-																													&acc_cali.acc_norm_filter,
-																													&acc_cali.acc_NEUTRAL[0],
-																													&acc_cali.acc_NEUTRAL[1],
-																													&acc_cali.acc_NEUTRAL[2],
-																													&acc_cali.acc_SENS[0],
-																													&acc_cali.acc_SENS[1],
-																													&acc_cali.acc_SENS[2],
-																													&acc_cali.is_body_static,
-																													&acc_cali.state);}   );
-#endif
+																		&acc_cali.acc_norm_filter,
+																		&acc_cali.acc_SENS[0],
+																		&acc_cali.acc_SENS[1],
+																		&acc_cali.acc_SENS[2],
+																		&acc_cali.acc_NEUTRAL[0],
+																		&acc_cali.acc_NEUTRAL[1],
+																		&acc_cali.acc_NEUTRAL[2],
+																		&acc_cali.is_body_static,
+																		&acc_cali.state);}         );
+		#endif
+		#if USE_MANU_DEBUG
+		RunOnceEvery(50,   {
+		DOWNLINK_SEND_ACC_CALI(MdebugChannel, MdebugDevice, &acc_cali.acc_norm,
+																		&acc_cali.acc_norm_filter,
+																		&acc_cali.acc_SENS[0],
+																		&acc_cali.acc_SENS[1],
+																		&acc_cali.acc_SENS[2],
+																		&acc_cali.acc_NEUTRAL[0],
+																		&acc_cali.acc_NEUTRAL[1],
+																		&acc_cali.acc_NEUTRAL[2],
+																		&acc_cali.cali_success,
+																		&acc_cali.state);}         );
+		#endif
+    }
+
 }
 
 void acc_cali_event(void)
@@ -276,6 +330,7 @@ void sensors_acc_cali_start(void)
 	{
 		acc_cali.state = ACC_CALI_INI;
 	}
+	acc_cali.cali_success = FALSE;
 }
 void sensors_acc_cali_stop(void)
 {
@@ -283,6 +338,31 @@ void sensors_acc_cali_stop(void)
 	{
 		acc_cali.state = ACC_CALI_IDLE;
 	}
+	acc_cali.cali_success = FALSE;
+}
+
+static void acc_cali_write_data(void)
+{
+	struct AccCali_PersData temp_acc_data;
+	uint8_t *ptemp = (uint8_t *)(&temp_acc_data);
+	temp_acc_data.gain[0] = acc_cali.acc_SENS[0];
+	temp_acc_data.gain[1] = acc_cali.acc_SENS[1];
+	temp_acc_data.gain[2] = acc_cali.acc_SENS[2];
+	temp_acc_data.offset[0] = acc_cali.acc_NEUTRAL[0];
+	temp_acc_data.offset[1] = acc_cali.acc_NEUTRAL[1];
+	temp_acc_data.offset[2] = acc_cali.acc_NEUTRAL[2];
+	temp_acc_data.crc16 = Crc16_normal(ptemp, 0, ACC_CALI_PERS_DATA_STRUCT_LENGTH - 4);
+
+	if(!fram_acc_cali_data_write(ptemp))
+	{
+		acc_cali.cali_success = TRUE;
+	}
+	else
+	{
+		acc_cali.cali_success = FALSE;
+		//fram_error.write_data_fail = TRUE;
+	}
+		
 }
 
 static void sensors_acc_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[6][3])

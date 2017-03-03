@@ -111,6 +111,8 @@ struct GpsState {
   bool_t h_stable;              ///< heading stable flag
   uint8_t head_stanum;
 
+  bool_t alive;
+
 
 };
 

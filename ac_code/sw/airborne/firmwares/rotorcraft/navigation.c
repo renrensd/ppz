@@ -58,6 +58,7 @@ struct EnuCoor_i navigation_obstacle;
 struct EnuCoor_i nav_last_point;
 
 uint8_t last_wp UNUSED;
+FLIGHT_DIRECT flight_direct;
 
 /** Maximum distance from HOME waypoint before going into failsafe mode */
 #ifndef FAILSAFE_MODE_DISTANCE
@@ -218,6 +219,8 @@ void nav_init(void)
   accel_route_brake = 0.0;
   set_carrot_angle = 50;
   flight_limit_height =FLIGHT_LIMIT_HEIGHT;
+
+  flight_direct = NAV_FORWARD;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_NAV_STATUS, send_nav_status);
@@ -508,8 +511,18 @@ void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end)
 
 	guidance_h_trajectory_tracking_set_segment(start_wp, end_wp);
 
-  nav_segment_start = *wp_star;
-  nav_segment_end = *wp_end;
+    /*update route segment info for display*/
+	nav_segment_start = *wp_star;
+	nav_segment_end = *wp_end;
+
+	/*caculate nav_leg_progress2_from*/
+	struct Int32Vect2 wp_diff, pos_diff;
+	struct EnuCoor_i pos_current;
+	VECT2_DIFF(wp_diff, *wp_end, *wp_star);                 //wp_diff is deta of route(x,y)
+	pos_current = *stateGetPositionEnu_i();
+	VECT2_DIFF(pos_diff, pos_current, *wp_star);            //pos_diff is deta from star(x,y)
+	int32_t leg_progress2 = ((int64_t)pos_diff.x*(int64_t)wp_diff.x + (int64_t)pos_diff.y*(int64_t)wp_diff.y)>>16;        //leg_progress2 is route_len * (shadow of cur_star len)
+	nav_leg_progress2_from = leg_progress2;   // <0:signed AC not reach start waypoint
 }
 #endif
 
@@ -612,6 +625,13 @@ float distance_to_target(void)
 	VECT3_DIFF(diff_wp, navigation_target, pos_now_enu);
 	uint32_t distance = int32_sqrt(VECT2_NORM2(diff_wp));
 	return POS_FLOAT_OF_BFP(distance);	
+}
+
+void set_current_pos_to_target(void)
+{
+	struct EnuCoor_i pos_now_enu;
+	pos_now_enu = *stateGetPositionEnu_i();
+	VECT3_COPY(navigation_target, pos_now_enu);
 }
 
 /** Check the time spent in a radius of 'ARRIVED_AT_WAYPOINT' around a wp  */
@@ -794,6 +814,14 @@ void nav_home(void)
   nav_run();
 }
 
+float get_dist2_p2p(struct EnuCoor_i s, struct EnuCoor_i e)
+{
+  struct FloatVect2 pos_diff;
+  pos_diff.x = POS_FLOAT_OF_BFP(s.x) - POS_FLOAT_OF_BFP(e.x);
+  pos_diff.y = POS_FLOAT_OF_BFP(s.y) - POS_FLOAT_OF_BFP(e.y);;
+  return pos_diff.x * pos_diff.x + pos_diff.y * pos_diff.y;
+}
+
 /** Returns squared horizontal distance to given point */
 float get_dist2_to_point(struct EnuCoor_i *p)
 {
@@ -864,7 +892,23 @@ bool_t nav_set_heading_parallel_line(struct EnuCoor_i *wp_from,struct EnuCoor_i 
 	if( delta_angle>ANGLE_BFP_OF_REAL(0.2f) && delta_angle<ANGLE_BFP_OF_REAL(3.14f-0.2f) )  //12deg error allowed
 	{
 		nav_heading = pre_heading;
-	}	
+		/*set heading,forward*/
+		flight_direct = NAV_FORWARD;
+		
+	}
+	else
+	{
+		if( delta_angle<ANGLE_BFP_OF_REAL(0.2f) )
+		{
+			/*forward flight*/
+			flight_direct = NAV_FORWARD;
+		}
+		else
+		{
+			/*backward flight*/
+			flight_direct = NAV_BACKWARD;
+		}
+	}
   }
   return FALSE;
 }
@@ -938,6 +982,7 @@ bool_t get_nav_route_mediacy(void)
 
 float smooth_brake_accel = 1.0;
 float pause_brake_accel = 2.0;
+float urgent_brake_accel = 3.0;
 
 void set_stop_brake(uint8_t brake_grade)
 {
@@ -945,20 +990,28 @@ void set_stop_brake(uint8_t brake_grade)
 	switch ( brake_grade )
 	{
 		case SMOOTH_BRAKE:
-			//accel_stop_brake = SMOOTH_BRAKE_ACCEL;
-			accel_stop_brake = smooth_brake_accel;
+			accel_stop_brake = SMOOTH_BRAKE_ACCEL;
+			//accel_stop_brake = smooth_brake_accel;
+			break;
+		case PAUSE_BRAKE:
+			accel_stop_brake = PAUSE_BRAKE_ACCEL;
+			//accel_stop_brake = pause_brake_accel;
 			break;
 		case URGENT_BRAKE:
-			//accel_stop_brake = URGENT_BRAKE_ACCEL;
-			accel_stop_brake = pause_brake_accel;
+			accel_stop_brake = URGENT_BRAKE_ACCEL;
+			//accel_stop_brake = urgent_brake_accel;
 			break;
+			
 		default:
 			accel_stop_brake = SMOOTH_BRAKE_ACCEL;
 			break;			
 	}
+	guidance_h_trajectory_tracking_set_emergency_brake(stop_brake_flag);
+	guidance_h_trajectory_tracking_set_emergency_brake_acc(accel_stop_brake);
 }
 
 void release_stop_brake(void)
 {
 	stop_brake_flag = FALSE;
+	guidance_h_trajectory_tracking_set_emergency_brake(stop_brake_flag);
 }

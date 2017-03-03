@@ -16,6 +16,7 @@
 #include "state.h"
 #include "subsystems/ins/ins_int.h"
 #include "subsystems/fram/fram_if.h"
+#include "subsystems/fram/fram_data.h"
 #include "data_check/crc16.h"
 #include  "magfield.h"
 #if PERIODIC_TELEMETRY
@@ -41,14 +42,13 @@ static void mag_cali_stop(bool_t ok);
 static bool_t is_mag_cali_done(void);
 static bool_t mag_cali_load_to_imu(void);
 
-#define MAG_SENSITIVITY		(12000) // LSB/G
 #define NORM_MAG	(0.6f) // Gauss
 
 extern int32_t nav_heading; // from navigation.c
 
 static void mag_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp __attribute__((unused)),
-                     struct Int32Vect3 *mag)
+                     struct Int32Vect3 *mag __attribute__((unused)) )
 {
 	uint8_t ok = 0;
 
@@ -148,7 +148,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 
 static void mag_cali_persistent_read(void)
 {
-	struct MagCaliPersData temp_MagCaliFramData;
+	struct MagCali_PersData temp_MagCaliFramData;
 	uint8_t *ptemp = (uint8_t *) (&temp_MagCaliFramData);
 
 	uint8_t err = fram_mag_cali_data_read(ptemp);
@@ -190,7 +190,7 @@ static void mag_cali_persistent_read(void)
 
 static void mag_cali_persistent_write(void)
 {
-	struct MagCaliPersData temp_MagCaliFramData;
+	struct MagCali_PersData temp_MagCaliFramData;
 	uint8_t *ptemp = (uint8_t *) (&temp_MagCaliFramData);
 
 	temp_MagCaliFramData.cali_ecef_pos_i = *stateGetPositionEcef_i();
@@ -490,8 +490,8 @@ for(int i=0;i<MAG_CALI_GRAB_NUM;++i)
 	grab_y[i] = mag_cali.grab_sum[i][1];
 }
 
-#ifdef PERIODIC_TELEMETRY
-		RunOnceEvery(25,   {
+#if PERIODIC_TELEMETRY
+		RunOnceEvery(50,   {
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_MAG_CALI(DefaultChannel, DefaultDevice,
 				&mag_cali.state,
@@ -593,10 +593,10 @@ static void mag_cali_calc_F(struct _s_matrix *_F, struct _s_matrix *_p, float _v
 	float by2 = by*by;
 	float vx;
 	float vy;
-	float vz;
+	//float vz;
 	float vx2;
 	float vy2;
-	float vz2;
+	//float vz2;
 
 	for(i=0;i<MAG_CALI_GRAB_NUM;++i)
 	{

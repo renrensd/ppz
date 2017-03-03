@@ -139,36 +139,46 @@ void delay_ms(uint16_t ms)
 }
 
 #include "subsystems/gps.h"
-uint8_t get_sys_year(void)
+uint8_t get_utc_year(void)
 {
 	return gps.gps_time.year;
 }
 
-uint8_t get_sys_month(void)
+uint8_t get_utc_month(void)
 {
 	return gps.gps_time.month;
 }
 
-uint8_t get_sys_day(void)
+uint8_t get_utc_day(void)
 {
 	return gps.gps_time.day;
 }
 
-uint8_t get_sys_hour(void)
+uint8_t get_utc_hour(void)
 {
 	return gps.gps_time.hour;
 }
 
-uint8_t get_sys_minute(void)
+uint8_t get_utc_minute(void)
 {
 	return gps.gps_time.minute;
 }
 
-uint8_t get_sys_second(void)
+uint8_t get_utc_second(void)
 {
 	return gps.gps_time.second;
 }
 
+uint32_t get_utc_time_decimal(void)  //no year info
+{
+	uint32_t temp_time = gps.gps_time.second;
+	temp_time += gps.gps_time.minute*100;
+	temp_time += gps.gps_time.hour*10000;
+	temp_time += gps.gps_time.day*1000000;
+	temp_time += gps.gps_time.month*100000000;
+	
+	return temp_time;
+}
 
 
 

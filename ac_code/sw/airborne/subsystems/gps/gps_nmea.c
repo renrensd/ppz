@@ -618,16 +618,21 @@ static void nmea_parse_GGA(void)
 
   // get position fix status
   nmea_read_until(&i);
+  if (gps_nmea.msg_buf[i] == ',' && gps_nmea.msg_buf[i + 1] == ',') 
+  {
+    return;
+  }
   // 0 = Invalid, 1 = Valid SPS, 2 = Valid DGPS, 3 = Valid PPS
   // check for good position fix
-  if ((gps_nmea.msg_buf[i] != '0') && (gps_nmea.msg_buf[i] != ','))  {
+  if ((gps_nmea.msg_buf[i] != '0') && (gps_nmea.msg_buf[i] != ','))  
+  {
     gps_nmea.pos_available = TRUE;
 	gps_nmea.gps_qual = (uint8_t)gps_nmea.msg_buf[i];
-    NMEA_PRINT("p_GGA() - POS_AVAILABLE == TRUE\n\r");
-  } else {
+  } 
+  else 
+  {
     gps_nmea.pos_available = FALSE;
 	gps_nmea.gps_qual = 0;
-    NMEA_PRINT("p_GGA() - gps_pos_available == false\n\r");
   }
 
   // get number of satellites used in GPS solution

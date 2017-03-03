@@ -123,7 +123,6 @@ struct Imu imu;
 
 void imu_init(void)
 {
-  gyro_offset_success = TRUE;  //unuse offset
   imu.gyro_filter_fc = GYRO_FILTER_FC;
   imu.acc_filter_fc = ACC_FILTER_FC;
   imu.mag_filter_fc = 10.0f;
@@ -133,7 +132,7 @@ void imu_init(void)
   init_butterworth_2_low_pass_int(&(imu.acc_x_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.acc_y_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.acc_z_filter), imu.acc_filter_fc, 1.0f/512.0f, 0);
-  init_butterworth_2_low_pass_int(&(imu.mag_x_filter), imu.mag_filter_fc, 1.0f/256.0f, 0);   //need to get mag update fre
+  init_butterworth_2_low_pass_int(&(imu.mag_x_filter), imu.mag_filter_fc, 1.0f/256.0f, 0);  
   init_butterworth_2_low_pass_int(&(imu.mag_y_filter), imu.mag_filter_fc, 1.0f/256.0f, 0);
   init_butterworth_2_low_pass_int(&(imu.mag_z_filter), imu.mag_filter_fc, 1.0f/256.0f, 0);
   
@@ -246,12 +245,7 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
   _imu->gyro.r = ((_imu->gyro_unscaled.r - _imu->gyro_neutral.r) * IMU_GYRO_R_SIGN *
                   IMU_GYRO_R_SENS_NUM) / IMU_GYRO_R_SENS_DEN;
   RATES_COPY(_imu->gyro_scaled, _imu->gyro);
-#ifndef NPS_SIMU
-  if(!gyro_offset_success)
-  {
-  	  gyro_offset_success = gyro_offset_caculate(_imu);
-  }
-#endif
+
   _imu->gyro.p = update_butterworth_2_low_pass_int(&(_imu->gyro_x_filter), _imu->gyro.p, INT32_RATE_FRAC);
   _imu->gyro.q = update_butterworth_2_low_pass_int(&(_imu->gyro_y_filter), _imu->gyro.q, INT32_RATE_FRAC);
   _imu->gyro.r = update_butterworth_2_low_pass_int(&(_imu->gyro_z_filter), _imu->gyro.r, INT32_RATE_FRAC);
@@ -260,12 +254,22 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
 void WEAK imu_scale_accel(struct Imu *_imu)
 {
   VECT3_COPY(_imu->accel_prev, _imu->accel);
-  _imu->accel.x = ((_imu->accel_unscaled.x - _imu->accel_neutral.x) * IMU_ACCEL_X_SIGN *
-                   IMU_ACCEL_X_SENS_NUM) / IMU_ACCEL_X_SENS_DEN;
-  _imu->accel.y = ((_imu->accel_unscaled.y - _imu->accel_neutral.y) * IMU_ACCEL_Y_SIGN *
-                   IMU_ACCEL_Y_SENS_NUM) / IMU_ACCEL_Y_SENS_DEN;
-  _imu->accel.z = ((_imu->accel_unscaled.z - _imu->accel_neutral.z) * IMU_ACCEL_Z_SIGN *
-                   IMU_ACCEL_Z_SENS_NUM) / IMU_ACCEL_Z_SENS_DEN;
+  if(!_imu->acc_var_valid)   //get fram var fail, use default data
+  {
+	  _imu->accel.x = ((_imu->accel_unscaled.x - _imu->accel_neutral.x) * IMU_ACCEL_X_SIGN *
+	                   IMU_ACCEL_X_SENS_NUM) / IMU_ACCEL_X_SENS_DEN;
+	  _imu->accel.y = ((_imu->accel_unscaled.y - _imu->accel_neutral.y) * IMU_ACCEL_Y_SIGN *
+	                   IMU_ACCEL_Y_SENS_NUM) / IMU_ACCEL_Y_SENS_DEN;
+	  _imu->accel.z = ((_imu->accel_unscaled.z - _imu->accel_neutral.z) * IMU_ACCEL_Z_SIGN *
+	                   IMU_ACCEL_Z_SENS_NUM) / IMU_ACCEL_Z_SENS_DEN;
+  }
+  else
+  {
+	  _imu->accel.x = (int32_t)((float)(_imu->accel_unscaled.x-_imu->accel_neutral.x) * _imu->acc_sens.x);
+	  _imu->accel.y = (int32_t)((float)(_imu->accel_unscaled.y-_imu->accel_neutral.y) * _imu->acc_sens.y);
+	  _imu->accel.z = (int32_t)((float)(_imu->accel_unscaled.z-_imu->accel_neutral.z) * _imu->acc_sens.z);
+  }
+  
   VECT3_COPY(_imu->accel_scaled, _imu->accel);
 
    _imu->accel.x = update_butterworth_2_low_pass_int(&(_imu->acc_x_filter), _imu->accel.x, INT32_ACCEL_FRAC);

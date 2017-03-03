@@ -63,7 +63,7 @@ void bbox_init(void)
 {
 	bbox_can_init();
 	bbox_info.first_con = FALSE;
-	bbox_info.con_flag = TRUE;
+	bbox_info.con_flag = FALSE;
 	bbox_info.start_log = FALSE;
 	bbox_info.gps_time = FALSE;
 

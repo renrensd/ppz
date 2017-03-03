@@ -39,6 +39,7 @@
 
 #include "subsystems/ahrs/ahrs_float_mlkf.h"
 #include "subsystems/ins/ins_int.h"
+#include "subsystems/fram/fram_if.h"
 
 
 /*===VARIABLES========================================================*/
@@ -59,7 +60,7 @@
 #define BAT_LIMIT_VOL  432   //unit:0.1v
 #define BAT_LIMIT_CAP  15  //unit:percent
 
-#define LESS_RES_CAP 5  //5%
+#define LESS_RES_CAP 3  //5%
 
 static uint8_t ahrs_ground_check(void);
 static uint8_t ins_ground_check(void);
@@ -82,6 +83,17 @@ void misc_moni_init(void)
 	rc_lost = TRUE;
 }
 
+uint8_t board_ground_check(void)
+{
+	if(fram_error.data_wrong || fram_error.read_data_fail || fram_error.write_data_fail)
+	{
+		return 1;  //signed fram wrong
+	}
+	else
+	{
+		return 0;
+	}
+}
 /***********************************************************************
 * FUNCTIONS   : battery ground check
 * DESCRIPTION :  only on ground check once
@@ -212,9 +224,34 @@ void gps_flight_check(void)
 		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
 	}
    #endif	
+
+   #ifdef USE_GPS2_UBLOX
+   	if(gps2.h_stable)
+	{
+		em[GPS_UBLOX_FAIL].active = 0;
+		em[GPS_UBLOX_FAIL].finished = 0;
+	}
+	else
+	{
+		set_except_mission(GPS_UBLOX_FAIL,TRUE,FALSE, FALSE,0, FALSE,FALSE,1);
+	}
+   #endif
 	
 }
 
+
+
+bool_t ops_ground_check(void)
+{
+	if(ops_info.con_flag == OPS_NOT_CONNECT)
+	{
+		return FALSE;
+	}
+	else
+	{
+		return TRUE;
+	}
+}
 /***********************************************************************
 * FUNCTIONS   : ops flight check
 * DESCRIPTION : ept_ms could close by ops recover
@@ -242,10 +279,7 @@ void ops_flight_check(void)
 	{   
 		if(ops_info.sys_error>>1)
 		{
-			//set_except_mission(OPS_BLOCKED,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
-
-
-			
+			set_except_mission(OPS_BLOCKED,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);			
 		}
 		else
 		{
@@ -404,8 +438,9 @@ static bool_t lift_lost_detect(void)
 		if( fabs(stateGetNedToBodyEulers_f()->phi)>MAX_ERROR_ATT || fabs(stateGetNedToBodyEulers_f()->theta)>MAX_ERROR_ATT )
 		{
 			counter++;
-			if(counter > 2)
+			if(counter > MONITORING_FREQUENCY)
 			{
+				counter = MONITORING_FREQUENCY;
 				return TRUE;
 			}
 		}
@@ -424,13 +459,13 @@ static bool_t lift_lost_detect(void)
 
 static bool_t yaw_command_monitor(void)
 {
-	static uint8_t counter = 0;
+	static uint16_t counter = 0;
 	if( abs(stabilization_cmd[COMMAND_YAW]) > MAX_ERROR_YAW_COMMAND )
 	{
 		counter++;
-		if(counter > 5)
+		if(counter > MONITORING_FREQUENCY)  //continual 1s
 		{
-			counter = 6;
+			counter = MONITORING_FREQUENCY;
 			return TRUE;
 		}
 	}
@@ -443,13 +478,13 @@ static bool_t yaw_command_monitor(void)
 
 static bool_t thrust_command_monitor(void)
 {
-	static uint8_t counter = 0;
-	if( get_error_z() &&(stabilization_cmd[COMMAND_THRUST] > MAX_ERROR_Z_THRUST) )
+	static uint16_t counter = 0;
+	if( get_error_z() && (stabilization_cmd[COMMAND_THRUST] > MAX_ERROR_Z_THRUST) )
 	{
 		counter++;
-		if(counter > 3)
+		if(counter > (MONITORING_FREQUENCY*2))  //continual 2s
 		{
-			counter =3;
+			counter = MONITORING_FREQUENCY*2;
 			return TRUE;
 		}
 	}

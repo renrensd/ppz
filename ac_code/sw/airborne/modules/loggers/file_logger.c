@@ -48,8 +48,8 @@
 #endif
 
 /** The file pointer */
-static FIL flog;
-static FRESULT res;
+//static FIL flog;
+//static FRESULT res;
 
 /** Start the file logger and open a new file */
 void file_logger_start(void)

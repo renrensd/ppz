@@ -50,7 +50,7 @@ bool_t flight_prepare(bool_t reset)
   return TRUE;
 }
 
-#if 1
+#if 0  //use for double loop virtical controler
 bool_t take_off_motion(bool_t reset)
 { 
   static uint8_t step_t=0;
@@ -95,7 +95,7 @@ bool_t take_off_motion(bool_t reset)
 
 }
 
-#else
+#else //use for three loop virtical controler
 bool_t take_off_motion(bool_t reset)
 { 
   static uint8_t step_t=0;
@@ -127,7 +127,7 @@ bool_t take_off_motion(bool_t reset)
 	  /*stay takeoff waypoint*/
 	  NavGotoWaypoint_wp(wp_ToL);
 	  //NavVerticalAltitudeMode(Height(2.000000), 0.);
-	  if(stateGetPositionEnu_f()->z  >1.5)  //&&(fabs(stateGetSpeedEnu_f()->z) < 0.2))
+	  if(stateGetPositionEnu_f()->z  >1.4)  //&&(fabs(stateGetSpeedEnu_f()->z) < 0.2))
 	  {
 	  	NavVerticalAltitudeMode(Height(2.0f), 0.);
 	  	step_t = 0;   //reset
@@ -180,6 +180,10 @@ bool_t land_motion(bool_t reset)
 		  step_l++;
 		}
 	  }
+	  else
+	  {
+	  	thrust_counter = 0;
+	  }
 	  break;
 	case 4:	 
  	  if ( !NavKillThrottle() )
@@ -215,7 +219,7 @@ bool_t lock_motion(bool_t reset)
   return TRUE;
 }
 
-int8_t nav_toward_waypoint(struct EnuCoor_i *wp_end,bool_t reset)
+int8_t nav_rc_go_home(struct EnuCoor_i *wp_end,bool_t reset)
 {   
 	uint8_t error_code=1;
 	static uint8_t step_h=0;
@@ -246,5 +250,5 @@ void pvtol_all_reset(bool_t reset)
     take_off_motion(reset);
     land_motion(reset);
     lock_motion(reset);
-	if(reset)   nav_toward_waypoint(&wp_ToL, reset);   //the wp_ToL is not used
+	if(reset)   nav_rc_go_home(&wp_ToL, reset);   //the wp_ToL is not used
 }

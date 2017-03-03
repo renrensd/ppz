@@ -46,6 +46,10 @@
 #include <string.h>
 
 #define XBEE_START 0x7E
+#define XBEE_AT_CMD_ID	0x09
+#define XBEE_AT_CMD_RESPONSE	0x88
+
+#define XBEE_AT_CMD_EXTRA_LEN	6
 
 #ifdef GCS_V1_OPTION   
 #include "firmwares/rotorcraft/autopilot.h"
@@ -65,7 +69,8 @@
 //#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x41,0x4E,0x7E,0x9B}   //NO6 GCS
 //#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xC2,0x55,0x99}  //no3
 //#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x41,0x46,0xF1,0xC1}  //no4
-#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xFC,0xE0,0x7D}  //no5
+//#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xFC,0xE0,0x7D}  //no5
+#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x41,0x54,0x1B,0xA6}  //no5 gcs
 //#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x41,0x4E,0x7E,0x91}   //no8
 //#define PPZCENTER_ADDR					{0x00,0x13,0xA2,0x00,0x40,0xD4,0x2E,0x23} //long-arm and small-2
 //#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xF1,0xEB,0x1B}
@@ -117,14 +122,17 @@ struct xbee_transport {
 struct xbee_connect_info
 {
 	bool_t gcs_con_available;
-	uint8_t gcs_addr[3][8];
-	uint8_t gcs_num;
+	uint8_t gcs_addr[8];
 	bool_t rc_con_available;
-	uint8_t rc_addr[3][8];
-	uint8_t rc_num;
+	uint8_t rc_addr[8];
 	bool_t ppzcenter_con_available;
-	uint8_t ppzcenter_addr[3][8];
-	uint8_t ppzcenter_num;
+	uint8_t pprz_addr[8];
+	uint8_t pairing_mode;
+	uint8_t pair_state;
+	uint8_t pair_ok;
+	uint8_t init_state;
+
+	uint8_t ac_sn_code[12];
 };
 extern uint8_t pprzcenter_addr[8];
 extern struct xbee_connect_info xbee_con_info;
@@ -138,7 +146,45 @@ extern struct xbee_transport xbee_tp;
 
 extern void XbeeSetRcConFalse(void);
 extern void XbeeSetGcsConFalse(void);
-extern void XbeeSetFailBind(void);
+
+enum XBEE_INIT_STATE_PARAM
+{
+	XBEE_STATE_UNINIT = 0,
+	XBEE_STATE_AT_CMD,
+	XBEE_STATE_PAIRING,
+	XBEE_STATE_FINISHED,
+};
+
+#ifdef COMM_DIRECT_CONNECT
+enum XBEE_PAIR_STATE_MACHINE
+{
+	XBEE_PAIR_STATE_P2N = 0,	//pair state switch to normal state
+	XBEE_PAIR_STATE_N2P = 1,	//normal state switch to pair state
+};
+
+struct XBEE_AT_CMD_PARAM
+{
+	uint16_t ID;
+	uint32_t DH;
+	uint32_t DL;
+
+	uint8_t read_flag;	//1-read,0-write
+};
+
+void xbee_at_cmd_send_frame(struct xbee_transport *trans, uint8_t nArgs, uint8_t const *pArg);
+void xbee_at_cmd_send(uint8_t nArgs, uint8_t const *pArg);
+void xbee_at_cmd_query_param(uint8_t d1, uint8_t d2);
+void xbee_at_cmd_set_param(uint8_t len, uint8_t *param);
+void xbee_at_cmd_set_id(uint16_t val);
+void xbee_at_cmd_set_dh(uint32_t val);
+void xbee_at_cmd_set_dl(uint32_t val);
+void xbee_at_cmd_response_parse(struct xbee_transport *t);
+void xbee_at_cmd_set_wr(void);
+void xbee_at_cmd_set_ac(void);
 extern void XbeeSetSuccessBind(void);
+extern void XbeeSetFailBind(void);
+
+#endif	/* COMM_DIRECT_CONNECT */
+
 
 #endif /* XBEE_H */

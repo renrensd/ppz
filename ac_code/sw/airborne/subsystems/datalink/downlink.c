@@ -88,6 +88,9 @@ void downlink_init(void)
 
 #if DATALINK == XBEE
   xbee_init();
+ #if USE_MANU_DEBUG
+  pprz_transport_init(&mdebug_tp);
+ #endif
 #endif
 #if DATALINK == TRANSPTA
   pta_init();

@@ -26,6 +26,7 @@
 #define PARAM_DROP_CAPCITY  3
 #define PARAM_SPRAY_ATOM  4
 #define PARAM_SPRAY_CHANNEL  5
+#define PARAM_SPRAY_WIDE 6
 
 #define MAX_OPS_SV_VERSION_LEN  30
 
@@ -52,6 +53,7 @@ struct OPS_INFO
 	int8_t    o_bat_rep_percent;
 	//#endif
 	uint8_t  sys_error;
+	uint8_t  mcu_info;
 
 	bool_t  sv_update;
 	uint8_t sv_len;
@@ -64,7 +66,8 @@ struct OPS_CONFIG_PARAM
 	uint16_t flow_m2;	// mL/m2
 	uint16_t drop_cm2;	//droplets/cm2
 	uint16_t atom;		//um
-	uint8_t spray_chal;	
+	uint16_t  spray_wide; //cm
+	uint8_t  spray_chal;	
 };
 /**** Declaration of constants ****/
 
@@ -80,7 +83,8 @@ extern void ops_init(void);
 extern void ops_heart_beat_handler(uint8_t *param);
 extern void ops_update_aircraft_vel(void);
 extern void ops_heart_beat_lose_handler(void);
-extern void ops_update_config_param(uint16_t param, uint8_t param_type);
+extern void ops_set_config_param(uint16_t param, uint8_t param_type);
+extern void ops_update_config_param(void);
 extern void rc_update_ops_config_param(uint8_t grade);
 extern void ops_software_version_handler(uint8_t *param, uint8_t len);
 

@@ -212,7 +212,7 @@ extern bool_t autopilot_guided_goto_ned_relative(float dx, float dy, float dz, f
  */
 extern bool_t autopilot_guided_goto_body_relative(float dx, float dy, float dz, float dyaw);
 
-extern bool_t autopilot_check_rc_bind(void);
+extern bool_t autopilot_check_is_pairing_mode(void);
 
 #ifdef CALIBRATION_OPTION
 extern void autopilot_mag_cali_store(void);

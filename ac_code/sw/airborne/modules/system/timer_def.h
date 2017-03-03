@@ -29,9 +29,12 @@ TIMER(TIMER_RC_SPEED_RL_DRIFT_STOP,             rc_speed_rl_drift_stop,         
 TIMER(TIMER_RC_RATE_ROTATION_DRIFT_STOP,        rc_rate_rotation_drift_stop,            TIMER_TASK_RC)
 TIMER(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG,      spray_break_continual_msg,              TIMER_TASK_GCS)
 TIMER(TIMER_GCS_VRC_ACK_MSG,                    send_heart_beat_A2VR_msg,               TIMER_TASK_GCS)
-#if DATALINK==XBEE
+#ifdef GCS_V1_OPTION
 TIMER(TIMER_XBEE_HEARTBEAT_MSG,                 xbee_msg_aircraft_ready_broadcast,      TIMER_TASK_TELEMETRY)
-#endif
+#endif	/* GCS_V1_OPTION */
+#ifdef COMM_DIRECT_CONNECT
+TIMER(TIMER_XBEE_QUERY_ID_TIMEOUT,              xbee_msg_query_network_id,      TIMER_TASK_TELEMETRY)
+#endif	/* COMM_DIRECT_CONNECT */
 #ifdef UPGRADE_OPTION
 TIMER(TIMER_UPGRADE_RES_TX_TIMEOUT,				mcu_upgrade_request_reboot,						TIMER_TASK_TELEMETRY)
 #endif	/* UPGRADE_OPTION */

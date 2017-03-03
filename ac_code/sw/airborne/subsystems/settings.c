@@ -38,7 +38,7 @@
 #include "wdg.h"
 #endif
 
-#ifndef FRAM_OPTION
+#ifdef FRAM_OPTION
 #include "subsystems/fram/fram_if.h"
 #endif	/* FRAM_OPTION */
 
@@ -71,6 +71,10 @@ void settings_init(void)
   
   /* from generated/settings.h */
   persistent_settings_load();
+#endif
+#ifdef FRAM_OPTION
+  fram_acc_cali_get();
+  fram_mag_cali_get();
 #endif
 }
 

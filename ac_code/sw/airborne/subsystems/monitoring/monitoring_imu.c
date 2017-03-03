@@ -95,7 +95,63 @@ uint8_t imu_ground_check(void)
 	return check_code;
 }
 
+uint8_t imu_ground_check_code(void)
+{
+	if(imu_moni.imu_error[0]&0x01)
+	{
+		return 6;  //gyro fix data
+	}
+	else if(imu_moni.imu_error[0]&0x02)
+	{
+		return 5;  //gyro fre data
+	}
+	else if(imu_moni.imu_error[0]&0x04)
+	{
+		return 8;  //gyro noise data
+	}
+	else if(imu_moni.imu_error[0]&0x08)
+	{
+		return 7;  //gyro range data
+	}
 
+	else if(imu_moni.imu_error[1]&0x01)
+	{
+		return 2;  //acc fix data
+	}
+	else if(imu_moni.imu_error[1]&0x02)
+	{
+		return 1;  //acc fre data
+	}
+	else if(imu_moni.imu_error[1]&0x04)
+	{
+		return 4;  //acc noise data
+	}
+	else if(imu_moni.imu_error[1]&0x08)
+	{
+		return 3;  //acc range data
+	}
+
+	else if(imu_moni.imu_error[2]&0x01)
+	{
+		return 10;  //acc fix data
+	}
+	else if(imu_moni.imu_error[2]&0x02)
+	{
+		return 9;  //acc fre data
+	}
+	else if(imu_moni.imu_error[2]&0x04)
+	{
+		return 12;  //acc noise data
+	}
+	else if(imu_moni.imu_error[2]&0x08)
+	{
+		return 11;  //acc range data
+	}
+	else
+	{
+		return 0;
+	}
+}
 
 void imu_ground_reset(void)   //use for restart ground check
 {
@@ -555,7 +611,7 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
   #endif
   
 }
-
+#if 0
 #define MAX_GYRO_OFFSET 200
 #define NUM_GYRO_OFFSET_CAL 2000
 static struct Int32Rates gyro_offset;
@@ -620,4 +676,5 @@ bool_t gyro_offset_caculate(struct Imu *_imu)
 	
 	return FALSE;
 }
+#endif
 /**************** END OF FILE *****************************************/

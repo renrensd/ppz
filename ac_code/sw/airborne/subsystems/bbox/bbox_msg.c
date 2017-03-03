@@ -69,14 +69,14 @@ void bbox_msg_log_start(void)
 	arg[0] = BBOX_LOG_DATA_SERVICE;
 	arg[1] = 0x00;
 	arg[2] = 0x00;	//start log.
-	if( get_sys_year() )
+	if( get_utc_year() )
 	{   /*below is UTC time, 8hours delay beijing time*/
-		arg[3] = get_sys_year();	//year
-		arg[4] = get_sys_month();	//month
-		arg[5] = get_sys_day();	    //day
-		arg[6] = get_sys_hour();	//hour
-		arg[7] = get_sys_minute();	//minute
-		arg[8] = get_sys_second();	//second
+		arg[3] = get_utc_year();	//year
+		arg[4] = get_utc_month();	//month
+		arg[5] = get_utc_day();	    //day
+		arg[6] = get_utc_hour();	//hour
+		arg[7] = get_utc_minute();	//minute
+		arg[8] = get_utc_second();	//second
 	}
 	else
 	{
@@ -175,7 +175,7 @@ void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len)
 				}
 				if(!bbox_info.gps_time)
 				{
-					if(get_sys_year())
+					if(get_utc_year())
 					{
 						bbox_msg_log_start();
 						bbox_info.gps_time = TRUE;

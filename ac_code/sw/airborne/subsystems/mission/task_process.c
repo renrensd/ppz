@@ -30,6 +30,8 @@
 #include "firmwares/rotorcraft/guidance/guidance_h_ref.h"
 #include "uplink_ac.h"
 
+#include "subsystems/monitoring/monitoring.h"   
+
 
 #define FLIGHT_PATH  1
 #define SPRAY_PATH  2
@@ -41,9 +43,14 @@ Task_Error task_error_state;
 
 bool_t from_wp_useful;
 bool_t hover_flag;
+bool_t manual_pause_flag;
 static bool_t spray_switch_flag;     /*usefor sign spray_line start and end*/
 static bool_t spray_caculate_flag;
 static bool_t height_align;
+static bool_t heading_align;   //only for debug
+
+float sprayed_lines_distance = 0.0f;
+float current_sprayed_distance = 0.0f;
 
 /*interrupt scene var*/
 //from_wp and next_wp are request can't be changed before recover
@@ -62,6 +69,7 @@ void get_shortest_reland_wp(void);
 bool_t run_normal_task(void);
 void spray_work_run(void);
 bool_t task_wp_empty_handle(void);
+void set_auto_stop_brake(void);
 
 static inline bool_t task_nav_update_target(struct EnuCoor_i enu_wp);
 static inline bool_t task_nav_hover(struct EnuCoor_i hover_wp);
@@ -89,6 +97,7 @@ void task_process_init(void)
 	task_error_state = TASK_NORMAL;
 	from_wp_useful = FALSE;
 	hover_flag = FALSE;
+	manual_pause_flag = FALSE;
 	spray_switch_flag = FALSE;
 	spray_caculate_flag = FALSE;
 	height_align = FALSE;
@@ -206,7 +215,7 @@ Gcs_State gcs_task_run(void)
 		case GCS_CMD_PAUSE:
 			gcs_state = GCS_RUN_PAUSE;
 			gcs_hover_enter();   //for stop spray
-			set_stop_brake(PAUSE_BRAKE);
+			set_auto_stop_brake();		
 			
 			break;
 			
@@ -223,8 +232,6 @@ Gcs_State gcs_task_run(void)
 				set_stop_brake(SMOOTH_BRAKE);
 				spray_break_and_continual();
 				VECT2_COPY(home_wp_enu, wp_home);
-				interrupt_wp_scene = *stateGetPositionEnu_i();
-				task_nav_update_target(interrupt_wp_scene);
 			}
 			else
 			{
@@ -248,8 +255,6 @@ Gcs_State gcs_task_run(void)
 				set_stop_brake(SMOOTH_BRAKE);
 				spray_break_and_continual();
 				get_shortest_reland_wp();
-				interrupt_wp_scene = *stateGetPositionEnu_i();
-				task_nav_update_target(interrupt_wp_scene);
 			}
 			else
 			{   
@@ -271,8 +276,6 @@ Gcs_State gcs_task_run(void)
 			{
 				set_stop_brake(PAUSE_BRAKE);
 				spray_break_and_continual();
-				interrupt_wp_scene = *stateGetPositionEnu_i();
-				task_nav_update_target(interrupt_wp_scene);
 			}
 			else
 			{
@@ -322,27 +325,55 @@ struct EnuCoor_i save_task_scene(void)
 ***********************************************************************/
 bool_t gcs_hover_enter(void)
 {
-	static uint8_t steady_flag = 0;
+	static uint8_t steady_counter = 0;
+
 	if( last_task_cmd != gcs_task_cmd)
 	{  
-		struct EnuCoor_i hover_wp;
-		hover_wp = save_task_scene();
-		//task_nav_hover(hover_wp);
-		steady_flag = 0;
+		save_task_scene();
+		steady_counter = 0;
 		return TRUE;
 	}
 	
-	if( steady_flag <= 2 )
+	if( steady_counter <= 5 )
 	{
 		if( NavGetHoverSteady() )
 		{
-			steady_flag++;
+			steady_counter++;
+		}
+		if(steady_counter == 6)  //make sure hover steady, set navigation_target here
+		{
+			interrupt_wp_scene = *stateGetPositionEnu_i();
+			task_nav_update_target(interrupt_wp_scene);
 		}
 		return TRUE;
 	}
 	else
 	{
 		return FALSE;
+	}
+}
+
+void set_auto_stop_brake(void)
+{
+	if(last_task_cmd != gcs_task_cmd)
+	{
+		if(manual_pause_flag)
+		{
+			set_stop_brake(URGENT_BRAKE);
+			manual_pause_flag = FALSE;
+		}
+		else if(em_alert_grade < 2)
+		{
+			set_stop_brake(SMOOTH_BRAKE);
+		}
+		else if(em_alert_grade == 2)
+		{
+			set_stop_brake(PAUSE_BRAKE);
+		}
+		else
+		{
+			set_stop_brake(URGENT_BRAKE);
+		}
 	}
 }
 
@@ -414,7 +445,13 @@ bool_t run_normal_task(void)
 				spray_switch_flag = TRUE;  //AC aligned in spray_line,begin spray
 				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
 				{	
+					if(spray_switch_flag)
+					{
+						current_sprayed_distance = 0.0f;  //reset
+						sprayed_lines_distance += sqrt(get_dist2_p2p(from_wp.wp_en, next_wp.wp_en));
+					}
 					spray_switch_flag = FALSE;  //AC end of spray_line, stop spray
+					
 					if( !achieve_next_wp() )  
 					{
 						task_wp_empty_handle();
@@ -424,6 +461,10 @@ bool_t run_normal_task(void)
 						wp_state = 1;
 						spray_caculate_flag = FALSE;   /*reset spray caculate flag for two continual spray line*/
 					}
+				}
+				else
+				{
+					current_sprayed_distance = sqrt(get_dist2_to_point(&(from_wp.wp_en)));   //caculate sprayed distance of curent line
 				}
 			}
 			break;
@@ -461,8 +502,9 @@ bool_t run_normal_task(void)
 			else  //ac_config_info.spray_convert_type==WAYPOINT_FORWARD/P2P
 			{
 				//task_nav_wp(struct EnuCoor_i first_wp)
-				/*if finish convert,get next_wp*/
-				if( !task_nav_wp(next_wp.wp_en) )
+				/*if finish convert,get next_wp*/				
+				//if( !task_nav_wp(next_wp.wp_en) )  replace with route guidance
+				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
 				{
 					/*no more task_wp to run*/
 					if( !achieve_next_wp() )  
@@ -613,12 +655,12 @@ static float set_path_flight_info(uint8_t type)
   switch(type) 
   {
   		case FLIGHT_PATH:
-			gh_set_max_speed(ac_config_info.max_flight_speed);
+			//gh_set_max_speed(ac_config_info.max_flight_speed);
 			nav_set_flight_speed(ac_config_info.max_flight_speed);
 			return ac_config_info.max_flight_height;
 			
 		case SPRAY_PATH:
-			gh_set_max_speed(ac_config_info.spray_speed);
+			//gh_set_max_speed(ac_config_info.spray_speed);
 			nav_set_flight_speed(ac_config_info.spray_speed);
 			return ac_config_info.spray_height;
 			
@@ -632,6 +674,7 @@ static float set_path_flight_info(uint8_t type)
 static inline bool_t task_nav_update_target(struct EnuCoor_i enu_wp)
 {
    VECT3_COPY(navigation_target, enu_wp);
+   return FALSE;
 }
 
 /** Navigation function hover flight
@@ -652,7 +695,7 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 {
   struct EnuCoor_i target_wp = first_wp;
 
-  if (nav_approaching_target(&target_wp, NULL, 0.3))
+  if (nav_approaching_target(&target_wp, NULL, 0.3)) 
   {
     return FALSE;
   }
@@ -673,6 +716,8 @@ static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCo
   static float flight_height_last = 0.0f;  //use reord last time flight height,once changed it will adjust the height before forword flight
 
   float flight_height = set_path_flight_info(flight_type); 
+  NavVerticalAltitudeMode(flight_height, 0.);
+  
   if(flight_height_last != flight_height)
   {
   	  height_align = FALSE;
@@ -696,10 +741,9 @@ static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCo
   {
   	nav_set_heading_forward_line(&p_start_wp, &p_end_wp);  /*it can caculate once economize CPU*/
   }
-
-  NavVerticalAltitudeMode(flight_height, 0.);
   
-  if( height_align &&  nav_check_heading() )
+  heading_align = nav_check_heading();
+  if( height_align && heading_align )
   {
   	return TRUE;
   }
@@ -806,6 +850,12 @@ void send_current_task(uint8_t wp_state)
 		RunOnceEvery(64, send_current_task_state(wp_state));  
 		//RunOnceEvery(50, send_task_info_pc());
 	}
+	#if 0//PERIODIC_TELEMETRY
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_DEBUG_TASK(DefaultChannel, DefaultDevice,
+	   	                              &heading_align,
+	   	                              &height_align        );
+	#endif
 }
 
 

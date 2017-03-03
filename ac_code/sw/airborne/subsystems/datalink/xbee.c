@@ -25,6 +25,9 @@
  * Maxstream XBee serial input and output
  */
 
+#include <stdlib.h> 
+#include <string.h>
+
 #include "mcu_periph/sys_time.h"
 #include "subsystems/datalink/uart_print.h"
 #include "subsystems/datalink/xbee.h"
@@ -33,6 +36,13 @@
 #include "modules/system/timer_if.h"
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
+
+#ifdef FRAM_OPTION
+#include "subsystems/fram/fram_class.h"
+#include "subsystems/fram/fram_def.h"
+#endif	/* FRAM_OPTION */
+
+#include "subsystems/eng/eng_app_if.h"
 
 #ifdef XBEE_RESET_GPIO
 #include "mcu_periph/gpio.h"
@@ -58,17 +68,14 @@ struct xbee_transport xbee_tp;
 struct xbee_connect_info xbee_con_info;
 #endif//GCS_V1_OPTION
 
-#define AT_COMMAND_SEQUENCE "+++"
-#define AT_SET_MY "ATMY"
-#define AT_AP_MODE "ATAP1\r"
-#define AT_WR "ATWR\r"
-#define AT_AC "ATAC\r"
-#define AT_EXIT "ATCN\r"
-
 #ifdef GCS_V1_OPTION
 uint8_t txAddr_bc[10] = {0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff};
 uint8_t pprzcenter_addr[8] = PPZCENTER_ADDR;
 #endif	//GCS_V1_OPTION
+
+#ifdef COMM_DIRECT_CONNECT
+struct XBEE_AT_CMD_PARAM xbee_config_param;
+#endif	/* COMM_DIRECT_CONNECT */
 
 
 static inline void xbee_parse_payload(struct xbee_transport *t);
@@ -79,8 +86,7 @@ static inline void xbee_parse_payload(struct xbee_transport *t);
 static void put_1byte(struct xbee_transport *trans, struct link_device *dev, const uint8_t byte)
 {
 #ifdef GCS_V1_OPTION
-  if( (xbee_con_info.gcs_con_available == TRUE) || (xbee_con_info.rc_con_available == TRUE) 
-  	  || (xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_BC)||(xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_PC) )
+  if(xbee_con_info.init_state == XBEE_STATE_FINISHED)
 #endif //GCS_V1_OPTION
   {
 	  trans->cs_tx += byte;
@@ -110,12 +116,11 @@ static uint8_t size_of(struct xbee_transport *trans __attribute__((unused)), uin
 { 
   // message length: payload + API overhead + XBEE TX overhead (868 or 2.4)
 #ifdef GCS_V1_OPTION
-  if( (xbee_con_info.gcs_con_available == TRUE) || (xbee_con_info.rc_con_available == TRUE) 
-  	  || (xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_BC)||(xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_PC) )
-  return len + XBEE_API_OVERHEAD + XBEE_TX_OVERHEAD;
+  if(xbee_con_info.init_state == XBEE_STATE_FINISHED)
+  return (len + XBEE_API_OVERHEAD + XBEE_TX_OVERHEAD);
   else return 0;
 #else
-  return len + XBEE_API_OVERHEAD + XBEE_TX_OVERHEAD;
+  return (len + XBEE_API_OVERHEAD + XBEE_TX_OVERHEAD);
 #endif 
   
 }
@@ -131,16 +136,16 @@ void xbee_tx_frame_header(uint8_t ack, uint8_t addr)
 	}
 	else if(addr == XBEE_ADDR_GCS)
 	{
-		xbee_set_tx_header(ack,&xbee_con_info.gcs_addr[0][0],0x00);
+		xbee_set_tx_header(ack,&xbee_con_info.gcs_addr[0],0x00);
 	}
 	else if(addr == XBEE_ADDR_PC)  //pprzcenter
 	{
-		//xbee_set_tx_header(ack,&(xbee_con_info.ppzcenter_addr[0][0]),0x00);
+		//xbee_set_tx_header(ack,&(xbee_con_info.pprz_addr[0]),0x00);
 		xbee_set_tx_header(ack, pprzcenter_addr, 0x00);
 	}
 	else if(addr == XBEE_ADDR_RC)
 	{
-		xbee_set_tx_header(ack,&xbee_con_info.rc_addr[0][0],0x00);
+		xbee_set_tx_header(ack,&xbee_con_info.rc_addr[0],0x00);
 	}
 #endif
 }
@@ -184,8 +189,7 @@ void xbee_set_tx_header(uint8_t seq, uint8_t *addr, uint8_t option)
 static void start_message(struct xbee_transport *trans, struct link_device *dev, uint8_t payload_len)
 {
 	#ifdef GCS_V1_OPTION
-    if( (xbee_con_info.gcs_con_available == TRUE) || (xbee_con_info.rc_con_available == TRUE) 
-  	     ||(xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_BC)||(xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_PC) )
+    if(xbee_con_info.init_state == XBEE_STATE_FINISHED)
 	#endif //GCS_V1_OPTION
 	{
 	  dev->nb_msgs++;
@@ -206,8 +210,7 @@ static void start_message(struct xbee_transport *trans, struct link_device *dev,
 static void end_message(struct xbee_transport *trans, struct link_device *dev)
 {
   #ifdef GCS_V1_OPTION
-  if( (xbee_con_info.gcs_con_available == TRUE) || (xbee_con_info.rc_con_available == TRUE) 
-  	  || (xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_BC)||(xbee_tp.trans_tx.tx_addr_type == XBEE_ADDR_PC) )
+  if(xbee_con_info.init_state == XBEE_STATE_FINISHED)
   #endif //GCS_V1_OPTION
   {
 	  trans->cs_tx = 0xff - trans->cs_tx;
@@ -233,51 +236,6 @@ static int check_available_space(struct xbee_transport *trans __attribute__((unu
 {
   return dev->check_free_space(dev->periph, bytes);
 }
-
-static uint8_t xbee_text_reply_is_ok(struct link_device *dev)
-{
-  char c[2];
-  int count = 0;
-
-  while (dev->char_available(dev->periph)) {
-    char cc = dev->get_byte(dev->periph);
-    if (count < 2) {
-      c[count] = cc;
-    }
-    count++;
-  }
-
-  if ((count > 2) && (c[0] == 'O') && (c[1] == 'K')) {
-    return TRUE;
-  }
-
-  return FALSE;
-}
-
-static uint8_t xbee_try_to_enter_api(struct link_device *dev)
-{
-
-  /** Switching to AT mode (FIXME: busy waiting) */
-  print_string(dev, AT_COMMAND_SEQUENCE);
-
-  /** - busy wait 1.25s */
-  sys_time_usleep(1250000);
-
-  return xbee_text_reply_is_ok(dev);
-}
-
-
-#if XBEE_BAUD == B9600
-#define XBEE_BAUD_ALTERNATE B115200
-#define XBEE_ATBD_CODE "ATBD3\rATWR\r"
-#pragma message "Experimental: XBEE-API@9k6 auto-baudrate 57k6 -> 9k6 (stop ground link for correct operation)"
-#elif XBEE_BAUD == B115200
-#define XBEE_BAUD_ALTERNATE B9600
-#define XBEE_ATBD_CODE "ATBD6\rATWR\r"
-#pragma message "Experimental: XBEE-API@57k6 auto-baudrate 9k6 -> 57k6 (stop ground link for correct operation)"
-#else
-#warning XBEE-API Non default baudrate: auto-baud disabled
-#endif
 
 void xbee_init(void)
 {
@@ -305,87 +263,88 @@ void xbee_init(void)
   struct link_device *dev = &((XBEE_UART).device);
 
   // Empty buffer before init process
-  while (dev->char_available(dev->periph)) {
+  while (dev->char_available(dev->periph)) 
+  {
     dev->get_byte(dev->periph);
   }
 
-#ifndef NO_XBEE_API_INIT
-  /** - busy wait 1.25s */
-  sys_time_usleep(1250000);
-
-  if (! xbee_try_to_enter_api(dev)) {
-#ifdef XBEE_BAUD_ALTERNATE
-
-    // Badly configured... try the alternate baudrate:
-    uart_periph_set_baudrate(&(XBEE_UART), XBEE_BAUD_ALTERNATE); // FIXME add set_baudrate to generic device, assuming uart for now
-    if (xbee_try_to_enter_api(dev)) {
-      // The alternate baudrate worked,
-      print_string(dev, XBEE_ATBD_CODE);
-    } else {
-      // Complete failure, none of the 2 baudrates result in any reply
-      // TODO: set LED?
-
-      // Set the default baudrate, just in case everything is right
-      uart_periph_set_baudrate(&(XBEE_UART), XBEE_BAUD); // FIXME add set_baudrate to generic device, assuming uart for now
-      print_string(dev, "\r");
-    }
-
-#endif
-    // Continue changing settings until the EXIT is issued.
-  }
-
-  /** Setting my address */
-  #if 0
-  print_string(dev, AT_SET_MY);
-  uint16_t addr = XBEE_MY_ADDR;
-  print_hex16(dev, addr);
-  print_string(dev, "\r");
-  #endif
-
-  print_string(dev, AT_AP_MODE);
-#ifdef XBEE_INIT
-  print_string(dev, XBEE_INIT);
-#endif
-
-  /** Switching back to normal mode */
-  print_string(dev, AT_EXIT);
-
-  uart_periph_set_baudrate(&(XBEE_UART), XBEE_BAUD); // FIXME add set_baudrate to generic device, assuming uart for now
-
-#endif
+#ifdef COMM_DIRECT_CONNECT
+  xbee_con_info.pair_state = XBEE_PAIR_STATE_P2N;
+  xbee_con_info.pair_ok = FALSE;
+  xbee_con_info.init_state = XBEE_STATE_UNINIT;
+  tm_create_timer(TIMER_XBEE_QUERY_ID_TIMEOUT, (500 MSECONDS), TIMER_PERIODIC,0);
+#endif	/* COMM_DIRECT_CONNECT */
 
 #ifdef GCS_V1_OPTION
+  xbee_con_info.ppzcenter_con_available = TRUE;
+#ifndef COMM_DIRECT_CONNECT
+  xbee_con_info.init_state = XBEE_STATE_FINISHED;
   xbee_con_info.rc_con_available = TRUE;   //set TRUE only for heartbeat communication
   uint8_t rc_add[]= {0x00, 0x13, 0xA2, 0x00, 0x40, 0xF1, 0xEB, 0x1B};
   for (uint8_t i = 0; i < 8; i++) 
   {
-	  xbee_con_info.rc_addr[0][i] = rc_add[i];
+	  xbee_con_info.rc_addr[i] = rc_add[i];
   }
 
-
-  
-
-  xbee_con_info.gcs_con_available = FALSE;
-  xbee_con_info.ppzcenter_con_available = FALSE;
-/*stop register timer call back,use timer.c*/  //xbee_bc_tid = sys_time_register_timer(1./XBEE_BC_PERIODIC_FREQUENCY, (sys_time_cb)xbee_msg_aircraft_ready_broadcast);
-  tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC,0);
+  if(xbee_con_info.gcs_con_available == FALSE)
+  {
+	  /*stop register timer call back,use timer.c*/  //xbee_bc_tid = sys_time_register_timer(1./XBEE_BC_PERIODIC_FREQUENCY, (sys_time_cb)xbee_msg_aircraft_ready_broadcast);
+	  tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC,0);
+  }
+#endif	/* COMM_DIRECT_CONNECT */
 #endif //GCS_V1_OPTION
+  uint8_t *temp_pt = eng_get_product_series_number();
+  for(uint8_t i=0; i<12; i++)
+  {
+  	xbee_con_info.ac_sn_code[i] = *(temp_pt+i);
+  }
 }
 
 void xbee_periodic(void)
 {
 #ifdef GCS_V1_OPTION
- tm_stimulate(TIMER_TASK_TELEMETRY);
+	tm_stimulate(TIMER_TASK_TELEMETRY);
+
+	#ifdef COMM_DIRECT_CONNECT
+	#if 1
+	if(autopilot_check_is_pairing_mode())
+	{
+		xbee_con_info.pairing_mode = TRUE;
+	}
+	else
+	{
+		xbee_con_info.pairing_mode = FALSE;
+	}
+	#endif
+
+	if(xbee_con_info.pairing_mode == TRUE)	//pair mode
+	{
+		if(xbee_con_info.pair_state == XBEE_PAIR_STATE_P2N)
+		{
+			xbee_con_info.pair_state = XBEE_PAIR_STATE_N2P;	//normal switch to pair mode.
+			tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC, 0);
+		}
+	}
+	else	//normal mode
+	{
+		if(xbee_con_info.pair_state == XBEE_PAIR_STATE_N2P)
+		{
+			xbee_con_info.pair_state = XBEE_PAIR_STATE_P2N;
+			xbee_con_info.pair_ok = FALSE;
+			tm_kill_timer(TIMER_XBEE_HEARTBEAT_MSG);
+		}
+	}
+	#endif	/* COMM_DIRECT_CONNECT */
 #endif
 }
 
 #ifdef GCS_V1_OPTION
-void xbee_msg_aircraft_ready_broadcast(void)  //call by xbee_init,priodic send until binded
+void xbee_msg_aircraft_ready_broadcast(void)
 {
 	const char serialcode[] = A2G_SERIAL_CODE;
-	const char ac_sn[] = AC_SN_CODE;
+	//const char ac_sn[] = AC_SN_CODE;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_BC);
-	DOWNLINK_SEND_AIRCRAFT_BIND_STATE(SecondChannel, SecondDevice, serialcode, ac_sn);
+	DOWNLINK_SEND_AIRCRAFT_BIND_STATE(SecondChannel, SecondDevice, serialcode, &xbee_con_info.ac_sn_code[0]);
 }
 #endif
 
@@ -461,119 +420,160 @@ static inline void xbee_parse_payload(struct xbee_transport *t)
   const uint8_t rckey[] = RC_SERIAL_CODE;
   uint8_t rc_equal;
 #endif //GCS_V1_OPTION
+  uint8_t msg_type;
+  uint8_t i;
 
   switch (t->trans_rx.payload[0]) 
   {
     case XBEE_RX_ID:
     case XBEE_TX_ID: /* Useful if A/C is connected to the PC with a cable */
       XbeeGetRSSI(t->trans_rx.payload);
-      uint8_t i;
       //payload save to dl_buffer
-      for (i = XBEE_RFDATA_OFFSET; i < t->trans_rx.payload_len; i++) 
+      for (i = XBEE_RFDATA_OFFSET; i < t->trans_rx.payload_len; i++)
 	  {
         dl_buffer[i - XBEE_RFDATA_OFFSET] = t->trans_rx.payload[i];
       }
-	  
-	  #ifdef GCS_V1_OPTION
-		//check gcs serial code.
-		if(xbee_con_info.gcs_con_available == FALSE)
+
+	  msg_type = dl_buffer[0];
+
+	  #ifndef COMM_DIRECT_CONNECT
+			//check gcs serial code.
+		if(msg_type == XBEE_TYPE_GCS)
 		{
-		  gcs_equal = TRUE;
-		  for(i=0; i<XBEE_SERIAL_CODE_LEN; i++)
+		  if(xbee_con_info.gcs_con_available == FALSE)
 		  {
-		  	if(dl_buffer[i+XBEE_SERIAL_CODE_OFFSET] != gcskey[i])
-		  	{
-				gcs_equal = FALSE;
-				break;
-			}
-		  }
-		  if(gcs_equal == TRUE)
-		  {
-			xbee_con_info.gcs_con_available = TRUE;
-			xbee_con_info.gcs_num++;
-			for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
-			{
-		       xbee_con_info.gcs_addr[0][i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
-		    }
+			  gcs_equal = TRUE;
+			  for(i=0; i<XBEE_SERIAL_CODE_LEN; i++)
+			  {
+			  	if(dl_buffer[i+XBEE_SERIAL_CODE_OFFSET] != gcskey[i])
+			  	{
+					gcs_equal = FALSE;
+					break;
+				}
+			  }
+			  if(gcs_equal == TRUE)
+			  {
+				xbee_con_info.gcs_con_available = TRUE;
+				for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
+				{
+			       xbee_con_info.gcs_addr[i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
+			    }
 
-			//sys_time_cancel_timer(xbee_bc_tid);  //cancel broadcast message
-			tm_kill_timer(TIMER_XBEE_HEARTBEAT_MSG);
+				//sys_time_cancel_timer(xbee_bc_tid);  //cancel broadcast message
+				tm_kill_timer(TIMER_XBEE_HEARTBEAT_MSG);
+			  }
 		  }
 		}
-
-		//rc broadcast message,check rc serial code.
-		if ( xbee_con_info.rc_con_available == FALSE )
-		{ 
-		  rc_equal = TRUE;
-		  for(i=0; i<XBEE_SERIAL_CODE_LEN; i++)
-		  {
-		  	if(dl_buffer[i+XBEE_SERIAL_CODE_OFFSET] != rckey[i])
-		  	{
-				rc_equal = FALSE;		
-				break;
-			}
+	      //rc broadcast message,check rc serial code.
+	    if(msg_type == XBEE_TYPE_RC)
+		{
+		  if ( xbee_con_info.rc_con_available == FALSE )
+		  { 
+			  rc_equal = TRUE;
+			  for(i=0; i<XBEE_SERIAL_CODE_LEN; i++)
+			  {
+			  	if(dl_buffer[i+XBEE_SERIAL_CODE_OFFSET] != rckey[i])
+			  	{
+					rc_equal = FALSE;		
+					break;
+				}
+			  }
+			  
+			  if(rc_equal == TRUE)
+			  {
+				//xbee_con_info.rc_con_available = TRUE;
+				for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
+				{
+			       if( xbee_con_info.rc_addr[i-XBEE_ADDR_OFFSET] != t->trans_rx.payload[i] )
+			       {   
+				   	    rc_equal = FALSE;  //indecate addr is different
+				   		if(1)// autopilot_check_is_pairing_mode() )
+				   		{  //AC attitude >30deg,record address
+							for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
+							{
+								xbee_con_info.rc_addr[i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
+							}
+							//settings_StoreSettings(1);  //save addr to flash
+							xbee_con_info.rc_con_available = TRUE;
+				   		}
+						//else  give up	
+						break;  //jump out the loop of check address
+			       }
+			    }
+				if(rc_equal == TRUE)
+				{  //old RC connect
+					xbee_con_info.rc_con_available = TRUE;   
+				}
+				
+			  }
 		  }
-		  
-		  if(rc_equal == TRUE)
-		  {
-			//xbee_con_info.rc_con_available = TRUE;
-			//xbee_con_info.rc_num++;
-			for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
-			{
-		       if( xbee_con_info.rc_addr[0][i-XBEE_ADDR_OFFSET] != t->trans_rx.payload[i] )
-		       {   
-			   	    rc_equal = FALSE;  //indecate addr is different
-			   		if(1)// autopilot_check_rc_bind() )
-			   		{  //AC attitude >30deg,record address
-						for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
-						{
-							xbee_con_info.rc_addr[0][i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
-						}
-						//settings_StoreSettings(1);  //save addr to flash
-						xbee_con_info.rc_con_available = TRUE;
-			   		}
-					//else  give up	
-					break;  //jump out the loop of check address
-		       }
-		    }
-			if(rc_equal == TRUE)
-			{  //old RC connect
-				xbee_con_info.rc_con_available = TRUE;   
-			}
-			
-		  }
-		}
+	    }
 
 		//ubuntu gcs bind without serial code,only add fixed address
-	   if(xbee_con_info.ppzcenter_con_available == FALSE)
+	    if(msg_type == XBEE_TYPE_DEFAULT)
 		{
-          xbee_con_info.ppzcenter_con_available = TRUE;
-		  xbee_con_info.ppzcenter_num++;
-		  for (i=0; i<XBEE_ADDR_LEN; i++)
-		  {
-		     xbee_con_info.ppzcenter_addr[0][i]=*(pprzcenter_addr+i);
+		   if(xbee_con_info.ppzcenter_con_available == FALSE)
+		   {
+	          xbee_con_info.ppzcenter_con_available = TRUE;
+			  for (i=0; i<XBEE_ADDR_LEN; i++)
+			  {
+			     xbee_con_info.pprz_addr[i]=*(pprzcenter_addr+i);
+			  }
+		   }
+	    }
+
+		if( (xbee_con_info.gcs_con_available == TRUE) || 
+			(xbee_con_info.rc_con_available == TRUE)  ||
+			(xbee_con_info.ppzcenter_con_available == TRUE)    )			 
+		{
+			dl_msg_available = TRUE;
+		}
+	  #else		//def COMM_DIRECT_CONNECT
+		dl_msg_available = TRUE;
+	    if(msg_type == XBEE_TYPE_GCS)
+		{
+		  if(xbee_con_info.pair_state == XBEE_PAIR_STATE_N2P)
+		  {  
+			  if(memcmp(&dl_buffer[XBEE_SERIAL_CODE_OFFSET], gcskey, 10) == 0)  //serial num are the same,paired success.
+			  {
+				tm_kill_timer(TIMER_XBEE_HEARTBEAT_MSG);
+				xbee_con_info.init_state = XBEE_STATE_AT_CMD;	//disable api msg before AT CMD finished.
+				xbee_con_info.pair_ok = TRUE;
+				for (i = XBEE_ADDR_OFFSET; i <= XBEE_ADDR_LEN; i++) 
+				{
+			       xbee_con_info.gcs_addr[i-XBEE_ADDR_OFFSET] = t->trans_rx.payload[i];
+			    }
+
+				uint32_t gcs_addr = (xbee_con_info.gcs_addr[0] << 24) | (xbee_con_info.gcs_addr[1] << 16)
+								 	 | (xbee_con_info.gcs_addr[2] << 8) | xbee_con_info.gcs_addr[3];
+				xbee_at_cmd_set_dh(gcs_addr);
+				if( fram_write(CL_GCS_MAC_ADDR, 0, xbee_con_info.gcs_addr) )
+				{
+					fram_write(CL_GCS_MAC_ADDR, 0, xbee_con_info.gcs_addr);
+				}
+
+				memset(dl_buffer, 0 , 50);
+			  }
 		  }
-		}
-	   if( (xbee_con_info.gcs_con_available == TRUE) || 
-	   	   (xbee_con_info.rc_con_available == TRUE)  ||
-	   	   (xbee_con_info.ppzcenter_con_available == TRUE)    )			 
-	    {
-	      dl_msg_available = TRUE;
-		}
-		
-	  #else
-	    dl_msg_available = TRUE;
-	  #endif //GCS_V1_OPTION
+	    }
+	  #endif /* COMM_DIRECT_CONNECT */
       break;
-    default:
-      return;
+	  
+	  #ifdef COMM_DIRECT_CONNECT
+	  case XBEE_AT_CMD_RESPONSE:
+		xbee_at_cmd_response_parse(t);
+		break;
+	  #endif /* COMM_DIRECT_CONNECT */
+	  
+      default:
+      	return;
   }
 }
 
 void xbee_check_and_parse(struct link_device *dev, struct xbee_transport *trans)
 {
   if (dev->char_available(dev->periph)) 
-  	{
+  {
     while (dev->char_available(dev->periph) && !trans->trans_rx.msg_received) 
 	{
       parse_xbee(trans, dev->get_byte(dev->periph));
@@ -592,19 +592,307 @@ void XbeeSetRcConFalse(void)
 
 void XbeeSetGcsConFalse(void)  
 { 
+#ifndef COMM_DIRECT_CONNECT
 	tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC,0);
+#endif	/* COMM_DIRECT_CONNECT */
     xbee_con_info.gcs_con_available = FALSE; 
 }
 
 void XbeeSetFailBind(void)  
 { 
+#ifndef COMM_DIRECT_CONNECT
 	tm_create_timer(TIMER_XBEE_HEARTBEAT_MSG, (2000 MSECONDS), TIMER_PERIODIC,0);
+#endif	/* COMM_DIRECT_CONNECT */
 	xbee_con_info.gcs_con_available = FALSE; 
 }
 
 void XbeeSetSuccessBind(void)  
 { 
+#ifndef COMM_DIRECT_CONNECT
 	tm_kill_timer(TIMER_XBEE_HEARTBEAT_MSG); 
+#endif	/* COMM_DIRECT_CONNECT */
 }
+
+#ifdef COMM_DIRECT_CONNECT
+/*******************************************************************************
+**  FUNCTION      : xbee_at_cmd_query_param                                         
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void xbee_at_cmd_query_param(uint8_t d1, uint8_t d2)
+{
+	uint8_t arg[2];
+   	arg[0] = d1;
+	arg[1] = d2;
+	xbee_config_param.read_flag = TRUE;
+	
+   	xbee_at_cmd_send(2, &arg[0]);
+}
+
+/*******************************************************************************
+**  FUNCTION      : xbee_at_cmd_set_param                                         
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void xbee_at_cmd_set_param(uint8_t len, uint8_t *param)
+{
+	xbee_config_param.read_flag = FALSE;
+	xbee_at_cmd_send(len, param);
+}
+
+/*******************************************************************************
+**  FUNCTION      : xbee_at_cmd_set_id                                         
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void xbee_at_cmd_set_id(uint16_t val)
+{
+	uint8_t arg[10];
+
+	arg[0] = 'I';
+	arg[1] = 'D';
+	arg[2] = val >> 8;
+	arg[3] = val & 0xFF;
+
+	xbee_at_cmd_set_param(4, &arg[0]);
+}
+
+/*******************************************************************************
+**  FUNCTION      : xbee_at_cmd_set_dh                                    
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void xbee_at_cmd_set_dh(uint32_t val)
+{
+	uint8_t arg[10];
+
+	arg[0] = 'D';
+	arg[1] = 'H';
+	arg[2] = (val >> 24) & 0xFF;
+	arg[3] = (val >> 16) & 0xFF;
+	arg[4] = (val >> 8) & 0xFF;
+	arg[5] = val & 0xFF;
+
+	xbee_at_cmd_set_param(6, &arg[0]);
+}
+
+/*******************************************************************************
+**  FUNCTION      : xbee_at_cmd_set_dl                                    
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void xbee_at_cmd_set_dl(uint32_t val)
+{
+	uint8_t arg[10];
+
+	arg[0] = 'D';
+	arg[1] = 'L';
+	arg[2] = (val >> 24) & 0xFF;
+	arg[3] = (val >> 16) & 0xFF;
+	arg[4] = (val >> 8) & 0xFF;
+	arg[5] = val & 0xFF;
+
+	xbee_at_cmd_set_param(6, &arg[0]);
+}
+
+/*******************************************************************************
+**  FUNCTION      : xbee_at_cmd_set_wr                                   
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void xbee_at_cmd_set_wr(void)
+{
+	uint8_t arg[10];
+
+	arg[0] = 'W';
+	arg[1] = 'R';
+
+	xbee_at_cmd_set_param(2, &arg[0]);
+}
+
+/*******************************************************************************
+**  FUNCTION      : xbee_at_cmd_set_ac                                 
+**  DESCRIPTION   : void 
+**  PARAMETERS    : void
+**  RETURN        : void                                                          
+*******************************************************************************/
+void xbee_at_cmd_set_ac(void)
+{
+	uint8_t arg[10];
+
+	arg[0] = 'A';
+	arg[1] = 'C';
+
+	xbee_at_cmd_set_param(2, &arg[0]);
+}
+
+
+void xbee_msg_query_network_id(void)
+{
+	xbee_at_cmd_query_param('I', 'D');
+}
+
+/***********************************************************************
+*  Name         : xbee_at_cmd_send
+*  Description : send onde frame msg to output fifo      
+*  Parameter  : 
+*  Returns      : 
+***********************************************************************/
+void xbee_at_cmd_send(uint8_t nArgs, uint8_t const *pArg)
+{
+	xbee_at_cmd_send_frame(&xbee_tp, nArgs, pArg);
+}
+
+/***********************************************************************
+*  Name         : xbee_at_cmd_send_frame
+*  Description :  put one frame data to tx fifo.
+*  Parameter  : 
+*  Returns      : 
+***********************************************************************/
+void xbee_at_cmd_send_frame(struct xbee_transport *trans, uint8_t nArgs, uint8_t const *pArg)
+{
+	uint8_t i;
+
+	struct link_device *dev = &((XBEE_UART).device);
+	
+	if( trans->trans_tx.check_available_space(trans, dev, nArgs + XBEE_AT_CMD_EXTRA_LEN + 1) )
+	{
+		dev->nb_msgs++;
+	  	dev->put_byte(dev->periph, XBEE_START);
+	  	const uint16_t len =  nArgs + 2;
+	  	dev->put_byte(dev->periph, (len >> 8));
+	  	dev->put_byte(dev->periph, (len & 0xff));
+		
+		dev->put_byte(dev->periph, XBEE_AT_CMD_ID);
+		trans->cs_tx = XBEE_AT_CMD_ID;
+		dev->put_byte(dev->periph, 0x01);	//frame id fixed to 0x01.
+	  	trans->cs_tx += 0x01;	
+		
+		for(i=0; i<nArgs; i++)
+		{
+			 dev->put_byte(dev->periph, pArg[i]);
+			 trans->cs_tx += pArg[i];
+		}
+
+		trans->cs_tx = 0xff - trans->cs_tx;
+		dev->put_byte(dev->periph, trans->cs_tx);
+		dev->send_message(dev->periph);
+	}
+	else
+	{
+		dev->nb_ovrn++;
+	}
+}
+
+/***********************************************************************
+*  Name         : xbee_at_cmd_response_parse
+*  Description :  
+*  Parameter  : 
+*  Returns      : 
+***********************************************************************/
+void xbee_at_cmd_response_parse(struct xbee_transport *t)
+{
+	if( (t->trans_rx.payload[2] == 'I') && (t->trans_rx.payload[3] == 'D') )
+	{
+		if(t->trans_rx.payload[4] == 0x00)	//Status OK
+		{
+			tm_kill_timer(TIMER_XBEE_QUERY_ID_TIMEOUT);
+			if(xbee_config_param.read_flag == TRUE)
+			{
+				xbee_config_param.ID = (t->trans_rx.payload[5] << 8) | t->trans_rx.payload[6];
+				uint8_t *mptr = eng_get_product_series_number();
+
+				uint16_t sn_id = atoi(&mptr[7]);
+				if(sn_id != xbee_config_param.ID)
+				{
+					xbee_at_cmd_set_id(sn_id);
+				}
+				else
+				{
+					xbee_at_cmd_query_param('D', 'H');
+				}
+			}
+			else
+			{
+				xbee_at_cmd_query_param('D', 'H');
+			}
+		}
+	}
+	else if( (t->trans_rx.payload[2] == 'D') && (t->trans_rx.payload[3] == 'H') )
+	{
+		if(t->trans_rx.payload[4] == 0x00)	//Status OK
+		{
+			if(xbee_config_param.read_flag == TRUE)
+			{
+				xbee_config_param.DH = (t->trans_rx.payload[5] << 24) | (t->trans_rx.payload[6] << 16)
+								 	 | (t->trans_rx.payload[7] << 8) | t->trans_rx.payload[8];
+				
+				uint32_t gcs_addr = (xbee_con_info.gcs_addr[0] << 24) | (xbee_con_info.gcs_addr[1] << 16)
+								 	 | (xbee_con_info.gcs_addr[2] << 8) | xbee_con_info.gcs_addr[3];
+				if(xbee_config_param.DH != gcs_addr) 	//address not equal
+				{
+					xbee_at_cmd_set_dh(gcs_addr);
+				}
+				else
+				{
+					xbee_at_cmd_query_param('D', 'L');
+				}	
+			}
+			else
+			{
+				xbee_at_cmd_query_param('D', 'L');
+			}
+		}
+	}
+	else if( (t->trans_rx.payload[2] == 'D') && (t->trans_rx.payload[3] == 'L') )
+	{
+		if(t->trans_rx.payload[4] == 0x00)	//Status OK
+		{
+			if(xbee_config_param.read_flag == TRUE)
+			{
+				xbee_config_param.DL = (t->trans_rx.payload[5] << 24) | (t->trans_rx.payload[6] << 16)
+								 	 | (t->trans_rx.payload[7] << 8) | t->trans_rx.payload[8];
+				
+				uint32_t gcs_addr = (xbee_con_info.gcs_addr[4] << 24) | (xbee_con_info.gcs_addr[5] << 16)
+								 	 | (xbee_con_info.gcs_addr[6] << 8) | xbee_con_info.gcs_addr[7];
+				if(xbee_config_param.DL != gcs_addr) 	//address not equal
+				{
+					xbee_at_cmd_set_dl(gcs_addr);
+				}
+				else
+				{
+					xbee_at_cmd_set_wr();
+				}
+			}
+			else
+			{
+				xbee_at_cmd_set_wr();
+			}
+		}
+	}
+	else if( (t->trans_rx.payload[2] == 'W') && (t->trans_rx.payload[3] == 'R') )
+	{
+		if(t->trans_rx.payload[4] == 0x00)	//Status OK
+		{
+			xbee_at_cmd_set_ac();
+		}
+	}
+	else if( (t->trans_rx.payload[2] == 'A') && (t->trans_rx.payload[3] == 'C') )
+	{
+		if(t->trans_rx.payload[4] == 0x00)	//Status OK
+		{
+			xbee_con_info.gcs_con_available = TRUE;
+			xbee_con_info.rc_con_available = TRUE;
+			xbee_con_info.init_state = XBEE_STATE_FINISHED;
+		}
+	}
+}
+#endif	/* COMM_DIRECT_CONNECT */
 
 

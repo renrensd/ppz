@@ -31,6 +31,14 @@ struct FRAM_INFO
 	
 };
 
+struct FRAM_ERROR_INFO
+{
+	bool_t read_data_fail;
+	bool_t write_data_fail;
+	bool_t data_wrong;
+};
+extern struct FRAM_ERROR_INFO fram_error;
+
 enum FRAM_DATA_INIT_SECTION_TYPE
 {
 	FRAM_DATA_INIT_SECTION_ONE,
@@ -56,12 +64,22 @@ extern uint8_t fram_ac_param_read(uint8_t *read_buffer, uint16_t len);
 extern uint8_t fram_ac_param_write(uint8_t *write_buffer, uint16_t len);
 extern uint8_t fram_mag_cali_data_read(uint8_t *read_buffer);
 extern uint8_t fram_mag_cali_data_write(uint8_t *write_buffer);
+extern uint8_t fram_mag_cali_default_data_write(void);
+extern uint8_t fram_acc_cali_data_read(uint8_t *write_buffer);
+extern uint8_t fram_acc_cali_data_write(uint8_t *write_buffer);
+extern uint8_t fram_sn_data_write(uint8_t *write_buffer);
+extern uint8_t fram_sn_data_read(uint8_t *write_buffer);
+
 #ifdef UPGRADE_OPTION
 extern uint8_t fram_write_swdl_mask(void);
+extern uint8_t fram_erase_swdl_mask (void);
 extern uint8_t fram_read_swdl_mask (uint8_t* pBlockData);
 extern bool_t fram_update_is_available(void);
 #endif	/* UPGRADE_OPTION */
 extern void fram_init_all_data(void);
+
+extern void fram_mag_cali_get(void);
+extern void fram_acc_cali_get(void);
 
 #endif //_FRAM_IF_H_
 

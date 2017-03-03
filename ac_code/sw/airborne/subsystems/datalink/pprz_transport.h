@@ -77,6 +77,7 @@ struct pprz_transport {
 };
 
 extern struct pprz_transport pprz_tp;
+extern struct pprz_transport mdebug_tp;
 
 // Init function
 extern void pprz_transport_init(struct pprz_transport *t);

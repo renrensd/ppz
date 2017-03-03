@@ -28,6 +28,9 @@
 /*				class				        quantity	        size		 previous class*/
 FRAM_START
  	CLASS    (CL_SOFTWARE_UPDATE_FLAG,	 	1,                  16,			cl_software_update_flag_array)
+ 	CLASS    (CL_GCS_MAC_ADDR,	 			1,                  8,			cl_gcs_mac_address)
+ 	CLASS    (CL_RC_MAC_ADDR,	 			1,                  8,			cl_rc_mac_address)
+	CLASS	 (CL_BOOTLOADER_RESERVE,		4,                   8,			cl_no_init_data_array)
     CLASS    (CL_SOFTWARE_VERSION,	 		1,             SW_VERSION_LONGTH,			cl_software_version_array) 
  	CLASS    (CL_FRAM_INIT_FLAG,	 	    1,                   4,			cl_fram_init_flag_array)
 	CLASS  	 (CL_PRODUCT_SERIES_NUMBER,	 	1,                  12,			cl_ac_serial_number_array)
@@ -36,7 +39,8 @@ FRAM_START
 	CLASS	 (CL_HARDWARE_VERSION,			1,                   1,			cl_ac_hw_version_array)
 	CLASS	 (CL_FRAM_RESERVE1,				1,                   1,			cl_no_init_data_array)
 	CLASS	 (CL_FRAM_RESERVE2,				1,                   1,			cl_no_init_data_array)
-	CLASS	 (CL_MAG_CALI_FRAM_DATA,				1,                   MAG_CALI_FRAM_DATA_LENGTH,			cl_no_init_data_array)
+	CLASS	 (CL_MAG_CALI_FRAM_DATA,		1,                   MAG_CALI_FRAM_DATA_LENGTH,			cl_no_init_data_array)
+	CLASS	 (CL_ACC_CALI_FRAM_DATA,		1,                   ACC_CALI_FRAM_DATA_LENGTH,			cl_no_init_data_array)
 FRAM_END
 
 

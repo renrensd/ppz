@@ -107,6 +107,13 @@
 #define SecondDevice DOWNLINK_DEVICE
 #endif	/* TRANSPTA */
 
+#if USE_MANU_DEBUG
+#define MdebugChannel DOWNLINK_MDEBUG_TP
+#define MdebugDevice DOWNLINK_MDEBUG_DEVICE
+#endif
+
+
+
 // Init function
 extern void downlink_init(void);
 extern void downlink_periodic(void);

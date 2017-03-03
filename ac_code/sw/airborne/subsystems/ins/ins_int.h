@@ -79,6 +79,8 @@ struct InsInt
   struct NedCoor_i ltp_speed;
   struct NedCoor_i ltp_accel;
 
+  bool_t ned_pos_rc_reset;
+
   // baro gps switch
   enum _e_ins_ekf_status ekf_state;
   float baro_z;  ///< z-position calculated from baro in meters (NED)
@@ -130,8 +132,8 @@ extern struct InsInt ins_int;
 #endif
 
 extern void ins_int_register(void);
-bool_t ins_int_check_realign(void);
-void ins_int_SetType(enum _e_ins_gps_type type);
-void ins_int_task(void);
+extern bool_t ins_int_check_realign(void);
+extern void ins_int_SetType(enum _e_ins_gps_type type);
+extern void ins_int_task(void);
 
 #endif /* INS_INT_H */

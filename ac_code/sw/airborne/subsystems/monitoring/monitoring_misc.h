@@ -39,9 +39,11 @@
 
 /**** Declaration of functions ****/
 extern void misc_moni_init(void);
+extern uint8_t board_ground_check(void);
 extern uint8_t battery_ground_check(void);
 extern void battery_flight_check(void);
 extern void gps_flight_check(void);
+extern bool_t ops_ground_check(void);
 extern void ops_flight_check(void);
 extern void rc_communication_flight_check(void);
 extern void gcs_communication_flight_check(void);

@@ -50,9 +50,10 @@
 #define TASK_BREAK 20
 #define MODE_CONVERT_A2M 21
 #define OPS_BLOCKED 22
+#define GPS_UBLOX_FAIL  23
 
 
-#define EPT_MS_NB 23
+#define EPT_MS_NB 24
 
 /*use for monitor_cmd*/
 #define CM_NONE 0
@@ -80,6 +81,20 @@ struct except_mission
     //int8_t error_code;
 };
 
+enum Ground_Check_Step
+{
+	BATTERY_CHECK = 0,
+	BOARD_CHECK,
+	IMU_CHECK,
+	HEIGHT_CHECK,
+	OPS_CHECK,
+	GPS_CHECK,
+	CALIBRATION_CHECK,
+	AUTOPILOT_CHECK,
+	RC_CONNECT
+};
+extern enum Ground_Check_Step ground_check_step;  //use to sign step in ground check;
+extern uint16_t monitoring_fail_code;
 
 #define CHECK_INTERVAL(_x, _sta, _deta)  ((_x)>((_sta)-(_deta)) && (_x)<((_sta)+(_deta)))
 
@@ -88,10 +103,11 @@ extern uint32_t em_code;
 extern bool_t rc_cmd_interrupt;
 extern bool_t gcs_cmd_interrupt;
 extern bool_t mode_convert_a2m;
-extern uint8_t rc_alert_grade;
+extern uint8_t em_alert_grade;
 extern uint8_t monitor_cmd;
 extern bool_t ground_check_pass;
 
+extern uint8_t mdebug_att_flag;
 #if TEST_MSG
 extern uint8_t fs_imu;
 extern uint8_t fre_imu;
@@ -114,7 +130,7 @@ extern uint8_t gps_flight;
 extern void monitoring_init(void);
 extern void monitoring_periodic(void);
 extern uint8_t data_fix_check(int32_t data, int32_t last_data, uint8_t *counter, uint8_t max_counter);
-extern void set_except_mission(uint8_t em_nb,bool_t em_active,bool_t em_finished,bool_t em_hover,uint8_t em_keep_time,bool_t em_home,bool_t em_land,uint8_t em_alert_grade);
+extern void set_except_mission(uint8_t em_nb,bool_t em_active,bool_t em_finished,bool_t em_hover,uint8_t em_keep_time,bool_t em_home,bool_t em_land,uint8_t alert_grade);
 extern void ground_monitoring_init(void);
 extern void flight_monitoring_init(void);
 extern void ground_monitoring(void);

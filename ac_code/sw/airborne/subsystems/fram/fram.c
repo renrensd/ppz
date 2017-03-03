@@ -21,12 +21,16 @@
 /**** System include files ****/
 #include <string.h>
 #include <stddef.h>
-
+#include "subsystems/imu.h"
+#include "data_check/crc16.h"
 /*---Public include files---------------------------------------------*/
 #include "modules/system/timer_if.h"
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
 #include "mcu_periph/sys_time.h"
+#ifdef GCS_V1_OPTION
+#include "subsystems/datalink/xbee.h"
+#endif	/* GCS_V1_OPTION */
 
 /*---Private include files--------------------------------------------*/
 #include "fm25v.h"
@@ -57,11 +61,13 @@
 
 /*===VARIABLES========================================================*/
 struct FRAM_INFO fram;
+struct FRAM_ERROR_INFO fram_error;
 
 /*---Global-----------------------------------------------------------*/
 const uint8_t fram_init_flags[4] =
 {0x55,0xAA,0x5A,0xA5};//need init the whole fram 
 
+#ifdef UPGRADE_OPTION
 const uint8_t cl_swdl_mask_array[] =
 {
    0xAA,0x55,0xA5,0x5A,
@@ -69,6 +75,15 @@ const uint8_t cl_swdl_mask_array[] =
    0x55,0x55,0x55,0x55,
    0xFF,0xFF,0xFF,0xFF,
 };
+
+const uint8_t clear_update_flag_array[] =
+{
+  0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,
+  0xFF,0xFF,0xFF,0xFF,              
+};
+#endif	/* UPGRADE_OPTION */
 
 /*---Private----------------------------------------------------------*/
 const FRAM_DATA_INIT_TYPE fram_data_section[FRAM_DATA_INIT_SECTION_MAX] = 
@@ -250,19 +265,68 @@ void fram_init_all_data(void)
                 /* need to reset special data section */
                 fram_factory_reset_init(*((uint16_t *)temp_fram_init_flags));
             }
-            return; 
          }    
     }
 	else
 	{
 	    temp_pointer = cl_data_array[CL_SOFTWARE_VERSION];
 	    fram_id_write(CL_SOFTWARE_VERSION,(uint8_t *)temp_pointer);
+
 	}
+	
+	#ifdef GCS_V1_OPTION
+	#ifdef COMM_DIRECT_CONNECT
+	fram_read(CL_GCS_MAC_ADDR, 0x00, xbee_con_info.gcs_addr);
+	fram_read(CL_RC_MAC_ADDR, 0x00, xbee_con_info.rc_addr);
+	#endif	/* COMM_DIRECT_CONNECT */
+	#endif	/* GCS_V1_OPTION */
+	
 }
+
 
 /*
  *	mag_cali
  */
+void fram_mag_cali_get(void)
+{
+	struct MagCali_PersData temp_MagCaliFramData;
+	uint8_t *ptemp = (uint8_t *) (&temp_MagCaliFramData);
+
+	uint8_t err = fram_mag_cali_data_read(ptemp);
+	imu.mag_var_valid = FALSE;
+
+	if (err)
+	{
+		fram_error.read_data_fail = TRUE;
+		return;  
+	}
+
+	uint32_t temp_crc16 = Crc16_normal(ptemp, 0, MAG_CALI_PERS_DATA_STRUCT_LENGTH - 4);
+	if(temp_crc16 != temp_MagCaliFramData.crc16)
+	{
+		fram_error.data_wrong = TRUE;
+		return; 
+	}
+
+	mag_cali.gain[0] = temp_MagCaliFramData.gain[0];
+	mag_cali.gain[1] = temp_MagCaliFramData.gain[1];
+	mag_cali.offset[0] = temp_MagCaliFramData.offset[0];
+	mag_cali.offset[1] = temp_MagCaliFramData.offset[1];
+	mag_cali.cali_ok = temp_MagCaliFramData.cali_ok;
+
+	imu.mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
+	imu.mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
+	imu.mag_neutral.z = 0;
+	imu.mag_sens.x = mag_cali.gain[0];
+	imu.mag_sens.y = mag_cali.gain[1];
+	imu.mag_sens.z = mag_cali.gain[1];
+	if( mag_cali.cali_ok )
+	{
+		imu.mag_var_valid = TRUE;
+	}
+
+}
+ 
 uint8_t fram_mag_cali_data_read(uint8_t *read_buffer)
 {
 	return fram_id_read(CL_MAG_CALI_FRAM_DATA, read_buffer);
@@ -273,6 +337,72 @@ uint8_t fram_mag_cali_data_write(uint8_t *write_buffer)
 	return fram_id_write(CL_MAG_CALI_FRAM_DATA, write_buffer);
 }
 
+uint8_t fram_mag_cali_default_data_write(void)
+{
+	struct MagCali_PersData temp_MagCaliFramData;
+	uint8_t *ptemp = (uint8_t *) (&temp_MagCaliFramData);
+	//temp_MagCaliFramData.gain[0] = ;
+
+
+	
+	temp_MagCaliFramData.cali_ok = FALSE;
+	temp_MagCaliFramData.crc16 = Crc16_normal(ptemp, 0, MAG_CALI_PERS_DATA_STRUCT_LENGTH - 4);	
+	return fram_id_write(CL_MAG_CALI_FRAM_DATA, ptemp);
+}
+/*
+ *	acc_cali
+ */
+void fram_acc_cali_get(void)
+{
+	struct AccCali_PersData temp_AccCaliFramData;
+	uint8_t *ptemp = (uint8_t *) (&temp_AccCaliFramData);
+
+	uint8_t err = fram_acc_cali_data_read(ptemp);
+
+	if (err)
+	{
+		fram_error.read_data_fail = TRUE;
+		imu.acc_var_valid = FALSE;
+		return; 
+	}
+
+	uint32_t temp_crc16 = Crc16_normal(ptemp, 0, ACC_CALI_PERS_DATA_STRUCT_LENGTH - 4);
+	if(temp_crc16 != temp_AccCaliFramData.crc16)
+	{
+		fram_error.data_wrong = TRUE;
+		imu.acc_var_valid = FALSE;
+		return;
+	}
+
+	imu.acc_sens.x = temp_AccCaliFramData.gain[0];
+	imu.acc_sens.y = temp_AccCaliFramData.gain[1];
+	imu.acc_sens.z = temp_AccCaliFramData.gain[2];
+	imu.accel_neutral.x = (int32_t)temp_AccCaliFramData.offset[0];
+	imu.accel_neutral.y = (int32_t)temp_AccCaliFramData.offset[1];
+	imu.accel_neutral.z = (int32_t)temp_AccCaliFramData.offset[2];
+	imu.acc_var_valid = TRUE;
+}
+
+
+uint8_t fram_acc_cali_data_read(uint8_t *read_buffer)
+{
+	return fram_id_read(CL_ACC_CALI_FRAM_DATA, read_buffer);
+}
+
+uint8_t fram_acc_cali_data_write(uint8_t *write_buffer)
+{
+	return fram_id_write(CL_ACC_CALI_FRAM_DATA, write_buffer);
+}
+
+uint8_t fram_sn_data_write(uint8_t *write_buffer)
+{
+	return fram_write(CL_PRODUCT_SERIES_NUMBER, 0, write_buffer);
+}
+
+uint8_t fram_sn_data_read(uint8_t *write_buffer)
+{
+	return fram_read(CL_PRODUCT_SERIES_NUMBER, 0, write_buffer);
+}
 
 
 #ifdef UPGRADE_OPTION
@@ -293,6 +423,17 @@ uint8_t fram_write_swdl_mask(void)
     };
     
     return ( fram_write(CL_SOFTWARE_UPDATE_FLAG, 0, buf) );
+}
+
+/***********************************************************************
+*  Name        : fram_erase_swdl_mask
+*  Description :          
+*  Parameter   : none
+*  Returns     : 0-Success, other-Fail  
+***********************************************************************/
+uint8_t fram_erase_swdl_mask (void)
+{   
+    return ( fram_write(CL_SOFTWARE_UPDATE_FLAG, 0, clear_update_flag_array) );
 }
 
 /***********************************************************************

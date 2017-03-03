@@ -352,7 +352,7 @@ void usart2_isr(void) { usart_isr(&uart2); }
 
 /* by default enable UART Tx and Rx */
 #ifndef USE_UART3_TX
-#define USE_UART3_TX FALSE
+#define USE_UART3_TX TRUE
 #endif
 #ifndef USE_UART3_RX
 #define USE_UART3_RX TRUE

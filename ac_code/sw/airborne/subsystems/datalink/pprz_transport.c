@@ -47,6 +47,7 @@
 #endif
 
 struct pprz_transport pprz_tp;
+struct pprz_transport mdebug_tp;
 
 static void put_1byte(struct pprz_transport *trans, struct link_device *dev, const uint8_t byte)
 {

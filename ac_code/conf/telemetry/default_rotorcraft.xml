@@ -9,7 +9,7 @@
       <!--message name="ROTORCRAFT_CMD"         period="0.5"/-->
       <message name="DL_VALUE"                 period="0.5"/>
       <message name="ROTORCRAFT_STATUS"      period="0.2"/>
-      <message name="ROTORCRAFT_FP"          period="1.0"/>
+      <message name="ROTORCRAFT_FP"          period="0.5"/>
       <message name="ALIVE"                  period="1.0"/>
       <message name="INS_REF"                period="5.0"/>
       <message name="ROTORCRAFT_NAV_STATUS"  period="2.0"/>
@@ -18,6 +18,8 @@
       <message name="INS"                    period="1.0"/>
       <message name="RC"                     period="0.1"/>
       <message name="DEBUG_GPS"  	     period="0.2"/>
+      <message name="ROTORCRAFT_TUNE_HOVER"  period="0.05"/>
+      <message name="INS_Z"                  period="0.05"/>
       <!--message name="I2C_ERRORS"          period="2.0"/>
       <message name="UART_ERRORS"            period="3.1"/>
       <message name="SUPERBITRF"             period="3"/>
@@ -28,21 +30,15 @@
       <message name="SURVEY"                 period="2.5"/>
       <message name="OPTIC_FLOW_EST"         period="0.25"/>
       <message name="BMP_STATUS"             period="0.25"/-->
-      <message name="VERT_LOOP"              period="1.0"/>
+      <message name="VERT_LOOP"              period="0.2"/>
       <message name="HOVER_LOOP"             period="2.0"/>
-      <message name="UTC_TIME"               period="10.0"/>
-      <message name="ACTUATORS_PWM"         period="0.25"/>
+      <message name="UTC_TIME"               period="2.0"/>
+      <message name="ACTUATORS_PWM"          period="0.25"/>
       <message name="STAB_ATTITUDE_FLOAT"    period="0.3"/>
+      <message name="IMU_ACCEL_SCALED"       period=".1"/>
       <!--message name="INS_Z"               period="1.0"/>
       <message name="GUIDANCE_H_REF_INT"     period="0.5"/-->
-      <message name="MCU_FAULT"              period="5.0"/>
-    </mode>
-
-    <mode name="LAND_CRASH">
-      <message name="DL_VALUE"               period="0.5"/>
-      <message name="ALIVE"                  period="2.1"/>
-      <message name="DEBUG_GPS"  	     period="0.2"/>
-      <message name="TUNE_VERT"              period="0.02"/>
+      <message name="MCU_FAULT"              period="1.0"/>
     </mode>
 
     <mode name="traj_test">
@@ -132,9 +128,8 @@
       <!--message name="FILTER_ALIGNER"     period="2.2"/>
       <message name="FILTER"             period=".5"/-->
       <!--message name="GEO_MAG"            period="5."/-->
-      <message name="AHRS_GYRO_BIAS_INT" period="0.1"/>
-      <message name="AHRS_QUAT_INT"      period=".25"/>
-      <message name="AHRS_EULER_INT"     period=".1"/>
+      <message name="AHRS_GYRO_BIAS_INT" period="0.05"/>
+      <message name="AHRS_QUAT_INT"      period=".5"/>
       <message name="AHRS_EULER"         period=".1"/>
       <message name="AHRS_RMAT_INT"      period=".5"/>
     </mode>

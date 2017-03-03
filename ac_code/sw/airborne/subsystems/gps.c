@@ -156,6 +156,7 @@ void gps_init(void)
   gps.last_3dfix_time = 0;
   gps.last_msg_ticks = 0;
   gps.last_msg_time = 0;
+  gps.alive = FALSE;
 #ifdef GPS_POWER_GPIO
   gpio_setup_output(GPS_POWER_GPIO);
   GPS_POWER_GPIO_ON(GPS_POWER_GPIO);
@@ -181,6 +182,11 @@ void gps_periodic_check(void)
 {
   if (sys_time.nb_sec - gps.last_msg_time > GPS_TIMEOUT) {
     gps.fix = GPS_FIX_NONE;
+	gps.alive = FALSE;
+  }
+  else
+  {
+  	gps.alive = TRUE;
   }
 
   /*ublox or nmea get gps.p_stable, use for monitoring*/

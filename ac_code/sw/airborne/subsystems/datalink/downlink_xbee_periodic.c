@@ -39,10 +39,14 @@ void downlink_gcs_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
 	//RunOnceEvery(TELEMETRY_FREQUENCY/DOWNLINK_GCS_FREQUENCY,downlink_msg_gcs());  
 	RunOnceEvery( TELEMETRY_FREQUENCY/HEART_BEART_A2G_FREQUENCY, 
 	              { 
-					#if DATALINK==XBEE
+					#ifndef COMM_DIRECT_CONNECT
 					if(xbee_con_info.gcs_con_available==FALSE) return;
-					#endif
-				    send_heart_beat_A2G_msg(); } );
+					send_heart_beat_A2G_msg(); } );
+					#else
+					if((xbee_con_info.pair_state == XBEE_PAIR_STATE_N2P)&&(xbee_con_info.pair_ok == FALSE) ) return;
+					send_heart_beat_A2G_msg(); } );
+					#endif	/* COMM_DIRECT_CONNECT */
+				    
 }
 
 void downlink_pc_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
@@ -57,8 +61,7 @@ void downlink_pc_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
 
     RunOnceEvery( TELEMETRY_FREQUENCY/NAV_FLIGHT_FREQUENCY, 
 	              { if(xbee_con_info.gcs_con_available==FALSE) return;
-				    send_task_info_pc();                        } );
-					
+				    send_task_info_pc();                        } );					
 }
 
 /*
@@ -118,7 +121,8 @@ void send_heart_beat_A2G_msg(void)
    Bound(battery_remain, 0, 100);
    int8_t  pesticides_remain = (int8_t)(ops_info.res_cap&0x00FF);
 
-   uint32_t error_code = em_code&0xFFFFF7FF;   //remove gcs lost error
+   uint32_t error_code = em_code;   //no remove gcs lost error
+   uint16_t selftest_code = (ground_check_step<<8)|(monitoring_fail_code&0x00FF);
 
    xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);	 //ack processing need handle later
    DOWNLINK_SEND_HEART_BEAT_AC_GCS_STATE(SecondChannel, SecondDevice, 
@@ -135,7 +139,8 @@ void send_heart_beat_A2G_msg(void)
    	                                     &pos_lat, 
    	                                     &battery_remain, 
    	                                     &pesticides_remain,
-   	                                     &error_code);
+   	                                     &error_code,
+   	                                     &selftest_code);
    
 }
 

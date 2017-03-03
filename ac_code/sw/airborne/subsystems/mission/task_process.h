@@ -47,6 +47,7 @@ extern enum Gcs_Task_Cmd gcs_task_cmd;
 extern enum Gcs_Task_Cmd last_task_cmd;
 extern Task_Error task_error_state;
 extern bool_t from_wp_useful;
+extern bool_t manual_pause_flag;
 
 extern void task_init(void);
 extern bool_t auto_task_ready_check(void);

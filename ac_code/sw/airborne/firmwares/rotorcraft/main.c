@@ -112,7 +112,7 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include "wdg.h"
 #endif
 
-#ifndef FRAM_OPTION
+#ifdef FRAM_OPTION
 #include "subsystems/fram/fram_if.h"
 #endif	/* FRAM_OPTION */
 
@@ -210,6 +210,14 @@ STATIC_INLINE void main_init(void)
   pprz_trig_int_init();
 #endif
 
+#ifdef FRAM_OPTION
+  fram_init_all_data();
+#endif
+
+#ifdef ENG_OPTION
+  eng_init();
+#endif	/* ENG_OPTION */
+
   electrical_init();
 
   stateInit();
@@ -232,10 +240,6 @@ STATIC_INLINE void main_init(void)
 
 #if USE_BARO_BOARD
   baro_init();
-#endif
-
-#ifdef FRAM_OPTION
-  fram_init_all_data();
 #endif
 
 #if USE_IMU
@@ -274,10 +278,6 @@ STATIC_INLINE void main_init(void)
 #ifdef OPS_OPTION
 	ops_init();
 #endif	/* OPS_OPTION */
-
-#ifdef ENG_OPTION
-	eng_init();
-#endif	/* ENG_OPTION */
 
 #ifdef MONITORING_OPTION
     monitoring_init();
@@ -510,9 +510,16 @@ STATIC_INLINE void failsafe_check(void)
   #else
    if (radio_control.link_status == RC_LINK_LOST || radio_control.status == RC_REALLY_LOST ) 
    {   //radio lost,will set mode kill
-   	   if( autopilot_mode != AP_MODE_NAV)
+   	   if(autopilot_mode == AP_MODE_ATTITUDE_DIRECT)
    	   {
-	   	   autopilot_set_mode(AP_MODE_KILL);
+	   	   if(gps.p_stable && autopilot_in_flight)
+	   	   {
+		   	autopilot_set_mode(AP_MODE_HOVER_Z_HOLD);
+	   	   }
+		   else
+		   {
+		   	autopilot_set_mode(AP_MODE_KILL);
+		   }
    	   }
    }
   #endif //end of ndef USE_MISSION
@@ -523,9 +530,9 @@ STATIC_INLINE void failsafe_check(void)
 
 STATIC_INLINE void main_event(void)
 {
-	#ifdef WDG_OPTION
-	mcu_set_task_wdg_flag(WDG_EVENT_ALL);
-	#endif	/* WDG_OPTION */
+  #ifdef WDG_OPTION
+  mcu_set_task_wdg_flag(WDG_EVENT_ALL);
+  #endif	/* WDG_OPTION */
 
   /* event functions for mcu peripherals: i2c, usb_serial.. */
   mcu_event();

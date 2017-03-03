@@ -287,7 +287,14 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
     bound_commands();
     bound_commands_step();
 
-#ifdef ESC_CALIBRATION
+  } 
+  else 
+  {  
+    for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) 
+	{
+      motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
+    }
+	#ifdef ESC_CALIBRATION
 		if(esc_cali_status == 0)
 		{
 			if(radio_control.values[RADIO_THROTTLE] > (MOTOR_MIXING_MAX_MOTOR/2))
@@ -322,12 +329,6 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
 				motor_mixing.commands[num] = MOTOR_MIXING_MIN_MOTOR;
 			}
 		}
-
-#endif
-
-  } else {
-    for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
-      motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
-    }
+     #endif
   }
 }

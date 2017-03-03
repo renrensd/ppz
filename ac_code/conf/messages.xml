@@ -1354,8 +1354,8 @@
     <field name="est_ydd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009765"/>
     <field name="err_x"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
     <field name="err_y"     type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
-    <field name="err_xd"    type="float" />
-    <field name="err_yd"    type="float" />
+    <field name="err_xd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
+    <field name="err_yd"    type="int32" alt_unit="m/s"  alt_unit_coef="0.0000019"/>
     <field name="i_posx"    type="int32" alt_unit_coef="0.0000019"/>
     <field name="i_posy"    type="int32" alt_unit_coef="0.0000019"/>
     <field name="cmd_x"     type="int32" alt_unit="deg" alt_unit_coef="0.013989"/>
@@ -2048,8 +2048,8 @@
 
   <!--217 is free -->
   <message name="MONITORING" id="217">
-    <field name="ground_check_step" type="uint8" values="battery|board|IMU|height|GPS|calibration|autopilot|ops|rc_connect "/>
-    <field name="monitoring_fail_code" type="uint16" values="pass|bat_e|board_e|imu_e|height_e|gps_w|calibra_e|ap_e|ops_e|rc_link"/>
+    <field name="ground_check_step" type="uint8" values="battery|board|IMU|height|ops|GPS|calibration|autopilot|rc_connect"/>
+    <field name="monitoring_fail_code" type="uint16" values="pass|bat_e|board_e|imu_e|height_e|ops_e|gps_w|calibra_e|ap_e|rc_link"/>
   </message>
 
   <message name="BEBOP_ACTUATORS" id="218">
@@ -2119,14 +2119,16 @@
     <field name="gps_flight" type="uint8" values="ok|pacc|nofix"/>
     <field name="em_cmd" type="uint8" values="none|hover|home|land"/>
     <field name="alert_grade" type="uint8" values="ok|low|middle|high"/>
-    <field name="sonar_valid" type="uint8" values="fail|ok"/>
-    <field name="baro_valid" type="uint8" values="fail|ok"/>
     <field name="em_code" type="uint32"/>
   </message>
 
-  <message name="VIDEO_SYNC" id="225">
+  <!--message name="VIDEO_SYNC" id="225">
     <field name="id" type="uint8"/>
-  </message>
+  </message-->
+ <message name="WRITE_SN_ACK" id="225">
+   <field name="data" type="uint8[12]"/>
+   <field name="result" type="uint8" />
+ </message>
 
   <message name="PERIODIC_TELEMETRY_ERR" id="226">
     <field name="process" type="uint8"/>
@@ -2153,10 +2155,19 @@
     <field name="divergence"    type="float" unit="1/s"/>
   </message>
 
-  <message name="STEREO_IMG" id="229">
+  <!--message name="STEREO_IMG" id="229">
     <field name="frequency" type="uint8"/>
     <field name="data_size" type="uint8"/>
     <field name="imageBuffer" type="uint8[]"/>
+  </message-->
+  <message name="OPS_INFO_BBOX" id="229">
+    <field name="volatage"   type="uint16"/>
+    <field name="current"    type="uint16"/>
+    <field name="total_cap"  type="uint16"/>
+    <field name="remain_cap" type="uint16"/>
+    <field name="temper"     type="uint16"/>
+    <field name="error"      type="uint8"/>
+    <field name="mcu"        type="uint8"/>
   </message>
 
   <!--230 is free -->
@@ -2365,17 +2376,9 @@
       <field name="L"   type="int32"/>
   </message>
   <!-- 252 is free -->
-  <message name="H_PID" id="252">
-      <field name="Px"   type="int32"/>
-      <field name="Dx"  type="int32"/>
-      <field name="Ix"  type="int32"/>
-      <field name="Py"   type="int32"/>
-      <field name="Dy"  type="int32"/>
-      <field name="Iy"  type="int32"/>
-      <field name="xh1"  type="float"/>
-      <field name="xh2"   type="float"/>
-      <field name="yh1"   type="float"/>
-      <field name="yh2"   type="float"/>
+  <message name="DEBUG_TASK" id="252">
+      <field name="heading_align"   type="uint8" values="FALSE|TRUE" />
+      <field name="height_align"   type="uint8" values="FALSE|TRUE" />
   </message>
 
   <message name="I2C_ERRORS" id="253">
@@ -2777,6 +2780,10 @@
    <field name="ac_id" type="uint8"/>
    <field name="packet_id" type="uint8"/>
    <field name="data" type="uint8[]"/>
+ </message>
+
+ <message name="WRITE_SN" id="154" link="forwarded">
+   <field name="data" type="uint8[12]"/>
  </message>
 
 </msg_class>

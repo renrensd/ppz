@@ -80,7 +80,7 @@
 #include "modules/system/timer_def.h"
 #endif	/* UPGRADE_OPTION */
 
-//#include "subsystems/radio_control/rc_datalink.h"
+#include "subsystems/eng/eng_app_if.h"
 
 #include "firmwares/rotorcraft/navigation.h"
 #include "firmwares/rotorcraft/autopilot.h"
@@ -147,9 +147,9 @@ void dl_parse_msg(void)
   //process RC uplink message 
   if(msg_type == XBEE_TYPE_RC)   
   {
-    #if DATALINK==XBEE
+    #ifndef COMM_DIRECT_CONNECT
 	if(xbee_con_info.rc_con_available != TRUE)  return;
-	#endif	/* DATALINK==XBEE */
+	#endif	/* COMM_DIRECT_CONNECT */
 
 	switch (msg_id) 
 	{  
@@ -163,7 +163,7 @@ void dl_parse_msg(void)
 		case DL_RC_SET_CMD:
 		{  
 			rc_set_connect();
-			rc_set_cmd_pasre(DL_RC_SET_CMD_set_cmd(dl_buffer));
+			rc_set_cmd_parse(DL_RC_SET_CMD_set_cmd(dl_buffer));
 			break;
 		}
 		
@@ -175,7 +175,7 @@ void dl_parse_msg(void)
 			break;
 		}
 
-		#if DATALINK==XBEE
+		#ifndef COMM_DIRECT_CONNECT
 		case DL_RC_BIND_STATE: 
 		{
 			/*check rc serial_code*/
@@ -199,7 +199,7 @@ void dl_parse_msg(void)
 			}
 			break;
 	    }
-		#endif	/* DATALINK==XBEE */
+		#endif	/* COMM_DIRECT_CONNECT */
 		
 		#ifdef CALIBRATION_OPTION
 		case DL_CALIBRATION_RESULT_RC_ACK_STATE:
@@ -218,9 +218,9 @@ void dl_parse_msg(void)
   //process android GCS uplink message 
  if(msg_type == XBEE_TYPE_GCS)   
  {
-    #if DATALINK==XBEE
+    #ifndef COMM_DIRECT_CONNECT
 	if(xbee_con_info.gcs_con_available != TRUE)  return;
-	#endif	/* DATALINK==XBEE */
+	#endif	/* COMM_DIRECT_CONNECT */
 	
   	switch (msg_id) 
 	{
@@ -389,16 +389,16 @@ void dl_parse_msg(void)
 		   break;
 		}
 		
-		#if DATALINK==XBEE
 		case DL_BIND_AIRCRAFT: 
 		{ 
 		  /*check gcs serial_code*/
 		  uint8_t code_check = TRUE;
-		  const char gcs_serial_code[] = AC_SN_CODE;
+		  //const char gcs_serial_code[] = AC_SN_CODE;
+		  uint8_t *temp_pt = eng_get_product_series_number();
 		  char *pt_serial_code = DL_BIND_AIRCRAFT_sn_code(dl_buffer);
 		  for(uint8_t i=0; i<10;i++)
 		  {    
-		  	 if( *(pt_serial_code+i)!=gcs_serial_code[i] )  
+		  	 if( *(pt_serial_code+i)!=*(temp_pt+i) )  
 			 {
 			 	code_check = FALSE;
 			 	break; 
@@ -418,7 +418,6 @@ void dl_parse_msg(void)
 		  send_aircraft_info_state();
 		  break;
 	   }	
-		#endif	/* DATALINK==XBEE */
 		
 		case DL_EMERGENCY_RECORD_ACK_STATE:
 		{
@@ -447,7 +446,7 @@ void dl_parse_msg(void)
 		}
 		case DL_GCS_VRC_SET_CMD:
 		{
-			rc_set_cmd_pasre(DL_RC_SET_CMD_set_cmd(dl_buffer));
+			rc_set_cmd_parse(DL_RC_SET_CMD_set_cmd(dl_buffer));
 			gcs_set_rc_type();
 			gcs_vrc_set_connect();
 
@@ -458,22 +457,25 @@ void dl_parse_msg(void)
 		#ifdef UPGRADE_OPTION
  		case DL_REQUEST_UPGRADE:
 		{
-			if( UPGRADE_TYPE_AC == DL_REQUEST_UPGRADE_type(dl_buffer) )
+			if(!autopilot_in_flight)
 			{
-				if(fram_write_swdl_mask() == 0)		//fram write swdl success.
+				if( UPGRADE_TYPE_AC == DL_REQUEST_UPGRADE_type(dl_buffer) )
 				{
-					uint8_t type = UPGRADE_TYPE_AC;
-					uint8_t state = UPGRADE_RES_OK;
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &state);
-					tm_create_timer(TIMER_UPGRADE_RES_TX_TIMEOUT, (4 SECONDS), TIMER_ONE_SHOT,0);//wait 4s to reboot.
-				}
-				else
-				{
-					uint8_t type = UPGRADE_TYPE_AC;
-					uint8_t state = UPGRADE_RES_FAIL;
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &state);
+					if(fram_write_swdl_mask() == 0)		//fram write swdl success.
+					{
+						uint8_t type = UPGRADE_TYPE_AC;
+						uint8_t ug_state = UPGRADE_RES_OK;
+						xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+						DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
+						tm_create_timer(TIMER_UPGRADE_RES_TX_TIMEOUT, (2 SECONDS), TIMER_ONE_SHOT,0);//wait 2s to reboot.
+					}
+					else
+					{
+						uint8_t type = UPGRADE_TYPE_AC;
+						uint8_t ug_state = UPGRADE_RES_FAIL;
+						xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+						DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
+					}
 				}
 			}
 			break;
@@ -492,9 +494,35 @@ void dl_parse_msg(void)
   {
 	switch (msg_id) 
 	{
+		#if USE_MANU_DEBUG
+		case DL_WRITE_SN :
+		{
+			uint8_t result = 1;
+			uint8_t r_pt[DL_WRITE_SN_data_length(dl_buffer)+10];  //add 10 avoid point overrun
+			uint8_t *t_pt = DL_WRITE_SN_data(dl_buffer);
+			fram_sn_data_write(t_pt);
+			fram_sn_data_read(r_pt);
+			for(uint8_t i=0; i<DL_WRITE_SN_data_length(dl_buffer); i++)
+			{
+				if( *(t_pt+i)!=r_pt[i] )
+				{
+					result = 0;
+					break;
+				}
+			}
+			DOWNLINK_SEND_WRITE_SN_ACK(MdebugChannel, MdebugDevice, &r_pt[0], &result);
+			
+			fram_mag_cali_default_data_write();   //while write sn, write default mag var to fram
+		}
+		break;
+		#endif
+		
 	    case  DL_PING: {
 		  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	      DOWNLINK_SEND_PONG(DefaultChannel, DefaultDevice);
+		  #if USE_MANU_DEBUG
+		  DOWNLINK_SEND_PONG(MdebugChannel, MdebugDevice);
+		  #endif
 		  #if OPEN_PC_DATALINK
   		  DOWNLINK_SEND_PONG(DOWNLINK_TRANSPORT, DOWNLINK_DEVICE);
 		  #endif
@@ -506,7 +534,7 @@ void dl_parse_msg(void)
 	      uint8_t i = DL_SETTING_index(dl_buffer);
 	      float var = DL_SETTING_value(dl_buffer);
 	      DlSetting(i, var);
-		  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+		   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	      DOWNLINK_SEND_DL_VALUE(DefaultChannel, DefaultDevice, &i, &var);
 		  #if OPEN_PC_DATALINK
   		  DOWNLINK_SEND_DL_VALUE(DOWNLINK_TRANSPORT, DOWNLINK_DEVICE, &i, &var);

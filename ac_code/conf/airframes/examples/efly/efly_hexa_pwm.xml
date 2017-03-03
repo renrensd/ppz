@@ -60,20 +60,13 @@
     <!--***if ndef,default is 25m/s2*** -->
     <define name="THRESHOLD_GROUND_DETECT" value="15."/>
 
-    <!--***take the GPS accuracy to ins*** -->
-    <!--define name="USE_GPS_ACC4R" value="1"/>
-    <define name="HFF_R_POS_MIN" value="2.5"/>
-    <define name="HFF_R_SPEED_MIN" value="2."/>
-
-    <define name="VF_FLOAT_MEAS_NOISE" value="2."/-->
-    <!--define name="USE_ADC_2" value="1"/-->
   </firmware>
 
   <modules main_freq="512">
     <!--load name="gps_ubx_ucenter.xml"/-->
     <!--load name="send_imu_mag_current.xml"/-->
     <!--load name="agl_dist.xml"/-->
-    <!--load name="acc_cali.xml"/-->
+    <load name="acc_cali.xml"/>
     <load name="mag_cali.xml"/>
     <load name="gps2_ublox.xml"/>
     <load name="ins_ublox.xml"/>
@@ -85,13 +78,7 @@
     <!--load name="radar_nra24.xml"/-->
     <!--load name="bat_manager.xml"/-->
     <load name="logger_file.xml"/>
-    <!--load name="nav_survey_rectangle_rotorcraft.xml"/-->    
-    <!--load name="geo_mag.xml"/>
-    <load name="osd_max7456.xml"/>
-    <load name="hott_telemetry.xml"/>
-    <load name="led_safety_status.xml">
-     <define name="SAFETY_WARNING_LED" value="5"/-->
-
+    <!--load name="geo_mag.xml"/-->
   </modules>
 
   <servos driver="Pwm">
@@ -313,19 +300,11 @@
   </section>
 
   <section name="INS" prefix="INS_">
-    <!-- datasheet 1.4 mm/LSB : 0.0014*2^8 = 0.3584 -->
-    <!-- calibration SENS = 1.156 :( -->
-    <!--define name="SONAR_SENS" value="0.0128633" integer="16"/-->
-    <!--define name="SONAR_OFFSET" value="7"-->
     <define name="SONAR_MAX_RANGE" value="1.0"/>
-    <!--define name="SONAR_UPDATE_ON_AGL" value="TRUE"/-->
   </section>
 
   <section name="STABILIZATION_RATE" prefix="STABILIZATION_RATE_">
     <!-- setpoints -->
-    <!--define name="SP_MAX_P" value="10000"/>
-    <define name="SP_MAX_Q" value="10000"/>
-    <define name="SP_MAX_R" value="10000"/-->
     <define name="SP_MAX_P" value="140" unit="deg/s"/>
     <define name="SP_MAX_Q" value="140" unit="deg/s"/>
     <define name="SP_MAX_R" value="140" unit="deg/s"/>

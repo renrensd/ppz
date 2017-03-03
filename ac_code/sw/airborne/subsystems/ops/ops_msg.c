@@ -34,6 +34,8 @@
 #include "ops_msg_uart_def.h"
 #include "ops_comm_if.h"
 
+#include "firmwares/rotorcraft/navigation.h"
+
 
 /*===VARIABLES========================================================*/
 /*---Global-----------------------------------------------------------*/
@@ -82,7 +84,14 @@ void ops_msg_start_spraying(void)
 {
 	uint8_t arg[2];
    	arg[0] = OPS_PRIO_GENERAL;
-	arg[1] = OPS_SPRAYING_START;
+	if(flight_direct==NAV_FORWARD)
+	{
+		arg[1] = OPS_FORWARD_SPRAYING_START;
+	}
+	else
+	{
+		arg[1] = OPS_BACKWARD_SPRAYING_START;
+	}
 
    	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
@@ -137,9 +146,11 @@ void ops_msg_config_param(void)
 	arg[7] = (ops_param.atom >> 8) & 0xff;
 	arg[8] = ops_param.atom & 0xff;
 	arg[9] = ops_param.spray_chal;
+	arg[10] = (ops_param.spray_wide>>8) & 0xff;
+	arg[11] = ops_param.spray_wide & 0xff;
 
    	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0a, &arg[0]);
-   	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0a, &arg[0]);
+   	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0c, &arg[0]);
 }
 
 /*---Private----------------------------------------------------------*/

@@ -24,12 +24,14 @@
 #include "modules/system/timer_if.h"
 #include "modules/mag_cali/mag_cali.h"
 
+#include "subsystems/ins/ins_int.h"
+
 
 uint8_t  flight_mode;       //nav_gcs_mode/nav_rc_mode,requested autopilot_mode==NAV
 
 uint16_t flight_status = 0; 
 
-bool_t  nav_toward_wp_flag = FALSE;   //flag,use to clear old info in toward_one_wp flight
+//bool_t  nav_toward_wp_flag = FALSE;   //flag,use to clear old info in toward_one_wp flight
 struct EnuCoor_i wp_take_off;//(wp_ms_break,wp_start) not use  record home/mission break/toward flight start waypoint
 float distance2_to_takeoff;
 
@@ -47,13 +49,13 @@ static void nav_mode_enter(void);
 static void  ac_config_set_default(void);
 static void rc_mode_enter(void);
 static void gcs_mode_enter(void);
+static void mode_convert_for_gps_type(void);
 
 
 
 void nav_flight_init(void)
 { 
 	flight_mode = nav_gcs_mode;  //default in nav_kill_mode
-	nav_toward_wp_flag = FALSE;
 	task_init();            //mission initial
 	rc_nav_init();             //rc info initial
 	ac_config_set_default();
@@ -71,15 +73,8 @@ void nav_flight_init(void)
  *  can't change autopilot mode into NAV from other mode in light,otherwise damage
  */
 void nav_flight(void)
-{ /*
-	struct EnuCoor_i wp_star,wp_end;
- wp_star.x = 404;
- wp_star.y = -35358;
- wp_end.x = -6571;
- wp_end.y = 14126;
- nav_route(&wp_star, &wp_end);
-*/
-	static bool_t takeoff_done = FALSE;
+{
+  static bool_t takeoff_done = FALSE;
 
  #ifndef DEBUG_RC
   if ( autopilot_mode != AP_MODE_NAV) 
@@ -99,6 +94,8 @@ void nav_flight(void)
   
   /*run except mission from monitoring*/
   ept_ms_run();
+
+  //mode_convert_for_gps_type();
   
   /*main nav run with flight step*/
   switch(flight_step)
@@ -219,6 +216,7 @@ void nav_flight(void)
 				else if(rc_set_info.vtol==LAND)
 				{
 					RC_HOVER();
+					set_current_pos_to_target();
 					flight_step = 5;          //goto landing
 				}
 				else if(rc_set_info.home)
@@ -231,6 +229,8 @@ void nav_flight(void)
 					{
 						wp_take_off.z = POS_BFP_OF_REAL(2.0);
 					}
+					
+					nav_rc_go_home(&wp_take_off,TRUE);   //reset the step
 					flight_step = 4;          //goto home
 				}
 				//else: execution rc_cmd
@@ -248,7 +248,6 @@ void nav_flight(void)
 				{
 					flight_step = 3;  
 					rc_mode_enter();
-					rc_set_info.vtol = LAND;
 					break;
 				}
 				
@@ -261,12 +260,7 @@ void nav_flight(void)
 				}
 
 				/*run back home */
-				if(nav_toward_wp_flag)    //reset toward flight once
-				{
-					nav_toward_waypoint(&wp_take_off,TRUE); 
-					nav_toward_wp_flag = FALSE;
-				}
-				else if(0 == nav_toward_waypoint(&wp_take_off,FALSE))    
+				if(0 == nav_rc_go_home(&wp_take_off,FALSE))    
 				{
 					rc_set_info.vtol = LAND;
 					rc_set_info.home = FALSE;
@@ -376,6 +370,26 @@ static void ept_ms_run(void)
 	}
 }
 
+static void mode_convert_for_gps_type(void)
+{
+	if(ins_int.ned_pos_rc_reset)
+	{
+		if(ins_int.gps_type == GPS_RTK)
+		{
+			if(!ins_int.rtk_hf_realign)
+			{
+				rc_set_cmd_parse(0x01);   //
+			}
+		}
+		else if(ins_int.gps_type == GPS_UBLOX)
+		{
+			if(!ins_int.ublox_hf_realign)
+			{ 
+				rc_set_cmd_parse(0x01);   //rtk fail, set to nav_rc_mode
+			}
+		}
+	}
+}
 
 /*flight mode change transition*/
 void flight_mode_enter(uint8_t new_mode)
@@ -412,7 +426,6 @@ static void nav_mode_enter(void)
 	/*reset flight status ,in other mode*/
 	
 	flight_mode = nav_gcs_mode;  //default in nav_rc_mode,how to use nav_kill_mode?
-	nav_toward_wp_flag = TRUE;
 	rc_set_info_init();
 	pvtol_all_reset(TRUE);  //reset all motion step
 	flight_step = 0;  //restart
@@ -423,12 +436,10 @@ static void rc_mode_enter(void)
 	rc_set_info_reset();        //clear rc_set_info
 	guidance_h_nav_rc_enter();  //guidance_enter run
 	
-	nav_toward_wp_flag = TRUE;	
 }
 
 static void gcs_mode_enter(void)
 {	
-	nav_toward_wp_flag = TRUE;	
 }
 
 uint16_t get_flight_status(void)

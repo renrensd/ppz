@@ -26,29 +26,19 @@
 
 
 /**** Definition of types ****/ 
-struct Height_Monitor {
-   uint32_t sonar_ground_counter;   //inspect counter
-   uint32_t baro_ground_counter;
-   
-   bool_t sonar_ground_check;  //set TRUE to stop check
-   bool_t baro_ground_check;
-   
-   float sonar_aver;    //inspect average
+struct Height_Monitor 
+{
+   uint32_t baro_ground_counter;   
    float baro_aver;
-
-   uint16_t sonar_interval_counter;  //interval out counter
-   uint16_t baro_interval_counter;
-   uint32_t sonar_update_counter;    //use for check update frequence
-   uint32_t baro_update_counter;
-   uint8_t  sonar_error_data_counter;
-   //uint8_t  baro_error_data_counter;
-   uint8_t  sonar_fix_data_counter;
+   uint32_t baro_update_counter;   
+   uint16_t baro_interval_counter;   
+   
+   bool_t baro_ground_check;
    uint8_t  baro_fix_data_counter;
    //bit1:error_data;  bit2:fix_data  bit3:frequence  bit4:noise  bit5:range
    //x_code once set,need reset by checker,sensors inspect can not change it.
-   uint8_t  sonar_code;    
-   uint8_t  baro_code;
-   uint8_t  sonar_status;  //0:normal  1:dead_distance   2:over_distance   3:error
+       
+   uint8_t  baro_code;   
    bool_t   baro_status;   //1:fail  0:ok
 
 };
@@ -70,6 +60,8 @@ extern uint8_t height_ground_check(void);
 extern void height_flight_check(void);
 extern void height_ground_reset(void);
 extern void height_frequence_check(void);
+extern uint8_t height_ground_check_code(void);
+extern uint8_t imu_ground_check_code(void);
 
 #endif /*_MONITORING_HEIGHT_H_ */
 

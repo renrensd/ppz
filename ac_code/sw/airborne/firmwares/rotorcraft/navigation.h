@@ -45,9 +45,17 @@
 #define SMOOTH_BRAKE 1
 #define PAUSE_BRAKE 2
 #define URGENT_BRAKE 3
-#define SMOOTH_BRAKE_ACCEL 1.2f
-#define PAUSE_BRAKE_ACCEL 2.2f
-#define URGENT_BRAKE_ACCEL  3.0f
+#define SMOOTH_BRAKE_ACCEL 1.0f
+#define PAUSE_BRAKE_ACCEL  1.6f
+#define URGENT_BRAKE_ACCEL 2.5
+
+typedef enum Flight_Direct
+{
+	NAV_FORWARD = 0,
+	NAV_BACKWARD =1
+} FLIGHT_DIRECT;
+
+extern FLIGHT_DIRECT flight_direct;
 
 extern struct EnuCoor_i navigation_target;
 extern struct EnuCoor_i navigation_carrot;
@@ -96,11 +104,13 @@ extern float  accel_stop_brake;
 
 extern float smooth_brake_accel;
 extern float pause_brake_accel;
+extern float urgent_brake_accel;
 
 extern uint8_t set_carrot_angle;
 
 extern float nav_circle_radians_no_rewind; /* Cumulated, add by whp */
 
+extern float get_dist2_p2p(struct EnuCoor_i s, struct EnuCoor_i e);
 extern float get_dist2_to_waypoint(uint8_t wp_id);
 extern float get_dist2_to_point(struct EnuCoor_i *p);
 extern void compute_dist2_to_home(void);
@@ -224,6 +234,7 @@ bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_
 #define NavApproachingFrom(wp, from, time) nav_approaching_from(&waypoints[wp].enu_i, &waypoints[from].enu_i, time)
 extern bool_t nav_approaching_target(struct EnuCoor_i *wp, struct EnuCoor_i *from, float arrived_distance); 
 extern float distance_to_target(void);
+extern void set_current_pos_to_target(void);
 /** Check the time spent in a radius of 'ARRIVED_AT_WAYPOINT' around a wp  */
 bool_t nav_check_wp_time(struct EnuCoor_i *wp, uint16_t stay_time);
 #define NavCheckWaypointTime(wp, time) nav_check_wp_time(&waypoints[wp].enu_i, time)

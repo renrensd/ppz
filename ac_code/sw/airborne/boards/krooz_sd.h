@@ -356,7 +356,7 @@
 
 /*monitoring system option*/
 #define MONITORING_OPTION
-#define MONITORING_FREQUENCY 2
+#define MONITORING_FREQUENCY 10
 
 /* sonar mb1242 i2c pin define */
 #define I2C_SONAR_GPIO_SDA_PORT GPIOD

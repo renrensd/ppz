@@ -197,9 +197,9 @@ static void send_mcu_fault(struct transport_tx *trans, struct link_device *dev)
 #ifdef BBOX_OPTION
 static void send_utc_time(struct transport_tx *trans, struct link_device *dev)
 {
-	if(get_sys_day())
+	if(get_utc_day())
 	{
-		uint32_t time = (get_sys_year()<<24) | (get_sys_month()<<16) | (get_sys_day()<<8) | (get_sys_day());
+		uint32_t time = get_utc_time_decimal();
 		pprz_msg_send_UTC_TIME(trans, dev, AC_ID, &time);
 	}
 }
@@ -236,7 +236,7 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
 #endif
   uint8_t spray_state = get_spray_switch_state();
   uint16_t time_sec = sys_time.nb_sec;
-  int32_t ops_connect_info = (int32_t)((ops_info.con_flag)|(ops_info.sys_error)<<8);
+  //int32_t ops_connect_info = (int32_t)((ops_info.con_flag)|(ops_info.sys_error)<<8);
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_STATUS(trans, dev, AC_ID,
                                   //&imu_nb_err, 
@@ -246,7 +246,7 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
                                   &fix, &autopilot_mode,
                                   &autopilot_in_flight, &autopilot_motors_on,
                                   &guidance_h.mode, &guidance_v_mode,
-                                  &electrical.vsupply, &ops_connect_info, &electrical.rep_cap, &electrical.temper,
+                                  &electrical.vsupply, &electrical.current, &electrical.rep_cap, &electrical.temper,
 								  &time_sec);
   #if OPEN_PC_DATALINK
   pprz_msg_send_ROTORCRAFT_STATUS(&((DOWNLINK_TRANSPORT).trans_tx), &((DOWNLINK_DEVICE).device), AC_ID,
@@ -430,7 +430,7 @@ void autopilot_init(void)
   #endif
   #ifdef BBOX_OPTION
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_UTC_TIME, send_utc_time);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_UTC_TIME, send_actuators_pwm);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS_PWM, send_actuators_pwm);
   #endif
 #ifdef ACTUATORS
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
@@ -892,7 +892,7 @@ void autopilot_ready_check(void)
 	#endif
 }
 
-bool_t autopilot_check_rc_bind(void)
+bool_t autopilot_check_is_pairing_mode(void)
 {
 	if(autopilot_in_flight || !kill_throttle)  return FALSE;
 	float rc_roll = stateGetNedToBodyEulers_f()->phi;

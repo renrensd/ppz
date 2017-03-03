@@ -3,7 +3,6 @@
 #
 #
 
-$(TARGET).CFLAGS += -DENG_OPTION
 $(TARGET).srcs += subsystems/eng/eng_app.c
 
 # add it for all targets except sim, fbw and nps

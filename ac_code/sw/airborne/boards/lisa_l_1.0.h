@@ -43,6 +43,7 @@
 #define I2C2_GPIO_SCL GPIO10
 #define I2C2_GPIO_SDA GPIO11
 
+#define COMM_DIRECT_CONNECT
 
 /*
  * UART pin configuration

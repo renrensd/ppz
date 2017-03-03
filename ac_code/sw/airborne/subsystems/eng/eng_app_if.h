@@ -56,7 +56,7 @@ typedef struct
 
 typedef struct
 {
-	uint8_t cl_product_series_number[SIZE_OF_PRODUCT_SERIES_NUMBER];
+	uint8_t cl_product_sn[SIZE_OF_PRODUCT_SERIES_NUMBER];
 	uint8_t cl_12nc_series_number[SIZE_OF_12NC_SERIES_NUMBER];
 	uint8_t cl_manufacture_date[SIZE_OF_MANUFACTURE_DATE];
 }MANUFACTURE_INFO;
