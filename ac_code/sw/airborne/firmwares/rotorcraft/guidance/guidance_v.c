@@ -279,7 +279,7 @@ void guidance_v_SetAccCutoff(float fc)
 {
 	guid_v.acc_filter_fc = fc;
 	init_butterworth_2_low_pass(&guid_v.NED_z_acc_filter,
-				low_pass_filter_get_tau(fc), 1.0f/(float)GUIDANCE_V_LOOP_FREQ, guid_v.NED_z_acc_filter.i[0]);
+				low_pass_filter_get_tau(fc), 1.0f/(float)GUIDANCE_V_LOOP_FREQ, guid_v.NED_z_acc_filter.o[0]);
 }
 
 void guidance_v_read_rc(void)

@@ -116,17 +116,6 @@ uint32_t CalculateXYZACRC32(uint16_t ulCount,unsigned char *ucBuffer)
 }
 #endif
 
-static void gps_nmea_data_filter_ini(void)
-{
-	InitMedianFilterVect3Int(gps_nmea.ecef_pos_filter);
-	InitMedianFilterVect3Int(gps_nmea.ecef_vel_filter);
-}
-static void gps_nmea_data_filter_update(void)
-{
-	UpdateMedianFilterVect3Int(gps_nmea.ecef_pos_filter, gps.ecef_pos);
-	UpdateMedianFilterVect3Int(gps_nmea.ecef_vel_filter, gps.ecef_vel);
-}
-
 void gps_impl_init(void)
 {
   gps.nb_channels = GPS_NB_CHANNELS;
@@ -144,8 +133,6 @@ void gps_impl_init(void)
   gps_nmea.msg_len = 0;
   nmea_parse_prop_init();
   nmea_configure();
-
-  gps_nmea_data_filter_ini();
 }
 
 void gps_nmea_msg(void)
@@ -170,8 +157,6 @@ void gps_nmea_msg(void)
 			gps.last_3dfix_ticks = sys_time.nb_sec_rem;
 			gps.last_3dfix_time = sys_time.nb_sec;
 		}
-	 	//median filter
-	 	//gps_nmea_data_filter_update(gps);
 		AbiSendMsgGPS_POS(GPS_NMEA_ID, now_ts, &gps);
   }
  #if USE_XYZA
@@ -184,8 +169,6 @@ void gps_nmea_msg(void)
  #ifdef USE_GPS_HEADING
   if( gps_nmea.heading_available ) 
   {
-  	//median filter
-  	//gps_nmea_data_filter_update(gps);
   	AbiSendMsgGPS_HEADING(GPS_NMEA_ID, now_ts, &gps);
   }
   gps_nmea.heading_available = FALSE;

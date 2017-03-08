@@ -197,8 +197,6 @@ void motor_mixing_run_spinup(uint32_t counter, uint32_t max_counter)
 void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
 {
   uint8_t i;
-  static uint8_t esc_cali_status = 0;
-  static pprz_t value = MOTOR_MIXING_STOP_MOTOR;
 
 #if !HITL
   if (motors_on) {
@@ -295,6 +293,8 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
       motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
     }
 	#ifdef ESC_CALIBRATION
+    static uint8_t esc_cali_status = 0;
+    static pprz_t value = MOTOR_MIXING_STOP_MOTOR;
 		if(esc_cali_status == 0)
 		{
 			if(radio_control.values[RADIO_THROTTLE] > (MOTOR_MIXING_MAX_MOTOR/2))

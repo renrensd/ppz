@@ -26,5 +26,6 @@ extern struct GpsState gps2;
 void gps2_ublox_init(void);
 void gps2_ublox_event(void);
 void gps2_ublox_periodic(void);
+bool_t gps2_ublox_check_update(void);
 
 #endif /* SW_AIRBORNE_MODULES_GPS_GPS_UBLOX_H_ */

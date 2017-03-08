@@ -125,9 +125,6 @@ static inline float get_first_order_low_pass(struct FirstOrderLowPass *filter)
  *  tau: time constant
  */
 struct SecondOrderLowPass {
-  float a[2]; ///< denominator gains
-  float b[2]; ///< numerator gains
-  float i[2]; ///< input history
   float o[2]; ///< output history
   float coef;
 };
@@ -140,7 +137,7 @@ struct SecondOrderLowPass {
  * @param sample_time sampling period of the signal
  * @param value initial value of the filter
  */
-static inline void init_second_order_low_pass(struct SecondOrderLowPass *filter, float tau, float Q, float sample_time,
+static inline void init_second_order_low_pass(struct SecondOrderLowPass *filter, float tau, float sample_time,
     float value)
 {
 	/*
@@ -158,6 +155,7 @@ static inline void init_second_order_low_pass(struct SecondOrderLowPass *filter,
   {
   	filter->coef = 0;
   }
+  filter->o[0] = value;
 }
 
 /** Update second order low pass filter state with a new value.
@@ -216,7 +214,7 @@ struct SecondOrderLowPass_int {
  * @param sample_time sampling period of the signal
  * @param value initial value of the filter
  */
-static inline void init_second_order_low_pass_int(struct SecondOrderLowPass_int *filter, float cut_off, float Q,
+static inline void init_second_order_low_pass_int(struct SecondOrderLowPass_int *filter, float cut_off,
     float sample_time, int32_t value)
 {
 	/*
@@ -241,7 +239,7 @@ static inline void init_second_order_low_pass_int(struct SecondOrderLowPass_int 
   */
 
 	float tau = low_pass_filter_get_tau(cut_off);
-  init_second_order_low_pass(&filter->f, tau, Q, sample_time, value);
+  init_second_order_low_pass(&filter->f, tau, sample_time, value);
 }
 
 /** Update second order low pass filter state with a new value(fixed point version).
@@ -300,7 +298,7 @@ typedef struct SecondOrderLowPass Butterworth2LowPass;
  */
 static inline void init_butterworth_2_low_pass(Butterworth2LowPass *filter, float tau, float sample_time, float value)
 {
-  init_second_order_low_pass((struct SecondOrderLowPass *)filter, tau, 0.7071, sample_time, value);
+  init_second_order_low_pass((struct SecondOrderLowPass *)filter, tau, sample_time, value);
 }
 
 /** Update second order Butterworth low pass filter state with a new value.
@@ -343,7 +341,7 @@ typedef struct SecondOrderLowPass_int Butterworth2LowPass_int;
 static inline void init_butterworth_2_low_pass_int(Butterworth2LowPass_int *filter, float cut_off, float sample_time,
     int32_t value)
 {
-  init_second_order_low_pass_int((struct SecondOrderLowPass_int *)filter, cut_off, 0.7071, sample_time, value);
+  init_second_order_low_pass_int((struct SecondOrderLowPass_int *)filter, cut_off, sample_time, value);
 }
 
 /** Update second order Butterworth low pass filter state with a new value(fixed point version).
@@ -391,8 +389,8 @@ typedef struct {
  */
 static inline void init_butterworth_4_low_pass(Butterworth4LowPass *filter, float tau, float sample_time, float value)
 {
-  init_second_order_low_pass(&filter->lp1, tau, 1.30651, sample_time, value);
-  init_second_order_low_pass(&filter->lp2, tau, 0.51184, sample_time, value);
+  init_second_order_low_pass(&filter->lp1, tau, sample_time, value);
+  init_second_order_low_pass(&filter->lp2, tau, sample_time, value);
 }
 
 /** Update fourth order Butterworth low pass filter state with a new value.
@@ -444,8 +442,8 @@ typedef struct {
 static inline void init_butterworth_4_low_pass_int(Butterworth4LowPass_int *filter, float cut_off, float sample_time,
     int32_t value)
 {
-  init_second_order_low_pass_int(&filter->lp1, cut_off, 1.30651, sample_time, value);
-  init_second_order_low_pass_int(&filter->lp2, cut_off, 0.51184, sample_time, value);
+  init_second_order_low_pass_int(&filter->lp1, cut_off, sample_time, value);
+  init_second_order_low_pass_int(&filter->lp2, cut_off, sample_time, value);
 }
 
 /** Update fourth order Butterworth low pass filter state with a new value(fixed point version).
