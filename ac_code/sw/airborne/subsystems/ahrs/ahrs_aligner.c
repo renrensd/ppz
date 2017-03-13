@@ -30,6 +30,7 @@
 
 #include <stdlib.h> /* for abs() */
 #include "subsystems/imu.h"
+#include "subsystems/monitoring/monitoring_imu.h"
 #include "led.h"
 #include "subsystems/abi.h"
 #include "mcu_periph/sys_time.h"
@@ -106,6 +107,11 @@ void ahrs_aligner_init(void)
 
 void ahrs_aligner_run(void)
 {
+	if(imu_moni.imu_status == FALSE)
+	{
+		return;
+	}
+
 	RATES_ADD(gyro_sum, imu.gyro);
 	VECT3_ADD(accel_sum, imu.accel);
 	VECT3_ADD(mag_sum, imu.mag);
