@@ -5,7 +5,7 @@ ifndef SPI_INCLUDED
 SPI_INCLUDED = 1
 
 #generic spi master driver
-SPI_CFLAGS = -DUSE_SPI -DSPI_MASTER
+SPI_CFLAGS = -DUSE_SPI=1 -DSPI_MASTER=1
 SPI_SRCS = mcu_periph/spi.c $(SRC_ARCH)/mcu_periph/spi_arch.c
 
 $(TARGET).CFLAGS += $(SPI_CFLAGS)
