@@ -212,7 +212,7 @@ static void ins_int_propagate(struct Int32Vect3 *accel, float dt);
 static void ins_int_gps_switch(enum _e_ins_gps_type type);
 static inline void gpss_state_update(void);
 
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_ins(struct transport_tx *trans, struct link_device *dev)
@@ -323,7 +323,7 @@ static void ins_int_init(void)
   INT32_VECT3_ZERO(ins_int.ltp_speed);
   INT32_VECT3_ZERO(ins_int.ltp_accel);
 
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);

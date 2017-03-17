@@ -175,7 +175,7 @@ void Tracking_differntiator(float signal)
 //*****************************************************//
 //                define done here                                                    //
 
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)

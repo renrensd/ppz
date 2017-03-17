@@ -17,7 +17,7 @@ struct GpsState gps2;
 
 static bool_t update = FALSE;
 
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_gps2_ublox(struct transport_tx *trans, struct link_device *dev)
@@ -48,7 +48,7 @@ void gps2_ublox_init(void)
 {
 	gps2_ublox.dev = &((GPS2_UBLOX_LINK).device);
 	UBX_parser_init(&gps2_ublox.parser);
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS2_UBLOX, send_gps2_ublox);
 #endif
 }

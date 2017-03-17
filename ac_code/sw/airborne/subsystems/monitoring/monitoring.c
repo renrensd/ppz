@@ -262,7 +262,7 @@ static inline void monitoring_msg_handle(void)
 		#if USE_MANU_DEBUG
 		DOWNLINK_SEND_MONITORING(MdebugChannel, MdebugDevice, &ground_check_step, &monitoring_fail_code);
 		#endif
-	    #ifdef PERIODIC_TELEMETRY
+	    #if PERIODIC_TELEMETRY
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	    DOWNLINK_SEND_MONITORING(DefaultChannel, DefaultDevice, &ground_check_step, &monitoring_fail_code);
 		#if TEST_MSG

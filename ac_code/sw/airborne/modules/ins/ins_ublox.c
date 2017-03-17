@@ -14,7 +14,7 @@ struct _s_ins_ublox ins_ublox;
 //abi_event ublox_ev;
 //abi_event accel_ev;
 
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
@@ -79,7 +79,7 @@ void ins_ublox_init(void)
 	//AbiBindMsgGPS_UBX(ABI_BROADCAST, &ublox_ev, ublox_cb);
 	//AbiBindMsgIMU_ACCEL_INT32(ABI_BROADCAST, &accel_ev, accel_cb);
 
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_UBLOX, send_ins_ublox);
 #endif
 

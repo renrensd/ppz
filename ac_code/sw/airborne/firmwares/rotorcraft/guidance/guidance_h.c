@@ -189,7 +189,7 @@ static void Tracking_differntiator_hy(float signal)
 //                define done here                                                    //
 
 
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_gh(struct transport_tx *trans, struct link_device *dev)
@@ -297,7 +297,7 @@ void guidance_h_init(void)
   guidance_h_module_init();
 #endif
 
-#ifdef PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_H_INT, send_gh);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HOVER_LOOP, send_hover_loop);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_H_REF_INT, send_href);
