@@ -9,7 +9,7 @@ AHRS_MLKF_CFLAGS  = -DUSE_AHRS
 AHRS_MLKF_CFLAGS += -DUSE_AHRS_ALIGNER
 
 ifeq (,$(findstring $(USE_MAGNETOMETER),0 FALSE))
-  AHRS_MLKF_CFLAGS += -DUSE_MAGNETOMETER
+  AHRS_MLKF_CFLAGS += -DUSE_MAGNETOMETER=1
 else
 $(error ahrs_float_mlkf needs a magnetometer)
 endif

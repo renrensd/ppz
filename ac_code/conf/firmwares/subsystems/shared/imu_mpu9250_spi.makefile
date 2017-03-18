@@ -8,7 +8,7 @@ include $(CFG_SHARED)/spi_master.makefile
 
 # for fixedwing firmware and ap only
 ifeq ($(TARGET), ap)
-  IMU_MPU9250_CFLAGS  = -DUSE_IMU
+  IMU_MPU9250_CFLAGS  = -DUSE_IMU=1
 endif
 
 $(TARGET).CFLAGS += -I$(PAPARAZZI_SRC)/sw/ext/libstm32
