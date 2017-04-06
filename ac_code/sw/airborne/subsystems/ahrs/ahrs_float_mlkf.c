@@ -133,7 +133,7 @@ void ahrs_mlkf_init(void)
   init_butterworth_2_low_pass(&filter_r, 0.00885, (1. / 512), 0.);
 #endif
 
-  ahrs_mlkf.virtual_rtk_h_valid = TRUE;
+  ahrs_mlkf.virtual_rtk_heading_valid = TRUE;
   ahrs_mlkf.heading_state = AMHS_MAG;
 }
 
@@ -517,11 +517,16 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 
 }
 
+bool_t ahrs_mlkf_is_rtk_heading_valid(void)
+{
+	return gps.h_stable;
+}
+
 void ahrs_mlkf_task(void)
 {
 	static bool_t gps_heading_aligned = FALSE;
 
-	if (gps.h_stable && ahrs_mlkf.virtual_rtk_h_valid)
+	if (ahrs_mlkf_is_rtk_heading_valid() && ahrs_mlkf.virtual_rtk_heading_valid)
 	{
 		if(ahrs_mlkf.rtk_gps_update)
 		{
@@ -561,7 +566,7 @@ void ahrs_mlkf_update_gps(struct GpsState *gps_s)
 	ahrs_mlkf.rtk_gps_update = TRUE;
 }
 
-#define MAG_OFFSET_ANGLE 2.7
+//#define MAG_OFFSET_ANGLE 2.7
 static void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s)
 {
 //	struct FloatVect3 imu_h;

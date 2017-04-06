@@ -262,8 +262,24 @@
     <field name="south" type="float" unit="m"/>
   </message>
 
-  <message name="WC_RSSI" id="28">
+  <!--message name="WC_RSSI" id="28">
     <field name="raw_level" type="uint8"/>
+  </message-->
+  <message name="JOYSTICK_DEBUG" id="28">
+        <field name="cmd" type="int32"/>
+        <field name="cur_fb" type="int8"/>
+	<field name="cur_rl" type="int8"/>
+	<field name="cur_ud" type="int8"/>
+	<field name="cur_cc" type="int8"/>
+	<field name="smo_fb" type="int8"/>
+	<field name="smo_rl" type="int8"/>
+	<field name="smo_ud" type="int8"/>
+	<field name="smo_cc" type="int8"/>
+        <field name="rssi"   type="float"/>
+        <field name="s_fb"   type="float"/>
+        <field name="s_rl"   type="float"/>
+        <field name="s_ud"   type="float"/>
+        <field name="s_cc"   type="float"/>
   </message>
 
   <message name="RANGEFINDER" id="29">
@@ -468,10 +484,14 @@
     <field name="cycle_time" type="uint32" unit="ms"/>
   </message>
 
-  <message name="RC_3CH_" id="51">
+  <!--message name="RC_3CH_" id="51">
     <field name="throttle_mode" type="uint8" unit="byte_mask"/>
     <field name="roll"  type="int8"/>
     <field name="pitch" type="int8"/>
+  </message-->
+  <message name="MC_COMMAND" id="51">
+    <field name="mc_id" type="uint8" values="reserve|attitude_test|calibrate_acc|calibrate_esc"/>
+    <field name="value"  type="uint8" values="stop|start"/>
   </message>
 
  <message name="MPPT" id="52">
@@ -591,6 +611,7 @@
       <field name="vtol" type="uint8" values="locked|taking_off|landing|cruising"/>
       <field name="home" type="uint8" values="no_home|back_home"/>
       <field name="spray" type="uint8" values="stop|open"/>
+      <field name="lock" type="uint8" values="unlock|lock"/>
       <field name="motion_cmd" type="uint8" />     
       <field name="set_cmd" type="uint8" /> 
       <field name="rotation_rate" type="float" /> 
