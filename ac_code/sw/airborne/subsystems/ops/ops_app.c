@@ -210,6 +210,7 @@ void ops_heart_beat_handler(uint8_t *param)
 {
 	tm_kill_timer(TIMER_OPS_HB_POLL);
 	ops_update_aircraft_vel();    //get ac flight speed
+	ops_update_aircraft_area();	//get spray area
 	ops_msg_heart_beat();
 	ops_info.res_cap = (*(param+1) << 8 | *param);
 	ops_info.work_state = *(param+2);
@@ -268,6 +269,12 @@ void ops_update_aircraft_vel(void)
 		speed = 0;  //set dead bound
 	}
 	ops_info.vel = (uint16_t)speed;
+}
+
+void ops_update_aircraft_area(void)
+{
+	ops_info.treated_area = (uint16_t) ((ops_param.spray_wide/100) * (ops_info.sum_sprayed_distance)); //m*m
+	ops_info.total_area = 0;		
 }
 
 /***********************************************************************
@@ -363,5 +370,107 @@ void ops_software_version_handler(uint8_t *param, uint8_t len)
 		ops_info.sv_len = len;
 	}
 }
+#ifdef UPGRADE_OPTION
+void ops_request_update_response(uint8_t *param)
+{
+	uint8_t data1= *(param);
+	uint8_t data2=*(param+1);
+	switch (data1)
+	{
+		case OPS_UPDATE_REQ_RES_DATA:
+		{
+			switch(data2)
+			{
+				case OPS_STATE_OK:
+				{
+					uint8_t type = UPGRADE_TYPE_OPS;
+					uint8_t ug_state = UPGRADE_RES_OK;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
+					break;
+				}
+				case OPS_STATE_FAIL://send again
+				{
+					uint8_t type = UPGRADE_TYPE_OPS;
+					uint8_t ug_state = UPGRADE_RES_FAIL;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
+					break;
+				}
+			}
+			break;
+		}
+		case OPS_UPDATE_ASK_READY_RES_DATA:
+		{
+			switch (data2)
+			{
+				case OPS_STATE_OK:
+				{
+					uint8_t type = UPGRADE_TYPE_OPS;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_STATUS(SecondChannel, SecondDevice, &type);
+					break;
+				}
+				case OPS_STATE_FAIL:
+				{
+					/*uint8_t type = UPGRADE_TYPE_OPS;
+					uint8_t ug_state = UPGRADE_RES_FAIL;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_STATUS(SecondChannel, SecondDevice, &type, &ug_state);*/
+					break;
+				}
+			}
+			break;
+		}
+		case OPS_UPDATE_RES_DATA:
+		{
+			switch (data2)
+			{
+				case OPS_STATE_OK:
+				{
+					uint8_t type = UPGRADE_TYPE_OPS;
+					uint8_t ug_state = UPGRADE_RES_PASS;   //next frame
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_REQUESET_FIRMWARE(SecondChannel, SecondDevice, &type, &ug_state);
+					break;
+				}
+				case OPS_STATE_FAIL:
+				{
+					uint8_t type = UPGRADE_TYPE_OPS;
+					uint8_t ug_state = UPGRADE_RES_FAIL;    //current frame
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_REQUESET_FIRMWARE(SecondChannel, SecondDevice, &type, &ug_state);
+					break;
+				}
+			}
+			break;
+		}
+		case OPS_UPDATE_OVER_RES_DATA:
+		{
+			switch (data2)
+			{
+				case OPS_STATE_OK:
+				{
+					uint8_t type = UPGRADE_TYPE_OPS;
+					uint8_t ug_state = UPGRADE_RES_OK;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_RESULT(SecondChannel, SecondDevice, &type, &ug_state);
+					break;
+				}
+				case OPS_STATE_FAIL:
+				{
+					uint8_t type = UPGRADE_TYPE_OPS;
+					uint8_t ug_state = UPGRADE_RES_FAIL;
+					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+					DOWNLINK_SEND_UPGRADE_RESULT(SecondChannel, SecondDevice, &type, &ug_state);
+					break;
+				}
+			}
+			break;
+		}
+	}
+}
+#endif
+
 /**************** END OF FILE *****************************************/
 

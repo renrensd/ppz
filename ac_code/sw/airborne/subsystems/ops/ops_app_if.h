@@ -40,6 +40,9 @@ struct OPS_INFO
 	uint8_t work_state;		//module work state.
 	uint8_t spray_state;
 	uint16_t vel;		//aircraft velocity, mm/s.
+	uint16_t treated_area;
+	float sum_sprayed_distance;
+	uint16_t total_area;
 	uint8_t init_status;
 	uint8_t con_flag;	//the flag that aircraft connected to ops.
 	uint8_t selfclean_flag;
@@ -82,6 +85,7 @@ extern void ops_task(void);
 extern void ops_init(void);
 extern void ops_heart_beat_handler(uint8_t *param);
 extern void ops_update_aircraft_vel(void);
+extern void ops_update_aircraft_area(void);
 extern void ops_heart_beat_lose_handler(void);
 extern void ops_set_config_param(uint16_t param, uint8_t param_type);
 extern void ops_update_config_param(void);

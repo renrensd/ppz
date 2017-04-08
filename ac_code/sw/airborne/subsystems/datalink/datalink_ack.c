@@ -15,8 +15,10 @@
 #include "subsystems/ops/ops_msg_if.h"
 #include "subsystems/eng/eng_app_if.h"
 #include "subsystems/monitoring/monitoring.h"
-
-
+#if USE_MANU_DEBUG
+#include "modules/acc_cali/acc_cali.h"
+#include "subsystems/actuators/motor_mixing.h"
+#endif
 
 void send_heart_beat_A2R_msg(void)
 {   
@@ -90,7 +92,7 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 	switch(id)
 	{
 		case CONFIG_ALL:
-			if(length==12)
+			if(length==13)
 			{
 				uint8_t i = 0;
 				ac_config_info.spray_height = ((float)((uint16_t)(*((uint8_t*)pt_value+i)|*((uint8_t*)pt_value+i+1)<<8)))/100.0;
@@ -115,7 +117,6 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 				i+=2;
 				ac_config_info.atomization_grade = (uint8_t)(*((uint8_t*)pt_value+i));
 				ops_set_config_param(ac_config_info.atomization_grade, PARAM_SPRAY_ATOM);
-
 				ops_update_config_param();
 			}
 			break;
@@ -147,6 +148,17 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 			ops_set_config_param(ac_config_info.atomization_grade, PARAM_SPRAY_ATOM);
 			ops_update_config_param();
 			break;
+		case JOYSTICK_ENABLE:
+			if(!autopilot_in_flight)
+			{
+				ac_config_info.rocker_remote_status=(uint8_t)(*((uint8_t*)pt_value)); //add by lg
+				check_joystick_enable(ac_config_info.rocker_remote_status);
+			}
+			break;
+		case U_BLOX_ENABLE:
+			ac_config_info.force_redun_status = (uint8_t)(*((uint8_t*)pt_value));
+			ac_config_info.force_redun_status = force_use_redundency_and_vrc(ac_config_info.force_redun_status);
+			break;
 			
 		default: break;
 	}
@@ -162,6 +174,21 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 	#endif
 }
 
+void send_gcs_components_info(void)
+{
+	static bool_t update_flag = FALSE;
+	if(eng_components_info.ops_sv.sv_update
+	   &&!update_flag
+	   #ifdef BBOX_OPTION
+	   &&eng_components_info.bbox_sv.sv_update
+	   #endif
+	                                          )
+	{
+		send_aircraft_info_state();
+		update_flag = TRUE;
+	}
+}
+
 void send_aircraft_info_state(void)
 {
 	enum engine_type ac_engine_type = Electricity;
@@ -175,37 +202,27 @@ void send_aircraft_info_state(void)
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
+	uint8_t rocker_remote_status=ac_config_info.rocker_remote_status;
+	uint8_t misc_status =((uint8_t)(ac_config_info.force_redun_status<<1)+(ac_config_info.rocker_remote_status));
 	char     ac_sn[12]="";
 	char     ac_sv[25]="";
 	char     ops_sv[25]="";
 	char     bbox_sv[25]="";
 	uint8_t *temp_pt = eng_get_product_series_number();
-	for(uint8_t a=0; a<12; a++)
-	{
-		ac_sn[a] = *(temp_pt+a);
-	}
+	memcpy(ac_sn, temp_pt, 12);
 	
 	if(eng_components_info.ac_sv.sv_update)
 	{
-		for(uint8_t i=0; i<eng_components_info.ac_sv.sv_len; i++)
-		{
-			ac_sv[i] = eng_components_info.ac_sv.version[i];
-		}
+		memcpy(ac_sv, &eng_components_info.ac_sv.version[0], eng_components_info.ac_sv.sv_len);
 	}
 	if(eng_components_info.ops_sv.sv_update)
 	{
-		for(uint8_t j=0; j<eng_components_info.ops_sv.sv_len; j++)
-		{
-			ops_sv[j] = eng_components_info.ops_sv.version[j];
-		}
+		memcpy(ops_sv, &eng_components_info.ops_sv.version[0], eng_components_info.ops_sv.sv_len);
 	}
 	#ifdef BBOX_OPTION
 	if(eng_components_info.bbox_sv.sv_update)
 	{
-		for(uint8_t k=0; k<eng_components_info.bbox_sv.sv_len; k++)
-		{
-			ops_sv[k] = eng_components_info.bbox_sv.version[k];
-		}
+		memcpy(bbox_sv, &eng_components_info.bbox_sv.version[0], eng_components_info.bbox_sv.sv_len);
 	}
 	#endif
 	
@@ -225,13 +242,14 @@ void send_aircraft_info_state(void)
 		                              &ac_sn[0],
 		                              &ac_sv[0],
 		                              &ops_sv[0],
-		                              &bbox_sv[0]);
+		                              &bbox_sv[0],
+		                              &misc_status);
 }
 
-uint8_t DlSetCommand(uint8_t id, uint8_t pt_value)
+uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 {
 	uint8_t response = 0;
-	enum Set_Command command_gcs = (enum Set_Command)(id);
+	enum Set_GCS_Command command_gcs = (enum Set_GCS_Command)(id);
 	switch(command_gcs)
 	{
 		case GCS_CMD:
@@ -286,4 +304,34 @@ uint8_t DlSetCommand(uint8_t id, uint8_t pt_value)
 	
 	return response;
 }
+
+#if USE_MANU_DEBUG
+bool_t DlSetMCCommand(uint8_t id, uint8_t pt_value)
+{
+	bool_t response = TRUE;
+	switch(id)
+	{
+		case MC_ATTITUDE_TEST:
+			set_mdebug_att_flag(pt_value);
+			break;
+			
+		case MC_CALIBRATE_ACC:
+			set_acc_cali_enable(pt_value);
+			break;
+			
+		case MC_CALIBRATE_ECS:
+			set_esc_calibration(pt_value);
+			break;
+
+		case MC_TEST_MOTORS:
+			set_particular_motor_run(pt_value);
+			
+		default:  
+			response = FALSE;
+			break;
+	}
+	return response;
+}
+#endif
+
 

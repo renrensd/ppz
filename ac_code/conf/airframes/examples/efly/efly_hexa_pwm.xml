@@ -126,9 +126,9 @@
 <define name="ACCEL_X_NEUTRAL" value="0"/>
 <define name="ACCEL_Y_NEUTRAL" value="0"/>
 <define name="ACCEL_Z_NEUTRAL" value="0"/>
-<define name="ACCEL_X_SENS" value="4.907102" integer="16"/>
-<define name="ACCEL_Y_SENS" value="4.908358" integer="16"/>
-<define name="ACCEL_Z_SENS" value="4.876638" integer="16"/>
+<define name="ACCEL_X_SENS" value="4.9" integer="16"/>
+<define name="ACCEL_Y_SENS" value="4.9" integer="16"/>
+<define name="ACCEL_Z_SENS" value="4.9" integer="16"/>
 
 <define name="MAG_X_NEUTRAL" value="0"/>
 <define name="MAG_Y_NEUTRAL" value="0"/>

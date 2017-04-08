@@ -101,6 +101,7 @@ static void guidance_h_hover_enter(void);
 static void guidance_h_nav_enter(void);
 static inline void transition_run(void);
 static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool_t in_flight);
+static inline void reset_guidance_reference_from_current_position(void);
 
 float fsg_h(float x,float d);
 int32_t fhan_control(float pos,float vel,  float repul, float h1);
@@ -371,6 +372,11 @@ static void guidance_h_state_update(bool_t in_flight)
 	bool_t realign_done = FALSE;
 	bool_t reset = FALSE;
 
+	if(ins_int_check_hf_realign_done())
+	{
+		reset = TRUE;
+	}
+
 	if(guidance_h.ned_pos_rc_reset)
 	{
 		if(ins_int.gps_type == GPS_RTK)
@@ -394,13 +400,10 @@ static void guidance_h_state_update(bool_t in_flight)
 			reset = TRUE;
 		}
 	}
-	else if(ins_int_check_realign())
-	{
-		reset = TRUE;
-	}
 
 	if (reset)
 	{
+		reset_guidance_reference_from_current_position();
 		guidance_h.ned_pos_rc = guidance_h.ned_pos;
 		traj_pid_loop_reset();
 	}
@@ -1313,9 +1316,10 @@ static void guidance_h_update_reference(void)
 static void guidance_h_hover_enter(void)
 {
   /* set horizontal setpoint to current position */
+  VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
   guidance_h.sp.heading = stateGetNedToBodyEulers_i()->psi;
   guidance_h.rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
-
+	reset_guidance_reference_from_current_position();
   guidance_h_ned_pos_rc_need_reset();
   guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
 }
@@ -1333,6 +1337,8 @@ static void guidance_h_nav_enter(void)
 void guidance_h_nav_rc_enter(void)
 {
   /* set horizontal setpoint to current position */
+  VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
+  reset_guidance_reference_from_current_position();
 	guidance_h_ned_pos_rc_need_reset();
 	guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
 

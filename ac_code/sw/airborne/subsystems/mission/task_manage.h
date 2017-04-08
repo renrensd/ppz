@@ -32,6 +32,8 @@
 
 #define POINT_MAX_DISTANCE 300000   //unit=cm
 
+#define NavKillMode()  {autopilot_set_mode(AP_MODE_KILL);Flag_AC_Flight_Ready=FALSE;}
+
 /*value: start=1; pause=2; continual=3; back_home=4;  reserve_land=5*/
 enum Gcs_Task_Cmd
 {

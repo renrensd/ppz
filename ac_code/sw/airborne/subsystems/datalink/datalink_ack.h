@@ -37,6 +37,8 @@ enum set_cmd
 #define MAX_FLIGHT_SPEED       5    //unit=cm/s
 #define MAX_FLIGHT_HEIGHT      6    //unit=cm
 #define ATOMIZATION_GRADE      7    //atomization_grade
+#define JOYSTICK_ENABLE		   8	// 1:enable
+#define U_BLOX_ENABLE          9    // 1:enable 
 
 enum engine_type
 {
@@ -45,7 +47,7 @@ enum engine_type
 	Hybrid     =3
 };
 
-enum Set_Command
+enum Set_GCS_Command
 {
 	GCS_CMD = 1,
 	REQUEST_AC_INFO = 2,
@@ -60,15 +62,29 @@ enum Task_Ack_Type
 {
 	TASK_ADD = 0,
 	TASK_UPDATE = 1,
-	TASK_DELETE =2,
-	TASK_GET =3
+	TASK_DELETE = 2,
+	TASK_GET = 3
 };
+
+#if USE_MANU_DEBUG
+enum Set_MC_Command
+{
+	MC_ATTITUDE_TEST = 1,
+	MC_CALIBRATE_ACC = 2,
+	MC_CALIBRATE_ECS = 3,
+	MC_TEST_MOTORS = 4
+};
+#endif
 
 //extern uint8_t rc_set_cmd_parse(uint8_t cmd);
 extern void send_heart_beat_A2R_msg(void);
 extern void send_heart_beat_A2VR_msg(void);
 extern void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length);
 extern void send_aircraft_info_state(void);
-extern uint8_t DlSetCommand(uint8_t id, uint8_t pt_value);
+extern void send_gcs_components_info(void);
+extern uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value);
+#if USE_MANU_DEBUG
+extern bool_t DlSetMCCommand(uint8_t id, uint8_t pt_value);
+#endif
 
 #endif /* DATALINK_H */

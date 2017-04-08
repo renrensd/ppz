@@ -91,6 +91,19 @@ void vff_init_zero(void)
   vff_init(0., 0., 0., 0.);
 }
 
+void vff_init_P(void)
+{
+	int i, j;
+	for (i = 0; i < VFF_STATE_SIZE; i++)
+	{
+		for (j = 0; j < VFF_STATE_SIZE; j++)
+		{
+			vff.P[i][j] = 0.;
+		}
+		vff.P[i][i] = VFF_EXTENDED_INIT_PXX;
+	}
+}
+
 void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_baro_offset)
 {
   vff.z = init_z;
@@ -149,8 +162,8 @@ void vff_propagate(float accel, float dt)
 	}
 
   /* update state */
-  //vff.zdotdot = accel + 9.81 - vff.bias;
-	vff.zdotdot = accel + 9.81;
+  vff.zdotdot = accel + 9.81 - vff.bias;
+  //vff.zdotdot = accel + 9.81;
   vff.z = vff.z + dt * vff.zdot;
   vff.zdot = vff.zdot + dt * vff.zdotdot;
   /* update covariance */

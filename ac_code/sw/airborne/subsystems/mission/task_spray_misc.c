@@ -125,7 +125,7 @@ uint8_t spray_convert_caculate(void)
 	return SPRAY_CONVERT_CONTINUAL;
 }
 
-//TIMER(TIMER_GCS_SPRAY_BREAK_CONTINUAL_MSG,        spray_break_continual_msg,            TIMER_TASK_GCS)
+/*resrve*/
 bool_t spray_break_and_continual(void)
 {
 	if(!spray_continual_info.flag_record)
@@ -145,6 +145,7 @@ bool_t spray_break_and_continual(void)
 	}
 }
 
+/*resrve*/
 void spray_break_continual_msg(void)
 {
 	uint8_t wp_type = 1;  //default lla coordinate
@@ -158,6 +159,7 @@ void spray_break_continual_msg(void)
 	                                      &pos_break_lat);
 }
 
+/*resrve*/
 void spray_bac_msg_stop(void)
 {
 	spray_continual_info.flag_ack = TRUE;

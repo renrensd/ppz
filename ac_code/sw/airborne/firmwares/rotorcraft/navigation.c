@@ -133,12 +133,12 @@ float   nav_shift;
 
 /** minimum horizontal distance to waypoint to mark as arrived */
 #ifndef ARRIVED_AT_WAYPOINT
-#define ARRIVED_AT_WAYPOINT 0.5
+#define ARRIVED_AT_WAYPOINT 0.8
 #endif
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
-
+#include "subsystems/ops/ops_app_if.h"  
 void set_exception_flag(uint8_t flag_num) {
   exception_flag[flag_num] = 1;
 }
@@ -152,7 +152,8 @@ static void send_nav_status(struct transport_tx *trans, struct link_device *dev)
                                       &block_time, &stage_time,
                                       &dist_home, &dist_wp,
                                       &nav_block, &nav_stage,
-                                      &horizontal_mode);
+                                      &horizontal_mode,
+                                      &ops_info.sum_sprayed_distance, &ops_info.treated_area);
   if (horizontal_mode == HORIZONTAL_MODE_ROUTE) {
     float sx = POS_FLOAT_OF_BFP(nav_segment_start.x);
     float sy = POS_FLOAT_OF_BFP(nav_segment_start.y);

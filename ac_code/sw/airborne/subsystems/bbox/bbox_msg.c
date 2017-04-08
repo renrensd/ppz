@@ -40,6 +40,40 @@
 
 /*===VARIABLES========================================================*/
 /*---Global-----------------------------------------------------------*/
+/*****************for upgrade***********************************/
+extern uint8_t  bbox_upgrade_status;
+void bbox_msg_request_upgrade(void)
+{
+		uint8_t arg[2];
+   		arg[0] = BBOX_UPGRADE_SERVIC;   //request upgrade  0x05
+		arg[1] = BBOX_UPDATE_REQ_DATA;	//0x01
+		bbox_can_msg_send(2, &arg[0]);    
+}
+
+void bbox_msg_ready_status(void)
+{
+	uint8_t arg[2];
+   	arg[0] = BBOX_UPGRADE_SERVIC;   //request ready status?	0x05
+	arg[1] = BBOX_UPDATE_ASK_READY_DATA;	//0x03
+	bbox_can_msg_send(2, &arg[0]); 
+}
+
+void bbox_msg_send_frame(uint8_t *pt_value,uint8_t length)
+{
+	uint8_t arg[150],i=0;
+	arg[0] = BBOX_UPGRADE_SERVIC;   //request upgrade
+	arg[1] = BBOX_UPDATE_DATA;
+	for(i=0;i<length;i++)
+	{
+		arg[2+i]=*((uint8_t *)pt_value+i);
+	}
+	bbox_can_msg_send(2+length, arg); 
+}
+
+void bbox_msg_update_over(uint8_t num,uint8_t *arg)
+{
+	bbox_can_msg_send(num, &arg[0]); 
+}
 
 /*******************************************************************************
 **  FUNCTION      : bbox_msg_heart_beat                                         
@@ -208,7 +242,78 @@ void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len)
 						bbox_info.sv_update = TRUE;
 					}
 				}
-
+			case BBOX_UPGRADE_SERVIC:
+			{
+				if(frame[3] == BBOX_UPDATE_REQ_RES_DATA)		//request upgrade 0x02
+				{
+					
+					if(frame[4] == BBOX_POSITIVE_RESULT)		//return successful request to GCS
+					{
+																//delay 100ms
+						uint8_t type = UPGRADE_TYPE_BBOX;
+						uint8_t ug_state = UPGRADE_RES_OK;
+						xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+						DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
+					}
+					else if(frame[4] == BBOX_BAD_RESULT)		//send request to bbox again
+					{
+						bbox_msg_request_upgrade();	
+					}
+				}
+				else if(frame[3] == BBOX_UPDATE_ASK_READY_RES_DATA)		//request ready status	0x04
+				{
+					
+					if(frame[4] == BBOX_POSITIVE_RESULT)		//return successful request to GCS
+					{
+						bbox_upgrade_status=TRUE;
+						uint8_t type = UPGRADE_TYPE_BBOX;
+						xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+						DOWNLINK_SEND_UPGRADE_STATUS(SecondChannel, SecondDevice, &type);
+						break;
+					}
+					else if(frame[4] == BBOX_BAD_RESULT)		//send request to bbox again
+					{
+						bbox_msg_ready_status();	
+					}
+				}
+				else if(frame[3] == BBOX_UPDATE_RES_DATA)		//return frame ack  0x08
+				{
+					if(frame[4] == BBOX_POSITIVE_RESULT)
+					{
+						uint8_t type = UPGRADE_TYPE_BBOX;
+						uint8_t ug_state = UPGRADE_RES_PASS;   //next frame
+						xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+						DOWNLINK_SEND_REQUESET_FIRMWARE(SecondChannel, SecondDevice, &type, &ug_state);
+					}
+					else if(frame[4] == BBOX_BAD_RESULT)
+					{
+						uint8_t type = UPGRADE_TYPE_BBOX;
+						uint8_t ug_state = UPGRADE_RES_FAIL;    //current frame
+						xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+						DOWNLINK_SEND_REQUESET_FIRMWARE(SecondChannel, SecondDevice, &type, &ug_state);
+					}
+				}
+				else if(frame[3] == BBOX_UPDATE_OVER_RES_DATA)		//update over 0x0a
+				{
+					if(frame[4] == BBOX_POSITIVE_RESULT)		
+					{
+						uint8_t type = UPGRADE_TYPE_BBOX;
+						uint8_t ug_state = UPGRADE_RES_OK;
+						bbox_upgrade_status=FALSE;
+						xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+						DOWNLINK_SEND_UPGRADE_RESULT(SecondChannel, SecondDevice, &type, &ug_state);
+					}
+					else if(frame[4] == BBOX_BAD_RESULT)
+					{
+						uint8_t type = UPGRADE_TYPE_BBOX;
+						uint8_t ug_state = UPGRADE_RES_FAIL;
+						xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+						DOWNLINK_SEND_UPGRADE_RESULT(SecondChannel, SecondDevice, &type, &ug_state);
+						
+					}
+				}
+				break;
+			}
 			default:
 				break;
 		}

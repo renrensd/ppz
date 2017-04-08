@@ -144,9 +144,7 @@ INFO_VALUE("it is recommended to configure in your airframe PERIODIC_FREQUENCY t
 tid_t main_periodic_tid; ///< id for main_periodic() timer
 tid_t modules_tid;       ///< id for modules_periodic_task() timer
 tid_t failsafe_tid;      ///< id for failsafe_check() timer
-#ifndef WITHOUT_RADIO
 tid_t radio_control_tid; ///< id for radio_control_periodic_task() timer
-#endif
 tid_t electrical_tid;    ///< id for electrical_periodic() timer
 tid_t telemetry_tid;     ///< id for telemetry_periodic() timer
 #if USE_BARO_BOARD
@@ -233,9 +231,7 @@ STATIC_INLINE void main_init(void)
 #endif
 
 #ifndef INTER_MCU_AP
- #ifndef WITHOUT_RADIO
   radio_control_init();
- #endif
 #endif
 
 #if USE_BARO_BOARD
@@ -289,9 +285,7 @@ STATIC_INLINE void main_init(void)
   // register the timers for the periodic functions
   main_periodic_tid = sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
   modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
-  #ifndef WITHOUT_RADIO
   radio_control_tid = sys_time_register_timer((1. / 60.), NULL);
-  #endif
   failsafe_tid = sys_time_register_timer(0.05, NULL);
   electrical_tid = sys_time_register_timer(0.1, NULL);
   telemetry_tid = sys_time_register_timer((1. / TELEMETRY_FREQUENCY), NULL);
@@ -335,11 +329,13 @@ STATIC_INLINE void handle_periodic_tasks(void)
 	#endif	/* WDG_OPTION */
 	modules_periodic_task();
   }
-  #ifndef WITHOUT_RADIO
-  if (sys_time_check_and_ack_timer(radio_control_tid)) {
-    radio_control_periodic_task();
-  }
-  #endif
+
+  if(autopilot_rc)		//add by lg
+  {
+	if (sys_time_check_and_ack_timer(radio_control_tid)) {
+    	radio_control_periodic_task();
+  	}
+  } 
   if (sys_time_check_and_ack_timer(failsafe_tid)) {
     failsafe_check();
   }

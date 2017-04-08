@@ -206,7 +206,6 @@ struct HorizontalGuidance
 
   struct Int32Eulers rc_sp;    ///< with #INT32_ANGLE_FRAC
 
-  // ublox pos pid loop
   struct FloatVect2 ned_acc;
   struct FloatVect2 ned_vel;
   struct FloatVect2 ned_pos;

@@ -107,7 +107,7 @@ void ahrs_aligner_init(void)
 
 void ahrs_aligner_run(void)
 {
-	if(imu_moni.imu_status == FALSE)
+	if (imu_ground_check() != 1)
 	{
 		return;
 	}
@@ -118,10 +118,6 @@ void ahrs_aligner_run(void)
 
 	ref_sensor_samples[samples_idx] = imu.accel.z;
 	samples_idx++;
-
-#ifdef AHRS_ALIGNER_LED
-	RunOnceEvery(50, {LED_TOGGLE(AHRS_ALIGNER_LED);});
-#endif
 
 	if (samples_idx >= SAMPLES_NB)
 	{
@@ -155,7 +151,10 @@ void ahrs_aligner_run(void)
 
 		if (ahrs_aligner.noise < LOW_NOISE_THRESHOLD)
 		{
-			ahrs_aligner.low_noise_cnt++;
+			if (ahrs_aligner.lp_mag.x || ahrs_aligner.lp_mag.y || ahrs_aligner.lp_mag.z)
+			{
+				ahrs_aligner.low_noise_cnt++;
+			}
 		}
 		else if (ahrs_aligner.low_noise_cnt > 0)
 		{
@@ -165,9 +164,6 @@ void ahrs_aligner_run(void)
 		if (ahrs_aligner.low_noise_cnt > LOW_NOISE_TIME)
 		{
 			ahrs_aligner.status = AHRS_ALIGNER_LOCKED;
-#ifdef AHRS_ALIGNER_LED
-			LED_ON(AHRS_ALIGNER_LED);
-#endif
 			uint32_t now_ts = get_sys_time_usec();
 			AbiSendMsgIMU_LOWPASSED(ABI_BROADCAST, now_ts, &ahrs_aligner.lp_gyro, &ahrs_aligner.lp_accel,
 					&ahrs_aligner.lp_mag);

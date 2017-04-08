@@ -65,7 +65,7 @@ struct AhrsMlkf {
   struct OrientationReps body_to_imu;
 
   bool_t is_aligned;
-  bool_t virtual_rtk_h_valid;
+  bool_t virtual_rtk_heading_valid;
   bool_t rtk_gps_update;
   enum _e_ahrs_mlkf_heading_status heading_state;
   float mag_heading;
@@ -86,6 +86,8 @@ extern void ahrs_mlkf_update_accel(struct Int32Vect3 *accel);
 
 extern void ahrs_float_mlkf_SetMagNoise(float noise);
 extern void ahrs_float_mlkf_SetGpsHeadingNoise(float noise);
+
+extern bool_t ahrs_mlkf_is_rtk_heading_valid(void);
 
 void ahrs_mlkf_task(void);
 #ifdef USE_GPS_HEADING

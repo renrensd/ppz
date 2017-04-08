@@ -48,13 +48,17 @@
 *******************************************************************************/
 void ops_msg_heart_beat(void)
 {
-	uint8_t arg[4];
+	uint8_t arg[8];
    	arg[0] = OPS_PRIO_GENERAL;
 	arg[1] = OPS_POSITIVE_RESULT;
 	arg[2] = (ops_info.vel >> 8) & 0xff;
 	arg[3] = ops_info.vel & 0xff;
+	arg[4] = 0;
+	arg[5] = 0;
+	arg[6] = (ops_info.treated_area>>8) & 0xff;
+	arg[7] = ops_info.treated_area & 0xff;
 	
-   	ops_comm_send_frame(OPS_RES_ACK_NOT_NEEDED,OPS_HEART_BEAT,4, &arg[0]);
+   	ops_comm_send_frame(OPS_RES_ACK_NOT_NEEDED,OPS_HEART_BEAT,8, &arg[0]);
 }
 
 /*******************************************************************************
@@ -153,6 +157,18 @@ void ops_msg_config_param(void)
    	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0c, &arg[0]);
 }
 
+void ops_update_frame_trans(uint8_t *pt_value,uint8_t length)
+{
+	uint8_t param[150],i=0;
+	param[0]=OPS_PRIO_GENERAL;
+	param[1]=OPS_UPDATE_DATA;
+	for(i=0;i<length;i++)
+	{
+		param[2+i]=	*((uint8_t *)pt_value+i);
+	}
+	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_UPGRADE_ID,length+2,param);
+}
+
 /*---Private----------------------------------------------------------*/
 /***********************************************************************
 *  Name         : ops_msg_create
@@ -198,6 +214,9 @@ void ops_uart_msg_handle(U8 const *frame)
 			ops_msg_device_manage_handler(&ops_uart_frame);
 			break;
 		case OPS_AIRCRAFT_SERVICE:
+            ops_msg_device_manage_handler(&ops_uart_frame);
+			break;
+		case OPS_UPGRADE_SERVICE:  
             ops_msg_device_manage_handler(&ops_uart_frame);
 			break;
 		default:
@@ -301,10 +320,16 @@ void ops_msg_device_manage_handler(OPS_UART_FRAME *ops_msg)
 		case OPS_REQUEST_SOFTWARE_VERSION:
 			if(param[1] == OPS_POSITIVE_RESULT)
 			{
-				ops_software_version_handler(ops_msg->param + 1, ops_msg->size);
+				ops_software_version_handler(ops_msg->param + 2, ops_msg->size - 2);
 			}
 			break;
-		
+			#ifdef UPGRADE_OPTION
+		case OPS_UPGRADE_ID:   
+			{
+				ops_request_update_response(ops_msg->param + 1);	
+			}
+			break;
+			#endif
 		default:
 			break;
 		

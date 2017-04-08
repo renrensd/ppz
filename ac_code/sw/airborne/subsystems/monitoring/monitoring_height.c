@@ -66,6 +66,12 @@ void height_moni_init(void)
 	AbiBindMsgBARO_ABS(ABI_BROADCAST, &baro_ev_mo, baro_moni_cb);
 }
 
+/***********************************************************************
+* FUNCTIONS   : height_ground_check
+* DESCRIPTION :  get ground check state of baro
+* INPUTS      : 
+* RETURN      : check_code
+***********************************************************************/
 uint8_t height_ground_check(void)
 {
 	uint8_t check_code = 0;  //default is running
@@ -89,6 +95,12 @@ uint8_t height_ground_check(void)
 	return check_code;
 }
 
+/***********************************************************************
+* FUNCTIONS   : height_ground_check
+* DESCRIPTION : return baro error state
+* INPUTS      : 
+* RETURN      : error_code
+***********************************************************************/
 uint8_t height_ground_check_code(void)
 {
 	if(h_moni.baro_code&0x02)

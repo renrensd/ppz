@@ -377,6 +377,11 @@ static void send_rotorcraft_cmd(struct transport_tx *trans, struct link_device *
 }
 #endif
 
+void check_joystick_enable(uint8_t status)		//add by lg
+{
+	if(ac_config_info.rocker_remote_status==1) autopilot_rc=TRUE;
+	else if(ac_config_info.rocker_remote_status==0) autopilot_rc=FALSE;	
+}
 void autopilot_init(void)
 {
   /* mode is finally set at end of init if MODE_STARTUP is not KILL */
@@ -389,17 +394,18 @@ void autopilot_init(void)
   autopilot_ground_detected = FALSE;
   autopilot_detect_ground_once = FALSE;
   autopilot_flight_time = 0;
-#ifndef WITHOUT_RADIO
+/*#ifndef WITHOUT_RADIO
   autopilot_rc = TRUE;
 #else
   autopilot_rc = FALSE;   //stop radio event task
-#endif
+#endif*/
   autopilot_power_switch = FALSE;
 #ifdef POWER_SWITCH_GPIO
   gpio_setup_output(POWER_SWITCH_GPIO);
   gpio_clear(POWER_SWITCH_GPIO); // POWER OFF
 #endif
 
+  autopilot_rc = FALSE;   //stop radio event task add by lg
   autopilot_arming_init();
 
   nav_init();
@@ -881,7 +887,7 @@ void autopilot_on_rc_frame(void)
 void autopilot_ready_check(void)
 {
 	#ifdef USE_MISSION
-	if(ground_check_pass)
+	if((ground_check_pass)&&(Flag_AC_Flight_Ready==TRUE))		//add by lg
 	{
 		autopilot_set_mode(AP_MODE_NAV);
 	}

@@ -42,16 +42,19 @@ enum Spray_Convert_Type
 struct config_info
 {   
 	enum Spray_Convert_Type spray_convert_type;
-	uint8_t atomization_grade;  //grade 1/2/3...
-	uint16_t spray_concentration;  //unit=ml/m2
-	float spray_height;     //unit=m
-	float spray_wide;       //unit=m
-	float spray_speed;      //recommnad, unit=m/s
-	float max_flight_speed;            //unit=m/s
-	float max_flight_height;    //unit=m
+	uint8_t atomization_grade;      //grade 1/2/3...
+	uint16_t spray_concentration;   //unit=ml/m2
+	float spray_height;             //unit=m
+	float spray_wide;               //unit=m
+	float spray_speed;              //recommnad, unit=m/s
+	float max_flight_speed;         //unit=m/s
+	float max_flight_height;        //unit=m
+	uint8_t rocker_remote_status;	// 1:enable
+	uint8_t force_redun_status;			//1:enable
 };
 
 extern uint8_t flight_mode;
+extern bool_t is_force_redundency;
 extern uint16_t flight_status;
 extern enum Flight_State  flight_state;
 extern enum Rc_Type rc_type;
@@ -64,6 +67,6 @@ extern void nav_flight_init(void);
 extern void nav_flight(void);
 extern uint16_t get_flight_status(void);
 extern void flight_mode_enter(uint8_t new_mode);
-
+extern uint8_t force_use_redundency_and_vrc(uint8_t enable);
 
 #endif /* END OF RC_NAV_H */

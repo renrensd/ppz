@@ -100,6 +100,8 @@ struct FloatRates {
     while (_a < -M_PI) _a += (2.*M_PI);             \
   }
 
+#define FLOAT_DISTANCE(_a, _b)	(fabsf((_a)-(_b)))
+
 //
 //
 // Vector algebra

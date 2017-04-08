@@ -53,7 +53,7 @@ struct Imu_Monitor {
    uint32_t mag_update_counter;
    
    //0:gyro;  1:accel;  2:mag   
-   //##code=0:normal  bit1:fix_data  bit2:frequence  bit3:noise  bit4:range  bit5:interference(mag)
+   //##code=0:normal  bit1:fix_data  bit2:frequence  bit3:noise  bit4:range  bit5:interference(mag)  bit6:no data update
    //error will update(change according to current state)
    uint8_t imu_error[3];   
    bool_t imu_status;   //0:fail  1:ok  ##once set fail,keep fail until restart

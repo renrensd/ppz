@@ -129,7 +129,7 @@ void mpu9250_spi_event(struct Mpu9250_Spi *mpu)
 		else if (mpu->spi_trans.status == SPITransSuccess)
 		{
 			// Successfull reading
-			if ( bit_is_set(mpu->rx_buf[1], 0) && DataValidCheck(&(mpu->rx_buf[2])))
+			if (bit_is_set(mpu->rx_buf[1], 0) && DataValidCheck(&(mpu->rx_buf[2])))
 			{
 				// new data
 				mpu->data_accel.vect.x = Int16FromBuf(mpu->rx_buf, 2);

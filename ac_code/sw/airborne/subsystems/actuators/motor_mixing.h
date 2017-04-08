@@ -48,4 +48,9 @@ extern void motor_mixing_init(void);
 extern void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[]);
 extern void motor_mixing_run_spinup(uint32_t counter, uint32_t max_counter);
 
+#if USE_MANU_DEBUG
+extern void set_esc_calibration(uint8_t value);
+extern void set_particular_motor_run(uint8_t value);
+#endif
+
 #endif /* MOTOR_MIXING_H */

@@ -194,9 +194,39 @@ void motor_mixing_run_spinup(uint32_t counter, uint32_t max_counter)
   }
 }
 
+#if USE_MANU_DEBUG
+uint8_t mc_esc_calibration_state = 0;
+uint8_t mc_test_motor_step = 0;
+void set_esc_calibration(uint8_t value)
+{
+	static bool_t calibration_flag = FALSE;
+	if(!calibration_flag && value)
+	{
+		mc_esc_calibration_state = 1;   //start give max limit
+		calibration_flag = TRUE;
+	}
+	else
+	{
+		mc_esc_calibration_state = 0;   //give min limit
+	}	
+	mc_test_motor_step = 0;  //if in esc calibration, reset all motor test
+}
+
+void set_particular_motor_run(uint8_t value)
+{
+	if(!mc_esc_calibration_state)
+	{
+		mc_test_motor_step = value;
+		Bound(mc_test_motor_step, 0, 6);
+	}
+}
+#endif
+
 void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
 {
   uint8_t i;
+  static uint8_t esc_cali_status = 0;
+  static pprz_t value = MOTOR_MIXING_STOP_MOTOR;
 
 #if !HITL
   if (motors_on) {
@@ -293,8 +323,6 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
       motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
     }
 	#ifdef ESC_CALIBRATION
-    static uint8_t esc_cali_status = 0;
-    static pprz_t value = MOTOR_MIXING_STOP_MOTOR;
 		if(esc_cali_status == 0)
 		{
 			if(radio_control.values[RADIO_THROTTLE] > (MOTOR_MIXING_MAX_MOTOR/2))
@@ -331,4 +359,26 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
 		}
      #endif
   }
+
+  #if USE_MANU_DEBUG
+  	if(mc_esc_calibration_state)
+  	{		
+		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+		{
+			motor_mixing.commands[i] = MOTOR_MIXING_MAX_MOTOR;
+		}
+  	}
+	else
+	{
+		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+		{
+			motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
+		}
+		if(mc_test_motor_step)
+		{
+			motor_mixing.commands[mc_test_motor_step-1] = MOTOR_MIXING_MIN_MOTOR;
+		}
+	}
+    #endif
+
 }

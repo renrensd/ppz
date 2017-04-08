@@ -896,15 +896,6 @@ void get_gps_pos_stable(void)
 		gps.p_stable = TRUE;
 		counter_nmea_qual = 41;  /*avoid overflow*/
 	}
-
-	if( gps_nmea.pos_type <= SINGLE )
-	{
-		gps.flag_rtk = FALSE;
-	}
-	else
-	{
-		gps.flag_rtk = TRUE;
-	}
 }
 
 /*run 20hz,use 2s time no fix heading set unstable*/
@@ -937,11 +928,13 @@ void gps_nmea_msg_outtime_check(void)
 	if( (now_time-gps_nmea.last_tramsg_time) > MSG_TIME_OUT )
 	{
 		gps_nmea.sol_tatus = 0;
+		gps.h_stable = FALSE;
 	}
 	if( (now_time-gps_nmea.last_xyzmsg_time) > MSG_TIME_OUT )
 	{
 		gps_nmea.pos_type = TIME_OUT;
-	}	
+		gps.p_stable = FALSE;
+	}
 }
 
 /*

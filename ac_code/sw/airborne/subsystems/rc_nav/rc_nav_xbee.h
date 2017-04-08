@@ -11,7 +11,8 @@
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 
 //#define DEBUG_RC
-//#define VIRTUAL_JOYSTICK
+#define RC_PERIODIC_FRE 16
+#define VIRTUAL_JOYSTICK
 
 //rc_vtol_cmd
 #define LOCKED 0
@@ -19,10 +20,30 @@
 #define LAND 2
 #define CRUISE 3
 
+//rc_set_cmd
+#define RC_SET_AUTO 0x10
+#define RC_SET_MANUAL 0x01
+#define RC_TAKE_OFF 0x30
+#define RC_LAND 0x03
+#define RC_HOME 0x40
+#define RC_STOP_HOME 0x04
+#define RC_LOCK 0x06
+#define RC_UNLOCK 0x60
+#define RC_ADD_SPRAY 0x20
+#define RC_OPEN_SPRAY RC_ADD_SPRAY
+#define RC_REDUCE_SPRAY 0x02
+#define RC_CLOSE_SPRAY RC_REDUCE_SPRAY
+#define RC_MAINPOWER_ON 0x50
+#define RC_MAINPOWER_OFF 0x05
+#ifdef CALIBRATION_OPTION
+#define RC_MAG_CALIBRATION_BEGIN 0x70
+#define RC_MAG_CALIBRATION_END 0x07
+#endif
+
 struct Joystick_Motion
 {
 	bool_t received_flag;
-	uint16_t sign_counter;
+	uint16_t signal_counter;
 	int8_t current_stick_ratio[4];
 	int8_t smooth_stick_ratio[4];
 	float percent_rssi;  //0--1.0
@@ -67,18 +88,18 @@ enum manual_mission
  */
 //virtical control functions
 #define RC_V_Rate 0.5
-#define RC_V_Max_Speed  1.5
+#define RC_MAX_V_SPEED  1.5
 #define V_DEFAULT_GRADE 1
 
 #define RC_Climb(_grade)  { \
     float climb = RC_V_Rate*_grade; \
-    if (climb > RC_V_Max_Speed) climb=RC_V_Max_Speed; \
+    if (climb > RC_MAX_V_SPEED) climb=RC_MAX_V_SPEED; \
     NavVerticalClimbMode(climb); \
   }
 	
 #define RC_Decline(_grade)  { \
     float climb = -RC_V_Rate*_grade; \
-    if (climb < -RC_V_Max_Speed) climb = -RC_V_Max_Speed; \
+    if (climb < -RC_MAX_V_SPEED) climb = -RC_MAX_V_SPEED; \
     NavVerticalClimbMode(climb); \
   }
 
@@ -99,7 +120,7 @@ enum manual_mission
 #define RL_SPEED 1.0
 
 #define RAD_OF_DEG(d) (d*M_PI/180.)
-#define ROTATION_RATE RAD_OF_DEG(40)   //unit =rad/s
+#define RC_MAX_ROTATION_RATE RAD_OF_DEG(40)   //unit =rad/s
 #define ROTATION_DRIFT_RATE 0.2
 
 #define RC_FB_SPEED(_grade)  ({ \
@@ -149,5 +170,7 @@ extern void rc_set_info_init(void);
 extern void rc_motion_info_init(void);
 extern void rc_nav_init(void);
 extern void rc_set_rc_type(void);
+
+extern void rc_periodic_task(void);
     
 #endif /* END OF RC_NAV_XBEE_H */

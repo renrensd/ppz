@@ -27,31 +27,37 @@
 #include "subsystems/datalink/downlink.h"
 
 
-struct Task_Wp task_wp[NB_TASK];
-uint8_t nb_pending_wp;
+struct Task_Wp task_wp[NB_TASK];   //unfinished task, with relative waypoints/action/id
+uint8_t nb_pending_wp;             //number of waypoints in  unfinished task
 
 struct Int32Vect2 wp_home;
-bool_t wp_home_useful;
-struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];
-uint8_t nb_pending_reland;   /*number of wp_reserve_land*/
+bool_t wp_home_useful;             //record home waypoint got
+struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];    //reserve
+uint8_t nb_pending_reland;                             //reserve
 
-struct EnuCoor_i temp_enu[20];   //only use for update_task
-struct Task_Wp_Enu from_wp;  
-struct Task_Wp_Enu next_wp;          //use for get next waypoint
+struct EnuCoor_i temp_enu[20];    //only use for update_task
+struct Task_Wp_Enu from_wp;       //start wp of current flight line
+struct Task_Wp_Enu next_wp;       //end wp of current flight line
 
-
+bool_t Flag_AC_Flight_Ready;
 static int8_t parse_land_task_home(struct Land_Info dl_land_info);
 static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t offset);
 
 
 void task_manage_init(void)
 {
-	nb_pending_wp = 0;
+	nb_pending_wp = 0;           //use to sign task clean
 	wp_home_useful = FALSE;
 	nb_pending_reland = 0;
 	
 }
 
+/***********************************************************************
+* FUNCTION    : parse_gcs_cmd
+* DESCRIPTION : parse gcs command: start / pause / continual / home / land
+* INPUTS      : command
+* RETURN      : error code
+***********************************************************************/
 uint8_t parse_gcs_cmd( uint8_t cmd)
 {
 	uint8_t response = 0;
@@ -61,10 +67,18 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
     DOWNLINK_SEND_DEBUG_CMD(DefaultChannel, DefaultDevice, &gcs_cmd, &gcs_task_cmd, &wp_home_useful);
    #endif
 
+  if(gcs_cmd == GCS_CMD_LOCK)
+  {
+  	gcs_task_cmd = GCS_CMD_LOCK;
+		NavKillMode();
+		gcs_cmd_interrupt = TRUE;
+		return 0;
+  }
+
 	/*request first gcs_cmd is GCS_CMD_START*/
 	if(GCS_CMD_NONE==gcs_task_cmd)
 	{	
-		if(GCS_CMD_START!=gcs_cmd)//"|| autopilot_in_flight)" may need start in air
+		if(GCS_CMD_START!=gcs_cmd)
 		{
 			response =2;
 			return response;
@@ -77,7 +91,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 	}
 	if(GCS_CMD_START!=gcs_cmd && !autopilot_in_flight)
 	{
-		response =3;  /*not in flight*/
+		response =3;  /*not in flight, refuse command except start*/
 		return response;
 	}
 	
@@ -90,7 +104,8 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 				 || GCS_CMD_START==gcs_task_cmd)
 			{
 				gcs_task_cmd = GCS_CMD_START;
-				gcs_cmd_interrupt = TRUE;
+				Flag_AC_Flight_Ready=TRUE;	//add by lg
+				gcs_cmd_interrupt = TRUE;    //record command interrupt to get rid of emergency
 			}
 			else
 			{
@@ -103,7 +118,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			{
 				gcs_task_cmd = GCS_CMD_PAUSE;
 				gcs_cmd_interrupt = TRUE;
-				manual_pause_flag = TRUE;
+				manual_pause_flag = TRUE;   //record brake signal
 			}
 			else
 			{
@@ -146,8 +161,8 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			break;
 
 		case GCS_CMD_LOCK:
-			//TODOM add lock motors, danger!!!
 			gcs_task_cmd = GCS_CMD_LOCK;
+			NavKillMode();
 			gcs_cmd_interrupt = TRUE;
 			break;
 
@@ -158,7 +173,12 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 	return response;
 }
 
-
+/***********************************************************************
+* FUNCTION    : parse_add_task
+* DESCRIPTION : 
+* INPUTS      : new task
+* RETURN      : error code
+***********************************************************************/
 int8_t parse_add_task(struct Task_Info m_task_info)
 {
 	int8_t response = 0;
@@ -239,7 +259,12 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 	return response;
 }
 
-
+/***********************************************************************
+* FUNCTION    : parse_update_task
+* DESCRIPTION : 
+* INPUTS      : new task
+* RETURN      : error code
+***********************************************************************/
 int8_t parse_update_task(struct Task_Info m_task_info)
 {
 	int8_t response = 0;
@@ -309,6 +334,12 @@ int8_t parse_update_task(struct Task_Info m_task_info)
 	return response;
 }
 
+/***********************************************************************
+* FUNCTION    : parse_delete_task
+* DESCRIPTION : 
+* INPUTS      : the sequence of task need delete
+* RETURN      : error code
+***********************************************************************/
 int8_t parse_delete_task(uint8_t wp_start_id, uint8_t wp_end_id)
 {
 	int8_t response = 0;
@@ -332,6 +363,12 @@ int8_t parse_delete_task(uint8_t wp_start_id, uint8_t wp_end_id)
 	return response;
 }
 
+/***********************************************************************
+* FUNCTION    : parse_get_task
+* DESCRIPTION : reserve
+* INPUTS      : the sequence of task need reply
+* RETURN      : task info
+***********************************************************************/
 struct Task_Info parse_get_task(uint8_t wp_start_id, uint8_t wp_end_id)
 {
 	struct Task_Info m_task_info;
@@ -402,7 +439,7 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 	   		{
 				VECT2_COPY(wp_home, enu_home);	
 				
-				/*replace current pos with wp_home, if pos error <1m*/
+				/*replace current pos with wp_home, if pos error <1m!!!*/
 				struct EnuCoor_i temp_pos = *stateGetPositionEnu_i();
 				struct EnuCoor_i diff_pos;
 				VECT2_DIFF(diff_pos, temp_pos, enu_home)
@@ -431,6 +468,7 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 	return response;
 }
 
+/*reserve*/
 static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t offset)
 {
 	int8_t response = 0;
@@ -512,9 +550,9 @@ int8_t command_delete_all_task(void)
 		response = 1;
 		return response;
 	}
-	next_wp.wp_id = 0;
-	nb_pending_wp = 0;	
+	nb_pending_wp = 0;	 
 	from_wp_useful = FALSE;
+	next_wp.wp_id = 0;      //reset current wp_id
 	return response;
 }
 

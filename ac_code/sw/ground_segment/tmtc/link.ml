@@ -311,15 +311,17 @@ module XB = struct (** XBee module *)
     let frame_data =
       if !Xbee.mode868 then
         (*Xbee.api_tx64 ~frame_id (Int64.of_int ac_id) rf_data*)
-        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20040B47F42) rf_data*)
-        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20040E54653) rf_data*)
-        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20040F1EB1E) rf_data*)
-	    (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414e7ea1) rf_data*)
-      (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414e7ea0) rf_data*)
-      (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A2004146f1c2) rf_data*)
-        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20040C2563F) rf_data*)
-        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20040B959AB) rf_data*)
-        Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20041541BB9) rf_data
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20040fba080) rf_data*)(*debugpc*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414f1f81) rf_data*) (*no9*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200415201fe) rf_data*) (*no8*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A2004146f1c2) rf_data*) (*no7*)
+        Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414e7ea0) rf_data (*no6*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20041541BB9) rf_data*) (*no5*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200415AE239) rf_data*) (*no002*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200415AE240) rf_data*) (*no007*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20041269014) rf_data*) (*no003*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200415AE23C) rf_data*) (*no004*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200412690A3) rf_data*) (*no18*)
       else
         Xbee.api_tx16 ~frame_id ac_id rf_data in
     let packet = Xbee.Protocol.packet (Serial.payload_of_string frame_data) in

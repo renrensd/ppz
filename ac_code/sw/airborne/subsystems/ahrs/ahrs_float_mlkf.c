@@ -519,14 +519,14 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 
 bool_t ahrs_mlkf_is_rtk_heading_valid(void)
 {
-	return gps.h_stable;
+	return (gps.h_stable && ahrs_mlkf.virtual_rtk_heading_valid);
 }
 
 void ahrs_mlkf_task(void)
 {
 	static bool_t gps_heading_aligned = FALSE;
 
-	if (ahrs_mlkf_is_rtk_heading_valid() && ahrs_mlkf.virtual_rtk_heading_valid)
+	if (ahrs_mlkf_is_rtk_heading_valid())
 	{
 		if(ahrs_mlkf.rtk_gps_update)
 		{

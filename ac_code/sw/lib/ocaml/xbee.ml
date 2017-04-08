@@ -129,85 +129,104 @@ let api_tx64 = fun ?(frame_id = 0) dest data ->
   s.[0] <- api_tx64_id;
   s.[1] <- Char.chr frame_id;
   if !mode868 then begin
-(*  	s.[2] <- Char.chr 0x00;
+   (* s.[2] <- Char.chr 0x00;
+    s.[3] <- Char.chr 0x13;
+    s.[4] <- Char.chr 0xa2;
+    s.[5] <- Char.chr 0x00;
+    s.[6] <- Char.chr 0x41;
+    s.[7] <- Char.chr 0x52;
+    s.[8] <- Char.chr 0x01;
+    s.[9] <- Char.chr 0xfe;*)(*no8*)  
+	
+   (* s.[2] <- Char.chr 0x00;
     s.[3] <- Char.chr 0x13;
     s.[4] <- Char.chr 0xa2;
     s.[5] <- Char.chr 0x00;
     s.[6] <- Char.chr 0x41;
     s.[7] <- Char.chr 0x46;
     s.[8] <- Char.chr 0xf1;
-    s.[9] <- Char.chr 0xc2; *)
-(*    s.[2] <- Char.chr 0x00;
-    s.[3] <- Char.chr 0x13;
-    s.[4] <- Char.chr 0xa2;
-    s.[5] <- Char.chr 0x00;
-    s.[6] <- Char.chr 0x41;
-    s.[7] <- Char.chr 0x4e;
-    s.[8] <- Char.chr 0x7e;
-    s.[9] <- Char.chr 0xa0; *)
-	
+    s.[9] <- Char.chr 0xc2;*) (*no7*)
+
     s.[2] <- Char.chr 0x00;
     s.[3] <- Char.chr 0x13;
     s.[4] <- Char.chr 0xa2;
     s.[5] <- Char.chr 0x00;
     s.[6] <- Char.chr 0x41;
-    s.[7] <- Char.chr 0x54;
-    s.[8] <- Char.chr 0x1b;
-    s.[9] <- Char.chr 0xb9;
+    s.[7] <- Char.chr 0x4e;
+    s.[8] <- Char.chr 0x7e;
+    s.[9] <- Char.chr 0xa0; (*no6*)
 	
-(*    s.[2] <- Char.chr 0x00;
+	  (*s.[2] <- Char.chr 0x00;
     s.[3] <- Char.chr 0x13;
     s.[4] <- Char.chr 0xa2;
     s.[5] <- Char.chr 0x00;
     s.[6] <- Char.chr 0x41;
-    s.[7] <- Char.chr 0x4e;
-    s.[8] <- Char.chr 0x7e;
-    s.[9] <- Char.chr 0xa1; *)
+    s.[7] <- Char.chr 0x54;
+    s.[8] <- Char.chr 0x1B;
+    s.[9] <- Char.chr 0xB9;*) (*no5*)
     
-(*    s.[2] <- Char.chr 0x00;
+    (*s.[2] <- Char.chr 0x00;
     s.[3] <- Char.chr 0x13;
-    s.[4] <- Char.chr 0xa2;
+    s.[4] <- Char.chr 0xA2;
     s.[5] <- Char.chr 0x00;
-    s.[6] <- Char.chr 0x40;
-    s.[7] <- Char.chr 0xc2;
-    s.[8] <- Char.chr 0x56;
-    s.[9] <- Char.chr 0x3f; *)
+    s.[6] <- Char.chr 0x41;
+    s.[7] <- Char.chr 0x5A;
+    s.[8] <- Char.chr 0xE2;
+    s.[9] <- Char.chr 0x39;*) (*no002*)
     
-(*    s.[2] <- Char.chr 0x00;
+    (*s.[2] <- Char.chr 0x00;
     s.[3] <- Char.chr 0x13;
-    s.[4] <- Char.chr 0xa2;
+    s.[4] <- Char.chr 0xA2;
     s.[5] <- Char.chr 0x00;
-    s.[6] <- Char.chr 0x40;
-    s.[7] <- Char.chr 0xb9;
-    s.[8] <- Char.chr 0x59;
-    s.[9] <- Char.chr 0xab; *)
+    s.[6] <- Char.chr 0x41;
+    s.[7] <- Char.chr 0x5A;
+    s.[8] <- Char.chr 0xE2;
+    s.[9] <- Char.chr 0x40;*) (*no007*)
     
-(*    s.[2] <- Char.chr 0x00;
+    (*s.[2] <- Char.chr 0x00;
+    s.[3] <- Char.chr 0x13;
+    s.[4] <- Char.chr 0xA2;
+    s.[5] <- Char.chr 0x00;
+    s.[6] <- Char.chr 0x41;
+    s.[7] <- Char.chr 0x26;
+    s.[8] <- Char.chr 0x90;
+    s.[9] <- Char.chr 0x14;*) (*no003*)
+    
+    (*s.[2] <- Char.chr 0x00;
+    s.[3] <- Char.chr 0x13;
+    s.[4] <- Char.chr 0xA2;
+    s.[5] <- Char.chr 0x00;
+    s.[6] <- Char.chr 0x41;
+    s.[7] <- Char.chr 0x5A;
+    s.[8] <- Char.chr 0xE2;
+    s.[9] <- Char.chr 0x3C;*) (*no004*)
+    
+    (*s.[2] <- Char.chr 0x00;
+    s.[3] <- Char.chr 0x13;
+    s.[4] <- Char.chr 0xA2;
+    s.[5] <- Char.chr 0x00;
+    s.[6] <- Char.chr 0x41;
+    s.[7] <- Char.chr 0x26;
+    s.[8] <- Char.chr 0x90;
+    s.[9] <- Char.chr 0xA3;*) (*no18*)
+	
+   (* s.[2] <- Char.chr 0x00;
     s.[3] <- Char.chr 0x13;
     s.[4] <- Char.chr 0xa2;
     s.[5] <- Char.chr 0x00;
-    s.[6] <- Char.chr 0x40;
-    s.[7] <- Char.chr 0xb4;
-    s.[8] <- Char.chr 0x7f;
-    s.[9] <- Char.chr 0x42; *)
-		
-(*    s.[2] <- Char.chr 0x00;
+    s.[6] <- Char.chr 0x41;
+    s.[7] <- Char.chr 0x46;
+    s.[8] <- Char.chr 0xf1;
+    s.[9] <- Char.chr 0xc2;*) (*debugpc*)
+
+   (* s.[2] <- Char.chr 0x00;
     s.[3] <- Char.chr 0x13;
     s.[4] <- Char.chr 0xa2;
     s.[5] <- Char.chr 0x00;
-    s.[6] <- Char.chr 0x40;
-    s.[7] <- Char.chr 0xe5;
-    s.[8] <- Char.chr 0x46;
-    s.[9] <- Char.chr 0x53;*)
-		
-(*	s.[2] <- Char.chr 0x00;
-    s.[3] <- Char.chr 0x13;
-    s.[4] <- Char.chr 0xa2;
-    s.[5] <- Char.chr 0x00;
-    s.[6] <- Char.chr 0x40;
-    s.[7] <- Char.chr 0xf1;
-    s.[8] <- Char.chr 0xeb;
-    s.[9] <- Char.chr 0x1e; *)
+    s.[6] <- Char.chr 0x41;
+    s.[7] <- Char.chr 0x4f;
+    s.[8] <- Char.chr 0x1f;
+    s.[9] <- Char.chr 0x81;*)  (*no9*)
     s.[10] <- Char.chr 0xff;
     s.[11] <- Char.chr 0xfe;
     s.[12] <- Char.chr 0x0;

@@ -8,6 +8,7 @@
 
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "subsystems/ahrs/ahrs_float_mlkf.h"
 #include "state.h"
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/rc_nav/rc_nav_xbee.h"
@@ -27,11 +28,10 @@
 #include "subsystems/ins/ins_int.h"
 
 
-uint8_t  flight_mode;       //nav_gcs_mode/nav_rc_mode,requested autopilot_mode==NAV
+uint8_t  flight_mode;        //nav_gcs_mode/nav_rc_mode,requested autopilot_mode==NAV
+bool_t is_force_redundency;
+uint16_t flight_status = 0;  //assemble flight status, send to gcs in heartbeat msg
 
-uint16_t flight_status = 0; 
-
-//bool_t  nav_toward_wp_flag = FALSE;   //flag,use to clear old info in toward_one_wp flight
 struct EnuCoor_i wp_take_off;//(wp_ms_break,wp_start) not use  record home/mission break/toward flight start waypoint
 float distance2_to_takeoff;
 
@@ -40,24 +40,23 @@ static uint8_t flight_step = 0;
 
 Gcs_State task_state;
 
-enum Rc_Type rc_type = REAL_RC;
+enum Rc_Type rc_type = REAL_RC;     //for suport key RC and virtual RC(GCS)
 
-struct config_info ac_config_info;  //aircraft config infomation,have initial default value,change by gcs setting config
+struct config_info ac_config_info;  //aircraft config infomation,have initial default value,change by gcs set config msg
 
 static void ept_ms_run(void);
 static void nav_mode_enter(void);
 static void  ac_config_set_default(void);
 static void rc_mode_enter(void);
 static void gcs_mode_enter(void);
-static void mode_convert_for_gps_type(void);
-
 
 
 void nav_flight_init(void)
 { 
 	flight_mode = nav_gcs_mode;  //default in nav_kill_mode
-	task_init();            //mission initial
-	rc_nav_init();             //rc info initial
+	is_force_redundency = FALSE;
+	task_init();                 //mission initial
+	rc_nav_init();               //rc info initial
 	ac_config_set_default();
 }
 
@@ -88,14 +87,14 @@ void nav_flight(void)
   RunOnceEvery( NAV_FREQ,
       { if(flight_state==cruising)  distance2_to_takeoff = get_dist2_to_point(&wp_take_off); } );
 
+  RunOnceEvery( (NAV_FREQ/RC_PERIODIC_FRE), rc_periodic_task() );
+
   /*RC/GCS timer run*/
   tm_stimulate(TIMER_TASK_RC);
   tm_stimulate(TIMER_TASK_GCS);
   
   /*run except mission from monitoring*/
   ept_ms_run();
-
-  //mode_convert_for_gps_type();
   
   /*main nav run with flight step*/
   switch(flight_step)
@@ -122,6 +121,7 @@ void nav_flight(void)
 					monitoring_reset_emer();
 					flight_mode_enter(nav_gcs_mode);   //make sure get sp before take off,meas less
 					takeoff_done = FALSE;
+					Flag_AC_Flight_Ready = FALSE;
 					flight_step++;  /*once get gcs start cmd, jump to next step: take off*/
 				}
 			}
@@ -280,6 +280,10 @@ void nav_flight(void)
 			if( !land_motion(FALSE) )   //doing landing
 			{
 				task_init();  /*reset task*/
+				if(!autopilot_rc)
+				{
+					NavKillThrottle();	//add by lg
+				}
 				flight_step = 1;  /*land motion finished,jump to ready state*/
 			}
 			break;
@@ -289,10 +293,16 @@ void nav_flight(void)
 	}
 }
 
-
+/***********************************************************************
+* FUNCTION    : ept_ms_run
+* DESCRIPTION : exception mission parse, generate gcs_task_cmd/rc command
+* INPUTS      : void
+* RETURN      : void
+***********************************************************************/
 static void ept_ms_run(void)
 {
 	static uint8_t last_cmd = CM_NONE;
+	/*AC is landing now */
 	if(flight_state==landing)
 	{
 		monitor_cmd = CM_LAND;
@@ -370,28 +380,13 @@ static void ept_ms_run(void)
 	}
 }
 
-static void mode_convert_for_gps_type(void)
-{
-	if(ins_int.ned_pos_rc_reset)
-	{
-		if(ins_int.gps_type == GPS_RTK)
-		{
-			if(!ins_int.rtk_hf_realign)
-			{
-				rc_set_cmd_parse(0x01);   //
-			}
-		}
-		else if(ins_int.gps_type == GPS_UBLOX)
-		{
-			if(!ins_int.ublox_hf_realign)
-			{ 
-				rc_set_cmd_parse(0x01);   //rtk fail, set to nav_rc_mode
-			}
-		}
-	}
-}
 
-/*flight mode change transition*/
+/***********************************************************************
+* FUNCTION    : flight_mode_enter
+* DESCRIPTION : nav_gcs_mode/nav_rc_mode convert handle
+* INPUTS      : new mode
+* RETURN      : void
+***********************************************************************/
 void flight_mode_enter(uint8_t new_mode)
 {
 	if(flight_mode == new_mode) return;
@@ -421,10 +416,9 @@ void flight_mode_enter(uint8_t new_mode)
 	}	
 }
 
+/*AP_MODE_NAV enter handle*/
 static void nav_mode_enter(void)
 {
-	/*reset flight status ,in other mode*/
-	
 	flight_mode = nav_gcs_mode;  //default in nav_rc_mode,how to use nav_kill_mode?
 	rc_set_info_init();
 	pvtol_all_reset(TRUE);  //reset all motion step
@@ -442,6 +436,13 @@ static void gcs_mode_enter(void)
 {	
 }
 
+/***********************************************************************
+* FUNCTION    : get_flight_status
+* DESCRIPTION : assemble all flight status, one bit of flight_status 
+                express one flight status
+* INPUTS      : new mode
+* RETURN      : void
+***********************************************************************/
 uint16_t get_flight_status(void)
 {                
  /*flight_status:
@@ -494,8 +495,56 @@ uint16_t get_flight_status(void)
 	
 }
 
+static void force_use_all_redundency(bool_t enable)
+{
+	is_force_redundency = enable;
+	if(enable)
+	{
+		ins_int.virtual_rtk_pos_xy_valid = FALSE;
+		ins_int.virtual_rtk_pos_z_valid = FALSE;
+		ahrs_mlkf.virtual_rtk_heading_valid = FALSE;
+	}
+	else
+	{
+		ins_int.virtual_rtk_pos_xy_valid = TRUE;
+		ins_int.virtual_rtk_pos_z_valid = TRUE;
+		ahrs_mlkf.virtual_rtk_heading_valid = TRUE;
+	}
+}
 
-//called in initial
+uint8_t force_use_redundency_and_vrc(uint8_t enable)
+{
+	if(enable)
+	{
+		if(!is_force_redundency)
+		{
+			force_use_all_redundency(TRUE);
+			rc_set_cmd_parse(RC_SET_MANUAL);
+		}
+		return 1;
+	}
+	else
+	{
+		if(autopilot_in_flight)
+		{
+			return 1;
+		}
+		else
+		{
+			force_use_all_redundency(FALSE);
+			rc_set_cmd_parse(RC_SET_AUTO);
+			return 0;
+		}
+	}
+	return 0;
+}
+
+/***********************************************************************
+* FUNCTION    : ac_config_set_default
+* DESCRIPTION : set default ac_config_info during initial
+* INPUTS      : void
+* RETURN      : void
+***********************************************************************/
 static void  ac_config_set_default(void)
 {
 	ac_config_info.spray_concentration = 80;
@@ -505,5 +554,7 @@ static void  ac_config_set_default(void)
 	ac_config_info.spray_height = 3.0;
 	ac_config_info.spray_wide = 3.0;
 	ac_config_info.spray_speed = 3.0;
-	ac_config_info.spray_convert_type = WAYPOINT_FORWARD;
+	ac_config_info.spray_convert_type = WAYPOINT_P2P;
+	ac_config_info.rocker_remote_status=FALSE;
+	ac_config_info.force_redun_status = FALSE;
 }

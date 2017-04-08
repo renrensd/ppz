@@ -45,6 +45,8 @@ struct AccCali
 	float acc_SENS[3];
 };
 
+extern struct AccCali acc_cali;
+
 extern void acc_cali_init(void);
 extern void acc_cali_periodic(void);
 extern void acc_cali_event(void);
@@ -52,6 +54,8 @@ extern void acc_cali_event(void);
 extern void sensors_acc_cali_start(void);
 extern void sensors_acc_cali_stop(void);
 
-extern struct AccCali acc_cali;
+extern void set_acc_cali_enable(uint8_t value);
+
+
 
 #endif

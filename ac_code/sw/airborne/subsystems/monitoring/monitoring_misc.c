@@ -40,6 +40,7 @@
 #include "subsystems/ahrs/ahrs_float_mlkf.h"
 #include "subsystems/ins/ins_int.h"
 #include "subsystems/fram/fram_if.h"
+#include "modules/gps/gps2_ublox.h"
 
 
 /*===VARIABLES========================================================*/
@@ -175,58 +176,58 @@ void battery_flight_check(void)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
-void gps_flight_check(void) 
-{  
-    if( GpsFixValid() && gps.flag_rtk)
+void gps_flight_check(void)
+{
+	if(GpsFixValid())
 	{
-		if( gps.p_stable && ins_int.virtual_rtk_v_valid)
-        {   //could be recovered
-			em[GPS_ACC].active =0;
-			em[GPS_ACC].finished =0;
-			em[GPS_LOST].active =0;
-			em[GPS_LOST].finished =0;
-			#if TEST_MSG
-			gps_flight=0;
-			#endif
+		if (ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid())
+		{   //could be recovered
+			em[GPS_ACC].active = 0;
+			em[GPS_ACC].finished = 0;
+			em[GPS_LOST].active = 0;
+			em[GPS_LOST].finished = 0;
+#if TEST_MSG
+			gps_flight = 0;
+#endif
 		}
 		else
-		{   
-			if(gps.pacc <6000)  
+		{
+			if (gps.pacc < 6000)
 			{
 				em[GPS_ACC].alert_grade = 2;
 			}
-		    else  
+			else
 			{
 				em[GPS_ACC].alert_grade = 3;
-		    }
-			set_except_mission(GPS_ACC,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
-			#if TEST_MSG
-			gps_flight=1;
-			#endif
+			}
+			set_except_mission(GPS_ACC, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+#if TEST_MSG
+			gps_flight = 1;
+#endif
 		}
-    }
+	}
 	else
 	{
-		set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,2, FALSE,TRUE,3);	
-		//set_except_mission(GPS_LOST,TRUE,FALSE, TRUE,2, FALSE,FALSE,3);	
-		#if TEST_MSG
-		gps_flight=2;
-		#endif
+		set_except_mission(GPS_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+#if TEST_MSG
+		gps_flight = 2;
+#endif
 	}
-   #ifdef USE_GPS_HEADING
-	if(gps.h_stable && ahrs_mlkf.virtual_rtk_h_valid)
+
+#ifdef USE_GPS_HEADING
+	if(ahrs_mlkf_is_rtk_heading_valid())
 	{
 		em[IMU_MAG_EMI].active = 0;
 		em[IMU_MAG_EMI].finished = 0;
 	}
 	else
 	{
-		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);
+		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
 	}
-   #endif	
+#endif
 
-   #ifdef USE_GPS2_UBLOX
-   	if(gps2.h_stable)
+#ifdef USE_GPS2_UBLOX
+	if(gps2.p_stable)
 	{
 		em[GPS_UBLOX_FAIL].active = 0;
 		em[GPS_UBLOX_FAIL].finished = 0;
@@ -235,12 +236,15 @@ void gps_flight_check(void)
 	{
 		set_except_mission(GPS_UBLOX_FAIL,TRUE,FALSE, FALSE,0, FALSE,FALSE,1);
 	}
-   #endif
-	
+#endif
 }
 
-
-
+/***********************************************************************
+* FUNCTIONS   : ops_ground_check
+* DESCRIPTION : check ops communication
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
 bool_t ops_ground_check(void)
 {
 	if(ops_info.con_flag == OPS_NOT_CONNECT)
@@ -277,7 +281,7 @@ void ops_flight_check(void)
 	}
 	else
 	{   
-		if(ops_info.sys_error>>1)
+		if(ops_info.sys_error>>1)        //see spray protocol
 		{
 			set_except_mission(OPS_BLOCKED,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);			
 		}
@@ -339,13 +343,13 @@ void lift_flight_check(void)
 	/*ac lower setpoint height >1m and thrust cmd >MAX_ERROR_Z_THRUST*/
 	if( thrust_command_monitor() )  
 	{
-		set_except_mission(LIFT_POWER,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	//land direct
+		set_except_mission(LIFT_POWER,TRUE,FALSE, TRUE,0XFF, FALSE,FALSE,3);	//land direct
 	}
 
     /*yaw command overrun continual 3s*/
 	if( yaw_command_monitor() )
 	{
-		set_except_mission(LIFT_POWER,TRUE,FALSE, FALSE,0, FALSE,TRUE,3);	//land direct
+		set_except_mission(LIFT_POWER,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	//land direct
 	}
 
 	/*keep 1s att > 60deg, lock motors direct !!!*/
@@ -463,9 +467,9 @@ static bool_t yaw_command_monitor(void)
 	if( abs(stabilization_cmd[COMMAND_YAW]) > MAX_ERROR_YAW_COMMAND )
 	{
 		counter++;
-		if(counter > MONITORING_FREQUENCY)  //continual 1s
+		if(counter > MONITORING_FREQUENCY * 5)  //continual 5s
 		{
-			counter = MONITORING_FREQUENCY;
+			counter = MONITORING_FREQUENCY * 5;
 			return TRUE;
 		}
 	}

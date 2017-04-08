@@ -30,7 +30,10 @@
 
 /**** Declaration of variables ****/
 
-
+extern void bbox_msg_request_upgrade(void);
+extern void bbox_msg_ready_status(void);
+extern void bbox_msg_send_frame(uint8_t *pt_value,uint8_t length);
+void bbox_msg_update_over(uint8_t num,uint8_t *arg);
 /**** Declaration of functions ****/
 extern void bbox_msg_heart_beat(void);
 extern void bbox_msg_log_start(void);

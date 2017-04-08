@@ -442,3 +442,8 @@ static void sensors_acc_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, 
 	}
 }
 
+void set_acc_cali_enable(uint8_t value)
+{
+	acc_cali.enable = value;
+}
+

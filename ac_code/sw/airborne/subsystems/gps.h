@@ -105,7 +105,6 @@ struct GpsState {
   uint32_t last_msg_time;        ///< cpu time in sec at last received GPS message
   uint16_t reset;                ///< hotstart, warmstart, coldstart
   bool_t p_stable;                 ///< position stable flag
-  bool_t flag_rtk;
 
   float heading;
   bool_t h_stable;              ///< heading stable flag

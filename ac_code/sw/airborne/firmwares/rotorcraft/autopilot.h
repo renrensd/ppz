@@ -64,6 +64,7 @@ extern bool_t autopilot_rc;
 
 extern bool_t autopilot_power_switch;
 
+extern bool_t Flag_AC_Flight_Ready; //add by lg
 extern void autopilot_init(void);
 extern void autopilot_periodic(void);
 extern void autopilot_on_rc_frame(void);
@@ -71,7 +72,7 @@ extern void autopilot_set_mode(uint8_t new_autopilot_mode);
 extern void autopilot_set_motors_on(bool_t motors_on);
 extern void autopilot_check_in_flight(bool_t motors_on);
 extern void autopilot_ready_check(void);
-
+extern void check_joystick_enable(uint8_t status);
 extern bool_t autopilot_ground_detected;
 extern bool_t autopilot_detect_ground_once;
 

@@ -22,7 +22,7 @@
 #include "subsystems/mission/task_spray_misc.h"
 
 #include "subsystems/ops/ops_msg_if.h"
-
+#include "subsystems/ops/ops_app_if.h" 
 #include "firmwares/rotorcraft/nav_flight.h"
 
 #include "subsystems/datalink/downlink.h"
@@ -46,8 +46,8 @@ bool_t hover_flag;
 bool_t manual_pause_flag;
 static bool_t spray_switch_flag;     /*usefor sign spray_line start and end*/
 static bool_t spray_caculate_flag;
-static bool_t height_align;
-static bool_t heading_align;   //only for debug
+static bool_t height_align;    //flag of height check for next line
+static bool_t heading_align;   //flag of heading check for next line
 
 float sprayed_lines_distance = 0.0f;
 float current_sprayed_distance = 0.0f;
@@ -78,7 +78,7 @@ static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCo
 static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp);
 static float set_path_flight_info(uint8_t type);
 
-void send_current_task_state(uint8_t wp_state); 
+void send_current_task_state(uint8_t wp_state);
 void send_current_task(uint8_t wp_state);
 
 
@@ -130,7 +130,7 @@ bool_t achieve_next_wp(void)
 	next_wp.action = task_wp[0].action;
 	next_wp.wp_id = task_wp[0].wp_id;
 
-	/*remove first waypoint*/
+	/*remove forepart waypoint*/
 	for(uint8_t i=0; i<nb_pending_wp; i++)
 	{
 		TASK_WP_LEFT_SHIFT(i+1, 1);
@@ -199,6 +199,7 @@ Gcs_State gcs_task_run(void)
 		case GCS_CMD_START:
 			if(!from_wp_useful)
 			{
+				ops_info.sum_sprayed_distance = 0; //reset at start
 				if( !get_start_line() )
 				{
 					//waypoints is less than 2,error generate
@@ -285,6 +286,7 @@ Gcs_State gcs_task_run(void)
 
 		case GCS_CMD_LOCK:
 			gcs_state = GCS_RUN_LOCK;
+			if(!autopilot_rc) NavKillMode();		//add by lg
 			//NavKillThrottle();  //crash motion
 			break;
 			
@@ -353,6 +355,12 @@ bool_t gcs_hover_enter(void)
 	}
 }
 
+/***********************************************************************
+* FUNCTION    : set_auto_stop_brake
+* DESCRIPTION : give brake accel grade according to the situation 
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
 void set_auto_stop_brake(void)
 {
 	if(last_task_cmd != gcs_task_cmd)
@@ -377,6 +385,7 @@ void set_auto_stop_brake(void)
 	}
 }
 
+/*reseve*/
 void get_shortest_reland_wp(void)
 {
 	float distance_cur_reland[NB_RESERVE_LAND];
@@ -465,6 +474,7 @@ bool_t run_normal_task(void)
 				else
 				{
 					current_sprayed_distance = sqrt(get_dist2_to_point(&(from_wp.wp_en)));   //caculate sprayed distance of curent line
+					ops_info.sum_sprayed_distance = current_sprayed_distance + sprayed_lines_distance;
 				}
 			}
 			break;
@@ -502,9 +512,8 @@ bool_t run_normal_task(void)
 			else  //ac_config_info.spray_convert_type==WAYPOINT_FORWARD/P2P
 			{
 				//task_nav_wp(struct EnuCoor_i first_wp)
-				/*if finish convert,get next_wp*/				
-				//if( !task_nav_wp(next_wp.wp_en) )  replace with route guidance
-				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
+				/*if finish convert,get next_wp*/
+				if( !task_nav_wp(next_wp.wp_en) )
 				{
 					/*no more task_wp to run*/
 					if( !achieve_next_wp() )  
@@ -630,8 +639,15 @@ void spray_work_run(void)
 	
 }
 
+/***********************************************************************
+* FUNCTION    : task_wp_empty_handle
+* DESCRIPTION : no task handle
+* INPUTS      : none
+* RETURN      : 
+***********************************************************************/
 bool_t task_wp_empty_handle(void)
 {
+	/*task break or finish*/
 	if( HOVERING==next_wp.action || TERMINATION==next_wp.action )
 	{
 		/*waypoint info move from next to from*/
@@ -650,18 +666,24 @@ bool_t task_wp_empty_handle(void)
 	}
 }
 
+/***********************************************************************
+* FUNCTION    : set_path_flight_info
+* DESCRIPTION : according to the action get flight height and speed
+* INPUTS      : waypoint action
+* RETURN      : flight height
+***********************************************************************/
 static float set_path_flight_info(uint8_t type)
 {
   switch(type) 
   {
   		case FLIGHT_PATH:
-			//gh_set_max_speed(ac_config_info.max_flight_speed);
-			nav_set_flight_speed(ac_config_info.max_flight_speed);
+			gh_set_max_speed(ac_config_info.max_flight_speed);
+			//nav_set_flight_speed(ac_config_info.max_flight_speed);
 			return ac_config_info.max_flight_height;
 			
 		case SPRAY_PATH:
-			//gh_set_max_speed(ac_config_info.spray_speed);
-			nav_set_flight_speed(ac_config_info.spray_speed);
+			gh_set_max_speed(ac_config_info.spray_speed);
+			//nav_set_flight_speed(ac_config_info.spray_speed);
 			return ac_config_info.spray_height;
 			
 		default:
@@ -669,8 +691,12 @@ static float set_path_flight_info(uint8_t type)
   }
 }
 
-/** Navigation function set navigation_target
-*/
+/***********************************************************************
+* FUNCTION    : task_nav_update_target
+* DESCRIPTION : set current posion to navigation target
+* INPUTS      : 
+* RETURN      : 
+***********************************************************************/
 static inline bool_t task_nav_update_target(struct EnuCoor_i enu_wp)
 {
    VECT3_COPY(navigation_target, enu_wp);
@@ -695,7 +721,7 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 {
   struct EnuCoor_i target_wp = first_wp;
 
-  if (nav_approaching_target(&target_wp, NULL, 0.3)) 
+  if (nav_approaching_target(&target_wp, NULL, 0.5)) 
   {
     return FALSE;
   }
@@ -716,7 +742,7 @@ static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCo
   static float flight_height_last = 0.0f;  //use reord last time flight height,once changed it will adjust the height before forword flight
 
   float flight_height = set_path_flight_info(flight_type); 
-  NavVerticalAltitudeMode(flight_height, 0.);
+  NavVerticalAltitudeMode(flight_height, 0.);  //set flight height setpoint
   
   if(flight_height_last != flight_height)
   {
@@ -739,7 +765,7 @@ static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCo
   }
   else
   {
-  	nav_set_heading_forward_line(&p_start_wp, &p_end_wp);  /*it can caculate once economize CPU*/
+  	nav_set_heading_forward_line(&p_start_wp, &p_end_wp); 
   }
   
   heading_align = nav_check_heading();
@@ -750,7 +776,8 @@ static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCo
   return FALSE;
 }
 
-
+/** path run,set horizontal_mode to ROUTE
+*/
 static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp)
 {
   //Check proximity and wait for 'duration' seconds in proximity circle if desired 
@@ -766,6 +793,8 @@ static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i
   
 }
 
+/** for debug
+*/
 void send_task_info_pc(void) 
 {
 	#if PERIODIC_TELEMETRY
@@ -817,7 +846,12 @@ void send_task_info_pc(void)
    #endif
 }
 
-
+/***********************************************************************
+* FUNCTION    : send_current_task_state
+* DESCRIPTION : periodic send task state to gcs
+* INPUTS      : state express in line or out of line
+* RETURN      : 
+***********************************************************************/
 void send_current_task_state(uint8_t wp_state) 
 {
 	uint16_t system_time = sys_time.nb_sec;

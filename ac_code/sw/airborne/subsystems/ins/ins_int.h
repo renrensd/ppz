@@ -94,8 +94,8 @@ struct InsInt
   uint32_t baro_to_gps_count;
   float baro_to_gps_offset_step;
   float baro_to_gps_z_step;
-  bool_t virtual_rtk_v_valid;
-  bool_t virtual_rtk_h_valid;
+  bool_t virtual_rtk_pos_z_valid;
+  bool_t virtual_rtk_pos_xy_valid;
   //
   float R_rtk_pos_z_setting;
   float R_rtk_pos_z;
@@ -116,6 +116,8 @@ struct InsInt
   struct FloatVect2 gps_pos_m_ned;
   struct FloatVect2 gps_speed_m_ned;
 
+  uint8_t force_use_redundency;
+
 #if 1 //USE_SONAR
   bool_t update_on_agl; ///< use sonar to update agl if available
 #endif
@@ -132,8 +134,12 @@ extern struct InsInt ins_int;
 #endif
 
 extern void ins_int_register(void);
-extern bool_t ins_int_check_realign(void);
 extern void ins_int_SetType(enum _e_ins_gps_type type);
 extern void ins_int_task(void);
+extern bool_t ins_int_check_hf_realign_done(void);
+extern bool_t ins_int_is_rtk_pos_xy_valid(void);
+extern bool_t ins_int_is_rtk_pos_z_valid(void);
+extern bool_t ins_int_is_rtk_best_accu(void);
+extern void ins_int_SetForceRedun(uint8_t force);
 
 #endif /* INS_INT_H */

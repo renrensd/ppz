@@ -24,6 +24,8 @@
 #endif	/* TRANSPTA */
 #include "subsystems/monitoring/monitoring.h"
 
+#include "datalink_ack.h"
+
 //#include "subsystems/datalink/downlink.h"
 //#include "uplink_ac.h"
 
@@ -41,10 +43,12 @@ void downlink_gcs_periodic(void)  //run in DOWNLINK_GCS_FREQUENCY
 	              { 
 					#ifndef COMM_DIRECT_CONNECT
 					if(xbee_con_info.gcs_con_available==FALSE) return;
-					send_heart_beat_A2G_msg(); } );
+					send_heart_beat_A2G_msg(); 
+					send_gcs_components_info();                       } );
 					#else
 					if((xbee_con_info.pair_state == XBEE_PAIR_STATE_N2P)&&(xbee_con_info.pair_ok == FALSE) ) return;
-					send_heart_beat_A2G_msg(); } );
+					send_heart_beat_A2G_msg();  
+					send_gcs_components_info();                       } );
 					#endif	/* COMM_DIRECT_CONNECT */
 				    
 }
@@ -152,6 +156,7 @@ void send_rc_info_A2P_msg(void)
 	                      &rc_set_info.vtol,
 	                      &rc_set_info.home,
 	                      &rc_set_info.spray_grade,
+												&rc_set_info.locked,
 	                      &rc_motion_cmd,
 	                      &rc_set_cmd,
 	                      &rc_motion_info.rotation_rate,

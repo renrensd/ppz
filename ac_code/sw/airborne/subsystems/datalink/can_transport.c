@@ -149,9 +149,18 @@ static void count_bytes(struct can_transport *trans __attribute__((unused)),
   	dev->nb_bytes += bytes;
 }
 
+uint8_t bbox_upgrade_status=FALSE;
 static int check_available_space(struct can_transport *trans __attribute__((unused)), struct link_device *dev, uint8_t bytes)
 {
-	return dev->check_free_space(dev->periph, bytes);
+	if(bbox_upgrade_status==FALSE)
+	{
+		return dev->check_free_space(dev->periph, bytes);
+	}
+	else if(bbox_upgrade_status==TRUE)
+	{
+		return FALSE;
+	}
+	
 }
 
 static bool_t can_check_free_space(struct can_transport *p, uint8_t len)

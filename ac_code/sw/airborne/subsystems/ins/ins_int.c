@@ -66,6 +66,8 @@
 #include "math/my_math.h"
 #include "modules/ins/ins_ublox.h"
 #include "mcu_periph/sys_time.h"
+#include "subsystems/rc_nav/rc_nav_xbee.h"
+#include "firmwares/rotorcraft/nav_flight.h"
 
 #define R_BARO					(1000.0f)
 #define R_BARO_OFFSET		    (10.0f)
@@ -211,6 +213,7 @@ static void ins_int_init(void);
 static void ins_int_propagate(struct Int32Vect3 *accel, float dt);
 static void ins_int_gps_switch(enum _e_ins_gps_type type);
 static inline void gpss_state_update(void);
+static void ins_int_set_hf_realign_done(bool_t done);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -295,9 +298,11 @@ static void ins_int_init(void)
   ins_int.R_baro = R_BARO;
   ins_int.R_baro_offset = R_BARO_OFFSET;
   ins_int.ekf_state = INS_EKF_BARO;
-  ins_int.virtual_rtk_v_valid = TRUE;
-  ins_int.virtual_rtk_h_valid = TRUE;
+  ins_int.virtual_rtk_pos_z_valid = TRUE;
+  ins_int.virtual_rtk_pos_xy_valid = TRUE;
 #endif
+
+  ins_int.force_use_redundency = FALSE;
 
 #if USE_SONAR
   ins_int.update_on_agl = FALSE;  //INS_SONAR_UPDATE_ON_AGL; default FALSE, it will change in mornitoring
@@ -340,9 +345,15 @@ static void ins_int_init(void)
   ins_int.gps_type = GPS_RTK;
 }
 
+void ins_int_SetForceRedun(uint8_t force)
+{
+	ins_int.force_use_redundency = force;
+	force_use_redundency_and_vrc(force);
+}
+
 static inline void gpss_state_update(void)
 {
-	if(gps_nmea.pos_type != TIME_OUT )
+	if(RTK_GPS.p_stable)
 	{
 		if(UBLOX_GPS.p_stable)
 		{
@@ -366,6 +377,55 @@ static inline void gpss_state_update(void)
 	}
 }
 
+static void ins_int_set_hf_realign_done(bool_t done)
+{
+	ins_int.hf_realign_done = done;
+}
+
+bool_t ins_int_check_hf_realign_done(void)
+{
+	if(ins_int.hf_realign_done)
+	{
+		ins_int.hf_realign_done = FALSE;
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+bool_t ins_int_is_rtk_best_accu(void)
+{
+	if((gps_nmea.gps_qual == 52) && gps.p_stable)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+bool_t ins_int_is_rtk_pos_xy_valid(void)
+{
+	return (GpsFixValid() && (gps_nmea.pos_type > PSRDIFF) && gps.p_stable && ins_int.virtual_rtk_pos_xy_valid);
+}
+
+bool_t ins_int_is_rtk_pos_z_valid(void)
+{
+	if(GpsFixValid() && ins_int.ltp_initialized && ins_int.vf_stable && ins_int.virtual_rtk_pos_z_valid)
+	{
+		float r_unstable = (float) ins_int.rtk_gps_sd_ned.z / 10000.0;
+		r_unstable = r_unstable * r_unstable;
+		return (r_unstable < 0.04f);
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
 void ins_int_task(void)
 {
 	gpss_state_update();
@@ -379,10 +439,6 @@ void ins_int_task(void)
 #if INS_USE_GPS_ALT
 #define BARO_TO_GPS_TIME	(10)
 
-			float r_unstable = (float) ins_int.rtk_gps_sd_ned.z / 10000.0;
-			r_unstable = r_unstable * r_unstable;
-			bool_t p_stable_v = (r_unstable < 0.04f);
-
 			if (RTK_GPS.p_stable && ins_int.vf_realign)
 			{
 				ins_int.vf_realign = FALSE;
@@ -390,7 +446,7 @@ void ins_int_task(void)
 				ins_int.vf_stable = TRUE;
 			}
 
-			if (p_stable_v && ins_int.vf_stable && ins_int.virtual_rtk_v_valid)
+			if (ins_int_is_rtk_pos_z_valid())
 			{
 				if (ins_int.ekf_state == INS_EKF_BARO)
 				{
@@ -413,15 +469,6 @@ void ins_int_task(void)
 				}
 				else if (ins_int.ekf_state == INS_EKF_GPS)
 				{
-					if (RTK_GPS.p_stable)
-					{
-						if (r_unstable < ins_int.R_rtk_pos_z_setting)
-						{
-							r_unstable = ins_int.R_rtk_pos_z_setting;
-						}
-					}
-					ins_int.R_rtk_pos_z = r_unstable;
-
 					//vff_update_z_conf(ins_int.gps_body_z, ins_int.R_rtk_pos_z);
 					vff_update_z_conf(ins_int.gps_body_z, ins_int.R_rtk_pos_z_setting);
 					vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
@@ -433,6 +480,7 @@ void ins_int_task(void)
 				if (ins_int.ekf_state != INS_EKF_BARO)
 				{
 					ins_int.ekf_state = INS_EKF_BARO;
+					vff_init_P();
 				}
 			}
 
@@ -441,11 +489,14 @@ void ins_int_task(void)
 
 
 			/****************start of horizontal infomation fuse*****************/
-			if ( (gps_nmea.pos_type > PSRDIFF) && ins_int.virtual_rtk_h_valid )
+			if ( ins_int_is_rtk_pos_xy_valid() )
 			{
 				if (ins_int.gps_type != GPS_RTK)
 				{
-					ins_int_gps_switch(GPS_RTK);
+					if(ins_int_is_rtk_best_accu())
+					{
+						ins_int_gps_switch(GPS_RTK);
+					}
 				}
 
 #if USE_HFF
@@ -458,8 +509,8 @@ void ins_int_task(void)
 				if (ins_int.rtk_hf_realign)
 				{
 					ins_int.rtk_hf_realign = FALSE;
-					ins_int.hf_realign_done = TRUE;
 					b2_hff_realign(ins_int.gps_pos_m_ned, ins_int.gps_speed_m_ned);
+					ins_int_set_hf_realign_done(TRUE);
 				}
 
 				/*run horizontal filter*/
@@ -494,6 +545,7 @@ void ins_int_task(void)
 		if (ins_int.ekf_state != INS_EKF_BARO)
 		{
 			ins_int.ekf_state = INS_EKF_BARO;
+			vff_init_P();
 		}
 	}
 
@@ -511,8 +563,8 @@ void ins_int_task(void)
 				if (ins_int.ublox_hf_realign)
 				{
 					ins_int.ublox_hf_realign = FALSE;
-					ins_int.hf_realign_done = TRUE;
 					b2_hff_realign(ins_int.gps_pos_m_ned, ins_int.gps_speed_m_ned);
+					ins_int_set_hf_realign_done(TRUE);
 				}
 
 				b2_hff_set_gps_r(ins_int.R_ublox_pos, ins_int.R_ublox_vel);
@@ -528,19 +580,6 @@ void ins_int_task(void)
 	}
 }
 
-bool_t ins_int_check_realign(void)
-{
-	if(ins_int.hf_realign_done)
-	{
-		ins_int.hf_realign_done = FALSE;
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
-}
-
 void ins_int_SetType(enum _e_ins_gps_type type)
 {
 	ins_int_gps_switch(type);
@@ -548,8 +587,8 @@ void ins_int_SetType(enum _e_ins_gps_type type)
 
 void ins_reset_local_origin(void)
 {
-#ifdef USE_GPS  //called by flightplan init,set gps's postion as local ins (ltp_def is base point of ins)
-	if(RTK_GPS.p_stable)
+#if USE_GPS  //called by flightplan init,set gps's postion as local ins (ltp_def is base point of ins)
+	if(ins_int_is_rtk_best_accu())
 	{
 		ltp_def_from_ecef_i(&ins_int.ltp_def, &RTK_GPS.ecef_pos);
 		ins_int.ltp_def.lla.alt = RTK_GPS.lla_pos.alt;
@@ -573,7 +612,7 @@ void ins_reset_local_origin(void)
 
 void ins_reset_altitude_ref(void)
 {
-#ifdef USE_GPS //using state.ned_origin to set ins origin
+#if USE_GPS //using state.ned_origin to set ins origin
 	struct LlaCoor_i lla =
 	{ .lat = state.ned_origin_i.lla.lat, .lon = state.ned_origin_i.lla.lon, .alt = RTK_GPS.lla_pos.alt };
 	ltp_def_from_lla_i(&ins_int.ltp_def, &lla);
@@ -587,7 +626,11 @@ void ins_reset_altitude_ref(void)
 static void ins_int_propagate(struct Int32Vect3 *accel, float dt)
 { 
   /*not propagate until system time > 6s*/
-  if( get_sys_time_msec()< 6000 )  return;  
+  if( get_sys_time_msec()< 6000 )  return;
+  if(!ahrs_mlkf.is_aligned)
+  {
+  	return;
+  }
   
   /* untilt accels */
   struct Int32Vect3 accel_meas_body;

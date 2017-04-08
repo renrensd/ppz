@@ -4,21 +4,21 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        :
-* Module        :
-* Instance      :
-* Description   :
+* Object        : 
+* Module        : 
+* Instance      : 
+* Description   : 
 *-----------------------------------------------------------------------
-* Version:
-* Date:
-* Author:
+* Version: 
+* Date: 
+* Author: 
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-*
+* 
 *=====================================================================*/
 
-/**** System include files ****/
+/**** System include files ****/  
 
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/gps.h"
@@ -70,6 +70,7 @@
 #define AUTOPILOT_FAIL 8
 #define RC_FAIL 9
 */
+/*sensors fail state*/
 enum Battery_Check
 {
 	BATTERY_RUNING,
@@ -83,7 +84,7 @@ enum Board_Check
 	BOARD_FRAM_ERROR
 };
 enum Imu_Check
-{
+{	
 	IMU_RUNNING,
 	IMU_ACC_FREQUNCE_ERROR,
 	IMU_ACC_UPDATE_ERROR,
@@ -100,7 +101,7 @@ enum Imu_Check
 };
 
 enum Baro_Check
-{
+{	
 	BARO_RUNNING,
 	BARO_FREQUNCE_ERROR,
 	BARO_UPDATE_ERROR,
@@ -129,17 +130,17 @@ enum Ground_Check_Step ground_check_step;  //use to sign step in ground check;
 /*monitoring state*/
 #define GROUND_MONITORING 0
 #define FLIGHT_MONITORING 1
-uint8_t monitor_cmd;
+uint8_t monitor_cmd;  
 uint8_t em_alert_grade;
 
-static bool_t monitoring_state;  //monitoring state
-static bool_t run_monitoring_flag;
-bool_t ground_check_pass;  //global var use to sign ground monitoring result
+static bool_t monitoring_state;           //monitoring state
+static bool_t run_monitoring_flag;        //if poweron selftest fail set false to stop connitual
+bool_t ground_check_pass;                 //global var use to sign ground monitoring result
 
-uint16_t monitoring_fail_code;
-uint32_t em_code;   /*one bit express one emergency in EPT_MS_NB sequence*/
+uint16_t monitoring_fail_code;            //poweron selftest error code
+uint32_t em_code;                         /*one bit express one emergency in EPT_MS_NB sequence*/
 
-struct except_mission em[EPT_MS_NB];
+struct except_mission em[EPT_MS_NB];      //emergency var, store raw info 
 
 bool_t rc_cmd_interrupt;
 bool_t gcs_cmd_interrupt;
@@ -193,7 +194,7 @@ void monitoring_init(void)
 	gcs_cmd_interrupt = FALSE;
 	mode_convert_a2m = FALSE;
 	em_alert_grade = 0;
-	monitor_cmd = CM_NONE;
+	monitor_cmd = CM_NONE;	
 }
 
 int8_t monitoring_reset_emer(void)
@@ -212,21 +213,27 @@ int8_t monitoring_reset_emer(void)
 	}
 }
 
+/***********************************************************************
+* FUNCTION    : monitoring_led_update
+* DESCRIPTION : status led(install AC cap) manage
+* INPUTS      : void
+* RETURN      : void
+***********************************************************************/
 static void monitoring_led_update(void)
 {
 	if(run_monitoring_flag)
 	{
-		if(monitoring_state == GROUND_MONITORING)
+		if(monitoring_state == GROUND_MONITORING) 
 		{
 		   LED_ON(GREED_LED);
 		   LED_TOGGLE(RED_LED);  //red led toggle, sign running ground monitoring
 		}
-		else
+		else 
 		{
 			if(em_code)
 			{
-				LED_OFF(GREED_LED);
-				LED_TOGGLE(RED_LED);
+				LED_OFF(GREED_LED); 
+				LED_TOGGLE(RED_LED);  
 			}
 			else
 			{
@@ -242,6 +249,12 @@ static void monitoring_led_update(void)
 	}
 }
 
+/***********************************************************************
+* FUNCTION    : monitoring_msg_handle
+* DESCRIPTION : monitoring module msg
+* INPUTS      : void
+* RETURN      : void
+***********************************************************************/
 static inline void monitoring_msg_handle(void)
 {
 	static uint8_t fre_counter = 0;
@@ -260,13 +273,13 @@ static inline void monitoring_msg_handle(void)
 		monitoring_led_update();
 
 		#if USE_MANU_DEBUG
-		DOWNLINK_SEND_MONITORING(MdebugChannel, MdebugDevice, &ground_check_step, &monitoring_fail_code);
-		#endif
+		DOWNLINK_SEND_MONITORING(MdebugChannel, MdebugDevice, &ground_check_step, &monitoring_fail_code);		
+		#endif 	
 	    #if PERIODIC_TELEMETRY
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	    DOWNLINK_SEND_MONITORING(DefaultChannel, DefaultDevice, &ground_check_step, &monitoring_fail_code);
 		#if TEST_MSG
-		DOWNLINK_SEND_MONI_MSG(DefaultChannel, DefaultDevice,
+		DOWNLINK_SEND_MONI_MSG(DefaultChannel, DefaultDevice, 
 							&fs_imu,
 							&fre_imu,
 							&fix_imu,
@@ -291,17 +304,23 @@ static inline void monitoring_msg_handle(void)
 	}
 }
 
+/***********************************************************************
+* FUNCTION    : monitoring_periodic
+* DESCRIPTION : monitoring periodic task
+* INPUTS      : void
+* RETURN      : void
+***********************************************************************/
 void monitoring_periodic(void)
 {
 	monitoring_task();
 
 	if(run_monitoring_flag)
 	{
-		if(monitoring_state == GROUND_MONITORING)
+		if(monitoring_state == GROUND_MONITORING) 
 		{  //want to return ground_monitoring(),need reset sensor ground check flag
 		    ground_monitoring();
 		}
-		else
+		else 
 		{
 			flight_monitoring();  //once ground_monitoring() finished,it will run.
 		}
@@ -310,6 +329,12 @@ void monitoring_periodic(void)
 	monitoring_msg_handle();
 }
 
+/***********************************************************************
+* FUNCTION    : monitoring_task
+* DESCRIPTION : periodic task
+* INPUTS      : void
+* RETURN      : void
+***********************************************************************/
 static void monitoring_task(void)  //10hz
 {
 	RunOnceEvery( MONITORING_FREQUENCY/2, imu_frequence_check() );     //need periodic =2hz
@@ -318,7 +343,7 @@ static void monitoring_task(void)  //10hz
 	RunOnceEvery( MONITORING_FREQUENCY/5, rc_lost_check() );           //need periodic =5hz
 	RunOnceEvery( MONITORING_FREQUENCY/2, gcs_lost_check() );           //need periodic =2hz
 	alert_grade_update();
-	except_mission_manage();
+	except_mission_manage();	
 }
 
 void ground_monitoring_init(void)
@@ -328,8 +353,7 @@ void ground_monitoring_init(void)
 }
 /***********************************************************************
 * FUNCTION    : ground_monitoring
-* DESCRIPTION : systems will do self_inspection once on_ground
-*               self_inspection only one time until finished flight
+* DESCRIPTION : poweron self test
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -415,14 +439,34 @@ void ground_monitoring(void)
 			monitoring_fail_code = OPS_NO_LINK;
 		}
 		break;
+	case UBLOX_CHECK:
+#ifdef USE_GPS2_UBLOX
+		if( gps2.p_stable)
+#else
+		if (1)
+#endif
+		{
+			monitoring_fail_code = PASS;
+			ground_check_step++;  //next step
+		}
+		else
+		{
+			monitoring_fail_code = GPS_WAITING_FIX;
+		}
 
-	case GPS_CHECK:
+		if ((!gps2.alive) && ((get_sys_time_msec() - time_record) > 5000))
+		{
+			monitoring_fail_code = GPS_HW_ERROR;  //no gps msg received
+		}
+		break;
+	case RTK_CHECK:
 		if ( GpsFixValid() && gps.p_stable
 #ifdef USE_GPS_HEADING
-				&& gps.h_stable && (gps.num_sv > 15)   //default use zhonghaida RTK
+				&& gps.h_stable
+				&& (gps.num_sv>15)   //default use zhonghaida RTK
 #endif
 #ifdef USE_GPS2_UBLOX
-				//&& gps2.p_stable
+				&& gps2.p_stable
 #endif
 				)
 		{
@@ -451,7 +495,6 @@ void ground_monitoring(void)
 			monitoring_fail_code = GPS_HW_ERROR;  //no gps msg received
 		}
 		break;
-
 	case CALIBRATION_CHECK:
 		time_record = get_sys_time_msec();
 		ground_check_step++;  //next step
@@ -479,18 +522,30 @@ void ground_monitoring(void)
 			ground_check_pass = TRUE;
 		}
 		break;
-
 	default:
 		break;
 	}
 
 	if ( PASS != monitoring_fail_code)
 	{
-		if ((ground_check_step != GPS_CHECK)
-				|| ((ground_check_step == GPS_CHECK) && (monitoring_fail_code == GPS_HW_ERROR)))
+		bool_t fail = FALSE;
+
+		if ((ground_check_step != UBLOX_CHECK) && (ground_check_step != RTK_CHECK))
+		{
+			fail = TRUE;
+		}
+		if ((ground_check_step == UBLOX_CHECK) && (monitoring_fail_code == GPS_HW_ERROR))
+		{
+			fail = TRUE;
+		}
+		if ((ground_check_step == RTK_CHECK) && (monitoring_fail_code == GPS_HW_ERROR))
+		{
+			fail = TRUE;
+		}
+
+		if(fail)
 		{
 			run_monitoring_flag = FALSE;    //ground check fail,stop running monitoring
-
 			monitoring_state = FLIGHT_MONITORING;
 			ground_check_pass = FALSE;
 		}
@@ -499,17 +554,17 @@ void ground_monitoring(void)
 
 void flight_monitoring_init(void)
 {
-
+	
 }
 
 /***********************************************************************
 * FUNCTION    : flight_monitoring
-* DESCRIPTION :
+* DESCRIPTION : 
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
 void flight_monitoring(void)  //TODOM:need conside each step periodic
-{
+{	
 	RunOnceEvery( MONITORING_FREQUENCY,   battery_flight_check() );
 	//RunOnceEvery( MONITORING_FREQUENCY*2, board_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY/5, imu_flight_check() );
@@ -519,25 +574,31 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 	RunOnceEvery( MONITORING_FREQUENCY/5, rc_communication_flight_check() );
 	RunOnceEvery( MONITORING_FREQUENCY/2, gcs_communication_flight_check() );
 	lift_flight_check();
-	task_running_check();
-	mode_convert_check();
+	task_running_check();   
+	mode_convert_check();   
 	if(0)  //land,turn to ground monitoring
 	{
 		imu_ground_reset();
 		height_ground_reset();
 		monitoring_state = GROUND_MONITORING;
-		ground_check_step = 0;
+		ground_check_step = 0; 
 	}
 }
 
-
+/***********************************************************************
+* FUNCTION    : except_mission_manage
+* DESCRIPTION : rc_cmd_interrupt/gcs_cmd_interrupt set all active em[i] finished;
+                get the most serious command to monitor_cmd for execution
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
 static void except_mission_manage(void)
-{
-	if( flight_mode==nav_rc_mode && rc_cmd_interrupt )
+{ 	
+	if( flight_mode==nav_rc_mode && rc_cmd_interrupt ) 
 	{   // set all active ms finished
 		for(uint8_t i=0; i<EPT_MS_NB; i++)
 		{
-			if(em[i].active)  em[i].finished=TRUE;
+			if(em[i].active)  em[i].finished=TRUE;   
 		}
 		//current motion set none
 		monitor_cmd = CM_NONE;
@@ -545,11 +606,11 @@ static void except_mission_manage(void)
 		gcs_cmd_interrupt = FALSE;
 		return;
 	}
-	else if( flight_mode==nav_gcs_mode && gcs_cmd_interrupt )
+	else if( flight_mode==nav_gcs_mode && gcs_cmd_interrupt ) 
 	{   // set all active ms finished
 		for(uint8_t i=0; i<EPT_MS_NB; i++)
 		{
-			if(em[i].active)  em[i].finished=TRUE;
+			if(em[i].active)  em[i].finished=TRUE;   
 		}
 		//current motion set none
 		monitor_cmd = CM_NONE;
@@ -557,9 +618,9 @@ static void except_mission_manage(void)
 		gcs_cmd_interrupt = FALSE;
 		return;
 	}
-
+	
 	else
-	{
+	{ 
 		if(monitor_cmd == CM_LAND)
 		{
 			return;   //land can not interrupt
@@ -580,73 +641,86 @@ static void except_mission_manage(void)
 			return;
 		}
 		monitor_cmd = CM_NONE;   //if no ept,set monitor_cmd=CM_NONE
-	}
+	}	
 }
 
 static inline uint8_t check_land_ms(void)
-{
+{	
 	for(uint8_t i=0; i<EPT_MS_NB; i++)
 	{
 		if(em[i].active && !(em[i].finished))
-		{
+		{ 
 			if( !em[i].hover.hover && !em[i].home && em[i].land )
 			return TRUE;
-		}
+		}			
 	}
-	return FALSE;
+	return FALSE;	
 }
 
 static inline uint8_t check_home_ms(void)
-{
+{	
 	for(uint8_t i=0; i<EPT_MS_NB; i++)
 	{
 		if(em[i].active && !(em[i].finished))
-		{
+		{ 
 			if(!em[i].hover.hover && em[i].home)
 			return TRUE;
-		}
+		}			
 	}
-	return FALSE;
+	return FALSE;	
 }
 
 static inline uint8_t check_hover_ms(void)
-{
+{	
 	for(uint8_t i=0; i<EPT_MS_NB; i++)
 	{
 		if(em[i].active && !(em[i].finished))
-		{
+		{ 
 			if(em[i].hover.hover)
 			return TRUE;
-		}
+		}			
 	}
-	return FALSE;
+	return FALSE;	
 }
 
+/***********************************************************************
+* FUNCTION    : except_mission_update
+* DESCRIPTION : update except mission for hover,reduce the time;
+                once hover finished do next
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
 static void except_mission_update(void)
 {
 	for(uint8_t i=0; i<EPT_MS_NB; i++)
 	{
-		if(em[i].active && !(em[i].finished))   //ms is active and not finished
+		if(em[i].active && !(em[i].finished))   //ms is active and not finished 
 		{
 			if(em[i].hover.hover)
-			{
-				if(em[i].hover.keep_time && em[i].hover.keep_time != 0xFF)
+			{ 
+				if(em[i].hover.keep_time && em[i].hover.keep_time != 0xFF)  
 				{
 					em[i].hover.keep_time--;
 				}
-				if(!em[i].hover.keep_time)
+				if(!em[i].hover.keep_time)  
 				{
 					em[i].hover.hover = FALSE;
 				}
 			}
 			if(!(em[i].hover.hover) && !(em[i].home) && !(em[i].land))
-			{
-				em[i].finished = TRUE;
-			}
+			{   
+				em[i].finished = TRUE;   
+			}			
 		}
 	}
 }
 
+/***********************************************************************
+* FUNCTION    : alert_grade_update
+* DESCRIPTION : update alert grade and em_code
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
 static inline void alert_grade_update(void)
 {
 	em_alert_grade = 0;  //reset grade to 0
@@ -654,31 +728,37 @@ static inline void alert_grade_update(void)
 	for(uint8_t i=0; i<EPT_MS_NB; i++)
 	{
 		if(em[i].active)
-		{
-			if(em[i].alert_grade > em_alert_grade)
+		{ 
+			if(em[i].alert_grade > em_alert_grade)  
 			{
 				em_alert_grade = em[i].alert_grade;
 			}
 			em_code = em_code|(1<<i);
-		}
+		}			
 	}
 }
 
 uint8_t data_fix_check(int32_t data, int32_t last_data, uint8_t *counter, uint8_t max_counter)
 {
-	if( data==last_data)  (*counter)++;
-	else *counter=0;
-    if(*counter> max_counter)
+	if( data==last_data)  (*counter)++; 
+	else *counter=0;  
+    if(*counter> max_counter) 
 	{
 		(*counter)--;   //avoid overflow
 		return TRUE;
     }
-	else
+	else 
 	{
 		return FALSE;
 	}
 }
 
+/***********************************************************************
+* FUNCTION    : set_except_mission
+* DESCRIPTION : record emergency into em[i]
+* INPUTS      : emergency info
+* RETURN      : none
+***********************************************************************/
 void set_except_mission( uint8_t em_nb,
 	                     bool_t em_active,
 	                     bool_t em_finished,
@@ -688,7 +768,7 @@ void set_except_mission( uint8_t em_nb,
 	                     bool_t em_land,
 	                     uint8_t alert_grade)
 {
-	if(em[em_nb].active || em[em_nb].finished)  return;
+	if(em[em_nb].active || em[em_nb].finished)  return; 
 	em[em_nb].active = em_active;
 	em[em_nb].hover.hover = em_hover;
 	em[em_nb].hover.keep_time = em_keep_time;
@@ -696,6 +776,11 @@ void set_except_mission( uint8_t em_nb,
 	em[em_nb].land = em_land;
 	em[em_nb].alert_grade = alert_grade;
 	em[em_nb].finished = em_finished;
+}
+
+void set_mdebug_att_flag(uint8_t value)
+{
+	mdebug_att_flag = value;
 }
 
 /**************** END OF FILE *****************************************/

@@ -64,9 +64,22 @@ void gps2_ublox_event(void)
 	gps2_ublox_update(&gps2_ublox.parser, &gps2);
 }
 
+static void gps2_ublox_alive_check(struct GpsState *gps_s)
+{
+	if ((sys_time.nb_sec - gps_s->last_msg_time) > GPS_TIMEOUT)
+	{
+		gps_s->fix = GPS_FIX_NONE;
+		gps_s->alive = FALSE;
+	}
+	else
+	{
+		gps_s->alive = TRUE;
+	}
+}
+
 void gps2_ublox_periodic(void)
 {
-
+	gps2_ublox_alive_check(&gps2);
 }
 
 bool_t gps2_ublox_check_update(void)
@@ -108,6 +121,8 @@ static void gps2_ublox_update(struct _s_ubx_parser *parser, struct GpsState *gps
 		gps_s->num_sv = parser->SOL.numSV;
 
 		parser->SOL_available = FALSE;
+
+		gps_s->last_msg_time = sys_time.nb_sec;
 
 		update = TRUE;
 	}

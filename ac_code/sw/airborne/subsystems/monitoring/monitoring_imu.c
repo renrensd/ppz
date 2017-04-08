@@ -77,6 +77,12 @@ void imu_moni_init(void)
 	AbiBindMsgIMU_MAG_MONI(ABI_BROADCAST, &mag_ev_mo, mag_moni_cb);	
 }
 
+/***********************************************************************
+* FUNCTION    : imu_ground_check
+* DESCRIPTION : get imu ground check state
+* INPUTS      : none
+* RETURN      : check_code
+***********************************************************************/
 uint8_t imu_ground_check(void)
 {
 	uint8_t check_code;
@@ -95,9 +101,29 @@ uint8_t imu_ground_check(void)
 	return check_code;
 }
 
+/***********************************************************************
+* FUNCTION    : imu_ground_check_code
+* DESCRIPTION : get imu error code
+* INPUTS      : none
+* RETURN      : error code
+***********************************************************************/
 uint8_t imu_ground_check_code(void)
 {
-	if(imu_moni.imu_error[0]&0x01)
+	/*inspect data update first*/
+	if(imu_moni.imu_error[0]&0x20)
+	{
+		return 6;  //gyro no data
+	}
+	else if(imu_moni.imu_error[1]&0x20)
+	{
+		return 2;  //accel no data
+	}
+	else if(imu_moni.imu_error[2]&0x20)
+	{
+		return 10;  //mag no data
+	}
+	/*gyro*/
+	else if(imu_moni.imu_error[0]&0x01)
 	{
 		return 6;  //gyro fix data
 	}
@@ -113,7 +139,7 @@ uint8_t imu_ground_check_code(void)
 	{
 		return 7;  //gyro range data
 	}
-
+    /*accel*/
 	else if(imu_moni.imu_error[1]&0x01)
 	{
 		return 2;  //acc fix data
@@ -130,22 +156,22 @@ uint8_t imu_ground_check_code(void)
 	{
 		return 3;  //acc range data
 	}
-
+    /*mag*/
 	else if(imu_moni.imu_error[2]&0x01)
 	{
-		return 10;  //acc fix data
+		return 10;  //mag fix data
 	}
 	else if(imu_moni.imu_error[2]&0x02)
 	{
-		return 9;  //acc fre data
+		return 9;  //mag fre data
 	}
 	else if(imu_moni.imu_error[2]&0x04)
 	{
-		return 12;  //acc noise data
+		return 12;  //mag noise data
 	}
 	else if(imu_moni.imu_error[2]&0x08)
 	{
-		return 11;  //acc range data
+		return 11;  //mag range data
 	}
 	else
 	{
@@ -160,6 +186,12 @@ void imu_ground_reset(void)   //use for restart ground check
 	imu_moni.mag_ground_check = FALSE;
 }
 
+/***********************************************************************
+* FUNCTION    : imu_flight_check
+* DESCRIPTION : imu flight monitoring
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
 void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 {
 	if(imu_moni.imu_status) 
@@ -206,6 +238,12 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 
 }
 
+/***********************************************************************
+* FUNCTION    : imu_frequence_check
+* DESCRIPTION : monitor imu data update frequency
+* INPUTS      : none
+* RETURN      : none
+***********************************************************************/
 void imu_frequence_check(void)   //need periodic run to avoid counter overflow
 {
 	static bool_t check_start=FALSE;
@@ -221,9 +259,32 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
 		}
 		else 
 		{
-            imu_moni.imu_error[0] |=0x02;
-			imu_moni.imu_error[1] |=0x02;
-			imu_moni.imu_error[2] |=0x02;
+			if(imu_moni.gyro_update_counter)
+			{
+				imu_moni.imu_error[0] &=~(1<<5);
+			}
+			else
+			{
+				imu_moni.imu_error[0] |=(1<<5);
+			}
+			
+			if(imu_moni.accel_update_counter)
+			{
+				imu_moni.imu_error[1] &=~(1<<5);
+			}
+			else
+			{
+				imu_moni.imu_error[1] |=(1<<5);
+			}
+			
+			if(imu_moni.mag_update_counter)
+			{
+				imu_moni.imu_error[2] &=~(1<<5);
+			}
+			else
+			{
+				imu_moni.imu_error[2] |=(1<<5);
+			}
 			return;
 		}
 	}
@@ -258,7 +319,7 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
     }
 	else
 	{
-		imu_moni.imu_error[0] |=0x02;
+		imu_moni.imu_error[2] |=0x02;
 		imu_moni.imu_status=0;
 		#if TEST_MSG
 		fre_imu=3;
@@ -281,96 +342,92 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
 static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp __attribute__((unused)), struct Int32Vect3 *accel)
 {
+  
+  static struct Int32Vect3 accel_last;
+  imu_moni.accel_update_counter++;    //reset to 0 in main monitoring
+  
+  //check fix data
+  if( data_fix_check(accel->x, accel_last.x, &imu_moni.accel_fix_counter.x, DATA_FIX_MAX)||
+	  data_fix_check(accel->y, accel_last.y, &imu_moni.accel_fix_counter.y, DATA_FIX_MAX)||
+	  data_fix_check(accel->z, accel_last.z, &imu_moni.accel_fix_counter.z, DATA_FIX_MAX)  ) 
+  {  //fix data
+      imu_moni.imu_error[1] |=0x02;  //fix data
+      imu_moni.imu_status=0;  //set imu fail
+      #if TEST_MSG
+	  fix_imu=2;
+	  #endif
+      return;  	
+  }
+  imu_moni.imu_error[1] &=0xFD;  //no fix data
+  VECT3_COPY(accel_last,*accel);
+  
+  if(imu_moni.accel_ground_check)  return;  //finished ground check
 
-	static struct Int32Vect3 accel_last;
-	imu_moni.accel_update_counter++;    //reset to 0 in main monitoring
 
-	//check fix data
-	if (data_fix_check(accel->x, accel_last.x, &imu_moni.accel_fix_counter.x, DATA_FIX_MAX)
-			|| data_fix_check(accel->y, accel_last.y, &imu_moni.accel_fix_counter.y, DATA_FIX_MAX)
-			|| data_fix_check(accel->z, accel_last.z, &imu_moni.accel_fix_counter.z, DATA_FIX_MAX))
-	{  //fix data
-		imu_moni.imu_error[1] |= 0x02;  //fix data
-		imu_moni.imu_status = 0;  //set imu fail
-#if TEST_MSG
-		fix_imu = 2;
-#endif
-		return;
+  /*below is another ground inspect: range check and noise check*/  
+  imu_moni.accel_aver.x = (accel->x + imu_moni.accel_aver.x * SUM_RATIO)/(SUM_RATIO +1 );
+  imu_moni.accel_aver.y = (accel->y + imu_moni.accel_aver.y * SUM_RATIO)/(SUM_RATIO +1 );
+  imu_moni.accel_aver.z = (accel->z + imu_moni.accel_aver.z * SUM_RATIO)/(SUM_RATIO +1 );
+  imu_moni.accel_ground_counter++;
+  
+  if(imu_moni.accel_ground_counter <1000)  return;   //give up data before 1000th
+  
+  else if(imu_moni.accel_ground_counter <6000)    //run ground inspect
+  { 
+    //data inspect counter request 5000		
+	if( //check accel data is horizontal
+		( abs(imu_moni.accel_aver.x)+abs(imu_moni.accel_aver.y) )<ACC_XY &&      
+		 -imu_moni.accel_aver.z<ACC_Z_MAX &&
+		 -imu_moni.accel_aver.z>ACC_Z_MIN                                   )
+	{   //data is normal(horizontal),caculate noise
+		if( !CHECK_INTERVAL(accel->x, imu_moni.accel_aver.x, DETA_ACCEL) )  
+		{ imu_moni.accel_interval_counter.x++; }
+		if( !CHECK_INTERVAL(accel->y, imu_moni.accel_aver.y, DETA_ACCEL) )  
+		{ imu_moni.accel_interval_counter.y++; }
+		if( !CHECK_INTERVAL(accel->z, imu_moni.accel_aver.z, DETA_ACCEL) )  
+		{ imu_moni.accel_interval_counter.z++; }
 	}
-	imu_moni.imu_error[1] &= 0xFD;  //no fix data
-	VECT3_COPY(accel_last, *accel);
-
-	if (imu_moni.accel_ground_check)
-		return;  //finished ground check
-
-	/*below is another ground inspect: range check and noise check*/
-	imu_moni.accel_aver.x = (accel->x + imu_moni.accel_aver.x * SUM_RATIO) / (SUM_RATIO + 1);
-	imu_moni.accel_aver.y = (accel->y + imu_moni.accel_aver.y * SUM_RATIO) / (SUM_RATIO + 1);
-	imu_moni.accel_aver.z = (accel->z + imu_moni.accel_aver.z * SUM_RATIO) / (SUM_RATIO + 1);
-	imu_moni.accel_ground_counter++;
-
-	if (imu_moni.accel_ground_counter < 1000)
-		return;   //give up data before 1000th
-
-	else if (imu_moni.accel_ground_counter < 6000)    //run ground inspect
-	{
-		//data inspect counter request 5000
-		if ( //check accel data is horizontal
-		(abs(imu_moni.accel_aver.x) + abs(imu_moni.accel_aver.y)) < ACC_XY && -imu_moni.accel_aver.z < ACC_Z_MAX
-				&& -imu_moni.accel_aver.z > ACC_Z_MIN)
-		{   //data is normal(horizontal),caculate noise
-			if (!CHECK_INTERVAL(accel->x, imu_moni.accel_aver.x, DETA_ACCEL))
-			{
-				imu_moni.accel_interval_counter.x++;
-			}
-			if (!CHECK_INTERVAL(accel->y, imu_moni.accel_aver.y, DETA_ACCEL))
-			{
-				imu_moni.accel_interval_counter.y++;
-			}
-			if (!CHECK_INTERVAL(accel->z, imu_moni.accel_aver.z, DETA_ACCEL))
-			{
-				imu_moni.accel_interval_counter.z++;
-			}
-		}
-		else
-		{   //data is unnormal(not horizontal),set fail
-			imu_moni.imu_error[1] |= 0x08;  //data out of range
-			imu_moni.imu_status = 0;  //set imu fail
-			//device_status &=0xFFFDFFFF;  //bit 18 set 0
-			imu_moni.accel_ground_check = TRUE;
-			imu_moni.accel_ground_counter = 0;  //reset counter
-#if TEST_MSG
-			g_range_imu = 2;
-#endif
-			return;    //finished ground inspect
-		}
+	else 
+	{   //data is unnormal(not horizontal),set fail
+	    imu_moni.imu_error[1] |=0x08;  //data out of range
+        imu_moni.imu_status=0;  //set imu fail
+	 	//device_status &=0xFFFDFFFF;  //bit 18 set 0
+		imu_moni.accel_ground_check=TRUE;
+		imu_moni.accel_ground_counter=0;  //reset counter
+		#if TEST_MSG
+		g_range_imu=2;
+		#endif
+		return;    //finished ground inspect
 	}
-
-	else //imu_moni.accel_ground_counter>=6000, check noise
-	{
-		if (imu_moni.accel_interval_counter.x > 500 || imu_moni.accel_interval_counter.y > 500
-				|| imu_moni.accel_interval_counter.z > 500)
-		{   //data is unnormal, set fail
-			imu_moni.imu_error[1] |= 4;  //noise error
-			imu_moni.imu_status = 0;  //set imu fail
-			//device_status &=0xFFFDFFFF;  //bit 18 set 0
-			imu_moni.accel_ground_check = TRUE;
-			imu_moni.accel_ground_counter = 0;  //reset counter
-#if TEST_MSG
-			g_noise_imu = 2;
-#endif
-			return;   //finished ground inspect
-		}
-		else
-		{   //data is normal, set pass
-			imu_moni.imu_error[1] = 0;  //normal
-			//imu_moni.imu_status=1;  //use default,back to ground need reset default 1
-			//device_status |=0x00020000;  //bit 18 set 1
-			imu_moni.accel_ground_check = TRUE;
-			imu_moni.accel_ground_counter = 0;  //reset counter
-			return;   //finished ground inspect
-		}
+  }
+  
+  else //imu_moni.accel_ground_counter>=6000, check noise
+  {
+  	if(imu_moni.accel_interval_counter.x >500 ||
+	   imu_moni.accel_interval_counter.y >500 ||
+	   imu_moni.accel_interval_counter.z >500)
+  	{   //data is unnormal, set fail
+  	    imu_moni.imu_error[1] |=4;  //noise error
+        imu_moni.imu_status=0;  //set imu fail
+		//device_status &=0xFFFDFFFF;  //bit 18 set 0
+		imu_moni.accel_ground_check=TRUE;
+		imu_moni.accel_ground_counter=0;  //reset counter
+		#if TEST_MSG
+		g_noise_imu=2;
+		#endif
+		return;   //finished ground inspect
+  	}
+	else
+	{   //data is normal, set pass
+	    imu_moni.imu_error[1] =0;  //normal
+        //imu_moni.imu_status=1;  //use default,back to ground need reset default 1
+		//device_status |=0x00020000;  //bit 18 set 1
+		imu_moni.accel_ground_check=TRUE;   
+		imu_moni.accel_ground_counter=0;  //reset counter
+		return;   //finished ground inspect
 	}
+  }
+  
 }
 
 

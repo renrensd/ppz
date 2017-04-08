@@ -88,7 +88,8 @@ enum Ground_Check_Step
 	IMU_CHECK,
 	HEIGHT_CHECK,
 	OPS_CHECK,
-	GPS_CHECK,
+	UBLOX_CHECK,
+	RTK_CHECK,
 	CALIBRATION_CHECK,
 	AUTOPILOT_CHECK,
 	RC_CONNECT
@@ -136,6 +137,7 @@ extern void flight_monitoring_init(void);
 extern void ground_monitoring(void);
 extern void flight_monitoring(void);
 extern int8_t monitoring_reset_emer(void);
+extern void set_mdebug_att_flag(uint8_t value);
 
 #endif /*_MONITORING_H_*/
 
