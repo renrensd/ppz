@@ -79,8 +79,6 @@ struct InsInt
   struct NedCoor_i ltp_speed;
   struct NedCoor_i ltp_accel;
 
-  bool_t ned_pos_rc_reset;
-
   // baro gps switch
   enum _e_ins_ekf_status ekf_state;
   float baro_z;  ///< z-position calculated from baro in meters (NED)

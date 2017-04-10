@@ -49,6 +49,7 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "calibration.h"
 #endif	/* CALIBRATION_OPTION */
+#include "firmwares/rotorcraft/guidance/guidance_h.h"
 
 #define JOYSTICK_UPDATE_FREQUENCE  (10)
 
@@ -216,17 +217,9 @@ static void rc_motion_speed_update(void)
  ***********************************************************************/
 static void rc_setpoint_parse(void)
 {
-	float psi = ANGLE_FLOAT_OF_BFP(nav_heading);
-	const float s_psi = sinf(psi);
-	const float c_psi = cosf(psi);
-	float speed_x = c_psi * rc_motion_info.speed_fb - s_psi * rc_motion_info.speed_rl;
-	float speed_y = s_psi * rc_motion_info.speed_fb + c_psi * rc_motion_info.speed_rl;
-	BoundAbs(speed_x, FB_Max_Speed);
-	BoundAbs(speed_y, FB_Max_Speed);
-	guidance_h.sp.speed.x = SPEED_BFP_OF_REAL(speed_x);
-	guidance_h.sp.speed.y = SPEED_BFP_OF_REAL(speed_y);
+	guidance_h_set_vrc_vel_sp_body(rc_motion_info.speed_fb, rc_motion_info.speed_rl);
 
-	rc_turn_rate = RATE_BFP_OF_REAL(rc_motion_info.rotation_rate);
+	guidance_h.vrc_heading_rate_sp = rc_motion_info.rotation_rate;
 
 	NavVerticalClimbMode(rc_motion_info.speed_v);
 }
@@ -239,19 +232,7 @@ static void rc_setpoint_parse(void)
  ***********************************************************************/
 void rc_setpoint_speed_parse(float speed_fb, float speed_rl)
 {
-	//float psi= stateGetNedToBodyEulers_f()->psi; //yaw angle,replace with nav_heading
-	float psi = ANGLE_FLOAT_OF_BFP(nav_heading);
-	const float s_psi = sinf(psi);
-	const float c_psi = cosf(psi);
-
-	float speed_x = c_psi * speed_fb - s_psi * speed_rl;
-	float speed_y = s_psi * speed_fb + c_psi * speed_rl;
-
-	BoundAbs(speed_x, FB_Max_Speed);
-	BoundAbs(speed_y, FB_Max_Speed);
-
-	guidance_h.sp.speed.x = SPEED_BFP_OF_REAL(speed_x);
-	guidance_h.sp.speed.y = SPEED_BFP_OF_REAL(speed_y);
+	guidance_h_set_vrc_vel_sp_body(speed_fb, speed_rl);
 	horizontal_mode = HORIZONTAL_MODE_RC;    //request to set mode
 }
 

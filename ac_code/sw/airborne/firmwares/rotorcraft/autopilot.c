@@ -288,10 +288,7 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
                               &(stateGetNedToBodyEulers_i()->phi),
                               &(stateGetNedToBodyEulers_i()->theta),
                               &(stateGetNedToBodyEulers_i()->psi),
-                              &guidance_h.sp.pos.y,
-                              &guidance_h.sp.pos.x,
                               &carrot_up,
-                              &guidance_h.sp.heading,
                               &stabilization_cmd[COMMAND_THRUST],
                               &autopilot_flight_time);
   #if OPEN_PC_DATALINK

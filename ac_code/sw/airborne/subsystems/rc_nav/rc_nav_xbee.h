@@ -139,10 +139,10 @@ enum manual_mission
 #define RC_HOVER()  do{ \
    rc_motion_info.speed_fb=0.0; \
    rc_motion_info.speed_rl=0.0; \
-   guidance_h.sp.speed.x =0.0;  \
-   guidance_h.sp.speed.y =0.0;  \
+   guidance_h.vrc_vel_sp_b.x =0.0;  \
+   guidance_h.vrc_vel_sp_b.y =0.0;  \
    rc_motion_info.rotation_rate=0.0; \
-   rc_turn_rate=0; \
+   guidance_h.vrc_heading_rate_sp=0; \
    horizontal_mode = HORIZONTAL_MODE_RC;  \
    RC_Z_HOLD(); \
  }while(0) 

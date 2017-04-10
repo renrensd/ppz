@@ -264,8 +264,8 @@ void nav_run(void)
   if((horizontal_mode == HORIZONTAL_MODE_WAYPOINT) && (guidance_h.mode == GUIDANCE_H_MODE_NAV))
   {
   	struct FloatVect2 target_wp;
-  	target_wp.x = POS_FLOAT_OF_BFP(navigation_carrot.y);
-  	target_wp.y = POS_FLOAT_OF_BFP(navigation_carrot.x);
+  	target_wp.x = POS_FLOAT_OF_BFP(navigation_target.y);
+  	target_wp.y = POS_FLOAT_OF_BFP(navigation_target.x);
   	guidance_h_trajectory_tracking_set_hover(target_wp);
   }
 

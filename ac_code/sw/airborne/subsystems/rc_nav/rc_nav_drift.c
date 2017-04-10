@@ -59,7 +59,7 @@ void rc_rate_rotation_drift(int8_t sign)
 	tm_kill_timer(TIMER_RC_RATE_ROTATION_DRIFT_STOP);
 	
 	rc_motion_info.rotation_rate =(float)sign *ROTATION_DRIFT_RATE;
-	rc_turn_rate =RATE_BFP_OF_REAL( rc_motion_info.rotation_rate );
+	guidance_h.vrc_heading_rate_sp = rc_motion_info.rotation_rate;
 	
 	tm_create_timer(TIMER_RC_RATE_ROTATION_DRIFT_STOP, (1000 MSECONDS), TIMER_ONE_SHOT,0);
 }
@@ -85,7 +85,7 @@ void rc_speed_rl_drift_stop(void)
 void rc_rate_rotation_drift_stop(void)
 {
 	rc_motion_info.rotation_rate =0.0;
-	rc_turn_rate =0;
+	guidance_h.vrc_heading_rate_sp =0;
 }
 
 

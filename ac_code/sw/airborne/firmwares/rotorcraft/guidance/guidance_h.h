@@ -36,21 +36,6 @@
 #include "controllers/pid.h"
 #include "math/dim2_algebra.h"
 
-/** Use horizontal guidance reference trajectory.
- * Default is TRUE, define to FALSE to always disable it.
- */
-#ifndef GUIDANCE_H_USE_REF
-#define GUIDANCE_H_USE_REF TRUE
-#endif
-
-/** Use horizontal guidance speed reference.
- * This also allows to give velocity commands via RC in GUIDANCE_H_MODE_HOVER.
- * Default is TRUE, define to FALSE to always disable it.
- */
-#ifndef GUIDANCE_H_USE_SPEED_REF
-#define GUIDANCE_H_USE_SPEED_REF TRUE
-#endif
-
 #define GUIDANCE_H_MODE_KILL        0
 #define GUIDANCE_H_MODE_RATE        1
 #define GUIDANCE_H_MODE_ATTITUDE    2
@@ -64,38 +49,21 @@
 #define GUIDANCE_H_MODE_GUIDED      10
 
 
-struct HorizontalGuidanceSetpoint {
-  /** horizontal position setpoint in NED.
-   *  fixed point representation: Q23.8
-   *  accuracy 0.0039, range 8388km
-   */
-  struct Int32Vect2 pos;
-  struct Int32Vect2 speed;  ///< only used if GUIDANCE_H_USE_SPEED_REF
-  int32_t heading;          ///< with #INT32_ANGLE_FRAC
-};
-
-struct HorizontalGuidanceReference {
-  struct Int32Vect2 pos;     ///< with #INT32_POS_FRAC
-  struct Int32Vect2 speed;   ///< with #INT32_SPEED_FRAC
-  struct Int32Vect2 accel;   ///< with #INT32_ACCEL_FRAC
-};
-
-struct HorizontalGuidanceGains {
-  int32_t p;
-  int32_t d;
-  int32_t i;
-  int32_t v;
-  int32_t a;
-};
-
-struct HorizontalGuidanceGains_f {
-  float p;
-  float d;
-  float i;
-  float in_p;
-  float in_i;
-  float in_d;
-};
+//struct HorizontalGuidanceSetpoint {
+//  /** horizontal position setpoint in NED.
+//   *  fixed point representation: Q23.8
+//   *  accuracy 0.0039, range 8388km
+//   */
+//  struct Int32Vect2 pos;
+//  struct Int32Vect2 speed;  ///< only used if GUIDANCE_H_USE_SPEED_REF
+//  int32_t heading;          ///< with #INT32_ANGLE_FRAC
+//};
+//
+//struct HorizontalGuidanceReference {
+//  struct Int32Vect2 pos;     ///< with #INT32_POS_FRAC
+//  struct Int32Vect2 speed;   ///< with #INT32_SPEED_FRAC
+//  struct Int32Vect2 accel;   ///< with #INT32_ACCEL_FRAC
+//};
 
 
 enum _e_h_pid_loop_mode
@@ -198,21 +166,26 @@ struct HorizontalGuidance
 {
   uint8_t mode;
   /* configuration options */
-  bool_t use_ref;
-  bool_t approx_force_by_thrust;
+//  bool_t use_ref;
+//  bool_t approx_force_by_thrust;
 
-  struct HorizontalGuidanceSetpoint sp; ///< setpoints
-  struct HorizontalGuidanceReference ref; ///< reference calculated from setpoints
+//  struct HorizontalGuidanceSetpoint sp; ///< setpoints
+//  struct HorizontalGuidanceReference ref; ///< reference calculated from setpoints
 
-  struct Int32Eulers rc_sp;    ///< with #INT32_ANGLE_FRAC
+  struct Int32Eulers src_sp;    ///< with #INT32_ANGLE_FRAC
 
   struct FloatVect2 ned_acc;
   struct FloatVect2 ned_vel;
   struct FloatVect2 ned_pos;
-  struct FloatVect2 ned_vel_rc;
-  struct FloatVect2 ned_pos_rc;
-  struct FloatVect2 ned_vel_ref;
-  struct FloatVect2 ned_pos_ref;
+
+  struct FloatVect2 vrc_vel_sp_b;
+  struct FloatVect2 src_vel_sp_b;
+  bool_t is_src_vel_in_deadband;
+  struct FloatVect2 rc_pos_sp_i;
+  struct FloatVect2 guided_pos_sp_i;
+  float guided_heading;
+  float vrc_heading_rate_sp;
+  float vrc_heading_sp;
 
   float ned_acc_filter_fc;
   float ned_vel_filter_fc;
@@ -223,17 +196,15 @@ struct HorizontalGuidance
   Butterworth2LowPass ned_vel_x_filter;
   Butterworth2LowPass ned_vel_y_filter;
 
-  bool_t ned_pos_rc_reset;
+  bool_t rc_pos_sp_reset;
 
   enum _e_h_pid_loop_mode pid_loop_mode_running;
   enum _e_h_pid_loop_mode pid_loop_mode_gcs;
 };
 
-extern int32_t rc_turn_rate;                        ///< with #INT32_RATE_FRAC
-
-extern float hh;
-extern float hh0;
-extern float r_h;
+//extern float hh;
+//extern float hh0;
+//extern float r_h;
 
 extern struct HorizontalGuidance guidance_h;
 extern struct _s_trajectory_tracking traj;
@@ -241,8 +212,8 @@ extern struct _s_trajectory_tracking traj;
 //extern struct Int32Vect2 guidance_h.sp.speed;
 //#endif
 
-extern int32_t transition_percentage;
-extern int32_t transition_theta_offset;
+//extern int32_t transition_percentage;
+//extern int32_t transition_theta_offset;
 
 extern void guidance_h_init(void);
 extern void guidance_h_mode_changed(uint8_t new_mode);
@@ -268,7 +239,9 @@ extern void guidance_h_SetEmBrakeAcc(float acc);
 extern void guidance_h_SetNedAccFc(float Fc);
 extern void guidance_h_SetNedVelFc(float Fc);
 
-extern void guidance_h_ned_pos_rc_need_reset(void);
+extern void guidance_h_rc_pos_sp_need_reset(void);
+
+void guidance_h_set_vrc_vel_sp_body(float x, float y);
 
 /** Set horizontal position setpoint in GUIDED mode.
  * @param x North position (local NED frame) in meters.
