@@ -214,6 +214,8 @@ static void ins_int_propagate(struct Int32Vect3 *accel, float dt);
 static void ins_int_gps_switch(enum _e_ins_gps_type type);
 static inline void gpss_state_update(void);
 static void ins_int_set_hf_realign_done(bool_t done);
+static void ins_int_set_rtk_hf_realign(bool_t need_realign);
+static void ins_int_set_ublox_hf_realign(bool_t need_realign);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -315,8 +317,10 @@ static void ins_int_init(void)
 #endif
 
   ins_int.vf_realign = FALSE;
-  ins_int.rtk_hf_realign = FALSE;
   ins_int.vf_stable = FALSE;
+  ins_int_set_rtk_hf_realign(FALSE);
+  ins_int_set_ublox_hf_realign(FALSE);
+  ins_int_set_hf_realign_done(FALSE);
 
   /* init vertical and horizontal filters   all set 0 */
   vff_init_zero();
@@ -377,16 +381,49 @@ static inline void gpss_state_update(void)
 	}
 }
 
+static void ins_int_set_rtk_hf_realign(bool_t need_realign)
+{
+	ins_int.rtk_hf_realign = need_realign;
+	if(need_realign)
+	{
+		ins_int_set_hf_realign_done(FALSE);
+	}
+}
+
+static void ins_int_set_ublox_hf_realign(bool_t need_realign)
+{
+	ins_int.ublox_hf_realign = need_realign;
+	if (need_realign)
+	{
+		ins_int_set_hf_realign_done(FALSE);
+	}
+}
+
 static void ins_int_set_hf_realign_done(bool_t done)
 {
 	ins_int.hf_realign_done = done;
+}
+
+bool_t ins_int_check_hf_has_realigned(void)
+{
+	static bool_t last_realign_done = FALSE;
+	if((!last_realign_done) && ins_int.hf_realign_done)
+	{
+		last_realign_done = ins_int.hf_realign_done;
+		return TRUE;
+	}
+	else
+	{
+		last_realign_done = ins_int.hf_realign_done;
+		return FALSE;
+	}
+
 }
 
 bool_t ins_int_check_hf_realign_done(void)
 {
 	if(ins_int.hf_realign_done)
 	{
-		ins_int.hf_realign_done = FALSE;
 		return TRUE;
 	}
 	else
@@ -605,7 +642,7 @@ void ins_reset_local_origin(void)
 #endif
 
 #if USE_HFF
-	ins_int.rtk_hf_realign = TRUE;
+	ins_int_set_rtk_hf_realign(TRUE);
 #endif
 	ins_int.vf_realign = TRUE;
 }
@@ -995,11 +1032,11 @@ static void ins_int_gps_switch(enum _e_ins_gps_type type)
 
 	if(type == GPS_RTK)
 	{
-		ins_int.rtk_hf_realign = TRUE;
+		ins_int_set_rtk_hf_realign(TRUE);
 	}
 	else
 	{
-		ins_int.ublox_hf_realign = TRUE;
+		ins_int_set_ublox_hf_realign(TRUE);
 	}
 }
 

@@ -135,6 +135,7 @@ extern void ins_int_register(void);
 extern void ins_int_SetType(enum _e_ins_gps_type type);
 extern void ins_int_task(void);
 extern bool_t ins_int_check_hf_realign_done(void);
+extern bool_t ins_int_check_hf_has_realigned(void);
 extern bool_t ins_int_is_rtk_pos_xy_valid(void);
 extern bool_t ins_int_is_rtk_pos_z_valid(void);
 extern bool_t ins_int_is_rtk_best_accu(void);

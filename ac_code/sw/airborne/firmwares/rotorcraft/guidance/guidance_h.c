@@ -196,7 +196,10 @@ static void guidance_h_state_update(bool_t in_flight)
 	guidance_h.ned_acc = guidance_h.ned_acc_filter;
 	guidance_h.ned_vel = guidance_h.ned_vel_filter;
 
-	if(in_flight)
+//	bool_t realign_done = ins_int_check_hf_realign_done();
+	bool_t reset_rc_pos_sp = FALSE;
+
+	if (in_flight)
 	{
 		if (!in_flight_last)
 		{
@@ -205,16 +208,14 @@ static void guidance_h_state_update(bool_t in_flight)
 	}
 	in_flight_last = in_flight;
 
-	bool_t realign_done = ins_int_check_hf_realign_done();
-	bool_t reset_rc_pos_sp = FALSE;
-
-	if(realign_done)
+	if(ins_int_check_hf_has_realigned())
 	{
 		reset_rc_pos_sp = TRUE;
 	}
+
 	if(guidance_h.rc_pos_sp_reset)
 	{
-		if(realign_done)
+		if(ins_int_check_hf_realign_done())
 		{
 			guidance_h.rc_pos_sp_reset = FALSE;
 			reset_rc_pos_sp = TRUE;
