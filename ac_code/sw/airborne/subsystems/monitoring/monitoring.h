@@ -92,7 +92,8 @@ enum Ground_Check_Step
 	RTK_CHECK,
 	CALIBRATION_CHECK,
 	AUTOPILOT_CHECK,
-	RC_CONNECT
+	RC_CONNECT,
+	BBOX_CHECK
 };
 extern enum Ground_Check_Step ground_check_step;  //use to sign step in ground check;
 extern uint16_t monitoring_fail_code;

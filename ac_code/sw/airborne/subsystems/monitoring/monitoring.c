@@ -35,6 +35,9 @@
 
 #include "led.h"
 
+#include "subsystems/bbox/bbox_if.h"
+#include "subsystems/bbox/bbox_msg_def.h"
+
 #ifdef USE_GPS_NMEA
  #include "subsystems/gps/gps_nmea.h"
 #endif
@@ -116,6 +119,12 @@ enum Ops_Check
 	OPS_ERROR
 };
 
+enum Bbox_Check
+{
+	BBOX_RUNNING,
+	BBOX_NO_LINK,
+	BBOX_ERROR
+};
 enum Gps_Check
 {
 	GPS_RUNNING,
@@ -518,10 +527,32 @@ void ground_monitoring(void)
 		if (!rc_lost || !gcs_lost)
 		{
 			//ground_check_step = 0;        //reset step
+			ground_check_step++;
+			
+			//#ifndef BBOX_OPTION 
 			monitoring_state = FLIGHT_MONITORING;    //turn to flight monitoring
 			ground_check_pass = TRUE;
+			//#endif
+			
 		}
 		break;
+	#ifdef BBOX_OPTION	
+	case BBOX_CHECK:
+		if(bbox_info.con_flag)
+		{
+			if(bbox_info.status == BBOX_IS_ERROR)
+			{
+				monitoring_fail_code = BBOX_ERROR;
+			}
+		}
+		else 
+		{
+			monitoring_fail_code = BBOX_NO_LINK; 
+		}
+		monitoring_state = FLIGHT_MONITORING;    //turn to flight monitoring
+		ground_check_pass = TRUE;
+		break;
+	#endif /*BBOX_OPTION*/
 	default:
 		break;
 	}
@@ -530,6 +561,10 @@ void ground_monitoring(void)
 	{
 		bool_t fail = FALSE;
 
+		if (ground_check_step == BBOX_CHECK)
+		{
+			fail =FALSE;
+		}
 		if ((ground_check_step != UBLOX_CHECK) && (ground_check_step != RTK_CHECK))
 		{
 			fail = TRUE;

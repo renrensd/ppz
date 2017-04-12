@@ -194,6 +194,16 @@ void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len)
 		switch(frame[2])
 		{
 			case BBOX_MANAGE_SERVICE:
+				
+				if(frame[4]==BBOX_IS_ERROR)
+				{
+					bbox_info.status = BBOX_IS_ERROR;
+				}
+				else if(frame[4]==BBOX_IS_NORMAL)
+				{
+					bbox_info.status = BBOX_IS_NORMAL;
+				}
+		
 				bbox_msg_heart_beat();
 				if(bbox_info.first_con == FALSE)
 				{
