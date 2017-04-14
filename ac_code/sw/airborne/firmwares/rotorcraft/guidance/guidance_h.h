@@ -96,7 +96,7 @@ struct _s_segment
 	// tracking segment along direction and cross direction (orthogonal unit vector) in LTP NED
 	struct FloatVect2 along;
 	struct FloatVect2 cross;
-	// coordinate rotation matrix between i-t (LEP NED, segment)
+	// coordinate rotation matrix between i-t (LTP NED, segment)
 	struct _s_matrix22 R_i2t;
 	struct _s_matrix22 R_t2i;
 };
@@ -135,7 +135,7 @@ struct _s_trajectory_tracking
 	struct _s_segment segment;
 	struct _s_segment segment_last;
 
-	// coordinate rotation matrix between i-t-b (LEP NED, segment, body)
+	// coordinate rotation matrix between i-t-b (LTP NED, segment, body)
 	struct _s_matrix22 R_i2b;
 	struct _s_matrix22 R_b2i;
 	struct _s_matrix22 R_t2b;

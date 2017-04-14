@@ -513,7 +513,7 @@ bool_t run_normal_task(void)
 			{
 				//task_nav_wp(struct EnuCoor_i first_wp)
 				/*if finish convert,get next_wp*/
-				if( !task_nav_wp(next_wp.wp_en) )
+				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) )
 				{
 					/*no more task_wp to run*/
 					if( !achieve_next_wp() )  
@@ -674,16 +674,14 @@ bool_t task_wp_empty_handle(void)
 ***********************************************************************/
 static float set_path_flight_info(uint8_t type)
 {
-  switch(type) 
+  switch(type)
   {
   		case FLIGHT_PATH:
-			gh_set_max_speed(ac_config_info.max_flight_speed);
-			//nav_set_flight_speed(ac_config_info.max_flight_speed);
+			nav_set_flight_speed(ac_config_info.max_flight_speed);
 			return ac_config_info.max_flight_height;
 			
 		case SPRAY_PATH:
-			gh_set_max_speed(ac_config_info.spray_speed);
-			//nav_set_flight_speed(ac_config_info.spray_speed);
+			nav_set_flight_speed(ac_config_info.spray_speed);
 			return ac_config_info.spray_height;
 			
 		default:
