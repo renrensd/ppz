@@ -446,7 +446,7 @@ bool_t ins_int_is_rtk_best_accu(void)
 
 bool_t ins_int_is_rtk_pos_xy_valid(void)
 {
-	return (GpsFixValid() && (gps_nmea.pos_type > PSRDIFF) && gps.p_stable && ins_int.virtual_rtk_pos_xy_valid);
+	return (GpsFixValid() && ins_int.ltp_initialized && (gps_nmea.pos_type > PSRDIFF) && gps.p_stable && ins_int.virtual_rtk_pos_xy_valid);
 }
 
 bool_t ins_int_is_rtk_pos_z_valid(void)
