@@ -255,6 +255,9 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
 			imu_moni.gyro_update_counter=0;
 			imu_moni.accel_update_counter=0;
 			imu_moni.mag_update_counter=0;
+			imu_moni.imu_error[0] &=~(1<<5);
+			imu_moni.imu_error[1] &=~(1<<5);
+			imu_moni.imu_error[2] &=~(1<<5);
 			return;
 		}
 		else 
