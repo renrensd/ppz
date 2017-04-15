@@ -50,7 +50,7 @@ struct Imu {
   struct Int32Rates gyro_prev;        ///< previous gyroscope measurements
   struct Int32Vect3 accel_prev;       ///< previous accelerometer measurements
   struct Int32Rates gyro_neutral;     ///< gyroscope bias
-  struct Int32Vect3 accel_neutral;    ///< accelerometer bias
+  struct FloatVect3 accel_neutral;    ///< accelerometer bias
   struct Int32Vect3 mag_neutral;      ///< magnetometer neutral readings (bias)
   struct Int32Rates gyro_unscaled;    ///< unscaled gyroscope measurements
   struct Int32Vect3 accel_unscaled;   ///< unscaled accelerometer measurements
@@ -59,9 +59,6 @@ struct Imu {
   struct FloatVect3 mag_sens;
 
   struct FloatVect3 acc_sens;
-
-  bool_t acc_var_valid;
-  bool_t mag_var_valid;
 
   /** flag for adjusting body_to_imu via settings.
    * if FALSE, reset to airframe values, if TRUE set current roll/pitch
@@ -137,5 +134,9 @@ extern void imu_scale_mag(struct Imu *_imu);
 #define IMU_MAG_Z_SIGN 1
 #endif
 
+#define IMU_ACCEL_SENS_SCALE_FACTOR (2048)
+#define MAG_SENSITIVITY		(12000) // LSB/G
+#define ACC_NEUTRAL_COEF ((float)IMU_ACCEL_SENS_SCALE_FACTOR)
+#define ACC_SENS_COEF (9.81f * (float)(1<<INT32_ACCEL_FRAC) / (float)IMU_ACCEL_SENS_SCALE_FACTOR)
 
 #endif /* IMU_H */

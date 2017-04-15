@@ -22,6 +22,8 @@
 #include <string.h>
 #include <stddef.h>
 #include "subsystems/imu.h"
+#include "modules/mag_cali/mag_cali.h"
+#include "modules/acc_cali/acc_cali.h"
 #include "data_check/crc16.h"
 /*---Public include files---------------------------------------------*/
 #include "modules/system/timer_if.h"
@@ -293,7 +295,6 @@ void fram_mag_cali_get(void)
 	uint8_t *ptemp = (uint8_t *) (&temp_MagCaliFramData);
 
 	uint8_t err = fram_mag_cali_data_read(ptemp);
-	imu.mag_var_valid = FALSE;
 
 	if (err)
 	{
@@ -314,17 +315,7 @@ void fram_mag_cali_get(void)
 	mag_cali.offset[1] = temp_MagCaliFramData.offset[1];
 	mag_cali.cali_ok = temp_MagCaliFramData.cali_ok;
 
-	imu.mag_neutral.x = mag_cali.offset[0]*(float)MAG_SENSITIVITY;
-	imu.mag_neutral.y = mag_cali.offset[1]*(float)MAG_SENSITIVITY;
-	imu.mag_neutral.z = 0;
-	imu.mag_sens.x = mag_cali.gain[0];
-	imu.mag_sens.y = mag_cali.gain[1];
-	imu.mag_sens.z = mag_cali.gain[1];
-	if( mag_cali.cali_ok )
-	{
-		imu.mag_var_valid = TRUE;
-	}
-
+	mag_cali_load_to_imu();
 }
  
 uint8_t fram_mag_cali_data_read(uint8_t *read_buffer)
@@ -362,7 +353,6 @@ void fram_acc_cali_get(void)
 	if (err)
 	{
 		fram_error.read_data_fail = TRUE;
-		imu.acc_var_valid = FALSE;
 		return; 
 	}
 
@@ -370,17 +360,17 @@ void fram_acc_cali_get(void)
 	if(temp_crc16 != temp_AccCaliFramData.crc16)
 	{
 		fram_error.data_wrong = TRUE;
-		imu.acc_var_valid = FALSE;
 		return;
 	}
 
-	imu.acc_sens.x = temp_AccCaliFramData.gain[0];
-	imu.acc_sens.y = temp_AccCaliFramData.gain[1];
-	imu.acc_sens.z = temp_AccCaliFramData.gain[2];
-	imu.accel_neutral.x = (int32_t)temp_AccCaliFramData.offset[0];
-	imu.accel_neutral.y = (int32_t)temp_AccCaliFramData.offset[1];
-	imu.accel_neutral.z = (int32_t)temp_AccCaliFramData.offset[2];
-	imu.acc_var_valid = TRUE;
+	acc_cali.acc_gain[0] = temp_AccCaliFramData.gain[0];
+	acc_cali.acc_gain[1] = temp_AccCaliFramData.gain[1];
+	acc_cali.acc_gain[2] = temp_AccCaliFramData.gain[2];
+	acc_cali.acc_offset[0] = temp_AccCaliFramData.offset[0];
+	acc_cali.acc_offset[1] = temp_AccCaliFramData.offset[1];
+	acc_cali.acc_offset[2] = temp_AccCaliFramData.offset[2];
+
+	acc_cali_load_to_imu();
 }
 
 

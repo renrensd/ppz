@@ -40,7 +40,6 @@ static void mag_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[
 static void mag_cali_start(bool_t auto_cali);
 static void mag_cali_stop(bool_t ok);
 static bool_t is_mag_cali_done(void);
-static bool_t mag_cali_load_to_imu(void);
 
 #define NORM_MAG	(0.6f) // Gauss
 
@@ -260,7 +259,7 @@ static void mag_cali_heading_rotate(bool_t dir)
 	INT32_COURSE_NORMALIZE(nav_heading);
 }
 
-static bool_t mag_cali_load_to_imu(void)
+bool_t mag_cali_load_to_imu(void)
 {
 	// range check
 	float err = 0;
@@ -283,6 +282,13 @@ static bool_t mag_cali_load_to_imu(void)
 
 	if(err)
 	{
+		imu.mag_neutral.x = 0;
+		imu.mag_neutral.y = 0;
+		imu.mag_neutral.z = 0;
+		imu.mag_sens.x = 1;
+		imu.mag_sens.y = 1;
+		imu.mag_sens.z = 1;
+
 		return FALSE;
 	}
 	else

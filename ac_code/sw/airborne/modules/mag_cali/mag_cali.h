@@ -63,6 +63,7 @@ extern void mag_cali_init(void);
 extern void mag_cali_periodic(void);
 extern void mag_cali_event(void);
 
+extern bool_t mag_cali_load_to_imu(void);
 extern void mag_cali_imu_scale(struct Imu *_imu);
 extern bool_t mag_cali_nav_loop(bool_t run);
 

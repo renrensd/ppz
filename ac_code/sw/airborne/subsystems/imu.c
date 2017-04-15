@@ -254,21 +254,10 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
 void WEAK imu_scale_accel(struct Imu *_imu)
 {
   VECT3_COPY(_imu->accel_prev, _imu->accel);
-  if(!_imu->acc_var_valid)   //get fram var fail, use default data
-  {
-	  _imu->accel.x = ((_imu->accel_unscaled.x - _imu->accel_neutral.x) * IMU_ACCEL_X_SIGN *
-	                   IMU_ACCEL_X_SENS_NUM) / IMU_ACCEL_X_SENS_DEN;
-	  _imu->accel.y = ((_imu->accel_unscaled.y - _imu->accel_neutral.y) * IMU_ACCEL_Y_SIGN *
-	                   IMU_ACCEL_Y_SENS_NUM) / IMU_ACCEL_Y_SENS_DEN;
-	  _imu->accel.z = ((_imu->accel_unscaled.z - _imu->accel_neutral.z) * IMU_ACCEL_Z_SIGN *
-	                   IMU_ACCEL_Z_SENS_NUM) / IMU_ACCEL_Z_SENS_DEN;
-  }
-  else
-  {
-	  _imu->accel.x = (int32_t)((float)(_imu->accel_unscaled.x-_imu->accel_neutral.x) * _imu->acc_sens.x);
-	  _imu->accel.y = (int32_t)((float)(_imu->accel_unscaled.y-_imu->accel_neutral.y) * _imu->acc_sens.y);
-	  _imu->accel.z = (int32_t)((float)(_imu->accel_unscaled.z-_imu->accel_neutral.z) * _imu->acc_sens.z);
-  }
+
+	_imu->accel.x = (int32_t)((float)(_imu->accel_unscaled.x-(_imu->accel_neutral.x * ACC_NEUTRAL_COEF)) * _imu->acc_sens.x * ACC_SENS_COEF);
+	_imu->accel.y = (int32_t)((float)(_imu->accel_unscaled.y-(_imu->accel_neutral.y * ACC_NEUTRAL_COEF)) * _imu->acc_sens.y * ACC_SENS_COEF);
+	_imu->accel.z = (int32_t)((float)(_imu->accel_unscaled.z-(_imu->accel_neutral.z * ACC_NEUTRAL_COEF)) * _imu->acc_sens.z * ACC_SENS_COEF);
   
   VECT3_COPY(_imu->accel_scaled, _imu->accel);
 
@@ -295,25 +284,16 @@ void WEAK imu_scale_mag(struct Imu *_imu)
 #elif USE_MAGNETOMETER
 void WEAK imu_scale_mag(struct Imu *_imu)
 {
-	if(!mag_cali.cali_ok)
-	{
-		_imu->mag.x = ((_imu->mag_unscaled.x - _imu->mag_neutral.x)  *
-									 IMU_MAG_X_SENS_NUM) / IMU_MAG_X_SENS_DEN;
-		_imu->mag.y = ((_imu->mag_unscaled.y - _imu->mag_neutral.y)  *
-									 IMU_MAG_Y_SENS_NUM) / IMU_MAG_Y_SENS_DEN;
-		_imu->mag.z = ((_imu->mag_unscaled.z - _imu->mag_neutral.z)  *
-									 IMU_MAG_Z_SENS_NUM) / IMU_MAG_Z_SENS_DEN;
+	_imu->mag_real.x = (float)(_imu->mag_unscaled.x - _imu->mag_neutral.x) * _imu->mag_sens.x / (float)MAG_SENSITIVITY;
+	_imu->mag_real.y = (float)(_imu->mag_unscaled.y - _imu->mag_neutral.y) * _imu->mag_sens.y / (float)MAG_SENSITIVITY;
+	_imu->mag_real.z = (float)(_imu->mag_unscaled.z - _imu->mag_neutral.z) * _imu->mag_sens.z / (float)MAG_SENSITIVITY;
+	MAGS_BFP_OF_REAL(_imu->mag, _imu->mag_real);
+	VECT3_COPY(_imu->mag_scaled, _imu->mag);
+	_imu->mag.z = 0;
 
-		VECT3_COPY(_imu->mag_scaled, _imu->mag);
-
-		_imu->mag.x = update_butterworth_2_low_pass_int(&(_imu->mag_x_filter), _imu->mag.x, INT32_MAG_FRAC);
-		_imu->mag.y = update_butterworth_2_low_pass_int(&(_imu->mag_y_filter), _imu->mag.y, INT32_MAG_FRAC);
-		_imu->mag.z = update_butterworth_2_low_pass_int(&(_imu->mag_z_filter), _imu->mag.z, INT32_MAG_FRAC);
-	}
-	else
-	{
-		mag_cali_imu_scale(_imu);
-	}
+	//_imu->mag.x = update_butterworth_2_low_pass_int(&(_imu->mag_x_filter), _imu->mag.x, INT32_MAG_FRAC);
+	//_imu->mag.y = update_butterworth_2_low_pass_int(&(_imu->mag_y_filter), _imu->mag.y, INT32_MAG_FRAC);
+	//_imu->mag.z = update_butterworth_2_low_pass_int(&(_imu->mag_z_filter), _imu->mag.z, INT32_MAG_FRAC);
 }
 #else
 void WEAK imu_scale_mag(struct Imu *_imu __attribute__((unused))) {}

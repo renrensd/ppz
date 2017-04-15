@@ -26,7 +26,6 @@
 #define SW_VERSION_LONGTH     16
 #define MAG_CALI_FRAM_DATA_LENGTH	(MAG_CALI_PERS_DATA_STRUCT_LENGTH)
 #define ACC_CALI_FRAM_DATA_LENGTH   (ACC_CALI_PERS_DATA_STRUCT_LENGTH)
-#define MAG_SENSITIVITY		(12000) // LSB/G
 
 /**** Definition of types ****/ 
 struct AccCali_PersData

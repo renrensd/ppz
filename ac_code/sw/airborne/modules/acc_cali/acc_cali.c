@@ -28,7 +28,6 @@ static abi_event accel_ev;
 
 static void sensors_acc_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[6][3]);
 static void sensors_acc_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, float v[6][3]);
-static bool_t acc_cali_var_verify(void);
 static void acc_cali_write_data(void);
 
 static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
@@ -42,8 +41,6 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 #define ACC_STATIC_VALUE_THRESHOLD	(0.05f)
 #define ACC_CALI_GRAB_TIME	(PERIODIC_FREQUENCY)
 #define IS_WITHIN_OPEN_RANGE(value,min,max)	( (((value) < (max)) && ((value) > (min))) ? 1:0 )
-// TODO: efly_hexa_pwm.xml definition "IMU_MPU9250_ACCEL_RANGE" is not valid here
-#define IMU_ACCEL_SENS_SCALE_FACTOR (2048)
 
 	uint16_t i,j;
 	uint8_t grab_enable;
@@ -141,18 +138,9 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 		acc_cali.acc_offset[1] = p.data[4];
 		acc_cali.acc_offset[2] = p.data[5];
 
-		if( acc_cali_var_verify() )
+		if( acc_cali_load_to_imu() )
 		{
-#define NEUTRAL_COEF ((float)IMU_ACCEL_SENS_SCALE_FACTOR)
-			acc_cali.acc_NEUTRAL[0] = acc_cali.acc_offset[0] * NEUTRAL_COEF;
-			acc_cali.acc_NEUTRAL[1] = acc_cali.acc_offset[1] * NEUTRAL_COEF;
-			acc_cali.acc_NEUTRAL[2] = acc_cali.acc_offset[2] * NEUTRAL_COEF;
-#define SENS_COEF (9.81f * (float)(1<<INT32_ACCEL_FRAC) / (float)IMU_ACCEL_SENS_SCALE_FACTOR)
-			acc_cali.acc_SENS[0] = acc_cali.acc_gain[0] * SENS_COEF;
-			acc_cali.acc_SENS[1] = acc_cali.acc_gain[1] * SENS_COEF;
-			acc_cali.acc_SENS[2] = acc_cali.acc_gain[2] * SENS_COEF;
-
-			acc_cali_write_data();   //auto write data to fram, need add data range inspect
+			acc_cali_write_data();
 		}
 		else
 		{
@@ -238,23 +226,46 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 	}
 }
 
-static bool_t acc_cali_var_verify(void)
+bool_t acc_cali_load_to_imu(void)
 {
-	bool_t data_ok = TRUE;
+	// range check
+	float err = 0;
 	for (uint8_t i = 0; i < 3; ++i)
 	{
-		if ((acc_cali.acc_gain[i] < 0.7f) || (acc_cali.acc_gain[i] > 1.3f))
+		if ((acc_cali.acc_gain[i] < (0.7f)) || (acc_cali.acc_gain[i] > (1.3f)))
 		{
-			data_ok = FALSE;
+			err = TRUE;
 			break;
 		}
-		if ((acc_cali.acc_offset[i] < -0.3f) || (acc_cali.acc_offset[i] > 0.3f))
+		if ((acc_cali.acc_offset[i] < (-0.3f)) || (acc_cali.acc_offset[i] > (0.3f)))
 		{
-			data_ok = FALSE;
+			err = TRUE;
 			break;
 		}
 	}
-	return data_ok;
+
+	if(err)
+	{
+		imu.acc_sens.x = 1;
+		imu.acc_sens.y = 1;
+		imu.acc_sens.z = 1;
+		imu.accel_neutral.x = 0;
+		imu.accel_neutral.y = 0;
+		imu.accel_neutral.z = 0;
+
+		return FALSE;
+	}
+	else
+	{
+		imu.acc_sens.x = acc_cali.acc_gain[0];
+		imu.acc_sens.y = acc_cali.acc_gain[1];
+		imu.acc_sens.z = acc_cali.acc_gain[2];
+		imu.accel_neutral.x = acc_cali.acc_offset[0];
+		imu.accel_neutral.y = acc_cali.acc_offset[1];
+		imu.accel_neutral.z = acc_cali.acc_offset[2];
+
+		return TRUE;
+	}
 }
 
 void acc_cali_init(void)
@@ -293,12 +304,12 @@ void acc_cali_periodic(void)
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_ACC_CALI(DefaultChannel, DefaultDevice, &acc_cali.acc_norm,
 																		&acc_cali.acc_norm_filter,
-																		&acc_cali.acc_SENS[0],
-																		&acc_cali.acc_SENS[1],
-																		&acc_cali.acc_SENS[2],
-																		&acc_cali.acc_NEUTRAL[0],
-																		&acc_cali.acc_NEUTRAL[1],
-																		&acc_cali.acc_NEUTRAL[2],
+																		&acc_cali.acc_gain[0],
+																		&acc_cali.acc_gain[1],
+																		&acc_cali.acc_gain[2],
+																		&acc_cali.acc_offset[0],
+																		&acc_cali.acc_offset[1],
+																		&acc_cali.acc_offset[2],
 																		&acc_cali.is_body_static,
 																		&acc_cali.state);}         );
 		#endif
@@ -345,12 +356,12 @@ static void acc_cali_write_data(void)
 {
 	struct AccCali_PersData temp_acc_data;
 	uint8_t *ptemp = (uint8_t *)(&temp_acc_data);
-	temp_acc_data.gain[0] = acc_cali.acc_SENS[0];
-	temp_acc_data.gain[1] = acc_cali.acc_SENS[1];
-	temp_acc_data.gain[2] = acc_cali.acc_SENS[2];
-	temp_acc_data.offset[0] = acc_cali.acc_NEUTRAL[0];
-	temp_acc_data.offset[1] = acc_cali.acc_NEUTRAL[1];
-	temp_acc_data.offset[2] = acc_cali.acc_NEUTRAL[2];
+	temp_acc_data.gain[0] = acc_cali.acc_gain[0];
+	temp_acc_data.gain[1] = acc_cali.acc_gain[1];
+	temp_acc_data.gain[2] = acc_cali.acc_gain[2];
+	temp_acc_data.offset[0] = acc_cali.acc_offset[0];
+	temp_acc_data.offset[1] = acc_cali.acc_offset[1];
+	temp_acc_data.offset[2] = acc_cali.acc_offset[2];
 	temp_acc_data.crc16 = Crc16_normal(ptemp, 0, ACC_CALI_PERS_DATA_STRUCT_LENGTH - 4);
 
 	if(!fram_acc_cali_data_write(ptemp))
@@ -360,7 +371,6 @@ static void acc_cali_write_data(void)
 	else
 	{
 		acc_cali.cali_success = FALSE;
-		//fram_error.write_data_fail = TRUE;
 	}
 		
 }
