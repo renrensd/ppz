@@ -217,11 +217,12 @@ static void rc_motion_speed_update(void)
  ***********************************************************************/
 static void rc_setpoint_parse(void)
 {
-	guidance_h_set_vrc_vel_sp_body(rc_motion_info.speed_fb, rc_motion_info.speed_rl);
-
-	guidance_h.vrc_heading_rate_sp = rc_motion_info.rotation_rate;
-
-	NavVerticalClimbMode(rc_motion_info.speed_v);
+	if (flight_state == cruising)
+	{
+		guidance_h_set_vrc_vel_sp_body(rc_motion_info.speed_fb, rc_motion_info.speed_rl);
+		guidance_h.vrc_heading_rate_sp = rc_motion_info.rotation_rate;
+		NavVerticalClimbMode(rc_motion_info.speed_v);
+	}
 }
 
 /***********************************************************************
