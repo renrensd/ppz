@@ -1352,6 +1352,8 @@
   </message>
 
   <message name="VERT_LOOP" id="145">
+ 		<field name="guidance_v_mode"  type="uint8" />
+    <field name="vertical_mode"    type="uint8" />
     <field name="acc_z"      type="float" />
     <field name="speed_z"    type="float" />
     <field name="pos_z"      type="float" />

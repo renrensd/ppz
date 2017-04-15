@@ -178,10 +178,16 @@ void Tracking_differntiator(float signal)
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
+//extern uint8_t vertical_mode;
 static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
 {
+	uint8_t gv_mode = guidance_v_mode;
+	uint8_t vert_mode = vertical_mode;
+
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_VERT_LOOP(trans, dev, AC_ID,
+			&gv_mode,
+			&vert_mode,
 			&guid_v.NED_z_acc,
 			&guid_v.NED_z_speed,
 			&guid_v.NED_z_pos,
