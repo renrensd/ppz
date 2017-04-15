@@ -561,11 +561,7 @@ void ground_monitoring(void)
 	{
 		bool_t fail = FALSE;
 
-		if (ground_check_step == BBOX_CHECK)
-		{
-			fail =FALSE;
-		}
-		if ((ground_check_step != UBLOX_CHECK) && (ground_check_step != RTK_CHECK))
+		if ((ground_check_step != UBLOX_CHECK) && (ground_check_step != RTK_CHECK) && (ground_check_step != BBOX_CHECK))
 		{
 			fail = TRUE;
 		}
