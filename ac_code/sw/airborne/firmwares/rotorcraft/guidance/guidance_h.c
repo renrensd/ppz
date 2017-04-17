@@ -27,7 +27,6 @@
 #include "generated/airframe.h"
 #include "firmwares/rotorcraft/autopilot.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
-#include "firmwares/rotorcraft/guidance/guidance_flip.h"
 #include "firmwares/rotorcraft/guidance/guidance_module.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
@@ -868,7 +867,6 @@ void guidance_h_mode_changed(uint8_t new_mode)
 		break;
 
 	case GUIDANCE_H_MODE_FLIP:
-		guidance_flip_enter();
 		break;
 
 	default:
@@ -1026,7 +1024,6 @@ void guidance_h_run(bool_t  in_flight)
 #endif
 
 	case GUIDANCE_H_MODE_FLIP:
-		guidance_flip_run();
 		break;
 
 	default:

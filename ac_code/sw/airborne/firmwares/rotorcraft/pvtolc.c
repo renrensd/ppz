@@ -92,6 +92,7 @@ bool_t take_off_motion(bool_t reset)
 			wp_ToL = *stateGetPositionEnu_i();
 			NavGotoWaypoint_wp(wp_ToL);
 			NavVerticalAltitudeMode(Height(ac_config_info.max_flight_height), 0.);
+			//NavVerticalClimbMode(1.0f);
 			return TRUE;
 		}
 		step_t++;
@@ -100,6 +101,7 @@ bool_t take_off_motion(bool_t reset)
 		/*stay takeoff waypoint*/
 		NavGotoWaypoint_wp(wp_ToL)
 		;
+		NavVerticalAltitudeMode(Height(ac_config_info.max_flight_height), 0.);
 		if (FLOAT_DISTANCE(stateGetPositionEnu_f()->z, ac_config_info.max_flight_height) < 0.2f)
 		{
 			if (fabsf(stateGetSpeedEnu_f()->z) < 0.2f)

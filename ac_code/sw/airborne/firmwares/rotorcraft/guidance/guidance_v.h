@@ -28,10 +28,6 @@
 #define GUIDANCE_V_H
 
 #include "std.h"
-
-#include "firmwares/rotorcraft/guidance/guidance_v_ref.h"
-#include "firmwares/rotorcraft/guidance/guidance_v_adapt.h"
-
 #include "controllers/pid.h"
 #include "filters/low_pass_filter.h"
 
@@ -54,107 +50,52 @@ enum _e_v_pid_loop_mode
 
 struct _s_guidance_v
 {
+	uint8_t mode;
+
 	enum _e_v_pid_loop_mode pid_loop_mode_gcs;
 	enum _e_v_pid_loop_mode pid_loop_mode_running;
-	bool_t thr_in_deadband;
-	bool_t thr_in_deadband_prev;
-	float NED_z_acc;
-	float NED_z_speed;
-	float NED_z_pos;
+	float UP_z_acc;
+	float UP_z_speed;
+	float UP_z_pos;
 	struct _s_pid acc_z_pid;
 	struct _s_pid speed_z_pid;
 	struct _s_pid pos_z_pid;
-	float rc_pos_z;
-	float rc_speed_z;
-	float rc_acc_z;
+	int32_t loop_throttle_cmd;
+
 	float ref_pos_z;
 	float ref_speed_z;
 	float ref_acc_z;
 	float acc_filter_fc;
-	Butterworth2LowPass NED_z_acc_filter;
+	Butterworth2LowPass UP_z_acc_filter;
 	float thrust_coef;
+
+	// src and vrc
+	int32_t src_direct_throttle;
+	float src_speed_sp;
+	float src_acc_sp;
+	float rc_pos_sp;
+
+	//
+	float guided_pos_sp;
+	float climb_speed_sp;
 };
 
 extern struct _s_guidance_v guid_v;
 
-extern uint8_t guidance_v_mode;
-
-/** altitude setpoint in meters (input).
- *  fixed point representation: Q23.8
- *  accuracy 0.0039, range 8388km
- */
-extern int32_t guidance_v_z_sp;
-
-/** vertical speed setpoint in meter/s (input).
- *  fixed point representation: Q12.19
- *  accuracy 0.0000019, range +/-4096
- */
-extern int32_t guidance_v_zd_sp;
-
-/** altitude reference in meters.
- *  fixed point representation: Q23.8
- *  accuracy 0.0039, range 8388km
- */
-extern int32_t guidance_v_z_ref;
-
-/** vertical speed reference in meter/s.
- *  fixed point representation: Q12.19
- *  accuracy 0.0000038, range 4096
- */
-extern int32_t guidance_v_zd_ref;
-
-/** vertical acceleration reference in meter/s^2.
- *  fixed point representation: Q21.10
- *  accuracy 0.0009766, range 2097152
- */
-extern int32_t guidance_v_zdd_ref;
-
-extern int32_t guidance_v_z_sum_err; ///< accumulator for I-gain
-extern int32_t guidance_v_ff_cmd;    ///< feed-forward command
-extern int32_t guidance_v_fb_cmd;    ///< feed-back command
-
-/** thrust command.
- *  summation of feed-forward and feed-back commands,
- *  valid range 0 : #MAX_PPRZ
- */
-extern int32_t guidance_v_delta_t;
-
-/** nominal throttle for hover.
- * This is only used if #GUIDANCE_V_NOMINAL_HOVER_THROTTLE is defined!
- * Unit: factor of #MAX_PPRZ with range 0.1 : 0.9
- */
-extern float guidance_v_nominal_throttle;
-
-/** Use adaptive throttle command estimation.
- */
-extern bool_t guidance_v_adapt_throttle_enabled;
-
-
-extern int32_t guidance_v_thrust_coeff;
-
-extern float vh;
-extern float vh0;
-extern float r_vert;
-
 extern void guidance_v_init(void);
 extern void guidance_v_read_rc(void);
 extern void guidance_v_mode_changed(uint8_t new_mode);
-extern void guidance_v_notify_in_flight(bool_t in_flight);
 extern void guidance_v_run(bool_t in_flight);
 
 extern void guidance_v_SetAccCutoff(float fc);
 
-extern uint8_t get_error_z(void);
+extern bool_t guidance_v_get_thrust_error_1(void);
+extern bool_t guidance_v_get_thrust_error_2(void);
 
 /** Set z setpoint in GUIDED mode.
  * @param z Setpoint (down is positive) in meters.
  * @return TRUE if setpoint was set (currently in GUIDANCE_V_MODE_GUIDED)
  */
 extern bool_t guidance_v_set_guided_z(float z);
-
-#define guidance_v_SetKi(_val) {      \
-    guidance_v_ki = _val;       \
-    guidance_v_z_sum_err = 0;     \
-  }
 
 #endif /* GUIDANCE_V_H */

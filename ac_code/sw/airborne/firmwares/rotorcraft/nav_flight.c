@@ -549,8 +549,8 @@ static void  ac_config_set_default(void)
 {
 	ac_config_info.spray_concentration = 80;
 	ac_config_info.atomization_grade = 3;
-	ac_config_info.max_flight_height = 3.0;
-	ac_config_info.max_flight_speed = 4.0;
+	ac_config_info.max_flight_height = 2.0;
+	ac_config_info.max_flight_speed = 3.0;
 	ac_config_info.spray_height = 3.0;
 	ac_config_info.spray_wide = 3.0;
 	ac_config_info.spray_speed = 3.0;

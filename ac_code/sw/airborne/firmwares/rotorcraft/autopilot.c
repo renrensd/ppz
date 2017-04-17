@@ -125,10 +125,7 @@ static inline int ahrs_is_aligned(void)
 #endif
 
 /** Set descent speed in failsafe mode */
-#ifndef FAILSAFE_DESCENT_SPEED
-#define FAILSAFE_DESCENT_SPEED 0.8 //1.5   //for our aircraft,default 1.5m/s maybe too fast
-PRINT_CONFIG_VAR(FAILSAFE_DESCENT_SPEED)
-#endif
+#define FAILSAFE_DESCENT_SPEED (-0.8) //1.5   //for our aircraft,default 1.5m/s maybe too fast
 
 /** Mode that is set when the plane is really too far from home */
 #ifndef FAILSAFE_MODE_TOO_FAR_FROM_HOME
@@ -245,7 +242,7 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
                                   &spray_state,
                                   &fix, &autopilot_mode,
                                   &autopilot_in_flight, &autopilot_motors_on,
-                                  &guidance_h.mode, &guidance_v_mode,
+                                  &guidance_h.mode, &guid_v.mode,
                                   &electrical.vsupply, &electrical.current, &electrical.rep_cap, &electrical.temper,
 								  &time_sec);
   #if OPEN_PC_DATALINK
@@ -255,7 +252,7 @@ static void send_status(struct transport_tx *trans, struct link_device *dev)
                                   &spray_state,
                                   &fix, &autopilot_mode,
                                   &autopilot_in_flight, &autopilot_motors_on,
-                                  &guidance_h.mode, &guidance_v_mode,
+                                  &guidance_h.mode, &guid_v.mode,
                                   &electrical.vsupply, &electrical.current, &electrical.rep_cap, &electrical.temper,
 								  &time_sec);
   #endif
@@ -276,7 +273,6 @@ static void send_energy(struct transport_tx *trans, struct link_device *dev)
 
 static void send_fp(struct transport_tx *trans, struct link_device *dev)
 {
-  int32_t carrot_up = -guidance_v_z_sp;
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_ROTORCRAFT_FP(trans, dev, AC_ID,
                               &(stateGetPositionEnu_i()->x),
@@ -288,7 +284,6 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
                               &(stateGetNedToBodyEulers_i()->phi),
                               &(stateGetNedToBodyEulers_i()->theta),
                               &(stateGetNedToBodyEulers_i()->psi),
-                              &carrot_up,
                               &stabilization_cmd[COMMAND_THRUST],
                               &autopilot_flight_time);
   #if OPEN_PC_DATALINK
@@ -592,7 +587,7 @@ void autopilot_set_mode(uint8_t new_autopilot_mode)
       case AP_MODE_FAILSAFE:
 #ifndef KILL_AS_FAILSAFE
         guidance_v_mode_changed(GUIDANCE_V_MODE_CLIMB);
-        guidance_v_zd_sp = SPEED_BFP_OF_REAL(FAILSAFE_DESCENT_SPEED);
+        guid_v.climb_speed_sp = FAILSAFE_DESCENT_SPEED;
         break;
 #endif
       case AP_MODE_KILL:

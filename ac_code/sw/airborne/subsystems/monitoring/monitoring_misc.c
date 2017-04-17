@@ -482,21 +482,45 @@ static bool_t yaw_command_monitor(void)
 
 static bool_t thrust_command_monitor(void)
 {
-	static uint16_t counter = 0;
-	if( get_error_z() && (stabilization_cmd[COMMAND_THRUST] > MAX_ERROR_Z_THRUST) )
+	static uint16_t counter1 = 0, counter2 = 0;
+	bool_t err1 = 0, err2 = 0;
+
+	if (guidance_v_get_thrust_error_1())
 	{
-		counter++;
-		if(counter > (MONITORING_FREQUENCY*2))  //continual 2s
+		counter1++;
+		if (counter1 > (MONITORING_FREQUENCY * 2))  //continual 2s
 		{
-			counter = MONITORING_FREQUENCY*2;
-			return TRUE;
+			counter1 = MONITORING_FREQUENCY * 2;
+			err1 = TRUE;
 		}
 	}
 	else
 	{
-		counter = 0;
+		counter1 = 0;
 	}
-	return FALSE;
+
+	if (guidance_v_get_thrust_error_2())
+	{
+		counter2++;
+		if (counter2 > (MONITORING_FREQUENCY * 2))  //continual 2s
+		{
+			counter2 = MONITORING_FREQUENCY * 2;
+			err2 = TRUE;
+		}
+	}
+	else
+	{
+		counter2 = 0;
+	}
+
+	if (err1 || err2)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }
 /**************** END OF FILE *****************************************/
 

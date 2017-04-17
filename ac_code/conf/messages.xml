@@ -1401,7 +1401,6 @@
     <field name="phi"      type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
     <field name="theta"    type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
     <field name="psi"      type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
-    <field name="carrot_up"     type="int32" alt_unit="m" alt_unit_coef="0.0039063"/>
     <field name="thrust"        type="int32"/>
     <field name="flight_time"   type="uint16" unit="s"/>
   </message>
