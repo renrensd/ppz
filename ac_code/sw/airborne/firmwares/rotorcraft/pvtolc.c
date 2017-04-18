@@ -200,14 +200,14 @@ bool_t lock_motion(bool_t reset)
 	}
 	switch (step_o)
 	{
-	case 1:
+	case 0:
 		NavAttitude(RadOfDeg(0))
 		;
 		NavVerticalThrottleMode(9600 * (0))
 		;
 		step_o++;
 		break;
-	case 2:
+	case 1:
 		if ((NavKillThrottle()))
 			return TRUE;
 		step_o = 0;  //reset
