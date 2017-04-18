@@ -125,7 +125,7 @@ static void guidance_v_controller_ini(void)
 	guid_v.pos_z_pid.Kp = 1.5f;
 	guid_v.pos_z_pid.Kd = 0.0f;
 
-	guid_v.acc_filter_fc = 5;
+	guid_v.acc_filter_fc = 1;
 	init_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc),
 			1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
 }
@@ -165,6 +165,11 @@ void guidance_v_read_rc(void)
 	Bound(guid_v.src_speed_sp, - GUIDANCE_V_MAX_RC_DESCENT_SPEED, + GUIDANCE_V_MAX_RC_CLIMB_SPEED);
 }
 
+static void guidance_v_src_thr_to_acc_loop(void)
+{
+	guid_v.acc_z_pid.Ui = guid_v.src_direct_throttle/(float)MAX_PPRZ;
+}
+
 void guidance_v_mode_changed(uint8_t new_mode)
 {
 	if (new_mode == guid_v.mode)
@@ -179,7 +184,7 @@ void guidance_v_mode_changed(uint8_t new_mode)
 		guid_v.rc_pos_sp = guid_v.UP_z_pos;
 		if (guid_v.mode == GUIDANCE_V_MODE_RC_DIRECT)
 		{
-			guid_v.acc_z_pid.Ui = guid_v.src_direct_throttle;
+			guidance_v_src_thr_to_acc_loop();
 		}
 		break;
 	case GUIDANCE_V_MODE_RC_CLIMB:
@@ -188,7 +193,7 @@ void guidance_v_mode_changed(uint8_t new_mode)
 		guid_v.rc_pos_sp = guid_v.UP_z_pos;
 		if (guid_v.mode == GUIDANCE_V_MODE_RC_DIRECT)
 		{
-			guid_v.acc_z_pid.Ui = guid_v.src_direct_throttle;
+			guidance_v_src_thr_to_acc_loop();
 		}
 		break;
 	case GUIDANCE_V_MODE_FLIP:

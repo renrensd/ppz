@@ -591,19 +591,19 @@ static void guidance_h_trajectory_tracking_ini(void)
 	pid_set_out_range(&traj.pos_cross_pid, -5, +5);
 	pid_set_Ui_range(&traj.pos_cross_pid, -0.5, +0.5);
 
-	traj.vel_along_pid.Kp = 0.2f;
+	traj.vel_along_pid.Kp = 0.15f;
 	traj.vel_along_pid.Ki = 0.02f;
 	traj.vel_along_pid.Kd = 0.05f;
 
-	traj.vel_cross_pid.Kp = 0.2f;
+	traj.vel_cross_pid.Kp = 0.15f;
 	traj.vel_cross_pid.Ki = 0.04f;
 	traj.vel_cross_pid.Kd = 0.05f;
 
-	traj.pos_along_pid.Kp = 0.6f;
+	traj.pos_along_pid.Kp = 0.4f;
 	traj.pos_along_pid.Ki = 0.0f;
 	traj.pos_along_pid.Kd = 0.2f;
 
-	traj.pos_cross_pid.Kp = 0.8f;
+	traj.pos_cross_pid.Kp = 0.6f;
 	traj.pos_cross_pid.Ki = 0.0f;
 	traj.pos_cross_pid.Kd = 0.25f;
 
