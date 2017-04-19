@@ -276,6 +276,7 @@ static void send_debug_gps(struct transport_tx *trans, struct link_device *dev)
 				&RTK_GPS.heading,
 				&ahrs_mlkf.mag_heading,
 				&ahrs_mlkf.mlkf_heading,
+				&ahrs_mlkf.diff_heading,
 				&ins_int.rtk_gps_sd_ned.x,
 				&ins_int.rtk_gps_sd_ned.y,
 				&ins_int.rtk_gps_sd_ned.z);
