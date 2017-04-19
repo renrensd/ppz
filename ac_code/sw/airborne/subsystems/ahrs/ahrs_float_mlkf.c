@@ -206,6 +206,8 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
 void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 {
 	ahrs_mlkf.mag_heading = LimitAngleTo_0_2pi(atan2f(-mag->y, mag->x)) * (180.0f/3.1415926f);
+	ahrs_mlkf.diff_heading = gps.heading - ahrs_mlkf.mag_heading;
+	NormRadAngle(ahrs_mlkf.diff_heading);
 
 	if(ahrs_mlkf.heading_state == AMHS_MAG)
 	{
@@ -519,7 +521,7 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 
 bool_t ahrs_mlkf_is_rtk_heading_valid(void)
 {
-	return (gps.h_stable && ahrs_mlkf.virtual_rtk_heading_valid);
+	return (GpsFixValid() && gps.h_stable && ahrs_mlkf.virtual_rtk_heading_valid);
 }
 
 void ahrs_mlkf_task(void)

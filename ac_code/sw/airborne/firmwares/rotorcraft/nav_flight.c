@@ -29,14 +29,14 @@
 
 
 uint8_t  flight_mode;        //nav_gcs_mode/nav_rc_mode,requested autopilot_mode==NAV
-bool_t is_force_redundency;
+bool_t is_force_use_all_redundency;
 uint16_t flight_status = 0;  //assemble flight status, send to gcs in heartbeat msg
 
 struct EnuCoor_i wp_take_off;//(wp_ms_break,wp_start) not use  record home/mission break/toward flight start waypoint
 float distance2_to_takeoff;
 
 enum Flight_State flight_state;
-static uint8_t flight_step = 0;
+uint8_t flight_step = 0;
 
 Gcs_State task_state;
 
@@ -54,7 +54,7 @@ static void gcs_mode_enter(void);
 void nav_flight_init(void)
 { 
 	flight_mode = nav_gcs_mode;  //default in nav_kill_mode
-	is_force_redundency = FALSE;
+	is_force_use_all_redundency = FALSE;
 	task_init();                 //mission initial
 	rc_nav_init();               //rc info initial
 	ac_config_set_default();
@@ -495,9 +495,26 @@ uint16_t get_flight_status(void)
 	
 }
 
+void force_use_heading_redundency(bool_t enable)
+{
+	if(is_force_use_all_redundency)
+	{
+		return;
+	}
+
+	if(enable)
+	{
+		ahrs_mlkf.virtual_rtk_heading_valid = FALSE;
+	}
+	else
+	{
+		ahrs_mlkf.virtual_rtk_heading_valid = TRUE;
+	}
+}
+
 static void force_use_all_redundency(bool_t enable)
 {
-	is_force_redundency = enable;
+	is_force_use_all_redundency = enable;
 	if(enable)
 	{
 		ins_int.virtual_rtk_pos_xy_valid = FALSE;
@@ -512,11 +529,11 @@ static void force_use_all_redundency(bool_t enable)
 	}
 }
 
-uint8_t force_use_redundency_and_vrc(uint8_t enable)
+uint8_t force_use_all_redundency_and_vrc(uint8_t enable)
 {
 	if(enable)
 	{
-		if(!is_force_redundency)
+		if(!is_force_use_all_redundency)
 		{
 			force_use_all_redundency(TRUE);
 			rc_set_cmd_parse(RC_SET_MANUAL);

@@ -157,7 +157,7 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 			break;
 		case U_BLOX_ENABLE:
 			ac_config_info.force_redun_status = (uint8_t)(*((uint8_t*)pt_value));
-			ac_config_info.force_redun_status = force_use_redundency_and_vrc(ac_config_info.force_redun_status);
+			ac_config_info.force_redun_status = force_use_all_redundency_and_vrc(ac_config_info.force_redun_status);
 			break;
 			
 		default: break;

@@ -352,7 +352,7 @@ static void ins_int_init(void)
 void ins_int_SetForceRedun(uint8_t force)
 {
 	ins_int.force_use_redundency = force;
-	force_use_redundency_and_vrc(force);
+	force_use_all_redundency_and_vrc(force);
 }
 
 static inline void gpss_state_update(void)
@@ -476,11 +476,14 @@ void ins_int_task(void)
 #if INS_USE_GPS_ALT
 #define BARO_TO_GPS_TIME	(10)
 
-			if (RTK_GPS.p_stable && ins_int.vf_realign)
+			if (ins_int.vf_realign)
 			{
-				ins_int.vf_realign = FALSE;
-				vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
-				ins_int.vf_stable = TRUE;
+				if (ins_int_is_rtk_best_accu())
+				{
+					ins_int.vf_realign = FALSE;
+					vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
+					ins_int.vf_stable = TRUE;
+				}
 			}
 
 			if (ins_int_is_rtk_pos_z_valid())

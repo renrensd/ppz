@@ -31,7 +31,7 @@
 #define BAT_CRITICAL 1
 #define BAT_OTHER 2
 #define IMU_MOMENTARY 3
-#define IMU_MAG_EMI 4
+#define GPS_HEADING 4
 #define IMU_CRITICAL  5
 #define HEIGHT_SONAR 6
 #define HEIGHT_BARO 7

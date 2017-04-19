@@ -54,7 +54,7 @@ struct config_info
 };
 
 extern uint8_t flight_mode;
-extern bool_t is_force_redundency;
+extern bool_t is_force_use_all_redundency;
 extern uint16_t flight_status;
 extern enum Flight_State  flight_state;
 extern enum Rc_Type rc_type;
@@ -67,6 +67,7 @@ extern void nav_flight_init(void);
 extern void nav_flight(void);
 extern uint16_t get_flight_status(void);
 extern void flight_mode_enter(uint8_t new_mode);
-extern uint8_t force_use_redundency_and_vrc(uint8_t enable);
+extern uint8_t force_use_all_redundency_and_vrc(uint8_t enable);
+extern void force_use_heading_redundency(bool_t enable);
 
 #endif /* END OF RC_NAV_H */

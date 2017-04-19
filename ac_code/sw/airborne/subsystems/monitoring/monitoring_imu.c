@@ -206,8 +206,8 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 	{
 		em[IMU_CRITICAL].active =FALSE;
 		em[IMU_CRITICAL].finished =FALSE;
-		em[IMU_MAG_EMI].active =FALSE;
-		em[IMU_MAG_EMI].finished =FALSE;
+		em[GPS_HEADING].active =FALSE;
+		em[GPS_HEADING].finished =FALSE;
 		//only momentary,recover do nothing
 		//set_except_mission(IMU_MOMENTARY,FALSE,FALSE, FALSE,0, FALSE,FALSE,0);	
 

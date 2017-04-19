@@ -70,6 +70,7 @@ struct AhrsMlkf {
   enum _e_ahrs_mlkf_heading_status heading_state;
   float mag_heading;
   float mlkf_heading;
+  float diff_heading;
 };
 
 extern struct AhrsMlkf ahrs_mlkf;

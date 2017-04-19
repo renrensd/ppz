@@ -41,6 +41,7 @@
 #include "subsystems/ins/ins_int.h"
 #include "subsystems/fram/fram_if.h"
 #include "modules/gps/gps2_ublox.h"
+#include "modules/mag_cali/mag_cali.h"
 
 
 /*===VARIABLES========================================================*/
@@ -178,6 +179,10 @@ void battery_flight_check(void)
 ***********************************************************************/
 void gps_flight_check(void)
 {
+	static uint16_t count = 0;
+	static float diff_sum = 0;
+	static bool_t diff_err = FALSE;
+
 	if(GpsFixValid())
 	{
 		if (ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid())
@@ -217,12 +222,37 @@ void gps_flight_check(void)
 #ifdef USE_GPS_HEADING
 	if(ahrs_mlkf_is_rtk_heading_valid())
 	{
-		em[IMU_MAG_EMI].active = 0;
-		em[IMU_MAG_EMI].finished = 0;
+		if(!diff_err)
+		{
+			em[GPS_HEADING].active = 0;
+			em[GPS_HEADING].finished = 0;
+			force_use_heading_redundency(FALSE);
+		}
+
+		if ( mag_cali.cali_ok && ground_check_pass )
+		{
+			diff_sum += fabsf(ahrs_mlkf.diff_heading);
+			if(++count >= (10))	// 2s
+			{
+				diff_sum /= (float)(10);
+				if(diff_sum > RadOfDeg(20))
+				{
+					diff_err = TRUE;
+					set_except_mission(GPS_HEADING,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
+					force_use_heading_redundency(TRUE);
+				}
+				else
+				{
+					diff_err = FALSE;
+				}
+			}
+			count = 0;
+			diff_sum = 0;
+		}
 	}
 	else
 	{
-		set_except_mission(IMU_MAG_EMI,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
+		set_except_mission(GPS_HEADING,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
 	}
 #endif
 
@@ -256,6 +286,7 @@ bool_t ops_ground_check(void)
 		return TRUE;
 	}
 }
+
 /***********************************************************************
 * FUNCTIONS   : ops flight check
 * DESCRIPTION : ept_ms could close by ops recover
