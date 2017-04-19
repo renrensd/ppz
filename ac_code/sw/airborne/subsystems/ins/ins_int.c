@@ -276,7 +276,6 @@ static void send_debug_gps(struct transport_tx *trans, struct link_device *dev)
 				&RTK_GPS.heading,
 				&ahrs_mlkf.mag_heading,
 				&ahrs_mlkf.mlkf_heading,
-				&ahrs_mlkf.diff_heading,
 				&ins_int.rtk_gps_sd_ned.x,
 				&ins_int.rtk_gps_sd_ned.y,
 				&ins_int.rtk_gps_sd_ned.z);
@@ -319,6 +318,8 @@ static void ins_int_init(void)
 
   ins_int.vf_realign = FALSE;
   ins_int.vf_stable = FALSE;
+  ins_int.gps_body_z_hist_ok = FALSE;
+  ins_int.gps_body_z_hist_index = 0;
   ins_int_set_rtk_hf_realign(FALSE);
   ins_int_set_ublox_hf_realign(FALSE);
   ins_int_set_hf_realign_done(FALSE);
@@ -464,6 +465,65 @@ bool_t ins_int_is_rtk_pos_z_valid(void)
 	}
 }
 
+static void ins_int_record_rtk_z_hist(void)
+{
+	if(ins_int.gps_body_z_hist_index >= INS_INT_GPS_BODY_Z_HIST_SIZE)
+	{
+		if(ins_int.gps_body_z_hist_ok)
+		{
+			ins_int.gps_body_z_hist_ok = TRUE;
+		}
+		ins_int.gps_body_z_hist_index = 0;
+	}
+	ins_int.gps_body_z_hist[ins_int.gps_body_z_hist_index] = ins_int.gps_body_z;
+	++ins_int.gps_body_z_hist_index;
+}
+
+static uint8_t find_index(int16_t base, int16_t delta , int16_t max)
+{
+	int8_t index;
+
+	index = base + delta;
+
+  while (index > max) index -= max;
+  while (index < -max) index += max;
+
+  Bound(index, 0, max);
+	return index;
+}
+
+static float ins_int_get_recent_valid_rtk_z(void)
+{
+	uint8_t i,j,index;
+	float sum = 0;
+	float all_hist_mean;
+	float half_hist_mean;
+
+	if(ins_int.gps_body_z_hist_ok)
+	{
+		sum = 0;
+		for(i=0;i<INS_INT_GPS_BODY_Z_HIST_SIZE/2;++i)
+		{
+			index = find_index(ins_int.gps_body_z_hist_index, -4-i, INS_INT_GPS_BODY_Z_HIST_SIZE);
+			sum += ins_int.gps_body_z_hist[index];
+		}
+		half_hist_mean = sum / (float)(INS_INT_GPS_BODY_Z_HIST_SIZE/2);
+
+		sum = 0;
+		for(i=0;i<INS_INT_GPS_BODY_Z_HIST_SIZE;++i)
+		{
+			sum += ins_int.gps_body_z_hist[i];
+		}
+		all_hist_mean = sum / (float) (INS_INT_GPS_BODY_Z_HIST_SIZE);
+
+		//if(fabsf(half_hist_mean) > 10)
+	}
+	else
+	{
+		return ins_int.gps_body_z;
+	}
+}
+
 void ins_int_task(void)
 {
 	gpss_state_update();
@@ -503,8 +563,9 @@ void ins_int_task(void)
 					vff.z += ins_int.baro_to_gps_z_step;
 					//vff_update_z_conf(ins_int.gps_body_z, 10.0f);
 					ins_update_from_vff();
-					if (++ins_int.baro_to_gps_count == BARO_TO_GPS_TIME) // 2s
+					if (++ins_int.baro_to_gps_count >= BARO_TO_GPS_TIME) // 2s
 					{
+						ins_int.baro_to_gps_count = 0;
 						ins_int.ekf_state = INS_EKF_GPS;
 					}
 				}
@@ -515,13 +576,13 @@ void ins_int_task(void)
 					vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
 					ins_update_from_vff();
 				}
+				ins_int_record_rtk_z_hist();
 			}
 			else
 			{
 				if (ins_int.ekf_state != INS_EKF_BARO)
 				{
-					ins_int.ekf_state = INS_EKF_BARO;
-					vff_init_P();
+					ins_int.ekf_state = INS_EKF_GPS_TO_BARO;
 				}
 			}
 
@@ -585,8 +646,7 @@ void ins_int_task(void)
 	{
 		if (ins_int.ekf_state != INS_EKF_BARO)
 		{
-			ins_int.ekf_state = INS_EKF_BARO;
-			vff_init_P();
+			ins_int.ekf_state = INS_EKF_GPS_TO_BARO;
 		}
 	}
 
@@ -740,7 +800,12 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 		else
 		{
 			update_first_order_low_pass(&ins_int.baro_z_filter, ins_int.baro_z);
-			if(ins_int.ekf_state == INS_EKF_BARO)
+			if(ins_int.ekf_state == INS_EKF_GPS_TO_BARO)
+			{
+				vff_init_P();
+				ins_int.ekf_state = INS_EKF_BARO;
+			}
+			else if(ins_int.ekf_state == INS_EKF_BARO)
 			{
 				vff_update_baro_conf(ins_int.baro_z, ins_int.R_baro);
 				ins_update_from_vff();

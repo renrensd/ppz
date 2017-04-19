@@ -232,22 +232,22 @@ void gps_flight_check(void)
 		if ( mag_cali.cali_ok && ground_check_pass )
 		{
 			diff_sum += fabsf(ahrs_mlkf.diff_heading);
-			if(++count >= (10))	// 2s
+			if (++count >= (10))	// 2s
 			{
-				diff_sum /= (float)(10);
-				if(diff_sum > RadOfDeg(20))
+				diff_sum /= (float) (10);
+				if (diff_sum > 20)
 				{
 					diff_err = TRUE;
-					set_except_mission(GPS_HEADING,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
+					set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 					force_use_heading_redundency(TRUE);
 				}
 				else
 				{
 					diff_err = FALSE;
 				}
+				count = 0;
+				diff_sum = 0;
 			}
-			count = 0;
-			diff_sum = 0;
 		}
 	}
 	else
