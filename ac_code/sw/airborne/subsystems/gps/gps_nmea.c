@@ -475,7 +475,10 @@ static void nmea_parse_TRA(void)
   gps.head_stanum = gps_nmea.num_sta_use;
   gps_nmea.heading_available = TRUE;
 
-  gps_nmea.last_tramsg_time = get_sys_time_msec();
+	if (gps.test_msg_timeout)
+	{
+		gps_nmea.last_tramsg_time = get_sys_time_msec();
+	}
 }
 #endif
 
@@ -870,70 +873,77 @@ static void nmea_parse_XYZ(void)
   gps.ecef_vel.z= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   gps_nmea.pos_xyz_available = TRUE;
 
-  gps_nmea.last_xyzmsg_time = get_sys_time_msec();
-  
+  if(gps.test_msg_timeout)
+  {
+  	gps_nmea.last_xyzmsg_time = get_sys_time_msec();
+  }
 }
 
 #endif
 
+#define MSG_TIME_OUT 1000  //unit:ms
 /*run 20hz,use 2s time no fix pos set unstable*/
 void get_gps_pos_stable(void)
 {
-	static uint8_t counter_nmea_qual = 0;
+	uint32_t now_time = get_sys_time_msec();
+	static uint8_t counter = 0;
 
-	if(gps_nmea.pos_type < WIDE_INT)
+	if ((now_time - gps_nmea.last_xyzmsg_time) > MSG_TIME_OUT)
 	{
+		gps_nmea.pos_type = TIME_OUT;
 		gps.p_stable = FALSE;
-		counter_nmea_qual = 0;
+		counter = 0;
 	}
 	else
 	{
-		counter_nmea_qual++;
-	}
+		if (gps_nmea.pos_type < WIDE_INT)
+		{
+			gps.p_stable = FALSE;
+			counter = 0;
+		}
+		else
+		{
+			counter++;
+		}
 
-	if(counter_nmea_qual > 40)
-	{
-		gps.p_stable = TRUE;
-		counter_nmea_qual = 41;  /*avoid overflow*/
+		if (counter > 40)
+		{
+			gps.p_stable = TRUE;
+			counter = 41; /*avoid overflow*/
+		}
 	}
 }
 
 /*run 20hz,use 2s time no fix heading set unstable*/
 void get_gps_heading_stable(void)
 {
-	static uint8_t counter_heading = 0;
-	if(gps_nmea.sol_tatus!= 4) //not fix pos
-	{
-		gps.h_stable = FALSE;
-		counter_heading = 0;
-	}
-	else
-	{
-		counter_heading++;
-	}
-
-	if( ((counter_heading>200)&&(get_sys_time_float()<300.0)&&(gps_nmea.num_sta_use>14))
-		||((counter_heading>80)&&(get_sys_time_float()>300.0)) )
-	{
-		gps.h_stable = TRUE;
-		counter_heading = 200;  /*avoid overflow*/
-	}	
-}
-
-#define MSG_TIME_OUT 1000  //unit:ms
-/*run 20hz, set time_out to avoid msg flag no update*/
-void gps_nmea_msg_outtime_check(void)
-{
 	uint32_t now_time = get_sys_time_msec();
-	if( (now_time-gps_nmea.last_tramsg_time) > MSG_TIME_OUT )
+	static uint8_t counter = 0;
+
+	if ((now_time - gps_nmea.last_tramsg_time) > MSG_TIME_OUT)
 	{
 		gps_nmea.sol_tatus = 0;
 		gps.h_stable = FALSE;
+		counter = 0;
 	}
-	if( (now_time-gps_nmea.last_xyzmsg_time) > MSG_TIME_OUT )
+	else
 	{
-		gps_nmea.pos_type = TIME_OUT;
-		gps.p_stable = FALSE;
+		if (gps_nmea.sol_tatus != 4) //not fix pos
+		{
+			gps.h_stable = FALSE;
+			counter = 0;
+		}
+		else
+		{
+			counter++;
+		}
+
+		if (((counter > 200) && (get_sys_time_float() < 300.0) && (gps_nmea.num_sta_use > 14))
+				|| ((counter > 80) && (get_sys_time_float() > 300.0)))
+		{
+			gps.h_stable = TRUE;
+			counter = 200; /*avoid overflow*/
+		}
 	}
 }
 

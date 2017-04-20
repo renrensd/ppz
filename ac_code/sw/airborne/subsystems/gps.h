@@ -112,7 +112,7 @@ struct GpsState {
 
   bool_t alive;
 
-
+  bool_t test_msg_timeout;
 };
 
 /** data structure for GPS time sync */
