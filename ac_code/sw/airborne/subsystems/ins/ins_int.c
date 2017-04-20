@@ -231,17 +231,16 @@ static void send_ins(struct transport_tx *trans, struct link_device *dev)
 
 static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
 {
-	float gps_speed_z = ins_int.rtk_gps_speed_cm_ned.z * 0.01f;
-	float raw_baro_offset = ins_int.gps_body_z - ins_int.baro_z;
+	float raw_baro_offset = ins_int.rtk_ned_z - ins_int.baro_ned_z;
 	float baro_filter = get_first_order_low_pass(&ins_int.baro_z_filter);
 
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_INS_Z(trans, dev, AC_ID,
-  		  		&ins_int.baro_z,
+  		  		&ins_int.baro_ned_z,
   					&baro_filter,
-  					&ins_int.gps_body_z,
+  					&ins_int.rtk_ned_z,
   					&vff.z,
-					&gps_speed_z,
+					&ins_int.rtk_ned_zd,
 					&vff.zdot,
 					&vff.bias,
 					&raw_baro_offset,
@@ -318,14 +317,14 @@ static void ins_int_init(void)
 
   ins_int.vf_realign = FALSE;
   ins_int.vf_stable = FALSE;
-  ins_int.gps_body_z_hist_ok = FALSE;
-  ins_int.gps_body_z_hist_index = 0;
+  ins_int.rtk_z_hist_ok = FALSE;
+  ins_int.rtk_ned_z_hist_index = 0;
   ins_int_set_rtk_hf_realign(FALSE);
   ins_int_set_ublox_hf_realign(FALSE);
   ins_int_set_hf_realign_done(FALSE);
 
   /* init vertical and horizontal filters   all set 0 */
-  vff_init_zero();
+  vff_first_init();
 #if USE_HFF
   b2_hff_init(0., 0., 0., 0.);
 #endif
@@ -467,16 +466,17 @@ bool_t ins_int_is_rtk_pos_z_valid(void)
 
 static void ins_int_record_rtk_z_hist(void)
 {
-	if(ins_int.gps_body_z_hist_index >= INS_INT_GPS_BODY_Z_HIST_SIZE)
+	if(ins_int.rtk_ned_z_hist_index >= INS_INT_RTK_Z_HIST_SIZE)
 	{
-		if(ins_int.gps_body_z_hist_ok)
+		if(ins_int.rtk_z_hist_ok)
 		{
-			ins_int.gps_body_z_hist_ok = TRUE;
+			ins_int.rtk_z_hist_ok = TRUE;
 		}
-		ins_int.gps_body_z_hist_index = 0;
+		ins_int.rtk_ned_z_hist_index = 0;
 	}
-	ins_int.gps_body_z_hist[ins_int.gps_body_z_hist_index] = ins_int.gps_body_z;
-	++ins_int.gps_body_z_hist_index;
+	ins_int.rtk_ned_z_hist[ins_int.rtk_ned_z_hist_index] = ins_int.rtk_ned_z;
+	ins_int.rtk_ned_zd_hist[ins_int.rtk_ned_z_hist_index] = ins_int.rtk_ned_zd;
+	++ins_int.rtk_ned_z_hist_index;
 }
 
 static uint8_t find_index(int16_t base, int16_t delta , int16_t max)
@@ -492,36 +492,49 @@ static uint8_t find_index(int16_t base, int16_t delta , int16_t max)
 	return index;
 }
 
-static float ins_int_get_recent_valid_rtk_z(void)
+static void ins_int_get_recent_valid_rtk_z(float *z, float *zd)
 {
-	uint8_t i,j,index;
-	float sum = 0;
-	float all_hist_mean;
-	float half_hist_mean;
+#define GET_HIST_SIZE	(INS_INT_RTK_Z_HIST_SIZE/2)
 
-	if(ins_int.gps_body_z_hist_ok)
+	uint8_t i, j, index;
+	float z_sum = 0;
+	float zd_sum = 0;
+	float z_hist_mean;
+	float zd_hist_mean;
+
+	if ((z == NULL) || (zd == NULL))
 	{
-		sum = 0;
-		for(i=0;i<INS_INT_GPS_BODY_Z_HIST_SIZE/2;++i)
-		{
-			index = find_index(ins_int.gps_body_z_hist_index, -4-i, INS_INT_GPS_BODY_Z_HIST_SIZE);
-			sum += ins_int.gps_body_z_hist[index];
-		}
-		half_hist_mean = sum / (float)(INS_INT_GPS_BODY_Z_HIST_SIZE/2);
-
-		sum = 0;
-		for(i=0;i<INS_INT_GPS_BODY_Z_HIST_SIZE;++i)
-		{
-			sum += ins_int.gps_body_z_hist[i];
-		}
-		all_hist_mean = sum / (float) (INS_INT_GPS_BODY_Z_HIST_SIZE);
-
-		//if(fabsf(half_hist_mean) > 10)
+		return;
 	}
-	else
+
+	*z = ins_int.rtk_ned_z;
+	*zd = ins_int.rtk_ned_zd;
+
+	if (ins_int.rtk_z_hist_ok)
 	{
-		return ins_int.gps_body_z;
+		z_sum = 0;
+		zd_sum = 0;
+		for (i = 0; i < GET_HIST_SIZE; ++i)
+		{
+			index = find_index(ins_int.rtk_ned_z_hist_index, -4 - i, INS_INT_RTK_Z_HIST_SIZE);
+			z_sum += ins_int.rtk_ned_z_hist[index];
+			zd_sum += ins_int.rtk_ned_zd_hist[index];
+		}
+		z_hist_mean = z_sum / (float) GET_HIST_SIZE;
+		zd_hist_mean = zd_sum / (float) GET_HIST_SIZE;
+
+		if (fabsf(z_hist_mean) < 5)
+		{
+			*z = z_hist_mean;
+		}
+		if (fabsf(zd_hist_mean) < 2)
+		{
+			*zd = zd_hist_mean;
+		}
 	}
+
+	ins_int.rtk_z_hist_ok = 0;
+	ins_int.rtk_ned_z_hist_index = 0;
 }
 
 void ins_int_task(void)
@@ -552,9 +565,9 @@ void ins_int_task(void)
 				if (ins_int.ekf_state == INS_EKF_BARO)
 				{
 					ins_int.baro_to_gps_count = 0;
-					ins_int.baro_to_gps_offset_step = ((ins_int.gps_body_z - get_first_order_low_pass(&ins_int.baro_z_filter))
+					ins_int.baro_to_gps_offset_step = ((ins_int.rtk_ned_z - get_first_order_low_pass(&ins_int.baro_z_filter))
 							- vff.offset) / (float) BARO_TO_GPS_TIME;
-					ins_int.baro_to_gps_z_step = (ins_int.gps_body_z - vff.z) / (float) BARO_TO_GPS_TIME;
+					ins_int.baro_to_gps_z_step = (ins_int.rtk_ned_z - vff.z) / (float) BARO_TO_GPS_TIME;
 					ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
 				}
 				else if (ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
@@ -572,8 +585,8 @@ void ins_int_task(void)
 				else if (ins_int.ekf_state == INS_EKF_GPS)
 				{
 					//vff_update_z_conf(ins_int.gps_body_z, ins_int.R_rtk_pos_z);
-					vff_update_z_conf(ins_int.gps_body_z, ins_int.R_rtk_pos_z_setting);
-					vff_update_offset_conf(ins_int.gps_body_z - ins_int.baro_z, ins_int.R_baro_offset);
+					vff_update_z_conf(ins_int.rtk_ned_z, ins_int.R_rtk_pos_z_setting);
+					vff_update_offset_conf(ins_int.rtk_ned_z - ins_int.baro_ned_z, ins_int.R_baro_offset);
 					ins_update_from_vff();
 				}
 				ins_int_record_rtk_z_hist();
@@ -789,25 +802,27 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 	if (last_stamp > 0)
 	{
 		float dt = (float)(stamp - last_stamp) * 1e-6;
-		ins_int.baro_z = - baro_get_height(pressure, temperature); // - for NED
+		ins_int.baro_ned_z = - baro_get_height(pressure, temperature); // - for NED
 
 		if(!ins_int.baro_initialized)
 		{
-			init_first_order_low_pass(&ins_int.baro_z_filter, low_pass_filter_get_tau(1.0f), 0.05f, ins_int.baro_z);
+			init_first_order_low_pass(&ins_int.baro_z_filter, low_pass_filter_get_tau(1.0f), 0.05f, ins_int.baro_ned_z);
 			vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
 			ins_int.baro_initialized = TRUE;
 		}
 		else
 		{
-			update_first_order_low_pass(&ins_int.baro_z_filter, ins_int.baro_z);
+			update_first_order_low_pass(&ins_int.baro_z_filter, ins_int.baro_ned_z);
 			if(ins_int.ekf_state == INS_EKF_GPS_TO_BARO)
 			{
-				vff_init_P();
+				float valid_z, valid_zd;
+				ins_int_get_recent_valid_rtk_z(&valid_z, &valid_zd);
+				vff_init(valid_z, valid_zd, vff.bias, vff.offset);
 				ins_int.ekf_state = INS_EKF_BARO;
 			}
 			else if(ins_int.ekf_state == INS_EKF_BARO)
 			{
-				vff_update_baro_conf(ins_int.baro_z, ins_int.R_baro);
+				vff_update_baro_conf(ins_int.baro_ned_z, ins_int.R_baro);
 				ins_update_from_vff();
 				ins_ned_to_state();
 			}
@@ -849,12 +864,12 @@ static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
       && stabilization_cmd[COMMAND_THRUST] < INS_SONAR_THROTTLE_THRESHOLD
 #endif
 #ifdef INS_SONAR_BARO_THRESHOLD
-      && ins_int.baro_z > -INS_SONAR_BARO_THRESHOLD /* z down */
+      && ins_int.baro_ned_z > -INS_SONAR_BARO_THRESHOLD /* z down */
 #endif
       && ins_int.update_on_agl
 	  #if 0 //USE_BARO_BOARD
       && ins_int.baro_initialized
-      && ins_int.baro_z >-5    //use sonar meas,request baro_z below 5m  --by whp
+      && ins_int.baro_ned_z >-5    //use sonar meas,request baro_z below 5m  --by whp
 	  #endif
      ) 
    {
@@ -1072,7 +1087,8 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 			VECT3_SUB(ins_int.rtk_gps_speed_cm_ned, delta_speed_n);
 #endif
 
-			ins_int.gps_body_z = (float) ins_int.rtk_gps_pos_cm_ned.z * 0.01f;
+			ins_int.rtk_ned_z = (float) ins_int.rtk_gps_pos_cm_ned.z * 0.01f;
+			ins_int.rtk_ned_zd = (float) ins_int.rtk_gps_speed_cm_ned.z * 0.01f;
 		}
 	}
 }

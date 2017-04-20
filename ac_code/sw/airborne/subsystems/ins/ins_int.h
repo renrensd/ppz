@@ -36,7 +36,7 @@
 #include "math/pprz_algebra_float.h"
 #include "filters/low_pass_filter.h"
 
-#define INS_INT_GPS_BODY_Z_HIST_SIZE	(10)
+#define INS_INT_RTK_Z_HIST_SIZE	(10)
 
 enum _e_ins_gpss_status
 {
@@ -84,11 +84,13 @@ struct InsInt
 
   // baro gps switch
   enum _e_ins_ekf_status ekf_state;
-  float baro_z;  ///< z-position calculated from baro in meters (NED)
-  float gps_body_z;
-  float gps_body_z_hist[INS_INT_GPS_BODY_Z_HIST_SIZE];
-  uint8_t gps_body_z_hist_index;
-  float gps_body_z_hist_ok;
+  float baro_ned_z;  ///< z-position calculated from baro in meters (NED)
+  float rtk_ned_z;
+  float rtk_ned_zd;
+  float rtk_ned_z_hist[INS_INT_RTK_Z_HIST_SIZE];
+  float rtk_ned_zd_hist[INS_INT_RTK_Z_HIST_SIZE];
+  uint8_t rtk_ned_z_hist_index;
+  float rtk_z_hist_ok;
   float raw_baro_offset;
   struct FirstOrderLowPass baro_z_filter;
   bool_t baro_initialized;

@@ -82,7 +82,7 @@ static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
 	float bias = -vff.bias;
 	float zdot = -vff.zdot;
 	float z = -vff.z;
-	float gps_body_z = -ins_int.gps_body_z;
+	float gps_body_z = -ins_int.rtk_ned_z;
 
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_TUNE_VERT(trans, dev, AC_ID, &accel_scaled_z, &accel_z, &zdotdot, &bias, &zdot, &z, &gps_body_z,

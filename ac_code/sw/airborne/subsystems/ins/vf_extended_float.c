@@ -51,20 +51,13 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 #include "filters/low_pass_filter.h"
 
 /** initial covariance diagonal */
-#ifndef VFF_EXTENDED_INIT_PXX
 #define VFF_EXTENDED_INIT_PXX 1.0
-#endif
 
 /** process noise covariance Q */
-#ifndef VFF_EXTENDED_ACCEL_NOISE
 #define VFF_EXTENDED_ACCEL_NOISE  0.1
-#endif
 
 #define Qbiasbias 1e-7
 #define Qoffoff 1e-4
-#define R_BARO 10.0
-#define R_ALT 0.1
-#define R_OFFSET 1.
 
 struct VffExtended vff;
 
@@ -86,9 +79,12 @@ static void send_vffe(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
-void vff_init_zero(void)
+void vff_first_init(void)
 {
-  vff_init(0., 0., 0., 0.);
+	vff_init(0., 0., 0., 0.);
+#if PERIODIC_TELEMETRY
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
+#endif
 }
 
 void vff_init_P(void)
@@ -120,10 +116,6 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
 
   vff_lost_counter = 0;
   vff_lost_limit = 2000;
-
-#if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VFF_EXTENDED, send_vffe);
-#endif
 }
 
 
@@ -178,20 +170,16 @@ void vff_propagate(float accel, float dt)
   const float FPF22 = vff.P[2][2];
   const float FPF33 = vff.P[3][3];
 
-  vff.P[0][0] = FPF00 + 0.1f * dt * dt / 2.;
+  vff.P[0][0] = FPF00 + VFF_EXTENDED_ACCEL_NOISE * dt * dt / 2.;
   vff.P[0][1] = FPF01;
   vff.P[0][2] = FPF02;
   vff.P[1][0] = FPF10;
-  vff.P[1][1] = FPF11 + 0.1f * dt;
+  vff.P[1][1] = FPF11 + VFF_EXTENDED_ACCEL_NOISE * dt;
   vff.P[1][2] = FPF12;
   vff.P[2][0] = FPF20;
   vff.P[2][1] = FPF21;
   vff.P[2][2] = FPF22 + Qbiasbias;
   vff.P[3][3] = FPF33 + Qoffoff;
-
-#if DEBUG_VFF_EXTENDED
-  RunOnceEvery(10, send_vffe(&(DefaultChannel).trans_tx, &(DefaultDevice).device));
-#endif
 }
 
 /**
@@ -249,11 +237,6 @@ static void update_baro_conf(float z_meas, float conf)
   vff.P[3][2] -= K3 * P2;
   vff.P[3][3] -= K3 * P3;
 
-}
-
-void vff_update_baro(float z_meas)
-{
-  update_baro_conf(z_meas, R_BARO);
 }
 
 void vff_update_baro_conf(float z_meas, float conf)
@@ -316,17 +299,11 @@ static void update_alt_conf(float z_meas, float conf)
   vff.P[3][3] -= K3 * P3;
 }
 
-void vff_update_z(float z_meas)
-{
-  update_alt_conf(z_meas, R_ALT);
-}
-
 void vff_update_z_conf(float z_meas, float conf)
 {
   update_alt_conf(z_meas, conf);
 }
 
-/****????  ???????????**************************************************/
 void vff_update_zd_conf(float zd_meas, float conf)
 {
   update_speed_conf(zd_meas, conf);
