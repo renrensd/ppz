@@ -53,6 +53,6 @@ extern void task_init(void);
 extern bool_t auto_task_ready_check(void);
 extern Gcs_State gcs_task_run(void);
 extern void send_task_info_pc(void); 
-
+extern bool_t spray_switch_flag;
 #endif /*_TASK_MANAGE_H_*/
 /****************************** END OF FILE ***************************/

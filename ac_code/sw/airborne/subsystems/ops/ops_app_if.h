@@ -91,6 +91,7 @@ extern void ops_set_config_param(uint16_t param, uint8_t param_type);
 extern void ops_update_config_param(void);
 extern void rc_update_ops_config_param(uint8_t grade);
 extern void ops_software_version_handler(uint8_t *param, uint8_t len);
+extern void ops_delay_spraying(void); 
 
 #endif /*_OPS_APP_IF_H_*/
 /****************************** END OF FILE ***************************/

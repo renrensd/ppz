@@ -153,7 +153,7 @@ static void send_nav_status(struct transport_tx *trans, struct link_device *dev)
                                       &dist_home, &dist_wp,
                                       &nav_block, &nav_stage,
                                       &horizontal_mode,
-                                      &ops_info.sum_sprayed_distance, &ops_info.treated_area);
+                                      &ops_info.spray_state, &ops_info.treated_area);
   if (horizontal_mode == HORIZONTAL_MODE_ROUTE) {
     float sx = POS_FLOAT_OF_BFP(nav_segment_start.x);
     float sy = POS_FLOAT_OF_BFP(nav_segment_start.y);

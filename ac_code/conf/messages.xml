@@ -1562,7 +1562,7 @@
     <field name="cur_block" type="uint8"/>
     <field name="cur_stage" type="uint8"/>
     <field name="horizontal_mode" type="uint8"/>
-    <field name="spray_dist" type="float" format="%.1f" unit="cm"/>
+    <field name="spray_status" type="uint8"/>
     <field name="spray_area" type="uint16"  unit="m2"/>
   </message>
 
@@ -2184,7 +2184,7 @@
   <message name="OPS_INFO_BBOX" id="229">
     <field name="volatage"   type="uint16"/>
     <field name="current"    type="uint16"/>
-    <field name="total_cap"  type="uint16"/>
+    <field name="spray_status" type="uint8"/>
     <field name="remain_cap" type="uint16"/>
     <field name="temper"     type="uint16"/>
     <field name="error"      type="uint8"/>

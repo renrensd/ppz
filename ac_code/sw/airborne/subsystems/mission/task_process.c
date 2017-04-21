@@ -44,7 +44,7 @@ Task_Error task_error_state;
 bool_t from_wp_useful;
 bool_t hover_flag;
 bool_t manual_pause_flag;
-static bool_t spray_switch_flag;     /*usefor sign spray_line start and end*/
+bool_t spray_switch_flag;     /*usefor sign spray_line start and end*/
 static bool_t spray_caculate_flag;
 static bool_t height_align;    //flag of height check for next line
 static bool_t heading_align;   //flag of heading check for next line
@@ -416,7 +416,6 @@ void get_shortest_reland_wp(void)
 bool_t run_normal_task(void)
 {
 	uint8_t wp_state = 2; /*default:run over from_wp state*/
-	
 	spray_work_run();
 	
 	switch(from_wp.action)
@@ -425,6 +424,7 @@ bool_t run_normal_task(void)
 		{
 			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH))
 			{
+				spray_switch_flag = FALSE;
 				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
 				{
 					if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
@@ -540,6 +540,7 @@ bool_t run_normal_task(void)
 		{
 			if( hover_flag )  
 			{
+				spray_switch_flag = FALSE;
 				task_nav_hover(from_wp.wp_en);
 				if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
 				{
@@ -580,17 +581,24 @@ bool_t run_normal_task(void)
 void spray_work_run(void)
 {
 	/*spray switch control*/
-	if( SPRAY_LINE==from_wp.action 
+	/*if( ((SPRAY_LINE==from_wp.action)||(SPRAY_CONVERT== from_wp.action))
 	    && !get_spray_switch_state() 
 	    && get_nav_route_mediacy() 
-	    && spray_switch_flag==TRUE ) 
+	    && spray_switch_flag==TRUE ) */
+	if( !get_spray_switch_state() 
+	    && spray_switch_flag==TRUE )
 	{
 	   #ifdef OPS_OPTION
 		ops_start_spraying(); 
 	   #endif 	
 	}
-	else if( (SPRAY_LINE!=from_wp.action || !get_nav_route_mediacy())
-		      && get_spray_switch_state() )
+	/*else if( (SPRAY_LINE!=from_wp.action || !get_nav_route_mediacy())
+		      && get_spray_switch_state() )*/
+	/*else if( (!get_nav_route_mediacy())
+		      || (get_spray_switch_state() 
+		      &&spray_switch_flag == FALSE))*/
+	else if( (get_spray_switch_state() 
+		      &&spray_switch_flag == FALSE))
 	{
 	   #ifdef OPS_OPTION
 		ops_stop_spraying(); 
