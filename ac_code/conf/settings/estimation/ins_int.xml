@@ -10,7 +10,6 @@
        <dl_setting min="0" max="1" step="1" type="bool" values="OFF|ON" var="ins_int.virtual_rtk_pos_z_valid" module="subsystems/ins/ins_int" shortname="vrtk_z_valid"/>
        <dl_setting min="0" max="1" step="1" type="bool" values="OFF|ON" var="ins_int.virtual_rtk_pos_xy_valid" module="subsystems/ins/ins_int" shortname="vrtk_xy_valid"/>
        <dl_setting min="0" max="1" step="1" type="bool" values="OFF|ON" var="ins_int.force_use_redundency" module="subsystems/ins/ins_int" shortname="force_use_redundency" handler="SetForceRedun"/>
-       <dl_setting min="0" max="1" step="1" type="bool" values="OFF|ON" var="gps.test_msg_timeout" module="subsystems/gps" shortname="test_msg_timeout"/>  
     </dl_settings>
   </dl_settings>
 </settings>

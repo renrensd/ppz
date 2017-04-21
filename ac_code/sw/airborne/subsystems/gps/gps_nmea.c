@@ -475,10 +475,7 @@ static void nmea_parse_TRA(void)
   gps.head_stanum = gps_nmea.num_sta_use;
   gps_nmea.heading_available = TRUE;
 
-	if (gps.test_msg_timeout)
-	{
-		gps_nmea.last_tramsg_time = get_sys_time_msec();
-	}
+	gps_nmea.last_tramsg_time = get_sys_time_msec();
 }
 #endif
 
@@ -873,10 +870,7 @@ static void nmea_parse_XYZ(void)
   gps.ecef_vel.z= (int32_t)(strtod(&gps_nmea.msg_buf[i], NULL)*100);
   gps_nmea.pos_xyz_available = TRUE;
 
-  if(gps.test_msg_timeout)
-  {
-  	gps_nmea.last_xyzmsg_time = get_sys_time_msec();
-  }
+  gps_nmea.last_xyzmsg_time = get_sys_time_msec();
 }
 
 #endif

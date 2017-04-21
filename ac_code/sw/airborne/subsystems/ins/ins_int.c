@@ -468,10 +468,7 @@ static void ins_int_record_rtk_z_hist(void)
 {
 	if(ins_int.rtk_ned_z_hist_index >= INS_INT_RTK_Z_HIST_SIZE)
 	{
-		if(ins_int.rtk_z_hist_ok)
-		{
-			ins_int.rtk_z_hist_ok = TRUE;
-		}
+		ins_int.rtk_z_hist_ok = TRUE;
 		ins_int.rtk_ned_z_hist_index = 0;
 	}
 	ins_int.rtk_ned_z_hist[ins_int.rtk_ned_z_hist_index] = ins_int.rtk_ned_z;
@@ -486,7 +483,7 @@ static uint8_t find_index(int16_t base, int16_t delta , int16_t max)
 	index = base + delta;
 
   while (index > max) index -= max;
-  while (index < -max) index += max;
+  while (index < 0) index += max;
 
   Bound(index, 0, max);
 	return index;
@@ -494,7 +491,7 @@ static uint8_t find_index(int16_t base, int16_t delta , int16_t max)
 
 static void ins_int_get_recent_valid_rtk_z(float *z, float *zd)
 {
-#define GET_HIST_SIZE	(INS_INT_RTK_Z_HIST_SIZE/2)
+#define GET_HIST_SIZE	(5)
 
 	uint8_t i, j, index;
 	float z_sum = 0;
@@ -516,7 +513,7 @@ static void ins_int_get_recent_valid_rtk_z(float *z, float *zd)
 		zd_sum = 0;
 		for (i = 0; i < GET_HIST_SIZE; ++i)
 		{
-			index = find_index(ins_int.rtk_ned_z_hist_index, -4 - i, INS_INT_RTK_Z_HIST_SIZE);
+			index = find_index(ins_int.rtk_ned_z_hist_index, i+1, INS_INT_RTK_Z_HIST_SIZE);
 			z_sum += ins_int.rtk_ned_z_hist[index];
 			zd_sum += ins_int.rtk_ned_zd_hist[index];
 		}
@@ -533,7 +530,7 @@ static void ins_int_get_recent_valid_rtk_z(float *z, float *zd)
 		}
 	}
 
-	ins_int.rtk_z_hist_ok = 0;
+	ins_int.rtk_z_hist_ok = FALSE;
 	ins_int.rtk_ned_z_hist_index = 0;
 }
 
