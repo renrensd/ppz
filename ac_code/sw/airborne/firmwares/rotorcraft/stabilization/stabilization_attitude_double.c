@@ -200,7 +200,7 @@ void stabilization_attitude_set_body_cmd_f(float phi, float theta, float psi)
 
 #define MAX_SUM_ERR 1000
 
-#define MAX_DESIRED_RATE 100.0
+#define MAX_DESIRED_RATE 50.0
 void stabilization_attitude_run(bool_t  in_flight)
 {
 
@@ -319,7 +319,7 @@ void stabilization_attitude_run(bool_t  in_flight)
   /* bound the result */
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
-  BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
+  BoundAbs(stabilization_cmd[COMMAND_YAW], (MAX_PPRZ/2));
   #if 0
   stabilization_cmd[COMMAND_ROLL] = 0;
   stabilization_cmd[COMMAND_PITCH] = 0;
