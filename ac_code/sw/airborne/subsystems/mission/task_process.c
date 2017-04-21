@@ -32,6 +32,9 @@
 
 #include "subsystems/monitoring/monitoring.h"   
 
+#include "modules/system/timer_if.h"
+#include "modules/system/timer_class.h"
+#include "modules/system/timer_def.h"
 
 #define FLIGHT_PATH  1
 #define SPRAY_PATH  2
