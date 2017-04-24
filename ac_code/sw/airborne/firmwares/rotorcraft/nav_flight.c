@@ -121,7 +121,6 @@ void nav_flight(void)
 					monitoring_reset_emer();
 					flight_mode_enter(nav_gcs_mode);   //make sure get sp before take off,meas less
 					takeoff_done = FALSE;
-					Flag_AC_Flight_Ready = FALSE;
 					flight_step++;  /*once get gcs start cmd, jump to next step: take off*/
 				}
 			}
@@ -282,7 +281,7 @@ void nav_flight(void)
 				task_init();  /*reset task*/
 				if(!autopilot_rc)
 				{
-					NavKillThrottle();	//add by lg
+					NavKillMode();
 				}
 				flight_step = 1;  /*land motion finished,jump to ready state*/
 			}
