@@ -35,7 +35,7 @@
 /*this array hasn't put into the fram,just used in the DIA module,*/
 const uint8_t project_number_array[] =
 {
-    "EF01_10_" 
+    "EF01_10_"
 };
 
 /* software version */
