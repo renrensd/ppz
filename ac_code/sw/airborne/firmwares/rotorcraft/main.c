@@ -116,6 +116,8 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include "subsystems/fram/fram_if.h"
 #endif	/* FRAM_OPTION */
 
+#include "math/dim2_geometry.h"
+
 /* if PRINT_CONFIG is defined, print some config options */
 PRINT_CONFIG_VAR(PERIODIC_FREQUENCY)
 
@@ -166,7 +168,7 @@ tid_t ahrs_tid;
 int main(void)
 {
   main_init();
-
+  dim2_geometry_test();
 #if LIMIT_EVENT_POLLING
   /* Limit main loop frequency to 1kHz.
    * This is a kludge until we can better leverage threads and have real events.
