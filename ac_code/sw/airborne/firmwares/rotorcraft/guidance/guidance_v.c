@@ -115,8 +115,8 @@ static void guidance_v_controller_ini(void)
 	pid_set_Ui_range(&guid_v.acc_z_pid, 0, 1);
 	pid_set_out_range(&guid_v.speed_z_pid, -2, 2);
 	pid_set_Ui_range(&guid_v.speed_z_pid, -2, 2);
-	pid_set_out_range(&guid_v.pos_z_pid, -2, 2);
-	pid_set_Ui_range(&guid_v.pos_z_pid, -2, 2);
+	pid_set_out_range(&guid_v.pos_z_pid, -1, 1);
+	pid_set_Ui_range(&guid_v.pos_z_pid, -1, 1);
 
 	guid_v.acc_z_pid.Kp = 0.01f;
 	guid_v.acc_z_pid.Ki = 0.3f;
