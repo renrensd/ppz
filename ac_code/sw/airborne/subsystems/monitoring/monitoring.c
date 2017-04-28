@@ -122,7 +122,8 @@ enum Bbox_Check
 {
 	BBOX_RUNNING,
 	BBOX_NO_LINK,
-	BBOX_ERROR
+	BBOX_ERROR,
+	BBOX_PASS = 0xFF
 };
 enum Gps_Check
 {
@@ -538,6 +539,7 @@ void ground_monitoring(void)
 		case BBOX_CHECK:
 		if(bbox_info.con_flag)
 		{
+			monitoring_fail_code = BBOX_PASS;
 			if(bbox_info.status == BBOX_IS_ERROR)
 			{
 				monitoring_fail_code = BBOX_ERROR;
