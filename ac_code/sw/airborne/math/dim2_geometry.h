@@ -48,6 +48,6 @@ extern enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, s
 extern bool_t is_hray_intersect_with_edge(struct FloatVect2 *P, struct FloatVect2 *v0, struct FloatVect2 *v1);
 extern bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon);
 extern bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _s_polygon *polygon);
-extern int generate_valid_area(struct _s_polygon *valid_area, struct FloatVect2 *spray_boundary, uint8_t num, struct FloatVect2 *land_point);
+extern int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_area, struct FloatVect2 *land_point);
 
 #endif /* SW_AIRBORNE_MATH_DIM2_GEOMETRY_H_ */

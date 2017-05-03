@@ -43,13 +43,13 @@ struct FloatVect2 f={0,0};
 <waypoint name="v12" x="4.9" y="-1.1"/>
 */
 struct FloatVect2 Point = {12.5,5.3};
-struct FloatVect2 land_p = {19.2,-27};
+struct FloatVect2 land_p = {45.3,-10.8};
 struct FloatVect2 test_vertices[20] =
 {
-		{11.5,2.0},
-		{17.8,8.2},
-		{27.2,5.6},
-		{25.7,1.9},
+		{40.7,-5.9},
+		{39.5,2.1},
+		{50.2,1.7},
+		{50.5,-4.8},
 		{27.7,-4.7},
 		{35.5,-4.4},
 		{35.4,-10.6},
@@ -60,21 +60,21 @@ struct FloatVect2 test_vertices[20] =
 		{3.8,-7.9},
 		{4.9,-1.1}
 };
-struct FloatVect2 test_vertices2[20];
+struct FloatVect2 test_vertices2[21];
 struct _s_polygon test_poly;
 struct _s_polygon test_area;
 
 void dim2_geometry_test(void)
 {
-	polygon_init(&test_poly, test_vertices, 13);
-	polygon_init(&test_area, test_vertices2, 0);
+	polygon_init(&test_poly, test_vertices, 4);
+	polygon_init(&test_area, test_vertices2, 13);
 
 	while(1)
 	{
 		get_2_segments_relation(&a,&b,&c,&d);
 		is_hray_intersect_with_edge(&a, &b, &c);
 		is_point_in_polygon(&Point, &test_poly);
-		generate_valid_area(&test_area, test_poly.v, test_poly.n, &land_p);
+		generate_valid_area(&test_area, &test_poly, &land_p);
 	}
 	f = e;
 }
@@ -372,94 +372,12 @@ static uint8_t find_index(int16_t base, int16_t delta, int16_t max)
 /*
  * TODO: this function need to move to appication layer
  *
- *	WARNNING!!!!: make sure spray_boundary array have enough space for insert 1 point
- *	WARNNING!!!!: make sure spray_boundary array and land_point are global variable
- *	WARNNING!!!!: make sure vaid_area->v was correctly initialized
+ *	WARNNING!!!!: make sure valid_area array have enough space for insert 1 point
+ *	WARNNING!!!!: make sure spray_area->n array and land_point are global variable
+ *	WARNNING!!!!: make sure valid_area->v was correctly initialized
  */
-/*
-int generate_valid_area(struct _s_polygon *vaid_area, struct FloatVect2 *spray_boundary, uint8_t num,
-		struct FloatVect2 *land_point)
-{
-	uint8_t i;
-	uint8_t min_v0;
-	uint8_t min_v1;
-	uint8_t remain;
-	float min_dist;
-	float dist;
 
-	if ((vaid_area == NULL) || (spray_boundary == NULL) || (land_point == NULL) || (num < 2))
-	{
-		return -1;
-	}
-
-	// get min distance vertex between land_point
-	min_dist = point2_distance(land_point, &(spray_boundary[0]));
-	min_v0 = 0;
-
-	for (i = 0; i < num; ++i)
-	{
-		dist = point2_distance(land_point, &(spray_boundary[i]));
-		if (dist < min_dist)
-		{
-			min_v0 = i;
-		}
-	}
-
-	// get second min distance vertex between land_point
-	for (i = 0; i < num; ++i)
-	{
-		if (i != min_v0)
-		{
-			min_dist = point2_distance(land_point, &(spray_boundary[i]));
-			min_v1 = i;
-			break;
-		}
-	}
-
-	for (i = 0; i < num; ++i)
-	{
-		if (i == min_v0)
-		{
-			continue;
-		}
-		dist = point2_distance(land_point, &(spray_boundary[i]));
-		if (dist < min_dist)
-		{
-			min_v1 = i;
-		}
-	}
-
-	if (min_v0 == min_v1)
-	{
-		return -2;
-	}
-	else if (min_v0 > min_v1)
-	{
-		i = min_v0;
-		min_v0 = min_v1;
-		min_v1 = i;
-	}
-
-	// use min_v0 as first vertex
-	vaid_area->v[0] = spray_boundary[min_v0];
-	// use land_point as second vertex
-	vaid_area->v[1] = *(land_point);
-	// use min_v1 as third vertex
-	vaid_area->v[2] = spray_boundary[min_v1];
-	// add remain vertex in spray_boundary
-	remain = num - ((min_v1 - min_v0 - 1) + 2);
-	for (i = 0; i <= remain; ++i)
-	{
-		vaid_area->v[i + 3] = spray_boundary[find_index(min_v1, i, num)];
-	}
-	vaid_area->n = remain + 3;
-
-	return 0;
-}
-*/
-
-int generate_valid_area(struct _s_polygon *valid_area, struct FloatVect2 *spray_boundary, uint8_t num,
-		struct FloatVect2 *land_point)
+int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_area, struct FloatVect2 *land_point)
 {
 	struct FloatVect2 v_st;
 	struct FloatVect2 v_end;
@@ -468,23 +386,33 @@ int generate_valid_area(struct _s_polygon *valid_area, struct FloatVect2 *spray_
 	uint8_t max_index;
 	uint8_t index_st;
 	uint8_t index_end;
+	bool_t spray_vertex_dir;
+	bool_t split_dir;
 
-	if ((valid_area == NULL) || (spray_boundary == NULL) || (land_point == NULL) || (num < 2))
+	if ((valid_area == NULL) || (spray_area == NULL)  || (spray_area->v == NULL) || (land_point == NULL) || (spray_area->n < 2))
 	{
 		return -1;
 	}
 
 	// first search
-	VECT2_DIFF(v_st, spray_boundary[0], *land_point);
+	VECT2_DIFF(v_st, spray_area->v[0], *land_point);
 	float_vect2_normalize(&v_st);
-	VECT2_DIFF(v_end, spray_boundary[1], *land_point);
+	VECT2_DIFF(v_end, spray_area->v[1], *land_point);
 	float_vect2_normalize(&v_end);
+	if (asinf(VECT2_CROSS_PRODUCT(v_st, v_end)) > 0)
+	{
+		spray_vertex_dir = TRUE;
+	}
+	else
+	{
+		spray_vertex_dir = FALSE;
+	}
 	max_radian = acosf(VECT2_DOT_PRODUCT(v_st, v_end));
 	max_index = 0;
 
-	for (i = 0; i < num; ++i)
+	for (i = 0; i < spray_area->n; ++i)
 	{
-		VECT2_DIFF(v_end, spray_boundary[i], *land_point);
+		VECT2_DIFF(v_end, spray_area->v[i], *land_point);
 		float_vect2_normalize(&v_end);
 		float radian = acosf(VECT2_DOT_PRODUCT(v_st, v_end));
 		if (radian > max_radian)
@@ -496,16 +424,16 @@ int generate_valid_area(struct _s_polygon *valid_area, struct FloatVect2 *spray_
 	index_st = max_index;
 
 	// second search
-	VECT2_DIFF(v_st, spray_boundary[max_index], *land_point);
+	VECT2_DIFF(v_st, spray_area->v[max_index], *land_point);
 	float_vect2_normalize(&v_st);
-	VECT2_DIFF(v_end, spray_boundary[0], *land_point);
+	VECT2_DIFF(v_end, spray_area->v[0], *land_point);
 	float_vect2_normalize(&v_end);
 	max_radian = acosf(VECT2_DOT_PRODUCT(v_st, v_end));
 	max_index = 0;
 
-	for (i = 0; i < num; ++i)
+	for (i = 0; i < spray_area->n; ++i)
 	{
-		VECT2_DIFF(v_end, spray_boundary[i], *land_point);
+		VECT2_DIFF(v_end, spray_area->v[i], *land_point);
 		float_vect2_normalize(&v_end);
 		float radian = acosf(VECT2_DOT_PRODUCT(v_st, v_end));
 		if (radian > max_radian)
@@ -517,9 +445,9 @@ int generate_valid_area(struct _s_polygon *valid_area, struct FloatVect2 *spray_
 	index_end = max_index;
 
 	// check
-	for (i = 0; i < num; ++i)
+	for (i = 0; i < spray_area->n; ++i)
 	{
-		VECT2_DIFF(v_end, spray_boundary[i], *land_point);
+		VECT2_DIFF(v_end, spray_area->v[i], *land_point);
 		float_vect2_normalize(&v_end);
 		float radian = acosf(VECT2_DOT_PRODUCT(v_st, v_end));
 		if (radian > max_radian)
@@ -536,38 +464,47 @@ int generate_valid_area(struct _s_polygon *valid_area, struct FloatVect2 *spray_
 	}
 
 	// add vertex to valid_area
-	// cross > 0   index_st ~ index_end
-	// cross < 0 	index_end ~ index_st
 
-	VECT2_DIFF(v_st, spray_boundary[index_st], *land_point);
+	VECT2_DIFF(v_st, spray_area->v[index_st], *land_point);
 	float_vect2_normalize(&v_st);
-	VECT2_DIFF(v_end, spray_boundary[index_end], *land_point);
+	VECT2_DIFF(v_end, spray_area->v[index_end], *land_point);
 	float_vect2_normalize(&v_end);
-	max_radian = asinf(VECT2_CROSS_PRODUCT(v_st, v_end));
+	if (asinf(VECT2_CROSS_PRODUCT(v_st, v_end)) > 0)
+	{
+		split_dir = TRUE;
+	}
+	else
+	{
+		split_dir = FALSE;
+	}
 
 	valid_area->n = 0;
-	if (max_radian > 0)
+	if (spray_vertex_dir ^ split_dir)
 	{
-		for (i = 0; i < num; ++i)
+		for (i = 0; i < spray_area->n; ++i)
 		{
-			j = (index_st + i) % num;
-			valid_area->v[i] = spray_boundary[j];
+			j = (index_end + i) % spray_area->n;
+			valid_area->v[i] = spray_area->v[j];
 			++valid_area->n;
-			if (j == index_end)
+			if (j == index_st)
 			{
+				valid_area->v[i+1] = *land_point;
+				++valid_area->n;
 				break;
 			}
 		}
 	}
 	else
 	{
-		for (i = 0; i < num; ++i)
+		for (i = 0; i < spray_area->n; ++i)
 		{
-			j = (index_end + i) % num;
-			valid_area->v[i] = spray_boundary[j];
+			j = (index_st + i) % spray_area->n;
+			valid_area->v[i] = spray_area->v[j];
 			++valid_area->n;
-			if (j == index_st)
+			if (j == index_end)
 			{
+				valid_area->v[i+1] = *land_point;
+				++valid_area->n;
 				break;
 			}
 		}
