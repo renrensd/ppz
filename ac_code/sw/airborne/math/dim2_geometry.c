@@ -81,7 +81,7 @@ void dim2_geometry_test(void)
 
 int polygon_init(struct _s_polygon *polygon, struct FloatVect2 *vertices, uint8_t num)
 {
-	if ((polygon == NULL) || (vertices == NULL) || (num < 2))
+	if ((polygon == NULL) || (vertices == NULL) )
 	{
 		return -1;
 	}
@@ -109,7 +109,7 @@ static bool_t is_on_segment(struct FloatVect2 *v0, struct FloatVect2 *v1, struct
 	}
 }
 
-bool_t is_relation_collinetion(enum _e_segment_relation relation)
+bool_t is_relation_collineation(enum _e_segment_relation relation)
 {
 	if ((relation == SR_COLLINEATION_SEPARATION) ||
 			(relation == SR_COLLINEATION_INSIDE) ||
@@ -299,7 +299,7 @@ bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon)
 
 		// point on edge
 		enum _e_segment_relation rel = get_2_segments_relation(P, &(polygon->v[i]), P, &(polygon->v[j]));
-		if (is_relation_collinetion(rel))
+		if (is_relation_collineation(rel))
 		{
 			if (is_on_segment(&(polygon->v[i]), P, &(polygon->v[j])))
 			{

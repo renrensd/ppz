@@ -42,7 +42,7 @@ struct _s_circle
 
 extern void dim2_geometry_test(void);
 extern int polygon_init(struct _s_polygon *polygon, struct FloatVect2 *vertices, uint8_t num);
-extern bool_t is_relation_collinetion(enum _e_segment_relation relation);
+extern bool_t is_relation_collineation(enum _e_segment_relation relation);
 extern enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct FloatVect2 *v1,
 		struct FloatVect2 *v2, struct FloatVect2 *v3);
 extern bool_t is_hray_intersect_with_edge(struct FloatVect2 *P, struct FloatVect2 *v0, struct FloatVect2 *v1);
