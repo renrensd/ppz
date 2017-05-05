@@ -510,6 +510,51 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 		}
 	}
 
+	// enlarge area
+	/*
+	uint8_t	P1 = 0;
+	float max_dist = 0;
+	for (i = 0; i < valid_area->n; ++i)
+	{
+		float dist = point2_distance(&(valid_area->v[i]), &(valid_area->v[0]));
+		if(dist > max_dist)
+		{
+			max_dist = dist;
+			P1 = i;
+		}
+	}
+
+	uint8_t	P2 = 0;
+	max_dist = point2_distance(&(valid_area->v[0]), &(valid_area->v[P1]));
+	for (i = 0; i < valid_area->n; ++i)
+	{
+		float dist = point2_distance(&(valid_area->v[i]), &(valid_area->v[P1]));
+		if (dist > max_dist)
+		{
+			max_dist = dist;
+			P2 = i;
+		}
+	}
+	*/
+
+	// find a center point
+	struct FloatVect2 center = {0, 0};
+	for (i = 0; i < valid_area->n; ++i)
+	{
+		VECT2_SUM(center, center, valid_area->v[i]);
+	}
+	VECT2_SDIV(center, center, (float)valid_area->n);
+
+	// enlarge each vertex
+	struct FloatVect2 ray;
+	for (i = 0; i < valid_area->n; ++i)
+	{
+		VECT2_DIFF(ray, valid_area->v[i], center);
+		float_vect2_normalize(&ray);
+		VECT2_SMUL(ray, ray, 2);
+		VECT2_SUM(valid_area->v[i], valid_area->v[i], ray);
+	}
+
 	return 0;
 }
 
