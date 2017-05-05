@@ -43,16 +43,16 @@ struct FloatVect2 f={0,0};
 <waypoint name="v12" x="4.9" y="-1.1"/>
 */
 struct FloatVect2 Point = {12.5,5.3};
-struct FloatVect2 land_p = {45.3,-10.8};
+struct FloatVect2 land_p = {0,0};
 struct FloatVect2 test_vertices[20] =
 {
-		{40.7,-5.9},
-		{39.5,2.1},
-		{50.2,1.7},
-		{50.5,-4.8},
-		{27.7,-4.7},
-		{35.5,-4.4},
-		{35.4,-10.6},
+		{-104.7,377.4},
+		{-150,20},
+		{132.8,125.8},
+		{201.7,274.5},
+		{47.6,302.2},
+		{177,390.2},
+		{26.8,443.7},
 		{34.0,-16.7},
 		{18.1,-20.1},
 		{7.4,-17.9},
@@ -66,7 +66,7 @@ struct _s_polygon test_area;
 
 void dim2_geometry_test(void)
 {
-	polygon_init(&test_poly, test_vertices, 4);
+	polygon_init(&test_poly, test_vertices, 7);
 	polygon_init(&test_area, test_vertices2, 13);
 
 	while(1)
@@ -408,7 +408,7 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 		spray_vertex_dir = FALSE;
 	}
 	max_radian = acosf(VECT2_DOT_PRODUCT(v_st, v_end));
-	max_index = 0;
+	max_index = 1;
 
 	for (i = 0; i < spray_area->n; ++i)
 	{

@@ -5,23 +5,34 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="0.5" y="-0.3"/>
-    <waypoint name="CLIMB" x="-4.4" y="0.7"/>
-    <waypoint name="STDBY" x="-13.8" y="-9.9"/>
-    <waypoint name="p1" x="11.5" y="2.0"/>
-    <waypoint name="TD" x="-7.1" y="-0.8"/>
-    <waypoint name="S1" x="-13.8" y="-10.0"/>
-    <waypoint name="S2" x="5.9" y="-9.3"/>
-    <waypoint name="S3" x="5.8" y="-3.4"/>
-    <waypoint name="S4" x="-13.8" y="-3.8"/>
-    <waypoint name="S5" x="9.3" y="-5.7"/>
-    <waypoint name="S6" x="8.1" y="-3.7"/>
-    <waypoint name="p2" x="30" y="-11.5"/>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="S1" x="0" y="0"/>
+    <waypoint name="S2" x="0" y="0"/>
+    <waypoint name="S3" x="0" y="0"/>
+    <waypoint name="S4" x="0" y="0"/>
+    <waypoint name="O1" x="-59.2" y="28.0"/>
+    <waypoint name="O2" x="26.9" y="248.2"/>
+    <waypoint name="O3" x="-82.7" y="16.0"/>
+    <waypoint name="O4" x="111.6" y="242.6"/>
+    <waypoint name="O5" x="110.4" y="323.1"/>
+    <waypoint name="From" x="0" y="20"/>
+    <waypoint name="Next" x="113.0" y="380.3"/>
+    <waypoint name="P1" x="-104.7" y="377.4"/>
+    <waypoint name="P2" x="-150" y="20"/>
+    <waypoint name="P3" x="132.8" y="125.8"/>
+    <waypoint name="P4" x="201.7" y="274.5"/>
+    <waypoint name="P5" x="47.6" y="302.2"/>
+    <waypoint name="P6" x="177.0" y="390.2"/>
+    <waypoint name="P7" x="26.8" y="443.7"/>
   </waypoints>
   <blocks>
+    <block name="circle">
+      <circle radius="7" wp="O1"/>
+    </block>
     <block name="Wait GPS">
       <call fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid()"/>
+      <circle radius="7" wp="O1"/>
     </block>
     <block name="Geo init">
       <while cond="LessThan(NavBlockTime(), 10)"/>
@@ -32,53 +43,6 @@
     </block>
     <block name="Start Engine">
       <call fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Takeoff" post_call="NavSetWaypointHere(WP_CLIMB)" strip_button="Takeoff" strip_icon="up.png">
-      <exception cond="stateGetPositionEnu_f()->z > 0.3" deroute="Climb"/>
-      <call fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay height="1.2" wp="CLIMB"/>
-    </block>
-    <block name="Climb">
-      <exception cond="stateGetPositionEnu_f()->z > 1.0" deroute="Standby"/>
-      <stay height="1.2" wp="CLIMB"/>
-    </block>
-    <block name="Standby" strip_button="Standby" strip_icon="standby.png">
-      <stay wp="STDBY"/>
-    </block>
-    <block name="s1-s2" strip_button="s1-s2" strip_icon="waypoint_one.png">
-      <call fun="nav_set_heading_towards_waypoint(WP_S2)"/>
-      <go from="S1" hmode="route" wp="S2"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S5)"/>
-      <go from="S2" hmode="route" wp="S5"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S6)"/>
-      <go from="S5" hmode="route" wp="S6"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S3)"/>
-      <go from="S6" hmode="route" wp="S3"/>
-    </block>
-    <block name="s3-s4" strip_button="s3-s4" strip_icon="waypoint_one.png">
-      <call fun="nav_set_heading_towards_waypoint(WP_S4)"/>
-      <go from="S3" hmode="route" wp="S4"/>
-      <deroute block="Standby"/>
-    </block>
-    <block name="circle3" strip_button="circle_-2m" strip_icon="circle-left.png">
-      <set value="-2.0" var="nav_radius"/>
-      <circle radius="nav_radius" until="NavCircleCount() > 2.0" wp="TD"/>
-      <deroute block="Standby"/>
-    </block>
-    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
-      <call fun="NavSetWaypointHere(WP_TD)"/>
-    </block>
-    <block name="land">
-      <go wp="TD"/>
-    </block>
-    <block name="flare">
-      <exception cond="0.36 > stateGetPositionEnu_f()->z" deroute="Holding point"/>
-      <exception cond="!nav_is_in_flight()" deroute="landed"/>
-      <call fun="NavStartDetectGround()"/>
-      <stay climb="-0.15" vmode="climb" wp="TD"/>
-    </block>
-    <block name="landed">
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
