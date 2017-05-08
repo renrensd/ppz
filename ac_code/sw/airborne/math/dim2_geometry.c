@@ -11,72 +11,53 @@
 #include <math.h>
 #include "pprz_algebra.h"
 
+#include "mcu_periph/sys_time.h"
+#include "generated/flight_plan.h"
+#include "subsystems/navigation/waypoints.h"
+
 #define TOLERANCE	(1e-6)
 
 /*
  * TEST_FUNCTION
  */
-struct FloatVect2 a={0.9,0.1};
-struct FloatVect2 b={-0.9,0.1};
-struct FloatVect2 c={1,-3};
-struct FloatVect2 d={2.4,0};
 
-struct FloatVect2 e={1.234,3.456};
-struct FloatVect2 f={0,0};
+#define P_NUM	(20)
+#define O_NUM	(5)
 
-/*
-<waypoint name="HOME" x="-4.7" y="3.8"/>
-<waypoint name="CLIMB" x="-9.5" y="1.9"/>
-<waypoint name="STDBY" x="19.2" y="-27.0"/>
-<waypoint name="v0" x="11.5" y="2.0"/>
-<waypoint name="v1" x="17.8" y="8.2"/>
-<waypoint name="v2" x="27.2" y="5.6"/>
-<waypoint name="v3" x="25.7" y="1.9"/>
-<waypoint name="v4" x="27.7" y="-4.7"/>
-<waypoint name="v5" x="35.5" y="-4.4"/>
-<waypoint name="v6" x="35.4" y="-10.6"/>
-<waypoint name="v7" x="34.0" y="-16.7"/>
-<waypoint name="v8" x="18.1" y="-20.1"/>
-<waypoint name="v9" x="7.4" y="-17.9"/>
-<waypoint name="v10" x="9.1" y="-12.0"/>
-<waypoint name="v11" x="3.8" y="-7.9"/>
-<waypoint name="v12" x="4.9" y="-1.1"/>
-*/
-struct FloatVect2 Point = {12.5,5.3};
-struct FloatVect2 land_p = {0,0};
-struct FloatVect2 test_vertices[20] =
-{
-		{-104.7,377.4},
-		{-150,20},
-		{132.8,125.8},
-		{201.7,274.5},
-		{47.6,302.2},
-		{177,390.2},
-		{26.8,443.7},
-		{34.0,-16.7},
-		{18.1,-20.1},
-		{7.4,-17.9},
-		{9.1,-12},
-		{3.8,-7.9},
-		{4.9,-1.1}
-};
-struct FloatVect2 test_vertices2[21];
-struct _s_polygon test_poly;
-struct _s_polygon test_area;
+struct FloatVect2 home = {0,0};
+struct FloatVect2 P_array[P_NUM];
+struct FloatVect2 O_array[O_NUM];
+struct FloatVect2 valid_area_boundary_vertices_array[P_NUM + 1];
+struct _s_polygon P_polygon;
+struct _s_polygon test_valid_area;
+float time_elapse;
 
 void dim2_geometry_test(void)
 {
-	polygon_init(&test_poly, test_vertices, 7);
-	polygon_init(&test_area, test_vertices2, 13);
+	for(int i=0;i<P_NUM;++i)
+	{
+		VECT2_COPY(P_array[i], waypoints[WP_P1+i].enu_f);
+	}
+	for (int i = 0; i < O_NUM; ++i)
+	{
+		VECT2_COPY(O_array[i], waypoints[WP_O1+i].enu_f);
+	}
+
+	VECT2_COPY(home, waypoints[WP_HOME].enu_f);
+
+	polygon_init(&P_polygon, P_array, P_NUM);
+	polygon_init(&test_valid_area, valid_area_boundary_vertices_array, 0);
+	generate_valid_area(&test_valid_area, &P_polygon, &home);
 
 	while(1)
 	{
-		get_2_segments_relation(&a,&b,&c,&d);
-		is_hray_intersect_with_edge(&a, &b, &c);
-		is_point_in_polygon(&Point, &test_poly);
-		generate_valid_area(&test_area, &test_poly, &land_p);
+		time_elapse = get_sys_time_float();
+		for(int i=0;i<1000;++i)
+		{
+			is_line_in_polygon(&(O_array[0]), &(O_array[1]), &test_valid_area);
+		}
+		time_elapse = get_sys_time_float() - time_elapse;
 	}
-	f = e;
 }
 
 int polygon_init(struct _s_polygon *polygon, struct FloatVect2 *vertices, uint8_t num)
@@ -354,21 +335,6 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 	return TRUE;
 }
 
-static uint8_t find_index(int16_t base, int16_t delta, int16_t max)
-{
-	int16_t index;
-
-	index = base + delta;
-
-	while (index > max)
-		index -= max;
-	while (index < 0)
-		index += max;
-
-	Bound(index, 0, max);
-	return index;
-}
-
 /*
  * TODO: this function need to move to appication layer
  *
@@ -381,6 +347,7 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 {
 	struct FloatVect2 v_st;
 	struct FloatVect2 v_end;
+	struct FloatVect2 center;
 	uint8_t i, j;
 	float max_radian;
 	uint8_t max_index;
@@ -392,6 +359,18 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	if ((valid_area == NULL) || (spray_area == NULL)  || (spray_area->v == NULL) || (land_point == NULL) || (spray_area->n < 2))
 	{
 		return -1;
+	}
+
+	// land_point in spray_area
+	if (is_point_in_polygon(land_point, spray_area))
+	{
+		for (i = 0; i < spray_area->n; ++i)
+		{
+			valid_area->v[i] = spray_area->v[i];
+		}
+		valid_area->n = spray_area->n;
+
+		goto enlarge;
 	}
 
 	// first search
@@ -510,40 +489,14 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 		}
 	}
 
-	// enlarge area
-	/*
-	uint8_t	P1 = 0;
-	float max_dist = 0;
-	for (i = 0; i < valid_area->n; ++i)
-	{
-		float dist = point2_distance(&(valid_area->v[i]), &(valid_area->v[0]));
-		if(dist > max_dist)
-		{
-			max_dist = dist;
-			P1 = i;
-		}
-	}
-
-	uint8_t	P2 = 0;
-	max_dist = point2_distance(&(valid_area->v[0]), &(valid_area->v[P1]));
-	for (i = 0; i < valid_area->n; ++i)
-	{
-		float dist = point2_distance(&(valid_area->v[i]), &(valid_area->v[P1]));
-		if (dist > max_dist)
-		{
-			max_dist = dist;
-			P2 = i;
-		}
-	}
-	*/
-
+	enlarge:
 	// find a center point
-	struct FloatVect2 center = {0, 0};
+	VECT2_ASSIGN(center, 0, 0);
 	for (i = 0; i < valid_area->n; ++i)
 	{
 		VECT2_SUM(center, center, valid_area->v[i]);
 	}
-	VECT2_SDIV(center, center, (float)valid_area->n);
+	VECT2_SDIV(center, center, (float )valid_area->n);
 
 	// enlarge each vertex
 	struct FloatVect2 ray;

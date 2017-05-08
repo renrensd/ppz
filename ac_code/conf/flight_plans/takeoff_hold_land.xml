@@ -5,25 +5,39 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="0" y="0"/>
-    <waypoint name="S1" x="0" y="0"/>
-    <waypoint name="S2" x="0" y="0"/>
-    <waypoint name="S3" x="0" y="0"/>
-    <waypoint name="S4" x="0" y="0"/>
-    <waypoint name="O1" x="-59.2" y="28.0"/>
-    <waypoint name="O2" x="26.9" y="248.2"/>
-    <waypoint name="O3" x="-82.7" y="16.0"/>
-    <waypoint name="O4" x="111.6" y="242.6"/>
-    <waypoint name="O5" x="110.4" y="323.1"/>
-    <waypoint name="From" x="0" y="20"/>
-    <waypoint name="Next" x="113.0" y="380.3"/>
-    <waypoint name="P1" x="-104.7" y="377.4"/>
-    <waypoint name="P2" x="-150" y="20"/>
-    <waypoint name="P3" x="132.8" y="125.8"/>
-    <waypoint name="P4" x="201.7" y="274.5"/>
-    <waypoint name="P5" x="47.6" y="302.2"/>
-    <waypoint name="P6" x="177.0" y="390.2"/>
-    <waypoint name="P7" x="26.8" y="443.7"/>
+    <waypoint name="HOME" x="0.4" y="0.5"/>
+    <waypoint name="S1" x="33.3" y="164.3"/>
+    <waypoint name="S2" x="28.8" y="164.1"/>
+    <waypoint name="S3" x="45.5" y="258.7"/>
+    <waypoint name="S4" x="52.0" y="257.9"/>
+    <waypoint name="O1" x="-4.6" y="207.0"/>
+    <waypoint name="O2" x="-72.7" y="214.8"/>
+    <waypoint name="O3" x="65.3" y="205.4"/>
+    <waypoint name="O4" x="115.4" y="205.3"/>
+    <waypoint name="O5" x="170.6" y="199.8"/>
+    <waypoint name="From" x="1.5" y="4.0"/>
+    <waypoint name="Next" x="72.5" y="397.9"/>
+    <waypoint name="P1" x="-211.5" y="21.7"/>
+    <waypoint name="P2" x="-124.9" y="-34.1"/>
+    <waypoint name="P3" x="12.4" y="79.3"/>
+    <waypoint name="P4" x="81.5" y="-48.0"/>
+    <waypoint name="P5" x="200.6" y="-23.2"/>
+    <waypoint name="P6" x="322.6" y="84.4"/>
+    <waypoint name="P7" x="341.2" y="217.1"/>
+    <waypoint name="P8" x="325.1" y="347.7"/>
+    <waypoint name="P9" x="260.6" y="429.3"/>
+    <waypoint name="P10" x="201.5" y="494.1"/>
+    <waypoint name="P11" x="107.7" y="507.5"/>
+    <waypoint name="P12" x="2.4" y="500.3"/>
+    <waypoint name="P13" x="-87.8" y="497.0"/>
+    <waypoint name="P14" x="-184.0" y="462.9"/>
+    <waypoint name="P15" x="-257.7" y="409.0"/>
+    <waypoint name="P16" x="-298.9" y="340.6"/>
+    <waypoint name="P17" x="-326.2" y="258.8"/>
+    <waypoint name="P18" x="-324.7" y="182.8"/>
+    <waypoint name="P19" x="-310.0" y="123.9"/>
+    <waypoint name="P20" x="-269.9" y="75.6"/>
+    <waypoint name="wp1" x="-24" y="239"/>
   </waypoints>
   <blocks>
     <block name="circle">
