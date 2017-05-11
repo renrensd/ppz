@@ -5,7 +5,7 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="-668.8" y="-68.0"/>
+    <waypoint alt="27.5" name="HOME" x="-708.6" y="167.6"/>
     <waypoint name="S1" x="33.3" y="164.3"/>
     <waypoint name="S2" x="28.8" y="164.1"/>
     <waypoint name="S3" x="45.5" y="258.7"/>
@@ -17,11 +17,11 @@
     <waypoint name="O5" x="170.6" y="199.8"/>
     <waypoint name="From" x="-68.1" y="68.2"/>
     <waypoint name="Next" x="72.5" y="397.9"/>
-    <waypoint name="P1" x="-771.4" y="33.3"/>
-    <waypoint alt="27.5" name="P2" x="-549.2" y="33.4"/>
-    <waypoint name="P3" x="-526.5" y="151.3"/>
-    <waypoint name="P4" x="-749.0" y="148.4"/>
-    <waypoint name="P5" x="200.6" y="-23.2"/>
+    <waypoint alt="27.5" name="P1" x="-564.2" y="307.0"/>
+    <waypoint alt="27.5" name="P2" x="-875.6" y="290.0"/>
+    <waypoint name="P3" x="-865.6" y="118.0"/>
+    <waypoint alt="27.5" name="P4" x="-715.5" y="235.6"/>
+    <waypoint name="P5" x="-567.6" y="144.9"/>
     <waypoint name="P6" x="322.6" y="84.4"/>
     <waypoint name="P7" x="341.2" y="217.1"/>
     <waypoint name="P8" x="325.1" y="347.7"/>

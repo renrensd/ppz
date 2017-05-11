@@ -24,7 +24,7 @@
  * TEST_FUNCTION
  */
 
-#define P_NUM	(4)
+#define P_NUM	(5)
 #define O_NUM	(5)
 
 struct FloatVect2 home = {0,0};
@@ -355,37 +355,30 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 
 float vector_angle(struct FloatVect2 *v0, struct FloatVect2 *v1, bool_t normalized)
 {
-	if (normalized)
+	float dot, cross;
+	struct FloatVect2 a = *v0;
+	struct FloatVect2 b = *v1;
+
+	if (!normalized)
 	{
-		float dot = VECT2_DOT_PRODUCT(*v0, *v1);
-		float cross = VECT2_CROSS_PRODUCT(*v0, *v1);
-		Bound(dot, -1, 1);
-		if(cross < 0)
-		{
-			return -acosf(dot);
-		}
-		else
-		{
-			return acosf(dot);
-		}
+		float_vect2_normalize(&a);
+		float_vect2_normalize(&b);
+	}
+	if (VECT2_IS_EQUAL(a, b))
+	{
+		return 0;
+	}
+
+	dot = VECT2_DOT_PRODUCT(a, b);
+	cross = VECT2_CROSS_PRODUCT(a, b);
+	Bound(dot, -1, 1);
+	if (cross < 0)
+	{
+		return -acosf(dot);
 	}
 	else
 	{
-		struct FloatVect2 a = *v0;
-		struct FloatVect2 b = *v1;
-		float_vect2_normalize(&a);
-		float_vect2_normalize(&b);
-		float dot = VECT2_DOT_PRODUCT(a, b);
-		float cross = VECT2_CROSS_PRODUCT(a, b);
-		Bound(dot, -1, 1);
-		if (cross < 0)
-		{
-			return -acosf(dot);
-		}
-		else
-		{
-			return acosf(dot);
-		}
+		return acosf(dot);
 	}
 }
 
@@ -454,13 +447,13 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	uint8_t i, j, k;
 	float angle;
 	float max_angle;
-	uint8_t max_index;
 	uint8_t index_st;
 	uint8_t index_end;
 	bool_t spray_vertex_dir;
 	bool_t in_concave = FALSE;
 
-	if ((valid_area == NULL) || (spray_area == NULL)  || (spray_area->v == NULL) || (land_point == NULL) || (spray_area->n < 2))
+	if ((valid_area == NULL) || (spray_area == NULL) || (spray_area->v == NULL) || (land_point == NULL)
+			|| (spray_area->n < 2))
 	{
 		return -1;
 	}
@@ -481,6 +474,7 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	spray_vertex_dir = (polygon_area(spray_area) > 0);
 
 	// check concave
+	// TODO: multiple concave corner not in consideration
 	for (j = 0; j < spray_area->n; ++j)
 	{
 		k = (j + 1) % spray_area->n;
@@ -516,96 +510,95 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 			if (is_point_in_polygon(land_point, &concave))
 			{
 				in_concave = TRUE;
+				index_st = k;
+				index_end = i;
 				break;
 			}
 		}
 	}
 
-	// first search (CCW)
-	VECT2_DIFF(v_st, spray_area->v[0], *land_point);
-	float_vect2_normalize(&v_st);
-	VECT2_DIFF(v_end, spray_area->v[1], *land_point);
-	float_vect2_normalize(&v_end);
-	max_angle = CCW_angle(vector_angle(&v_st, &v_end, TRUE));
-	max_index = 1;
-
-	for (i = 0; i < spray_area->n; ++i)
+	if (!in_concave)
 	{
-		VECT2_DIFF(v_end, spray_area->v[i], *land_point);
-		float_vect2_normalize(&v_end);
-		angle = CCW_angle(vector_angle(&v_st, &v_end, TRUE));
-		if (angle > max_angle)
+		// first search (CCW)
+		VECT2_DIFF(v_st, spray_area->v[0], *land_point);
+		float_vect2_normalize(&v_st);
+		max_angle = 0;
+		index_st = 0;
+
+		for (i = 1; i < spray_area->n; ++i)
 		{
-			max_angle = angle;
-			max_index = i;
+			VECT2_DIFF(v_end, spray_area->v[i], *land_point);
+			float_vect2_normalize(&v_end);
+			angle = CCW_angle(vector_angle(&v_st, &v_end, TRUE));
+			if ((angle > max_angle) && (angle < M_PI))
+			{
+				max_angle = angle;
+				index_st = i;
+			}
 		}
-	}
-	index_st = max_index;
 
-	// second search (CW)
-	VECT2_DIFF(v_st, spray_area->v[max_index], *land_point);
-	float_vect2_normalize(&v_st);
-	VECT2_DIFF(v_end, spray_area->v[0], *land_point);
-	float_vect2_normalize(&v_end);
-	max_angle = CW_angle(vector_angle(&v_st, &v_end, TRUE));
-	max_index = 0;
+		// second search (CW)
+		VECT2_DIFF(v_st, spray_area->v[index_st], *land_point);
+		float_vect2_normalize(&v_st);
+		max_angle = 0;
+		index_end = 0;
 
-	for (i = 0; i < spray_area->n; ++i)
-	{
-		VECT2_DIFF(v_end, spray_area->v[i], *land_point);
-		float_vect2_normalize(&v_end);
-		angle = CW_angle(vector_angle(&v_st, &v_end, TRUE));
-		if (angle > max_angle)
-		{
-			max_angle = angle;
-			max_index = i;
-		}
-	}
-	index_end = max_index;
-
-	// check include
-	for (i = 0; i < spray_area->n; ++i)
-	{
-		VECT2_DIFF(v_end, spray_area->v[i], *land_point);
-		float_vect2_normalize(&v_end);
-		angle = CW_angle(vector_angle(&v_st, &v_end, TRUE));
-		if (angle > max_angle)
-		{
-			return -2;
-		}
-	}
-
-	// add vertex to valid_area
-
-	valid_area->n = 0;
-	if (spray_vertex_dir)
-	{
 		for (i = 0; i < spray_area->n; ++i)
 		{
-			j = (index_end + i) % spray_area->n;
-			valid_area->v[i] = spray_area->v[j];
-			++valid_area->n;
-			if (j == index_st)
+			if (i == index_st)
 			{
-				valid_area->v[i+1] = *land_point;
-				++valid_area->n;
-				break;
+				continue;
 			}
+			VECT2_DIFF(v_end, spray_area->v[i], *land_point);
+			float_vect2_normalize(&v_end);
+			angle = CW_angle(vector_angle(&v_st, &v_end, TRUE));
+			if ((angle > max_angle) && (angle < M_PI))
+			{
+				max_angle = angle;
+				index_end = i;
+			}
+		}
+
+		// check include
+		for (i = 0; i < spray_area->n; ++i)
+		{
+			if ((i == index_st) || (i == index_end))
+			{
+				continue;
+			}
+			VECT2_DIFF(v_end, spray_area->v[i], *land_point);
+			float_vect2_normalize(&v_end);
+			angle = CW_angle(vector_angle(&v_st, &v_end, TRUE));
+			if (angle > max_angle)
+			{
+				return -2;
+			}
+		}
+
+		if (spray_vertex_dir)
+		{
+			i = index_end;
+			index_end = index_st;
+			index_st = i;
 		}
 	}
 	else
 	{
-		for (i = 0; i < spray_area->n; ++i)
+		//return -3;
+	}
+
+	// add vertex to valid_area
+	valid_area->n = 0;
+	for (i = 0; i < spray_area->n; ++i)
+	{
+		j = (index_st + i) % spray_area->n;
+		valid_area->v[i] = spray_area->v[j];
+		++valid_area->n;
+		if (j == index_end)
 		{
-			j = (index_st + i) % spray_area->n;
-			valid_area->v[i] = spray_area->v[j];
+			valid_area->v[i + 1] = *land_point;
 			++valid_area->n;
-			if (j == index_end)
-			{
-				valid_area->v[i+1] = *land_point;
-				++valid_area->n;
-				break;
-			}
+			break;
 		}
 	}
 
