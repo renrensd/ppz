@@ -456,6 +456,7 @@ void ground_monitoring(void)
 		{
 			monitoring_fail_code = PASS;
 			ground_check_step++;  //next step
+			time_record = get_sys_time_msec();
 		}
 		else
 		{
@@ -468,15 +469,7 @@ void ground_monitoring(void)
 		}
 		break;
 	case RTK_CHECK:
-		if ( GpsFixValid() && gps.p_stable
-				#ifdef USE_GPS_HEADING
-				&& gps.h_stable
-				&& (gps.num_sv > 15)   //default use zhonghaida RTK
-#endif
-#ifdef USE_GPS2_UBLOX
-				&& gps2.p_stable
-				#endif
-				)
+		if (rtk_power_up_stable() && ((get_sys_time_msec() - time_record) > 5000))
 		{
 			monitoring_fail_code = PASS;
 			ground_check_step++;  //next step

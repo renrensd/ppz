@@ -447,12 +447,12 @@ bool_t ins_int_is_rtk_best_accu(void)
 
 bool_t ins_int_is_rtk_pos_xy_valid(void)
 {
-	return (GpsFixValid() && ins_int.ltp_initialized && (gps_nmea.pos_type > PSRDIFF) && gps.p_stable && ins_int.virtual_rtk_pos_xy_valid);
+	return (gps.p_stable && ins_int.ltp_initialized && (gps_nmea.pos_type > PSRDIFF) && ins_int.virtual_rtk_pos_xy_valid);
 }
 
 bool_t ins_int_is_rtk_pos_z_valid(void)
 {
-	if(GpsFixValid() && ins_int.ltp_initialized && ins_int.vf_stable && ins_int.virtual_rtk_pos_z_valid)
+	if(gps.p_stable && ins_int.ltp_initialized && ins_int.vf_stable && ins_int.virtual_rtk_pos_z_valid)
 	{
 		float r_unstable = (float) ins_int.rtk_gps_sd_ned.z / 10000.0;
 		r_unstable = r_unstable * r_unstable;
@@ -605,10 +605,11 @@ void ins_int_task(void)
 			{
 				if (ins_int.gps_type != GPS_RTK)
 				{
+					/*
 					if(ins_int_is_rtk_best_accu())
 					{
 						ins_int_gps_switch(GPS_RTK);
-					}
+					}*/
 				}
 
 #if USE_HFF
@@ -657,6 +658,10 @@ void ins_int_task(void)
 		if (ins_int.ekf_state != INS_EKF_BARO)
 		{
 			ins_int.ekf_state = INS_EKF_GPS_TO_BARO;
+		}
+		if (ins_int.gps_type != GPS_UBLOX)
+		{
+			ins_int_gps_switch(GPS_UBLOX);
 		}
 	}
 

@@ -521,7 +521,7 @@ static inline void update_state_heading(const struct FloatVect3 *i_expected,
 
 bool_t ahrs_mlkf_is_rtk_heading_valid(void)
 {
-	return (GpsFixValid() && gps.h_stable);
+	return gps.h_stable;
 }
 
 void ahrs_mlkf_task(void)

@@ -34,7 +34,7 @@ bool_t flight_prepare(bool_t reset)
 	case 1:
 #if 0
 #else
-		if (!(GpsFixValid()))
+		if (!rtk_power_up_stable())
 			return TRUE;   //wait GPS fixed,it will change to wait LC connect
 #endif
 		step_p++;

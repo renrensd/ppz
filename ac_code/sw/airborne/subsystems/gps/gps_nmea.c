@@ -890,20 +890,19 @@ void get_gps_pos_stable(void)
 	}
 	else
 	{
-		if (gps_nmea.pos_type < WIDE_INT)
+		if (GpsIsLost() || (gps_nmea.pos_type < WIDE_INT) ||
+				(gps_nmea.gps_qual != 52) || (gps.num_sv < 10))
 		{
 			gps.p_stable = FALSE;
 			counter = 0;
 		}
 		else
 		{
-			counter++;
-		}
-
-		if (counter > 40)
-		{
-			gps.p_stable = TRUE;
-			counter = 41; /*avoid overflow*/
+			if(++counter > 100)
+			{
+				counter = 0;
+				gps.p_stable = TRUE;
+			}
 		}
 	}
 }
@@ -922,171 +921,25 @@ void get_gps_heading_stable(void)
 	}
 	else
 	{
-		if (gps_nmea.sol_tatus != 4) //not fix pos
+		if (GpsIsLost() || (gps_nmea.sol_tatus != 4) || (gps_nmea.num_sta_use < 8))
 		{
 			gps.h_stable = FALSE;
 			counter = 0;
 		}
 		else
 		{
-			counter++;
-		}
-
-		if (((counter > 200) && (get_sys_time_float() < 300.0) && (gps_nmea.num_sta_use > 14))
-				|| ((counter > 80) && (get_sys_time_float() > 300.0)))
-		{
-			gps.h_stable = TRUE;
-			counter = 200; /*avoid overflow*/
+			if (++counter > 100)
+			{
+				counter = 0;
+				gps.h_stable = TRUE;
+			}
 		}
 	}
 }
 
-/*
-double my_strtod(const char* s, char** endptr)
-
+bool_t rtk_power_up_stable(void)
 {
-
-   register const char*  p     = s;
-
-    register long double  value = 0.L;
-
-    int                   sign  = 0;
-
-    long double           factor;
-
-    unsigned int          expo;
-
-  
-
-    while ( isspace(*p) )//\u8df3\u8fc7\u524d\u9762\u7684\u7a7a\u683c
-
-      p++;
-
- 
-
-    if(*p == '-' || *p == '+')
-
-      sign = *p++;//\u628a\u7b26\u53f7\u8d4b\u7ed9\u5b57\u7b26sign\uff0c\u6307\u9488\u540e\u79fb\u3002
-
-  
-
-   //\u5904\u7406\u6570\u5b57\u5b57\u7b26
-
- 
-
-    while ( (unsigned int)(*p - '0') < 10u )//\u8f6c\u6362\u6574\u6570\u90e8\u5206
-
-      value = value*10 + (*p++ - '0');
-
-   //\u5982\u679c\u662f\u6b63\u5e38\u7684\u8868\u793a\u65b9\u5f0f\uff08\u5982\uff1a1234.5678\uff09
-
-   if ( *p == '.' )
-
-   {
-
-        factor = 1.;
-
-        p++;
-
-        while ( (unsigned int)(*p - '0') < 10u )
-
-      {
-
-         factor *= 0.1;
-
-            value  += (*p++ - '0') * factor;
-
-        }
-
-    }
-
-   //\u5982\u679c\u662fIEEE754\u6807\u51c6\u7684\u683c\u5f0f\uff08\u5982\uff1a1.23456E+3\uff09
-
-    if ( (*p | 32) == 'e' )
-
-   {
-
-      expo   = 0;
-
-        factor = 10.L;
-
-        switch (*++p)
-
-      {
-
-        case '-':
-
-           factor = 0.1;
-
-        case '+':
-
-           p++;
-
-           break;
-
-        case '0':
-
-        case '1':
-
-        case '2':
-
-        case '3':
-
-        case '4':
-
-        case '5':
-
-        case '6':
-
-        case '7':
-
-        case '8':
-
-        case '9':
-
-           break;
-
-        default :
-
-           value = 0.L;
-
-           p     = s;
-
-           goto done;
-
-        }
-
-        while ( (unsigned int)(*p - '0') < 10u )
-
-            expo = 10 * expo + (*p++ - '0');
-
-        while ( 1 )
-
-      {
-
-        if ( expo & 1 )
-
-           value *= factor;
-
-            if ( (expo >>= 1) == 0 )
-
-                break;
-
-            factor *= factor;
-
-        }
-
-    }
-
-done:
-
-    if ( endptr != 0 )
-
-        *endptr = (char*)p;
-
- 
-
-    return (sign == '-' ? -value : value);
-
+	 return (gps.p_stable && gps.h_stable && (gps.num_sv > 15) && (gps_nmea.num_sta_use > 14));
 }
-*/
+
+

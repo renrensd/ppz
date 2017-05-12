@@ -107,6 +107,7 @@ extern void nmea_parse_prop_msg(void);
 extern void gps_nmea_msg(void);
 extern void get_gps_pos_stable(void);
 extern void get_gps_heading_stable(void);
+extern bool_t rtk_power_up_stable(void);
 
 static inline void GpsEvent(void)
 {
