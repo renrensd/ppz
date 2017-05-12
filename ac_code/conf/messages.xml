@@ -2027,6 +2027,7 @@
     <field name="ref_speed_z"    type="float" />
     <field name="ref_pos_z"      type="float" />
     <field name="acc_z_pid_out"      type="float" />
+    <field name="hover_throttle"      type="float" />
   </message>
 
   <message name="MF_DAQ_STATE" id="214">

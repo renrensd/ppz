@@ -534,6 +534,43 @@ static void ins_int_get_recent_valid_rtk_z(float *z, float *zd)
 	ins_int.rtk_ned_z_hist_index = 0;
 }
 
+bool_t ins_int_v_ekf_open_loop(void)
+{
+	return (ins_int.ekf_state == INS_EKF_PURE_ACC);
+}
+
+static void switch_to_baro(void)
+{
+	if(ins_int.baro_valid)
+	{
+		if (ins_int.ekf_state != INS_EKF_BARO)
+		{
+			ins_int.ekf_state = INS_EKF_GPS_TO_BARO;
+		}
+	}
+	else
+	{
+		ins_int.ekf_state = INS_EKF_PURE_ACC;
+		autopilot_set_mode(AP_MODE_FAILSAFE);
+	}
+}
+
+static void switch_to_ublox(void)
+{
+	if(UBLOX_GPS.p_stable)
+	{
+		if (ins_int.gps_type != GPS_UBLOX)
+		{
+			ins_int_gps_switch(GPS_UBLOX);
+		}
+	}
+	else
+	{
+		autopilot_set_mode(AP_MODE_FAILSAFE);
+	}
+}
+
+
 void ins_int_task(void)
 {
 	gpss_state_update();
@@ -590,10 +627,7 @@ void ins_int_task(void)
 			}
 			else
 			{
-				if (ins_int.ekf_state != INS_EKF_BARO)
-				{
-					ins_int.ekf_state = INS_EKF_GPS_TO_BARO;
-				}
+				switch_to_baro();
 			}
 
 #endif
@@ -646,23 +680,14 @@ void ins_int_task(void)
 			}
 			else
 			{
-				if (ins_int.gps_type != GPS_UBLOX)
-				{
-					ins_int_gps_switch(GPS_UBLOX);
-				}
+				switch_to_ublox();
 			}
 		}
 	}
 	else
 	{
-		if (ins_int.ekf_state != INS_EKF_BARO)
-		{
-			ins_int.ekf_state = INS_EKF_GPS_TO_BARO;
-		}
-		if (ins_int.gps_type != GPS_UBLOX)
-		{
-			ins_int_gps_switch(GPS_UBLOX);
-		}
+		switch_to_baro();
+		switch_to_ublox();
 	}
 
 	if((ins_int.gpss_state == UBLOX_VALID) || (ins_int.gpss_state == RTK_UBLOX_VALID))	// UBLOX valid
@@ -689,10 +714,6 @@ void ins_int_task(void)
 				ins_ned_to_state();
 			}
 		}
-	}
-	else	// no GPS
-	{
-
 	}
 }
 

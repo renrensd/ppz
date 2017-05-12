@@ -586,8 +586,15 @@ void autopilot_set_mode(uint8_t new_autopilot_mode)
     switch (new_autopilot_mode) {
       case AP_MODE_FAILSAFE:
 #ifndef KILL_AS_FAILSAFE
-        guidance_v_mode_changed(GUIDANCE_V_MODE_CLIMB);
-        guid_v.climb_speed_sp = FAILSAFE_DESCENT_SPEED;
+				if (ins_int_v_ekf_open_loop())
+				{
+					guidance_v_mode_changed(GUIDANCE_V_MODE_ACC_LAND);
+				}
+				else
+				{
+					guidance_v_mode_changed(GUIDANCE_V_MODE_CLIMB);
+					guid_v.climb_speed_sp = FAILSAFE_DESCENT_SPEED;
+				}
         break;
 #endif
       case AP_MODE_KILL:

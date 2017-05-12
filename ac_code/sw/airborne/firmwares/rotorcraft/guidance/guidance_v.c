@@ -83,10 +83,11 @@ static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
 	float zdot = -vff.zdot;
 	float z = -vff.z;
 	float gps_body_z = -ins_int.rtk_ned_z;
+	float hover_throttle = get_butterworth_2_low_pass(&guid_v.hover_throttle_filter);
 
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_TUNE_VERT(trans, dev, AC_ID, &accel_scaled_z, &accel_z, &zdotdot, &bias, &zdot, &z, &gps_body_z,
-			&guid_v.ref_acc_z, &guid_v.ref_speed_z, &guid_v.ref_pos_z, &guid_v.acc_z_pid.out);
+			&guid_v.ref_acc_z, &guid_v.ref_speed_z, &guid_v.ref_pos_z, &guid_v.acc_z_pid.out, &hover_throttle);
 }
 #endif
 
@@ -128,6 +129,7 @@ static void guidance_v_controller_ini(void)
 	guid_v.acc_filter_fc = 1;
 	init_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc),
 			1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
+	init_butterworth_2_low_pass(&guid_v.hover_throttle_filter, 1, 1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
 }
 
 void guidance_v_SetAccCutoff(float fc)
@@ -234,6 +236,7 @@ void guidance_v_run(bool_t in_flight)
 	case GUIDANCE_V_MODE_CLIMB:
 	case GUIDANCE_V_MODE_HOVER:
 	case GUIDANCE_V_MODE_GUIDED:
+	case GUIDANCE_V_MODE_ACC_LAND:
 	case GUIDANCE_V_MODE_NAV:
 		run_hover_loop(in_flight);
 		stabilization_cmd[COMMAND_THRUST] = guid_v.loop_throttle_cmd;
@@ -323,6 +326,7 @@ static void state_update_loop(void)
 	guid_v.UP_z_pos = -POS_FLOAT_OF_BFP(stateGetPositionNed_i()->z);
 
 	update_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, guid_v.UP_z_acc);
+	update_butterworth_2_low_pass(&guid_v.hover_throttle_filter, guid_v.acc_z_pid.Ui);
 
 	guid_v.thrust_coef = FLOAT_OF_BFP(get_vertical_thrust_coeff(), INT32_TRIG_FRAC);
 	Bound(guid_v.thrust_coef, 0.8f, 1.0f);
@@ -377,8 +381,15 @@ static void run_hover_loop(bool_t in_flight)
 			guid_v.ref_speed_z = guid_v.climb_speed_sp;
 			pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.UP_z_speed, 0,
 					get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
+
 			guid_v.ref_acc_z = guid_v.speed_z_pid.out;
 			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.UP_z_acc, 0, 0);
+
+			normalized_cmd = guid_v.acc_z_pid.out;
+		}
+		else if (guid_v.mode == GUIDANCE_V_MODE_ACC_LAND)
+		{
+			pid_loop_calc_2(&guid_v.acc_z_pid, -0.1f, guid_v.UP_z_acc, 0, 0);
 
 			normalized_cmd = guid_v.acc_z_pid.out;
 		}

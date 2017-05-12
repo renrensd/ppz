@@ -51,7 +51,8 @@ enum _e_ins_ekf_status
 	INS_EKF_GPS = 0,
 	INS_EKF_GPS_TO_BARO,
 	INS_EKF_BARO,
-	INS_EKF_BARO_TO_GPS
+	INS_EKF_BARO_TO_GPS,
+	INS_EKF_PURE_ACC,
 };
 
 enum _e_ins_gps_type
@@ -147,6 +148,7 @@ extern bool_t ins_int_check_hf_has_realigned(void);
 extern bool_t ins_int_is_rtk_pos_xy_valid(void);
 extern bool_t ins_int_is_rtk_pos_z_valid(void);
 extern bool_t ins_int_is_rtk_best_accu(void);
+extern bool_t ins_int_v_ekf_open_loop(void);
 extern void ins_int_SetForceRedun(uint8_t force);
 
 #endif /* INS_INT_H */

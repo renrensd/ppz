@@ -40,6 +40,7 @@
 #define GUIDANCE_V_MODE_MODULE    6
 #define GUIDANCE_V_MODE_FLIP      7
 #define GUIDANCE_V_MODE_GUIDED    8
+#define GUIDANCE_V_MODE_ACC_LAND  9
 
 enum _e_v_pid_loop_mode
 {
@@ -67,6 +68,7 @@ struct _s_guidance_v
 	float ref_acc_z;
 	float acc_filter_fc;
 	Butterworth2LowPass UP_z_acc_filter;
+	Butterworth2LowPass hover_throttle_filter;
 	float thrust_coef;
 
 	// src and vrc
