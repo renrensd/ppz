@@ -291,6 +291,7 @@ static void ins_int_init(void)
 #else
   ins_int.ltp_initialized  = FALSE;  //via NavSetGroundReferenceHere() set true
 #endif
+  ins_init_origin_from_flightplan();
 
   // Bind to BARO_ABS message,not default
 #if USE_BARO_BOARD

@@ -168,7 +168,7 @@ tid_t ahrs_tid;
 int main(void)
 {
   main_init();
-  dim2_geometry_test();
+  //dim2_geometry_test();
 #if LIMIT_EVENT_POLLING
   /* Limit main loop frequency to 1kHz.
    * This is a kludge until we can better leverage threads and have real events.
