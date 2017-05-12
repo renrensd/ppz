@@ -24,7 +24,7 @@
  * TEST_FUNCTION
  */
 
-#define P_NUM	(5)
+#define P_NUM	(8)
 #define O_NUM	(5)
 
 struct FloatVect2 home = {0,0};
@@ -439,6 +439,26 @@ bool_t is_corner_concave(struct _s_polygon *polygon, uint8_t corner)
  *	WARNNING!!!!: make sure valid_area->v was correctly initialized
  */
 
+static uint8_t get_index(int8_t base, int8_t delta, uint8_t max)
+{
+	uint8_t index = (base + delta) % max;
+	Bound(index, 0, max - 1);
+	return index;
+}
+
+static uint8_t get_delta(uint8_t st, uint8_t end, uint8_t max)
+{
+	if(end >= st)
+	{
+		return end - st + 1;
+	}
+	else
+	{
+		return max - end + st + 1;
+	}
+}
+
+
 int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_area, struct FloatVect2 *land_point)
 {
 	struct FloatVect2 v_st;
@@ -450,6 +470,13 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	uint8_t index_st;
 	uint8_t index_end;
 	bool_t spray_vertex_dir;
+
+	struct _s_polygon concave;
+	bool_t concave_start = FALSE;
+	bool_t concave_corner_flag[MAX_BOUNDARY_VERTICES_NUM];
+	uint8_t concave_corner_edge[MAX_BOUNDARY_VERTICES_NUM];	// rising: 1    falling: 2
+	uint8_t concave_corner_num = 0;
+	struct FloatVect2 concave_v[MAX_BOUNDARY_VERTICES_NUM];
 	bool_t in_concave = FALSE;
 
 	if ((valid_area == NULL) || (spray_area == NULL) || (spray_area->v == NULL) || (land_point == NULL)
@@ -475,18 +502,16 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 
 	// check concave
 	// TODO: multiple concave corner not in consideration
+	for (i = 0; i < spray_area->n; ++i)
+	{
+		concave_corner_flag[i] = FALSE;
+		concave_corner_edge[i] = 0;
+	}
+
 	for (j = 0; j < spray_area->n; ++j)
 	{
-		k = (j + 1) % spray_area->n;
-		if (j == 0)
-		{
-			i = spray_area->n - 1;
-		}
-		else
-		{
-			i = j - 1;
-		}
-
+		i = get_index(j,-1,spray_area->n);
+		k = get_index(j,1,spray_area->n);
 		VECT2_DIFF(v_st, spray_area->v[i], spray_area->v[j]);
 		VECT2_DIFF(v_end, spray_area->v[k], spray_area->v[j]);
 
@@ -500,7 +525,11 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 		}
 		if (angle > M_PI)
 		{
+			concave_corner_flag[j] = TRUE;
+			++concave_corner_num;
+
 			//check point in concave
+			/*
 			struct _s_polygon concave;
 			struct FloatVect2 concave_v[3];
 			concave_v[0] = spray_area->v[i];
@@ -514,7 +543,55 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 				index_end = i;
 				break;
 			}
+			*/
 		}
+	}
+
+	for (j = 0; j < spray_area->n; ++j)
+	{
+		i = get_index(j, -1, spray_area->n);
+		k = get_index(j, 1, spray_area->n);
+		if ((concave_corner_flag[i] == FALSE) && (concave_corner_flag[j] == TRUE))
+		{
+			concave_corner_edge[j] = 1;
+		}
+		else if ((concave_corner_flag[i] == TRUE) && (concave_corner_flag[j] == FALSE))
+		{
+			concave_corner_edge[j] = 2;
+		}
+		else
+		{
+			concave_corner_edge[j] = 0;
+		}
+	}
+
+	for (j = 0; j < spray_area->n; ++j)
+	{
+		if (concave_start)
+		{
+			if (concave_corner_edge[j] == 2)
+			{
+				index_end = j;
+
+				get_delta
+
+				concave_v[0] = spray_area->v[i];
+				concave_v[1] = spray_area->v[j];
+				concave_v[2] = spray_area->v[k];
+				polygon_init(&concave, concave_v, 3);
+				if (is_point_in_polygon(land_point, &concave))
+				{
+					in_concave = TRUE;
+				}
+			}
+			else
+			{
+				if (concave_corner_edge[j] == 1)
+				{
+					index_st = get_index(j, -1, spray_area->n);
+					concave_start = TRUE;
+				}
+			}
 	}
 
 	if (!in_concave)
