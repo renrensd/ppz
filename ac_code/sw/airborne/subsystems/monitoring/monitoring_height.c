@@ -224,6 +224,7 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
       height_fix=2;
 	  #endif
   }
+  h_moni.baro_code &=0xFD;
   last_pressure  =pressure;
 
   //check noise
