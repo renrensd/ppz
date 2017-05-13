@@ -378,7 +378,15 @@ static void run_hover_loop(bool_t in_flight)
 		}
 		else if (guid_v.mode == GUIDANCE_V_MODE_CLIMB)
 		{
-			guid_v.ref_speed_z = guid_v.climb_speed_sp;
+			if (guid_v.UP_z_pos > GUIDANCE_V_MAX_HEIGHT)
+			{
+				guid_v.ref_speed_z = 0;
+			}
+			else
+			{
+				guid_v.ref_speed_z = guid_v.climb_speed_sp;
+			}
+
 			pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.UP_z_speed, 0,
 					get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
 
@@ -397,7 +405,12 @@ static void run_hover_loop(bool_t in_flight)
 		{
 			if (vertical_mode == VERTICAL_MODE_ALT)
 			{
-				guid_v.ref_pos_z = POS_FLOAT_OF_BFP(nav_flight_altitude);
+				float nav_alt_sp = POS_FLOAT_OF_BFP(nav_flight_altitude);
+				if (nav_alt_sp > GUIDANCE_V_MAX_HEIGHT)
+				{
+					nav_alt_sp = GUIDANCE_V_MAX_HEIGHT;
+				}
+				guid_v.ref_pos_z = nav_alt_sp;
 				pid_loop_calc_2(&guid_v.pos_z_pid, guid_v.ref_pos_z, guid_v.UP_z_pos, 0, guid_v.UP_z_speed);
 				guid_v.ref_speed_z = guid_v.pos_z_pid.out;
 			}
