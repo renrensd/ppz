@@ -142,7 +142,7 @@ conf/%.xml :conf/%_example.xml
 ground_segment: _print_building update_google_version conf libpprz subdirs commands static
 ground_segment.opt: ground_segment cockpit.opt tmtc.opt
 
-static: cockpit tmtc generators sim_static joystick static_h
+static: cockpit tmtc generators sim_static static_h
 
 libpprz: _save_build_version
 	$(MAKE) -C $(LIB)/ocaml
@@ -165,8 +165,8 @@ tmtc.opt: libpprz cockpit.opt multimon
 generators: libpprz
 	$(MAKE) -C $(GENERATORS)
 
-joystick: libpprz
-	$(MAKE) -C $(JOYSTICK)
+#joystick: libpprz
+#	$(MAKE) -C $(JOYSTICK)
 
 sim_static: libpprz
 	$(MAKE) -C $(SIMULATOR)
