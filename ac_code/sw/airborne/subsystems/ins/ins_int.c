@@ -301,6 +301,7 @@ static void ins_int_init(void)
   ins_int.ekf_state = INS_EKF_BARO;
   ins_int.virtual_rtk_pos_z_valid = TRUE;
   ins_int.virtual_rtk_pos_xy_valid = TRUE;
+  ins_int.virtual_ublox_pos_valid = TRUE;
 #endif
 
   ins_int.force_use_redundency = FALSE;
@@ -360,7 +361,7 @@ static inline void gpss_state_update(void)
 {
 	if(RTK_GPS.p_stable)
 	{
-		if(UBLOX_GPS.p_stable)
+		if(ins_int_is_ublox_pos_valid())
 		{
 			ins_int.gpss_state = RTK_UBLOX_VALID;
 		}
@@ -371,7 +372,7 @@ static inline void gpss_state_update(void)
 	}
 	else
 	{
-		if(UBLOX_GPS.p_stable)
+		if(ins_int_is_ublox_pos_valid())
 		{
 			ins_int.gpss_state = UBLOX_VALID;
 		}
@@ -462,6 +463,11 @@ bool_t ins_int_is_rtk_pos_z_valid(void)
 	{
 		return FALSE;
 	}
+}
+
+bool_t ins_int_is_ublox_pos_valid(void)
+{
+	return (UBLOX_GPS.p_stable && ins_int.virtual_ublox_pos_valid);
 }
 
 static void ins_int_record_rtk_z_hist(void)
@@ -557,7 +563,7 @@ static void switch_to_baro(void)
 
 static void switch_to_ublox(void)
 {
-	if(UBLOX_GPS.p_stable)
+	if(ins_int_is_ublox_pos_valid())
 	{
 		if (ins_int.gps_type != GPS_UBLOX)
 		{
