@@ -604,11 +604,13 @@ void ins_int_task(void)
 			{
 				if (ins_int.ekf_state == INS_EKF_BARO)
 				{
+					/*
 					ins_int.baro_to_gps_count = 0;
 					ins_int.baro_to_gps_offset_step = ((ins_int.rtk_ned_z - get_first_order_low_pass(&ins_int.baro_z_filter))
 							- vff.offset) / (float) BARO_TO_GPS_TIME;
 					ins_int.baro_to_gps_z_step = (ins_int.rtk_ned_z - vff.z) / (float) BARO_TO_GPS_TIME;
 					ins_int.ekf_state = INS_EKF_BARO_TO_GPS;
+					*/
 				}
 				else if (ins_int.ekf_state == INS_EKF_BARO_TO_GPS)
 				{
