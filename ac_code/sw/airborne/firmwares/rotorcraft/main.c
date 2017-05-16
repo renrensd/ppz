@@ -168,7 +168,7 @@ tid_t ahrs_tid;
 int main(void)
 {
   main_init();
-  //dim2_geometry_test();
+
 #if LIMIT_EVENT_POLLING
   /* Limit main loop frequency to 1kHz.
    * This is a kludge until we can better leverage threads and have real events.
@@ -336,6 +336,7 @@ STATIC_INLINE void handle_periodic_tasks(void)
   {
 	if (sys_time_check_and_ack_timer(radio_control_tid)) {
     	radio_control_periodic_task();
+    	dim2_geometry_test();
   	}
   } 
   if (sys_time_check_and_ack_timer(failsafe_tid)) {

@@ -41,6 +41,7 @@ struct _s_circle
 };
 
 extern bool_t is_corner_concave(struct _s_polygon *polygon, uint8_t corner);
+extern float point_close_2_segment(struct FloatVect2 *P, struct FloatVect2 *v0, struct FloatVect2 *v1);
 extern float vector_angle(struct FloatVect2 *v0, struct FloatVect2 *v1, bool_t normalized);
 extern float CCW_angle(float angle);
 extern float CW_angle(float angle);

@@ -15,7 +15,8 @@
 #include "generated/flight_plan.h"
 #include "subsystems/navigation/waypoints.h"
 
-#define TOLERANCE	(1e-6)
+#define DATA_TOLERANCE	(1e-6)
+#define OA_TOLERANCE		(1)
 
 #define MAX_BOUNDARY_VERTICES_NUM	(20)
 #define MAX_OBSTACLES_NUM					(5)
@@ -24,7 +25,8 @@
  * TEST_FUNCTION
  */
 
-#define P_NUM	(8)
+#define P_NUM	(20)
+#define V_NUM	(21)
 #define O_NUM	(5)
 
 struct FloatVect2 home = {0,0};
@@ -37,9 +39,9 @@ float time_elapse;
 
 void dim2_geometry_test(void)
 {
-	for(int i=0;i<P_NUM;++i)
+	for (int i = 0; i < P_NUM; ++i)
 	{
-		VECT2_COPY(P_array[i], waypoints[WP_P1+i].enu_f);
+		VECT2_COPY(P_array[i], waypoints[WP_P0+i].enu_f);
 	}
 	for (int i = 0; i < O_NUM; ++i)
 	{
@@ -52,8 +54,27 @@ void dim2_geometry_test(void)
 	polygon_init(&test_valid_area, valid_area_boundary_vertices_array, 0);
 	generate_valid_area(&test_valid_area, &P_polygon, &home);
 
-	while(1)
+	//point_close_2_segment(&home, &(O_array[0]), &(O_array[1]));
+
+	for (int i = 0; i < V_NUM; ++i)
 	{
+		struct EnuCoor_f c;
+
+		if (i < test_valid_area.n)
+		{
+			VECT2_COPY(c, test_valid_area.v[i]);
+			waypoint_set_enu(WP_V0 + i, &c);
+		}
+		else
+		{
+			VECT2_COPY(c, test_valid_area.v[test_valid_area.n - 1]);
+			waypoint_set_enu(WP_V0 + i, &c);
+		}
+	}
+
+
+	time_elapse = get_sys_time_float() - time_elapse;
+
 		/*
 		time_elapse = get_sys_time_float();
 		struct FloatVect2 a;
@@ -74,8 +95,6 @@ void dim2_geometry_test(void)
 		{
 			is_line_in_polygon(&(O_array[0]), &(O_array[1]), &test_valid_area);
 		}*/
-		time_elapse = get_sys_time_float() - time_elapse;
-	}
 }
 
 int polygon_init(struct _s_polygon *polygon, struct FloatVect2 *vertices, uint8_t num)
@@ -142,10 +161,10 @@ enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct F
 	float ynum = determinant(detL1, y0_y1, detL2, y2_y3);
 	float denom = determinant(x0_x1, y0_y1, x2_x3, y2_y3);
 
-	if (fabsf(denom) < TOLERANCE)	// parallel
+	if (fabsf(denom) < DATA_TOLERANCE)	// parallel
 	{
 		float area = v0->x * (v1->y - v2->y) + v1->x * (v2->y - v0->y) + v2->x * (v0->y - v1->y);
-		if (fabsf(area) < TOLERANCE)
+		if (fabsf(area) < DATA_TOLERANCE)
 		{
 			if (is_on_segment(v2, v0, v3))
 			{
@@ -189,7 +208,19 @@ enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct F
 		P.y = ynum / denom;
 		if (is_on_segment(v0, &P, v1) && is_on_segment(v2, &P, v3))
 		{
-			return SR_INTERSECTION_INSIDE;
+			float dis0 = point2_distance(&P, v0);
+			float dis1 = point2_distance(&P, v1);
+			float dis2 = point2_distance(&P, v2);
+			float dis3 = point2_distance(&P, v3);
+			if((dis0 < OA_TOLERANCE) || (dis1 < OA_TOLERANCE) ||
+					(dis2 < OA_TOLERANCE) || (dis3 < OA_TOLERANCE))
+			{
+				return SR_INTERSECTION_OUTSIDE;
+			}
+			else
+			{
+				return SR_INTERSECTION_INSIDE;
+			}
 		}
 		else
 		{
@@ -249,6 +280,37 @@ bool_t is_hray_intersect_with_edge(struct FloatVect2 *P, struct FloatVect2 *v0, 
 	}
 }
 
+float point_close_2_segment(struct FloatVect2 *P, struct FloatVect2 *v0, struct FloatVect2 *v1)
+{
+	float disv = point2_distance(v0, v1);
+	float dis0 = point2_distance(P, v0);
+	float dis1 = point2_distance(P, v1);
+	float dis3;
+	struct FloatVect2 v, r;
+
+	v.x = v1->y - v0->y;
+	v.y = v1->x - v0->x;
+	VECT2_DIFF(r, *P, *v0);
+	float_vect2_normalize(&v);
+	dis3 = fabsf(VECT2_DOT_PRODUCT(v, r));
+
+	if((dis0 < OA_TOLERANCE) || (dis1 < OA_TOLERANCE))
+	{
+		return TRUE;
+	}
+	else
+	{
+		if((dis3 < OA_TOLERANCE) && (dis0 < disv) && (dis1 < disv))
+		{
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+}
+
 /*
  * check if point in polygon
  */
@@ -286,6 +348,12 @@ bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon)
 		}
 	}
 
+	// bound box tolerance
+	min_x -= OA_TOLERANCE;
+	min_y -= OA_TOLERANCE;
+	max_x += OA_TOLERANCE;
+	max_y += OA_TOLERANCE;
+
 	// point outside bound box
 	if ((P->x < min_x) || (P->x > max_x) || (P->y < min_y) || (P->y > max_y))
 	{
@@ -297,6 +365,7 @@ bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon)
 		j = (i + 1) % polygon->n;
 
 		// point on edge
+		/*
 		enum _e_segment_relation rel = get_2_segments_relation(P, &(polygon->v[i]), P, &(polygon->v[j]));
 		if (is_relation_collineation(rel))
 		{
@@ -304,6 +373,12 @@ bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon)
 			{
 				return TRUE;
 			}
+		}
+		*/
+		// point close to edge
+		if (point_close_2_segment(P, &(polygon->v[i]), &(polygon->v[j])))
+		{
+			return TRUE;
 		}
 
 		if (is_hray_intersect_with_edge(P, &(polygon->v[i]), &(polygon->v[j])))
@@ -454,7 +529,7 @@ static uint8_t get_delta(uint8_t st, uint8_t end, uint8_t max)
 	}
 	else
 	{
-		return max - end + st + 1;
+		return max - st + end + 1;
 	}
 }
 
@@ -551,8 +626,18 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	}
 
 	// check point in split concave polygon
-	for (j = 0; j < spray_area->n; ++j)
+	uint8_t search_base = 0;
+	for (k = 0; k < spray_area->n; ++k)
 	{
+		if (concave_corner_edge[k] == 1)
+		{
+			search_base = k;
+			break;
+		}
+	}
+	for (k = 0; k < spray_area->n; ++k)
+	{
+		j = get_index(search_base, k, spray_area->n);
 		if (concave_start)
 		{
 			if (concave_corner_edge[j] == 2)
@@ -568,6 +653,9 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 				if (is_point_in_polygon(land_point, &concave))
 				{
 					in_concave = TRUE;
+					i = index_end;
+					index_end = index_st;
+					index_st = i;
 					break;
 				}
 				concave_start = FALSE;
@@ -669,6 +757,8 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	}
 
 	enlarge:
+	valid_area->v[valid_area->n-1].y -= 50;
+	/*
 	// find a center point
 	VECT2_ASSIGN(center, 0, 0);
 	for (i = 0; i < valid_area->n; ++i)
@@ -683,9 +773,10 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	{
 		VECT2_DIFF(ray, valid_area->v[i], center);
 		float_vect2_normalize(&ray);
-		VECT2_SMUL(ray, ray, 2);
+		VECT2_SMUL(ray, ray, 20);
 		VECT2_SUM(valid_area->v[i], valid_area->v[i], ray);
 	}
+	*/
 
 	return 0;
 }

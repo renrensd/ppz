@@ -181,6 +181,8 @@ static void send_wp_moved(struct transport_tx *trans, struct link_device *dev)
                              &(waypoints[i].enu_i.x),
                              &(waypoints[i].enu_i.y),
                              &(waypoints[i].enu_i.z));
+  int32_t hmsl = waypoints[i].lla.alt - state.ned_origin_i.lla.alt + state.ned_origin_i.hmsl;
+  pprz_msg_send_WP_MOVED_LLA(trans, dev, AC_ID, &i, &(waypoints[i].lla.lat), &(waypoints[i].lla.lon), &hmsl);
 }
 #endif
 
