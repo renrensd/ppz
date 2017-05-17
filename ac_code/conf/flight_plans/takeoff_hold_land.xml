@@ -106,6 +106,11 @@
       <corner name="V19"/>
       <corner name="V20"/>
     </sector>
+    <sector name="line" type="dynamic">
+      <corner name="O1"/>
+      <corner name="O2"/>
+      <corner name="O3"/>
+    </sector>
   </sectors>
   <blocks>
     <block name="circle">

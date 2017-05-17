@@ -18,6 +18,9 @@
 #define DATA_TOLERANCE	(1e-6)
 #define OA_TOLERANCE		(1)
 
+#define MAX_BOUNDARY_VERTICES_NUM	(20)
+#define MAX_OBSTACLES_NUM					(5)
+
 /*
  * TEST_FUNCTION
  */
@@ -50,13 +53,21 @@ void dim2_geometry_test(void)
 	polygon_init(&P_polygon, P_array, P_NUM);
 	polygon_init(&test_valid_area, valid_area_boundary_vertices_array, 0);
 	generate_valid_area(&test_valid_area, &P_polygon, &home);
-
+	if(is_line_in_polygon(&(O_array[0]), &(O_array[1]), &test_valid_area))
+	{
+		O_array[2].x = 0;
+		O_array[2].y = 0;
+	}
+	else
+	{
+		O_array[2].x = 100;
+		O_array[2].y = 100;
+	}
 	//point_close_2_segment(&home, &(O_array[0]), &(O_array[1]));
 
+	struct EnuCoor_f c;
 	for (int i = 0; i < V_NUM; ++i)
 	{
-		struct EnuCoor_f c;
-
 		if (i < test_valid_area.n)
 		{
 			VECT2_COPY(c, test_valid_area.v[i]);
@@ -67,6 +78,11 @@ void dim2_geometry_test(void)
 			VECT2_COPY(c, test_valid_area.v[test_valid_area.n - 1]);
 			waypoint_set_enu(WP_V0 + i, &c);
 		}
+	}
+	for (int i = 0; i < O_NUM; ++i)
+	{
+		VECT2_COPY(c, O_array[i]);
+		//waypoint_set_enu(WP_O1 + i, &c);
 	}
 
 
@@ -530,20 +546,14 @@ static uint8_t get_delta(uint8_t st, uint8_t end, uint8_t max)
 	}
 }
 
-
-int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_area, struct FloatVect2 *land_point)
+static bool_t check_if_point_in_concave(struct FloatVect2 *P, struct _s_polygon *polygon, uint8_t *st, uint8_t *end, struct _s_polygon *spolyon, uint8_t *spoly_index_table)
 {
-	struct FloatVect2 v_st;
-	struct FloatVect2 v_end;
-	struct FloatVect2 center;
-	uint8_t i, j, k, l;
-	float angle;
-	float max_angle;
+	uint8_t i, j, k;
 	uint8_t index_st;
 	uint8_t index_end;
-	bool_t spray_vertex_dir;
-
-	struct _s_sub_polygon spoly;
+	float angle;
+	struct FloatVect2 v_st;
+	struct FloatVect2 v_end;
 	struct _s_polygon concave;
 	bool_t concave_start = FALSE;
 	bool_t concave_corner_flag[MAX_BOUNDARY_VERTICES_NUM];
@@ -552,17 +562,155 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	struct FloatVect2 concave_vertices[MAX_BOUNDARY_VERTICES_NUM];
 	bool_t in_concave = FALSE;
 
+	polygon->dir = (polygon_area(polygon) > 0);
+
+	// check concave
+	for (i = 0; i < MAX_BOUNDARY_VERTICES_NUM; ++i)
+	{
+		concave_corner_flag[i] = FALSE;
+		concave_corner_edge[i] = 0;
+		VECT2_ASSIGN(concave_vertices[i], 0, 0);
+	}
+	// search concave corner
+	for (j = 0; j < polygon->n; ++j)
+	{
+		i = get_index(j, -1, polygon->n);
+		k = get_index(j, 1, polygon->n);
+		VECT2_DIFF(v_st, polygon->v[i], polygon->v[j]);
+		VECT2_DIFF(v_end, polygon->v[k], polygon->v[j]);
+
+		if (polygon->dir)
+		{
+			angle = CW_angle(vector_angle(&v_st, &v_end, FALSE));
+		}
+		else
+		{
+			angle = CCW_angle(vector_angle(&v_st, &v_end, FALSE));
+		}
+		if (angle > M_PI)
+		{
+			polygon->concave = TRUE;
+			concave_corner_flag[j] = TRUE;
+			++concave_corner_num;
+		}
+	}
+
+	// split concave vertices
+	for (j = 0; j < polygon->n; ++j)
+	{
+		i = get_index(j, -1, polygon->n);
+		k = get_index(j, 1, polygon->n);
+		if ((concave_corner_flag[i] == FALSE) && (concave_corner_flag[j] == TRUE))
+		{
+			concave_corner_edge[j] = 1;
+		}
+		else if ((concave_corner_flag[i] == TRUE) && (concave_corner_flag[j] == FALSE))
+		{
+			concave_corner_edge[j] = 2;
+		}
+		else
+		{
+			concave_corner_edge[j] = 0;
+		}
+	}
+
+	// check point in split concave polygon
+	uint8_t search_base = 0;
+	for (k = 0; k < polygon->n; ++k)
+	{
+		if (concave_corner_edge[k] == 1)
+		{
+			search_base = k;
+			break;
+		}
+	}
+	for (k = 0; k < polygon->n; ++k)
+	{
+		j = get_index(search_base, k, polygon->n);
+		if (concave_start)
+		{
+			if (concave_corner_edge[j] == 2)
+			{
+				index_end = j;
+
+				uint8_t concave_vertices_num = get_delta(index_st, index_end, polygon->n);
+				for (i = 0; i < concave_vertices_num; ++i)
+				{
+					concave_vertices[i] = polygon->v[get_index(index_st, i, polygon->n)];
+				}
+				polygon_init(&concave, concave_vertices, concave_vertices_num);
+				if (is_point_in_polygon(P, &concave))
+				{
+					in_concave = TRUE;
+					i = index_end;
+					index_end = index_st;
+					index_st = i;
+					break;
+				}
+				concave_start = FALSE;
+			}
+		}
+		else
+		{
+			if (concave_corner_edge[j] == 1)
+			{
+				index_st = get_index(j, -1, polygon->n);
+				concave_start = TRUE;
+			}
+		}
+	}
+
+	if (in_concave)
+	{
+		*st = index_st;
+		*end = index_end;
+		return TRUE;
+	}
+	else
+	{
+		// get sub polygon
+		if (polygon->concave)
+		{
+			if ((spolyon != NULL) && (spoly_index_table != NULL))
+			{
+				spolyon->n = 0;
+				for (i = 0; i < polygon->n; ++i)
+				{
+					if (!concave_corner_flag[i])
+					{
+						spolyon->v[spolyon->n] = polygon->v[i];
+						spoly_index_table[spolyon->n] = i;
+						++spolyon->n;
+					}
+				}
+			}
+		}
+		return FALSE;
+	}
+}
+
+int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_area, struct FloatVect2 *land_point)
+{
+	struct FloatVect2 v_st;
+	struct FloatVect2 v_end;
+	uint8_t i, j;
+	float angle;
+	float max_angle;
+	uint8_t index_st;
+	uint8_t index_end;
+	bool_t in_concave;
+
+	struct FloatVect2 spoly_vertices[MAX_BOUNDARY_VERTICES_NUM];
+	uint8_t spoly_index[MAX_BOUNDARY_VERTICES_NUM];
+	struct _s_polygon spoly;
+
 	if ((valid_area == NULL) || (spray_area == NULL) || (spray_area->v == NULL) || (land_point == NULL)
 			|| (spray_area->n < 2))
 	{
 		return -1;
 	}
 
-	spoly.pp = spray_area;
-	for (i = 0; i < spray_area->n; ++i)
-	{
-		spoly.index[i] = i;
-	}
+	polygon_init(&spoly, spoly_vertices, 0);
 
 	// land_point in spray_area
 	if (is_point_in_polygon(land_point, spray_area))
@@ -576,109 +724,15 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 		return 0;
 	}
 
-	// polygon vertices direction
-	spray_vertex_dir = (polygon_area(spray_area) > 0);
-
 	// check concave
-	for (l = 0; l < 1; ++l)
+	in_concave = check_if_point_in_concave(land_point, spray_area, &index_st, &index_end, &spoly, spoly_index);
+	if (spray_area->concave && (!in_concave))
 	{
-		for (i = 0; i < MAX_BOUNDARY_VERTICES_NUM; ++i)
+		in_concave = check_if_point_in_concave(land_point, &spoly, &index_st, &index_end, NULL, NULL);
+		if(in_concave)
 		{
-			concave_corner_flag[i] = FALSE;
-			concave_corner_edge[i] = 0;
-			VECT2_ASSIGN(concave_vertices[i], 0, 0);
-		}
-		// search concave corner
-		for (j = 0; j < spray_area->n; ++j)
-		{
-			i = get_index(j, -1, spray_area->n);
-			k = get_index(j, 1, spray_area->n);
-			VECT2_DIFF(v_st, spray_area->v[i], spray_area->v[j]);
-			VECT2_DIFF(v_end, spray_area->v[k], spray_area->v[j]);
-
-			if (spray_vertex_dir)
-			{
-				angle = CW_angle(vector_angle(&v_st, &v_end, FALSE));
-			}
-			else
-			{
-				angle = CCW_angle(vector_angle(&v_st, &v_end, FALSE));
-			}
-			if (angle > M_PI)
-			{
-				concave_corner_flag[j] = TRUE;
-				++concave_corner_num;
-			}
-		}
-
-		// split concave vertices
-		for (j = 0; j < spray_area->n; ++j)
-		{
-			i = get_index(j, -1, spray_area->n);
-			k = get_index(j, 1, spray_area->n);
-			if ((concave_corner_flag[i] == FALSE) && (concave_corner_flag[j] == TRUE))
-			{
-				concave_corner_edge[j] = 1;
-			}
-			else if ((concave_corner_flag[i] == TRUE) && (concave_corner_flag[j] == FALSE))
-			{
-				concave_corner_edge[j] = 2;
-			}
-			else
-			{
-				concave_corner_edge[j] = 0;
-			}
-		}
-
-		// check point in split concave polygon
-		uint8_t search_base = 0;
-		for (k = 0; k < spray_area->n; ++k)
-		{
-			if (concave_corner_edge[k] == 1)
-			{
-				search_base = k;
-				break;
-			}
-		}
-		for (k = 0; k < spray_area->n; ++k)
-		{
-			j = get_index(search_base, k, spray_area->n);
-			if (concave_start)
-			{
-				if (concave_corner_edge[j] == 2)
-				{
-					index_end = j;
-
-					uint8_t concave_vertices_num = get_delta(index_st, index_end, spray_area->n);
-					for (i = 0; i < concave_vertices_num; ++i)
-					{
-						concave_vertices[i] = spray_area->v[get_index(index_st, i, spray_area->n)];
-					}
-					polygon_init(&concave, concave_vertices, concave_vertices_num);
-					if (is_point_in_polygon(land_point, &concave))
-					{
-						in_concave = TRUE;
-						i = index_end;
-						index_end = index_st;
-						index_st = i;
-						break;
-					}
-					concave_start = FALSE;
-				}
-			}
-			else
-			{
-				if (concave_corner_edge[j] == 1)
-				{
-					index_st = get_index(j, -1, spray_area->n);
-					concave_start = TRUE;
-				}
-			}
-		}
-
-		if(!in_concave)
-		{
-
+			index_st = spoly_index[index_st];
+			index_end = spoly_index[index_end];
 		}
 	}
 
@@ -724,7 +778,7 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 			}
 		}
 
-		if (spray_vertex_dir)
+		if (spray_area->dir)
 		{
 			i = index_end;
 			index_end = index_st;
@@ -736,7 +790,7 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 		float_vect2_normalize(&v_st);
 		VECT2_DIFF(v_end, spray_area->v[index_end], *land_point);
 		float_vect2_normalize(&v_end);
-		if (spray_vertex_dir)
+		if (spray_area->dir)
 		{
 			max_angle = CCW_angle(vector_angle(&v_st, &v_end, TRUE));
 		}
@@ -752,7 +806,7 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 			}
 			VECT2_DIFF(v_end, spray_area->v[i], *land_point);
 			float_vect2_normalize(&v_end);
-			if (spray_vertex_dir)
+			if (spray_area->dir)
 			{
 				angle = CCW_angle(vector_angle(&v_st, &v_end, TRUE));
 			}

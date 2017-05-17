@@ -21,9 +21,6 @@ enum _e_segment_relation
 	SR_COLLINEATION_OVERLAP
 };
 
-#define MAX_BOUNDARY_VERTICES_NUM	(20)
-#define MAX_OBSTACLES_NUM					(5)
-
 /*
  * n: vertices number
  * v: vertices array pointer
@@ -31,13 +28,9 @@ enum _e_segment_relation
 struct _s_polygon
 {
 	uint8_t n;
+	bool_t dir;
+	bool_t concave;
 	struct FloatVect2 *v;
-};
-
-struct _s_sub_polygon
-{
-	struct _s_polygon *pp;
-	uint8_t index[MAX_BOUNDARY_VERTICES_NUM];
 };
 
 /*
