@@ -216,14 +216,16 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
   if(get_sys_time_msec() <15000)  return;  //15s later begin run(data is not stable before
   
   //check fix data
-  if( data_fix_check( (int32_t)(pressure*100), (int32_t)(last_pressure*100), &h_moni.baro_fix_data_counter ,DATA_FIX_MAX ) )
-  {
-  	  h_moni.baro_code |=0x02;
-	  h_moni.baro_status = 1; //set fail
-	  #if TEST_MSG
-      height_fix=2;
-	  #endif
-  }
+	if (data_fix_check((int32_t) (pressure * 100), (int32_t) (last_pressure * 100), &h_moni.baro_fix_data_counter,
+			DATA_FIX_MAX))
+	{
+		h_moni.baro_code |= 0x02;
+		h_moni.baro_status = 1; //set fail
+#if TEST_MSG
+		height_fix = 2;
+#endif
+		return;
+	}
   h_moni.baro_code &=0xFD;
   last_pressure  =pressure;
 
