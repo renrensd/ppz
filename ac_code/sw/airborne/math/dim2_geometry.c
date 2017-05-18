@@ -66,6 +66,7 @@ void dim2_geometry_test(void)
 	//point_close_2_segment(&home, &(O_array[0]), &(O_array[1]));
 
 	struct EnuCoor_f c;
+	c.z = 0;
 	for (int i = 0; i < V_NUM; ++i)
 	{
 		if (i < test_valid_area.n)
@@ -83,7 +84,10 @@ void dim2_geometry_test(void)
 	{
 		VECT2_COPY(c, O_array[i]);
 		//waypoint_set_enu(WP_O1 + i, &c);
+
 	}
+	VECT2_COPY(c, O_array[2]);
+	waypoint_set_enu(WP_O3, &c);
 
 
 	time_elapse = get_sys_time_float() - time_elapse;

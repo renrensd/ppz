@@ -10,8 +10,8 @@
     <waypoint name="S2" x="28.8" y="164.1"/>
     <waypoint name="S3" x="45.5" y="258.7"/>
     <waypoint name="S4" x="52.0" y="257.9"/>
-    <waypoint alt="27.5" name="O1" x="325.7" y="106.7"/>
-    <waypoint name="O2" x="469.7" y="238.6"/>
+    <waypoint alt="27.5" name="O1" x="-1584.4" y="471.2"/>
+    <waypoint name="O2" x="-1110.0" y="525.0"/>
     <waypoint name="O3" x="65.3" y="205.4"/>
     <waypoint name="O4" x="115.4" y="205.3"/>
     <waypoint name="O5" x="170.6" y="199.8"/>
@@ -109,7 +109,7 @@
     <sector name="line" type="dynamic">
       <corner name="O1"/>
       <corner name="O2"/>
-      <corner name="O3"/>
+      <corner name="O1"/>
     </sector>
   </sectors>
   <blocks>
