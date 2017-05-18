@@ -57,6 +57,7 @@ enum _e_ins_ekf_status
 
 enum _e_ins_gps_type
 {
+	GPS_NONE,
 	GPS_RTK,
 	GPS_UBLOX
 };

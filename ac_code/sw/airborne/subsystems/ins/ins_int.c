@@ -299,7 +299,7 @@ static void ins_int_init(void)
   ins_int.baro_initialized = FALSE;
   ins_int.R_baro = R_BARO;
   ins_int.R_baro_offset = R_BARO_OFFSET;
-  ins_int.ekf_state = INS_EKF_BARO;
+  ins_int.ekf_state = INS_EKF_PURE_ACC;
   ins_int.virtual_rtk_pos_z_valid = TRUE;
   ins_int.virtual_rtk_pos_xy_valid = TRUE;
   ins_int.virtual_ublox_pos_valid = TRUE;
@@ -349,7 +349,7 @@ static void ins_int_init(void)
 
 	//ins_int_gps_switch(GPS_UBLOX);
   //ins_int_gps_switch(GPS_RTK);
-  ins_int.gps_type = GPS_RTK;
+  ins_int.gps_type = GPS_NONE;
 }
 
 void ins_int_SetForceRedun(uint8_t force)
@@ -437,7 +437,7 @@ bool_t ins_int_check_hf_realign_done(void)
 
 bool_t ins_int_is_rtk_best_accu(void)
 {
-	if((gps_nmea.gps_qual == 52) && gps.p_stable)
+	if((gps_nmea.gps_qual == 52) && (gps.num_sv > 15) && gps.p_stable)
 	{
 		return TRUE;
 	}
@@ -548,7 +548,12 @@ bool_t ins_int_v_ekf_open_loop(void)
 
 static void switch_to_baro(void)
 {
-	if(ins_int.baro_valid)
+	if (!ins_int.baro_initialized)
+	{
+		return;
+	}
+
+	if (ins_int.baro_valid)
 	{
 		if (ins_int.ekf_state != INS_EKF_BARO)
 		{
@@ -573,6 +578,7 @@ static void switch_to_ublox(void)
 	}
 	else
 	{
+		ins_int.gps_type = GPS_NONE;
 		autopilot_set_mode(AP_MODE_FAILSAFE);
 	}
 }
@@ -632,6 +638,7 @@ void ins_int_task(void)
 					vff_update_z_conf(ins_int.rtk_ned_z, ins_int.R_rtk_pos_z_setting);
 					vff_update_offset_conf(ins_int.rtk_ned_z - ins_int.baro_ned_z, ins_int.R_baro_offset);
 					ins_update_from_vff();
+					ins_ned_to_state();
 				}
 				ins_int_record_rtk_z_hist();
 			}
@@ -649,11 +656,10 @@ void ins_int_task(void)
 			{
 				if (ins_int.gps_type != GPS_RTK)
 				{
-					/*
-					if(ins_int_is_rtk_best_accu())
+					if (ins_int_is_rtk_best_accu() && (!autopilot_in_flight))
 					{
 						ins_int_gps_switch(GPS_RTK);
-					}*/
+					}
 				}
 
 #if USE_HFF
@@ -834,30 +840,49 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 
 	if (last_stamp > 0)
 	{
-		float dt = (float)(stamp - last_stamp) * 1e-6;
-		ins_int.baro_ned_z = - baro_get_height(pressure, temperature); // - for NED
+		float dt = (float) (stamp - last_stamp) * 1e-6;
+		ins_int.baro_ned_z = -baro_get_height(pressure, temperature); // - for NED
 
-		if(!ins_int.baro_initialized)
-		{
-			init_first_order_low_pass(&ins_int.baro_z_filter, low_pass_filter_get_tau(1.0f), 0.05f, ins_int.baro_ned_z);
-			vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
-			ins_int.baro_initialized = TRUE;
-		}
-		else
+		if (ins_int.baro_initialized)
 		{
 			update_first_order_low_pass(&ins_int.baro_z_filter, ins_int.baro_ned_z);
-			if(ins_int.ekf_state == INS_EKF_GPS_TO_BARO)
+		}
+
+		if (ins_int.ekf_state == INS_EKF_PURE_ACC)
+		{
+			if ((!autopilot_in_flight) && ins_int.baro_valid && (!ins_int.baro_initialized))
+			{
+				init_first_order_low_pass(&ins_int.baro_z_filter, low_pass_filter_get_tau(1.0f), 0.05f, ins_int.baro_ned_z);
+				vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
+				ins_int.baro_initialized = TRUE;
+				ins_int.ekf_state = INS_EKF_BARO;
+			}
+		}
+		else if (ins_int.ekf_state == INS_EKF_GPS_TO_BARO)
+		{
+			if (ins_int.baro_valid)
 			{
 				float valid_z, valid_zd;
 				ins_int_get_recent_valid_rtk_z(&valid_z, &valid_zd);
 				vff_init(valid_z, valid_zd, vff.bias, vff.offset);
 				ins_int.ekf_state = INS_EKF_BARO;
 			}
-			else if(ins_int.ekf_state == INS_EKF_BARO)
+			else
+			{
+				ins_int.ekf_state = INS_EKF_PURE_ACC;
+			}
+		}
+		else if (ins_int.ekf_state == INS_EKF_BARO)
+		{
+			if (ins_int.baro_valid)
 			{
 				vff_update_baro_conf(ins_int.baro_ned_z, ins_int.R_baro);
 				ins_update_from_vff();
 				ins_ned_to_state();
+			}
+			else
+			{
+				ins_int.ekf_state = INS_EKF_PURE_ACC;
 			}
 		}
 	}

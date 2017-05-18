@@ -921,7 +921,7 @@ void get_gps_heading_stable(void)
 	}
 	else
 	{
-		if (GpsIsLost() || (gps_nmea.sol_tatus != 4) || (gps_nmea.num_sta_use < 8))
+		if (GpsIsLost() || (gps_nmea.sol_tatus != 4) || (gps.head_stanum < 8))
 		{
 			gps.h_stable = FALSE;
 			counter = 0;
@@ -939,7 +939,7 @@ void get_gps_heading_stable(void)
 
 bool_t rtk_power_up_stable(void)
 {
-	 return (gps.p_stable && gps.h_stable && (gps.num_sv > 15) && (gps_nmea.num_sta_use > 14));
+	 return (gps.p_stable && gps.h_stable && (gps.num_sv > 15) && (gps.head_stanum > 14));
 }
 
 

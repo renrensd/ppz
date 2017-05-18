@@ -238,9 +238,9 @@
 
   <message name="DEBUG_GPS" id="26">
   	<field name="gpss"    	 type="uint8" values="RTK_UBLOX_INVALID|UBLOX_VALID|RTK_VALID|RTK_UBLOX_VALID"/>
-    <field name="baro_sw"    type="uint8" values="INS_Z_EKF_GPS|INS_Z_EKF_BARO|INS_Z_EKF_BARO_TO_GPS"/>
+    <field name="baro_sw"    type="uint8" values="INS_Z_EKF_GPS|INS_Z_EKF_GPS_TO_BARO|INS_Z_EKF_BARO|INS_Z_EKF_BARO_TO_GPS|INS_Z_EKF_PURE_ACC"/>
     <field name="mag_sw"     type="uint8" values="AMHS_GPS|AMHS_MAG|AMHS_SWITCHING"/>
-    <field name="gps_sw"     type="uint8" values="RTK|UBLOX"/>
+    <field name="gps_sw"     type="uint8" values="NONE|RTK|UBLOX"/>
     <field name="gps_qual"    type="uint8"/>
     <field name="pos_type"    type="uint8"/>
     <field name="p_stable"    type="uint8"/>
@@ -2070,8 +2070,8 @@
 
   <!--217 is free -->
   <message name="MONITORING" id="217">
-    <field name="ground_check_step" type="uint8" values="battery|board|IMU|height|ops|GPS|calibration|autopilot|rc_connect"/>
-    <field name="monitoring_fail_code" type="uint16" values="pass|bat_e|board_e|imu_e|height_e|ops_e|gps_w|calibra_e|ap_e|rc_link"/>
+    <field name="ground_check_step" type="uint8" values="battery|board|IMU|height|ops|UBLOX|RTK|calibration|autopilot|rc_connect"/>
+    <field name="monitoring_fail_code" type="uint16" values="pass|err"/>
   </message>
 
   <message name="BEBOP_ACTUATORS" id="218">

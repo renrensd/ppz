@@ -81,13 +81,11 @@ uint8_t height_ground_check(void)
 		if(!h_moni.baro_code)   //normal
 		{	
 			h_moni.baro_status = 0;   
-			ins_int.baro_valid = TRUE;
 			check_code = 1;  //set pass
 		}
 		else                   //set error
 		{	
 			h_moni.baro_status = 1;   
-			ins_int.baro_valid = FALSE;
 			check_code = 2;  //set fail
 		}
 	}
@@ -195,6 +193,14 @@ void height_frequence_check(void)
 	
 	h_moni.baro_update_counter=0;
 
+	if(h_moni.baro_status)
+	{
+		ins_int.baro_valid = FALSE;
+	}
+	else
+	{
+		ins_int.baro_valid = TRUE;
+	}
 }
 
 
