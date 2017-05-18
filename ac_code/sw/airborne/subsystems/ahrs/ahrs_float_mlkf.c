@@ -41,6 +41,7 @@
 #include <math.h>
 #include "math/my_math.h"
 #include "modules/mag_cali/mag_cali.h"
+#include "firmwares/rotorcraft/autopilot.h"
 
 //#include <stdio.h>
 
@@ -536,7 +537,10 @@ void ahrs_mlkf_task(void)
 
 			if (ahrs_mlkf.heading_state == AMHS_MAG)
 			{
-				//ahrs_mlkf.heading_state = AMHS_GPS;
+				if (!autopilot_in_flight)
+				{
+					ahrs_mlkf.heading_state = AMHS_GPS;
+				}
 			}
 			else if (ahrs_mlkf.heading_state == AMHS_GPS)
 			{
