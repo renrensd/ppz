@@ -37,8 +37,16 @@ struct _s_polygon P_polygon;
 struct _s_polygon test_valid_area;
 float time_elapse;
 
+struct FloatVect2 obstacles_vertices[O_NUM][4];
+struct _s_polygon obstacles[O_NUM];
+
 void dim2_geometry_test(void)
 {
+	for (int i = 0; i < O_NUM; ++i)
+	{
+		polygon_init (&(obstacles[i]), obstacles_vertices[i], 4);
+	}
+
 	for (int i = 0; i < P_NUM; ++i)
 	{
 		VECT2_COPY(P_array[i], waypoints[WP_P0+i].enu_f);
