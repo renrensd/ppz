@@ -303,6 +303,7 @@ static void ins_int_init(void)
   ins_int.virtual_rtk_pos_z_valid = TRUE;
   ins_int.virtual_rtk_pos_xy_valid = TRUE;
   ins_int.virtual_ublox_pos_valid = TRUE;
+  ins_int.virtual_baro_valid = TRUE;
 #endif
 
   ins_int.force_use_redundency = FALSE;
@@ -466,6 +467,11 @@ bool_t ins_int_is_rtk_pos_z_valid(void)
 	}
 }
 
+bool_t ins_int_is_baro_valid(void)
+{
+	return ins_int.virtual_baro_valid && ins_int.baro_valid;
+}
+
 bool_t ins_int_is_ublox_pos_valid(void)
 {
 	return (UBLOX_GPS.p_stable && ins_int.virtual_ublox_pos_valid);
@@ -553,7 +559,7 @@ static void switch_to_baro(void)
 		return;
 	}
 
-	if (ins_int.baro_valid)
+	if (ins_int_is_baro_valid())
 	{
 		if (ins_int.ekf_state != INS_EKF_BARO)
 		{
@@ -850,7 +856,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 
 		if (ins_int.ekf_state == INS_EKF_PURE_ACC)
 		{
-			if ((!autopilot_in_flight) && ins_int.baro_valid && (!ins_int.baro_initialized))
+			if ((!autopilot_in_flight) && ins_int_is_baro_valid() && (!ins_int.baro_initialized))
 			{
 				init_first_order_low_pass(&ins_int.baro_z_filter, low_pass_filter_get_tau(1.0f), 0.05f, ins_int.baro_ned_z);
 				vff_init(- GPS_B2G_DISTANCE, 0, 0, (- GPS_B2G_DISTANCE - get_first_order_low_pass(&ins_int.baro_z_filter)));
@@ -860,7 +866,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 		}
 		else if (ins_int.ekf_state == INS_EKF_GPS_TO_BARO)
 		{
-			if (ins_int.baro_valid)
+			if (ins_int_is_baro_valid())
 			{
 				float valid_z, valid_zd;
 				ins_int_get_recent_valid_rtk_z(&valid_z, &valid_zd);
@@ -874,7 +880,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id,
 		}
 		else if (ins_int.ekf_state == INS_EKF_BARO)
 		{
-			if (ins_int.baro_valid)
+			if (ins_int_is_baro_valid())
 			{
 				vff_update_baro_conf(ins_int.baro_ned_z, ins_int.R_baro);
 				ins_update_from_vff();

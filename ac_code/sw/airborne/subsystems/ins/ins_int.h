@@ -105,6 +105,7 @@ struct InsInt
   bool_t virtual_rtk_pos_z_valid;
   bool_t virtual_rtk_pos_xy_valid;
   bool_t virtual_ublox_pos_valid;
+  bool_t virtual_baro_valid;
   //
   float R_rtk_pos_z_setting;
   float R_rtk_pos_z;
@@ -151,6 +152,7 @@ extern bool_t ins_int_is_rtk_pos_xy_valid(void);
 extern bool_t ins_int_is_rtk_pos_z_valid(void);
 extern bool_t ins_int_is_ublox_pos_valid(void);
 extern bool_t ins_int_is_rtk_best_accu(void);
+extern bool_t ins_int_is_baro_valid(void);
 extern bool_t ins_int_v_ekf_open_loop(void);
 extern void ins_int_SetForceRedun(uint8_t force);
 
