@@ -73,9 +73,16 @@ static void send_vffe(struct transport_tx *trans, struct link_device *dev)
 {
   xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
   pprz_msg_send_VFF_EXTENDED(trans, dev, AC_ID,
-                             &vff.z_meas_baro, &vff.z_meas,
-                             &vff.z, &vff.zdot, &vff.zdotdot,
-                             &vff.bias, &vff.offset);
+                             &vff.accel,
+														 &vff.zdotdot,
+														 &vff.bias,
+														 &(vff.P[2][0]),
+														 &(vff.S),
+														 &(vff.K2),
+                             &vff.zdot,
+														 &vff.z_meas,
+														 &vff.z,
+														 &vff.offset);
 }
 #endif
 
@@ -143,6 +150,8 @@ void vff_init(float init_z, float init_zdot, float init_accel_bias, float init_b
  */
 void vff_propagate(float accel, float dt)
 {
+	vff.accel = accel;
+
 	if (vff_lost_counter < vff_lost_limit)
 	{
 		vff_lost_counter++;
@@ -265,15 +274,15 @@ static void update_alt_conf(float z_meas, float conf)
   vff.z_meas = z_meas;
 
   const float y = z_meas - vff.z;
-  const float S = vff.P[0][0] + conf;
-  const float K0 = vff.P[0][0] * 1 / S;
-  const float K1 = vff.P[1][0] * 1 / S;
-  const float K2 = vff.P[2][0] * 1 / S;
-  const float K3 = vff.P[3][0] * 1 / S;
+  vff.S = vff.P[0][0] + conf;
+  const float K0 = vff.P[0][0] * 1 / vff.S;
+  const float K1 = vff.P[1][0] * 1 / vff.S;
+  vff.K2 = vff.P[2][0] * 1 / vff.S;
+  const float K3 = vff.P[3][0] * 1 / vff.S;
 
   vff.z       = vff.z       + K0 * y;
   vff.zdot    = vff.zdot    + K1 * y;
-  vff.bias    = vff.bias    + K2 * y;
+  vff.bias    = vff.bias    + vff.K2 * y;
   vff.offset  = vff.offset  + K3 * y;
 
   const float P0 = vff.P[0][0];
@@ -289,10 +298,10 @@ static void update_alt_conf(float z_meas, float conf)
   vff.P[1][1] -= K1 * P1;
   vff.P[1][2] -= K1 * P2;
   vff.P[1][3] -= K1 * P3;
-  vff.P[2][0] -= K2 * P0;
-  vff.P[2][1] -= K2 * P1;
-  vff.P[2][2] -= K2 * P2;
-  vff.P[2][3] -= K2 * P3;
+  vff.P[2][0] -= vff.K2 * P0;
+  vff.P[2][1] -= vff.K2 * P1;
+  vff.P[2][2] -= vff.K2 * P2;
+  vff.P[2][3] -= vff.K2 * P3;
   vff.P[3][0] -= K3 * P0;
   vff.P[3][1] -= K3 * P1;
   vff.P[3][2] -= K3 * P2;

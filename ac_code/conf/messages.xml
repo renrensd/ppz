@@ -1577,13 +1577,16 @@
   </message>
 
   <message name="VFF_EXTENDED" id="161">
-      <field name="meas_baro"      type="float"/>
-      <field name="meas_alt"       type="float"/>
-      <field name="z"              type="float"/>
-      <field name="zd"             type="float"/>
-      <field name="zdd"            type="float"/>
-      <field name="bias"           type="float"/>
-      <field name="offset"         type="float"/>
+      <field name="raw_acc"      type="float"/>
+      <field name="ekf_acc"       type="float"/>
+      <field name="ekf_acc_bias"              type="float"/>
+      <field name="P20"             type="float"/>
+      <field name="S"            type="float"/>
+      <field name="K2"           type="float"/>
+      <field name="ekf_speed"         type="float"/>
+      <field name="gps_pos"         type="float"/>
+      <field name="ekf_pos"         type="float"/>
+      <field name="baro_offset"         type="float"/>
   </message>
 
   <message name="VFF" id="162">
