@@ -1580,6 +1580,7 @@
       <field name="raw_acc"      type="float"/>
       <field name="ekf_acc"       type="float"/>
       <field name="ekf_acc_bias"              type="float"/>
+      <field name="P00"             type="float"/>
       <field name="P20"             type="float"/>
       <field name="S"            type="float"/>
       <field name="K2"           type="float"/>

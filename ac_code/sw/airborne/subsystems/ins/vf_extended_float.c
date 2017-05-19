@@ -76,6 +76,7 @@ static void send_vffe(struct transport_tx *trans, struct link_device *dev)
                              &vff.accel,
 														 &vff.zdotdot,
 														 &vff.bias,
+														 &(vff.P[0][0]),
 														 &(vff.P[2][0]),
 														 &(vff.S),
 														 &(vff.K2),
@@ -275,6 +276,17 @@ static void update_alt_conf(float z_meas, float conf)
 
   const float y = z_meas - vff.z;
   vff.S = vff.P[0][0] + conf;
+	if (fabsf(vff.S) < conf)
+	{
+		if(vff.S < 0)
+		{
+			vff.S = -conf;
+		}
+		else
+		{
+			vff.S = conf;
+		}
+	}
   const float K0 = vff.P[0][0] * 1 / vff.S;
   const float K1 = vff.P[1][0] * 1 / vff.S;
   vff.K2 = vff.P[2][0] * 1 / vff.S;
