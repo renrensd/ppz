@@ -437,7 +437,8 @@ void ground_monitoring(void)
 		break;
 
 	case OPS_CHECK:
-		if (ops_ground_check())
+		//if (ops_ground_check())
+		if(1)//TEST_CASE
 		{
 			ground_check_step++;  //next step
 			time_record = get_sys_time_msec();
