@@ -243,9 +243,10 @@
     <field name="gps_sw"     type="uint8" values="NONE|RTK|UBLOX"/>
     <field name="gps_qual"    type="uint8"/>
     <field name="pos_type"    type="uint8"/>
-    <field name="p_stable"    type="uint8"/>
-    <field name="pos_sv_num"    type="uint8"/>
-    <field name="sol_tatus"    type="uint8"/>   
+    <field name="p_stable"    type="uint8"/>  
+    <field name="sol_tatus"    type="uint8"/>
+    <field name="h_stable"    type="uint8"/>
+    <field name="pos_sv_num"    type="uint8"/>      
     <field name="heading_sv_num"    type="uint8"/>
     <field name="gps_heading"    type="float" unit="deg"/>
     <field name="mag_heading"    type="float" unit="deg"/>
@@ -253,6 +254,9 @@
     <field name="gps_pos_sd_x"    type="int32" unit="m*10000"/>
     <field name="gps_pos_sd_y"    type="int32" unit="m*10000"/>
     <field name="gps_pos_sd_z"    type="int32" unit="m*10000"/>
+    <field name="UBLOX_tow"     type="uint32"/>
+  	<field name="UBLOX_numsv"   type="uint8"/>
+    <field name="UBLOX_fix"     type="uint8" values="NONE|NA|2D|3D|DGPS|RTK"/>
   </message>
 
   <message name="SURVEY" id="27">

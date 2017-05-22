@@ -18,7 +18,7 @@
       <message name="INS"                    period="1.0"/>
       <message name="RC"                     period="0.1"/>
       <message name="DEBUG_GPS"  	     period="0.2"/>
-      <message name="GPS2_UBLOX"             period="0.2"/>
+      <!--message name="GPS2_UBLOX"             period="0.2"/-->
       <message name="ROTORCRAFT_TUNE_HOVER"  period="0.05"/>
       <message name="INS_Z"                  period="0.2"/>
       <!--message name="I2C_ERRORS"          period="2.0"/>

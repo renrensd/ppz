@@ -270,15 +270,19 @@ static void send_debug_gps(struct transport_tx *trans, struct link_device *dev)
 	  		&gps_nmea.gps_qual,
 				&gps_nmea.pos_type,
 				&RTK_GPS.p_stable,
-				&RTK_GPS.num_sv,
 				&gps_nmea.sol_tatus,
+				&RTK_GPS.h_stable,
+				&RTK_GPS.num_sv,
 				&RTK_GPS.head_stanum,
 				&RTK_GPS.heading,
 				&ahrs_mlkf.mag_heading,
 				&ahrs_mlkf.mlkf_heading,
 				&ins_int.rtk_gps_sd_ned.x,
 				&ins_int.rtk_gps_sd_ned.y,
-				&ins_int.rtk_gps_sd_ned.z);
+				&ins_int.rtk_gps_sd_ned.z,
+				&UBLOX_GPS.tow,
+				&UBLOX_GPS.num_sv,
+				&UBLOX_GPS.fix);
 }
 
 #endif
