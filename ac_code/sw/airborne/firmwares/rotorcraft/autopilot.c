@@ -520,11 +520,26 @@ void autopilot_periodic(void)
 
 void autopilot_set_mode(uint8_t new_autopilot_mode)
 {
-
   /* force startup mode (default is kill) as long as AHRS is not aligned */
   if (!ahrs_is_aligned()) {
     new_autopilot_mode = MODE_STARTUP;
   }
+
+  if(new_autopilot_mode == AP_MODE_FAILSAFE)
+  {
+  	if((autopilot_mode == AP_MODE_ATTITUDE_DIRECT) || (autopilot_mode == AP_MODE_KILL))
+  	{
+  		return;
+  	}
+  }
+
+	if (autopilot_mode == AP_MODE_FAILSAFE)
+	{
+		if ((new_autopilot_mode != AP_MODE_ATTITUDE_DIRECT) && (new_autopilot_mode != AP_MODE_KILL))
+		{
+			return;
+		}
+	}
 
   if (new_autopilot_mode != autopilot_mode) {
     /* horizontal mode */
