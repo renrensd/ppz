@@ -41,7 +41,7 @@ const uint8_t project_number_array[] =
 /* software version */
 const uint8_t cl_software_version_array[SW_VERSION_LONGTH+1] =
 {
-    "22.01_170518_D  "  //for B2
+    "23.01_170523_D  "  //for B2
 };
 
 /* update flag flag *///CL_SOFTWARE_UPDATE_FLAG
