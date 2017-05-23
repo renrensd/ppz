@@ -645,9 +645,12 @@ static void except_mission_manage(void)
 		gcs_cmd_interrupt = FALSE;
 		return;
 	}
-
 	else
 	{
+		if((task_state != GCS_RUN_NORMAL) && (em_alert_grade <= 2))
+		{
+			return;
+		}
 		if (monitor_cmd == CM_LAND)
 		{
 			return;   //land can not interrupt

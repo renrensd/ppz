@@ -129,8 +129,15 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 		case GCS_CMD_CONTI:
 			if(GCS_CMD_CONTI==gcs_task_cmd || GCS_CMD_PAUSE==gcs_task_cmd)
 			{
-				gcs_task_cmd = GCS_CMD_CONTI;
-				gcs_cmd_interrupt = TRUE;
+				if(em_alert_grade > 2)
+				{
+					response = 2;
+				}
+				else
+				{
+					gcs_task_cmd = GCS_CMD_CONTI;
+					gcs_cmd_interrupt = TRUE;
+				}
 			}
 			else
 			{

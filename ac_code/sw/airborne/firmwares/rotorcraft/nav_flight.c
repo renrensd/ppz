@@ -353,7 +353,7 @@ static void ept_ms_run(void)
 				last_cmd = monitor_cmd;
 				break;
 			case CM_HOVER:
-				if(gcs_task_cmd < GCS_CMD_PAUSE)
+				if(gcs_task_cmd <= GCS_CMD_BHOME)
 				{
 					gcs_task_cmd = GCS_CMD_PAUSE;
 					last_cmd = monitor_cmd;
