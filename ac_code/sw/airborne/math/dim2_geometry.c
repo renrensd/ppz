@@ -42,6 +42,22 @@ struct _s_polygon obstacles[O_NUM];
 
 void dim2_geometry_test(void)
 {
+	static bool_t ini = FALSE;
+
+	if(!ini)
+	{
+		ini = TRUE;
+
+		struct EnuCoor_f c;
+		c.z = 0;
+		for (int i = 0; i < P_NUM; ++i)
+		{
+			VECT2_COPY(c, waypoints[WP_P0+i].enu_f);
+			VECT2_SDIV(c,c,10);
+			waypoint_set_enu(WP_P0 + i, &c);
+		}
+	}
+
 	for (int i = 0; i < O_NUM; ++i)
 	{
 		polygon_init (&(obstacles[i]), obstacles_vertices[i], 4);
@@ -446,6 +462,10 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 				(rel == SR_COLLINEATION_CONTAIN) ||
 				(rel == SR_COLLINEATION_OVERLAP))
 		{
+			if (point_close_2_segment(v0, &(polygon->v[i]), &(polygon->v[j])) && point_close_2_segment(v1, &(polygon->v[i]), &(polygon->v[j])))
+			{
+				return TRUE;
+			}
 			return FALSE;
 		}
 	}
