@@ -29,6 +29,9 @@
     <define name="GPS_B2G_DISTANCE" value="0.3"/>
     <define name="BARO_B2G_DISTANCE" value="0.3"/>
     <define name="DISTANCE_ABOVE_GROUNG" value="0.45"/>
+    <define name="OA_MAX_OBSTACLES_NUM" value="5"/>
+    <define name="OA_MAX_BOUNDARY_VERTICES_NUM" value="20"/>
+    <define name="OA_OBSTACLE_CORNER_NUM" value="4"/>
     <!--define name="USE_PERSISTENT_SETTINGS" value="TRUE"/-->
     <subsystem name="radio_control" type="ppm"/>   
     <subsystem name="motor_mixing"/>

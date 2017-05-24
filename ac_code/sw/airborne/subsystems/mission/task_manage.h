@@ -68,7 +68,8 @@ enum Task_Action
 	SPRAY_LINE,
 	SPRAY_CONVERT,
 	HOVERING,
-	TERMINATION		
+	TERMINATION,
+	AVOID_OBSTACLE
 };
 /*
 <field name="task_code" type="uint8"/>
@@ -83,14 +84,63 @@ struct Task_Info
 {
 	uint8_t task_code;
 	uint8_t wp_type;
-	uint8_t wp_start_id;
-	uint8_t wp_end_id;
+	uint16_t wp_start_id;
+	uint16_t wp_end_id;
 	uint8_t length_wp_action;
 	uint8_t *wp_action;
 	uint8_t length_wp_lon;
 	int32_t *waypoints_lon;
 	uint8_t length_wp_lat;
 	int32_t *waypoints_lat;
+};
+
+/*
+<field name="task_code" type="uint8"/>
+<field name="bp_type"  type="uint8"/>
+<field name="bp_start_id" type="uint8"/>
+<field name="bp_end_id" type="uint8"/>    
+<field name="bp_points_lon" type="int32[]" unit="e8,rad"/>  
+<field name="bp_points_lat" type="int32[]" unit="e8,rad"/>  
+*/
+struct bp_Info
+{
+	uint8_t task_code;
+	uint8_t total_bp_num;
+	uint8_t length_bp_lon;
+	int32_t *bp_points_lon;
+	uint8_t length_bp_lat;
+	int32_t *bp_points_lat;
+};
+
+/*
+<field name="task_code" type="uint8"/>
+<field name="op_type"  type="uint8"/>
+<field name="op_start_id" type="uint8"/>
+<field name="op_end_id" type="uint8"/>    
+<field name="op_points_lon" type="int32[]" unit="e8,rad"/>  
+<field name="op_points_lat" type="int32[]" unit="e8,rad"/>
+<field name="op_radius" type="int32[]" unit="cm"/>
+*/
+struct op_Info
+{
+	uint8_t task_code;
+	uint8_t total_op_num;
+	uint8_t length_op_lon;
+	int32_t *op_points_lon;
+	uint8_t length_op_lat;
+	int32_t *op_points_lat;
+};
+
+struct _s_oa_data
+{
+	struct FloatVect2 spray_boundary_vertices_array[OA_MAX_BOUNDARY_VERTICES_NUM];
+	uint8_t spray_boundary_vertices_num;
+	struct FloatVect2 obstacles_vertices_array[OA_MAX_OBSTACLES_NUM][OA_OBSTACLE_CORNER_NUM];
+	uint8_t obstacles_vertices_num;
+	struct FloatVect2 home;
+	bool_t spray_boundary_valid;
+	bool_t obstacles_valid;
+	bool_t home_valid;
 };
 
 /*
@@ -115,7 +165,7 @@ struct Task_Wp
 {
 	struct Int32Vect2  wp_en;
 	enum Task_Action   action;
-	uint8_t            wp_id;	
+	uint16_t            wp_id;	
 };
 
 struct Task_Wp_Enu
@@ -134,7 +184,7 @@ struct Task_Wp_Enu
 
 
 extern struct Task_Wp task_wp[NB_TASK];
-extern uint8_t nb_pending_wp;
+extern uint16_t nb_pending_wp;
 
 extern struct Int32Vect2 wp_home;
 extern bool_t wp_home_useful;
@@ -144,15 +194,19 @@ extern uint8_t nb_pending_reland;
 extern struct Task_Wp_Enu from_wp;  
 extern struct Task_Wp_Enu next_wp; 
 
+extern struct _s_oa_data oa_data;
 
 extern void task_manage_init(void);
 extern uint8_t parse_gcs_cmd( uint8_t cmd);
 extern int8_t parse_add_task(struct Task_Info m_task_info);
 extern int8_t parse_update_task(struct Task_Info m_task_info);
-extern int8_t parse_delete_task(uint8_t wp_start_id, uint8_t wp_end_id);
-extern struct Task_Info parse_get_task(uint8_t wp_start_id, uint8_t wp_end_id);
+extern int8_t parse_delete_task(uint16_t wp_start_id, uint16_t wp_end_id);
+extern struct Task_Info parse_get_task(uint16_t wp_start_id, uint16_t wp_end_id);
 extern int8_t parse_land_task(struct Land_Info dl_land_info);
 extern int8_t command_delete_all_task(void);
+extern int8_t parse_add_border(struct bp_Info m_bp_info);
+extern int8_t parse_add_obstacle(struct op_Info m_op_info);
+extern bool_t check_oa_data_valid(void);
 
 #endif /*_TASK_MANAGE_H_*/
 

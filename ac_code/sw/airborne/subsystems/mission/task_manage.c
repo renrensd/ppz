@@ -28,7 +28,7 @@
 
 
 struct Task_Wp task_wp[NB_TASK];   //unfinished task, with relative waypoints/action/id
-uint8_t nb_pending_wp;             //number of waypoints in  unfinished task
+uint16_t nb_pending_wp;             //number of waypoints in  unfinished task
 
 struct Int32Vect2 wp_home;
 bool_t wp_home_useful;             //record home waypoint got
@@ -38,6 +38,8 @@ uint8_t nb_pending_reland;                             //reserve
 struct EnuCoor_i temp_enu[20];    //only use for update_task
 struct Task_Wp_Enu from_wp;       //start wp of current flight line
 struct Task_Wp_Enu next_wp;       //end wp of current flight line
+
+struct _s_oa_data oa_data;
 
 bool_t Flag_AC_Flight_Ready;
 static int8_t parse_land_task_home(struct Land_Info dl_land_info);
@@ -197,7 +199,7 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 	}
 
 	/* waypoint id check(pending id < add wp_start_id) */
-	uint8_t max_pending_id = get_max_pending_id();
+	uint16_t max_pending_id = get_max_pending_id();
 	if( m_task_info.wp_start_id < max_pending_id )
 	{
 		if(m_task_info.wp_end_id==max_pending_id && check_task_wp_id(m_task_info.wp_start_id) )
@@ -347,13 +349,13 @@ int8_t parse_update_task(struct Task_Info m_task_info)
 * INPUTS      : the sequence of task need delete
 * RETURN      : error code
 ***********************************************************************/
-int8_t parse_delete_task(uint8_t wp_start_id, uint8_t wp_end_id)
+int8_t parse_delete_task(uint16_t wp_start_id, uint16_t wp_end_id)
 {
 	int8_t response = 0;
-	int8_t wp_offset_start = get_task_wp_offset(wp_start_id);
-	int8_t wp_offset_end = get_task_wp_offset(wp_end_id);
-	uint8_t nb_wp = wp_end_id - wp_start_id + 1;
-	uint8_t nb_left_shift = (nb_pending_wp-1) - wp_offset_end;
+	int16_t wp_offset_start = get_task_wp_offset(wp_start_id);
+	int16_t wp_offset_end = get_task_wp_offset(wp_end_id);
+	uint16_t nb_wp = wp_end_id - wp_start_id + 1;
+	uint16_t nb_left_shift = (nb_pending_wp-1) - wp_offset_end;
 	if( wp_offset_start < 0 
 		|| wp_offset_end < 0 
 		|| nb_wp != wp_offset_end - wp_offset_start )
@@ -376,7 +378,7 @@ int8_t parse_delete_task(uint8_t wp_start_id, uint8_t wp_end_id)
 * INPUTS      : the sequence of task need reply
 * RETURN      : task info
 ***********************************************************************/
-struct Task_Info parse_get_task(uint8_t wp_start_id, uint8_t wp_end_id)
+struct Task_Info parse_get_task(uint16_t wp_start_id, uint16_t wp_end_id)
 {
 	struct Task_Info m_task_info;
 	return m_task_info;
@@ -433,7 +435,7 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 {
 	int8_t response = 0;
 	/*add/update home waypoint, add operation request wp_home_useful==FASLE, update is opposite*/
-	if( (LAND_TASK_ADD==dl_land_info.operation_type && !wp_home_useful)
+	if( (LAND_TASK_ADD==dl_land_info.operation_type)
 		 || (LAND_TASK_UPDATE==dl_land_info.operation_type && wp_home_useful))  
 	{
 		if( 1 <= dl_land_info.waypoints_length )
@@ -455,6 +457,9 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 					VECT2_COPY(wp_home, temp_pos);
 				}
 				wp_home_useful = TRUE;  /*home waypoint receive success*/
+				oa_data.home.x = POS_FLOAT_OF_BFP(wp_home.x);
+				oa_data.home.y = POS_FLOAT_OF_BFP(wp_home.y);
+				oa_data.home_valid = TRUE;
 			}
 			else
 			{
@@ -563,6 +568,125 @@ int8_t command_delete_all_task(void)
 	return response;
 }
 
+bool_t check_oa_data_valid(void)
+{
+	return oa_data.spray_boundary_valid && oa_data.obstacles_valid && oa_data.home_valid;
+}
+
+static bool_t add_boundary_vertex(struct FloatVect2 *v, uint8_t max)
+{
+	if(oa_data.spray_boundary_vertices_num >= max)
+	{
+		return FALSE;
+	}
+	if(oa_data.spray_boundary_vertices_num >= OA_MAX_BOUNDARY_VERTICES_NUM)
+	{
+		return FALSE;
+	}
+	VECT2_COPY(oa_data.spray_boundary_vertices_array[oa_data.spray_boundary_vertices_num], *v);
+	++oa_data.spray_boundary_vertices_num;
+	if(oa_data.spray_boundary_vertices_num == max)
+	{
+		oa_data.spray_boundary_valid = TRUE;
+	}
+
+	return TRUE;
+}
+
+static bool_t add_obstacles_vertex(struct FloatVect2 *v, uint8_t max)
+{
+	if (oa_data.obstacles_vertices_num >= (max * OA_OBSTACLE_CORNER_NUM))
+	{
+		return FALSE;
+	}
+	if (oa_data.obstacles_vertices_num >= (OA_MAX_OBSTACLES_NUM * OA_OBSTACLE_CORNER_NUM))
+	{
+		return FALSE;
+	}
+	VECT2_COPY(oa_data.obstacles_vertices_array[oa_data.obstacles_vertices_num/OA_OBSTACLE_CORNER_NUM][oa_data.obstacles_vertices_num%OA_OBSTACLE_CORNER_NUM], *v);
+	++oa_data.obstacles_vertices_num;
+	if (oa_data.obstacles_vertices_num == (max * OA_OBSTACLE_CORNER_NUM))
+	{
+		oa_data.obstacles_valid = TRUE;
+	}
+
+	return TRUE;
+}
+
+int8_t parse_add_border(struct bp_Info m_bp_info)
+{
+	if(m_bp_info.length_bp_lat != m_bp_info.length_bp_lon)
+	{
+		return 4;
+	}
+	if(m_bp_info.length_bp_lat > OA_MAX_BOUNDARY_VERTICES_NUM)
+	{
+		return 4;
+	}
+	if(m_bp_info.total_bp_num > OA_MAX_BOUNDARY_VERTICES_NUM)
+	{
+		return 4;
+	}
+
+	struct LlaCoor_i lla; /* rad, e8 */
+	struct EnuCoor_i temp_enu;
+	for (uint8_t i = 0; i <  m_bp_info.length_bp_lon; i++)
+	{
+		lla.lon = *(m_bp_info.bp_points_lon + i);
+		lla.lat = *(m_bp_info.bp_points_lat + i);
+		if (task_lla_to_enu_convert(&temp_enu, &lla))
+		{
+			struct FloatVect2 v;
+			v.x = POS_FLOAT_OF_BFP(temp_enu.x);
+			v.y = POS_FLOAT_OF_BFP(temp_enu.y);
+			add_boundary_vertex(&v, m_bp_info.total_bp_num);
+		}
+		else
+		{
+			return 4;
+		}
+	}
+
+	return 0;
+}
+
+
+int8_t parse_add_obstacle(struct op_Info m_op_info)
+{
+	if (m_op_info.length_op_lat != m_op_info.length_op_lon)
+	{
+		return 4;
+	}
+	if (m_op_info.length_op_lat > (OA_MAX_OBSTACLES_NUM * OA_OBSTACLE_CORNER_NUM))
+	{
+		return 4;
+	}
+	if (m_op_info.total_op_num > OA_MAX_OBSTACLES_NUM)
+	{
+		return 4;
+	}
+
+	struct LlaCoor_i lla; /* rad, e8 */
+	struct EnuCoor_i temp_enu;
+	for (uint8_t i = 0; i < m_op_info.length_op_lon; i++)
+	{
+		lla.lon = *(m_op_info.op_points_lon + i);
+		lla.lat = *(m_op_info.op_points_lat + i);
+		if (task_lla_to_enu_convert(&temp_enu, &lla))
+		{
+			struct FloatVect2 v;
+			v.x = POS_FLOAT_OF_BFP(temp_enu.x);
+			v.y = POS_FLOAT_OF_BFP(temp_enu.y);
+			add_obstacles_vertex(&v, m_op_info.total_op_num);
+		}
+		else
+		{
+			return 4;
+		}
+	}
+
+	return 0;
+}
 /*
 add_task error code
 0 :success

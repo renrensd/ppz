@@ -49,6 +49,8 @@ extern Task_Error task_error_state;
 extern bool_t from_wp_useful;
 extern bool_t manual_pause_flag;
 
+extern enum Task_Action AC_action;
+
 extern void task_init(void);
 extern bool_t auto_task_ready_check(void);
 extern Gcs_State gcs_task_run(void);

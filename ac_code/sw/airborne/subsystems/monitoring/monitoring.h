@@ -51,9 +51,12 @@
 #define MODE_CONVERT_A2M 21
 #define OPS_BLOCKED 22
 #define GPS_UBLOX_FAIL  23
-
-
-#define EPT_MS_NB 24
+#define NO_AVOID_PATH   24
+#define P_IN_OBS_AREA   25
+#define NO_VALID_P      26
+#define OBS_INFO_ERROR  27			
+			
+#define EPT_MS_NB 28
 
 /*use for monitor_cmd*/
 #define CM_NONE 0

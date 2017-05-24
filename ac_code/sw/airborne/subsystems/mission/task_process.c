@@ -42,6 +42,7 @@
 
 enum Gcs_Task_Cmd gcs_task_cmd;
 enum Gcs_Task_Cmd last_task_cmd;
+enum Gcs_Task_Cmd save_task_cmd;
 Task_Error task_error_state;
 
 bool_t from_wp_useful;
@@ -62,6 +63,8 @@ struct EnuCoor_i interrupt_wp_scene;    /*use to save pos of ac exceptional inte
 
 struct EnuCoor_i home_wp_enu;
 struct EnuCoor_i reland_wp_enu;
+
+enum Task_Action AC_action;
 
 void task_process_init(void);
 bool_t achieve_next_wp(void);
@@ -85,12 +88,21 @@ void send_current_task_state(uint8_t wp_state);
 void send_current_task(uint8_t wp_state);
 
 
+void avoid_obstacle_init()
+{
+	oa_data.spray_boundary_valid = FALSE;
+	oa_data.obstacles_valid = FALSE;
+	oa_data.home_valid = FALSE;
+	oa_data.spray_boundary_vertices_num = 0;
+	oa_data.obstacles_vertices_num = 0;
+}
 
 void task_init(void)
 {
 	task_manage_init();
 	task_process_init();
 	task_spray_misc_init();
+	avoid_obstacle_init();
 }
 
 void task_process_init(void)
@@ -127,18 +139,30 @@ bool_t achieve_next_wp(void)
 	VECT2_COPY(from_wp.wp_en, next_wp.wp_en);
 	from_wp.action = next_wp.action;
 	from_wp.wp_id = next_wp.wp_id;
+	struct EnuCoor_i distance_wp;
 	
-	/*get waypoint info from task_wp*/
-	VECT2_COPY(next_wp.wp_en, task_wp[0].wp_en);
-	next_wp.action = task_wp[0].action;
-	next_wp.wp_id = task_wp[0].wp_id;
-
-	/*remove forepart waypoint*/
-	for(uint8_t i=0; i<nb_pending_wp; i++)
+	do
 	{
-		TASK_WP_LEFT_SHIFT(i+1, 1);
+		VECT2_DIFF(distance_wp,from_wp.wp_en,task_wp[0].wp_en);
+		/*get waypoint info from task_wp*/
+		VECT2_COPY(next_wp.wp_en, task_wp[0].wp_en);
+		next_wp.action = task_wp[0].action;
+		next_wp.wp_id = task_wp[0].wp_id;
+		for(uint8_t i=0; i<nb_pending_wp; i++)
+		{
+			TASK_WP_LEFT_SHIFT(i+1, 1);
+		}
+		nb_pending_wp--;
+		if(nb_pending_wp < 1) 
+		{
+			return FALSE;
+		}
 	}
-	nb_pending_wp--;
+	
+	while(!((abs(distance_wp.x)<POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100))
+		&&(abs(distance_wp.y)<POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100))));
+	
+	/*remove forepart waypoint*/
 	
 	return TRUE;
 }
@@ -218,19 +242,21 @@ Gcs_State gcs_task_run(void)
 			
 		case GCS_CMD_PAUSE:
 			gcs_state = GCS_RUN_PAUSE;
+			save_task_cmd = last_task_cmd;
 			gcs_hover_enter();   //for stop spray
 			set_auto_stop_brake();		
 			
 			break;
 			
 		case GCS_CMD_CONTI:
-			gcs_task_cmd = GCS_CMD_START;
+			gcs_task_cmd = save_task_cmd;
 			release_stop_brake();
 			
 			break;
 			
 		case GCS_CMD_BHOME:
 			gcs_state = GCS_RUN_HOME;
+			AC_action = TERMINATION;
 			if( gcs_hover_enter() )
 			{
 				set_stop_brake(SMOOTH_BRAKE);
@@ -420,7 +446,7 @@ bool_t run_normal_task(void)
 {
 	uint8_t wp_state = 2; /*default:run over from_wp state*/
 	spray_work_run();
-	
+	AC_action = from_wp.action;
 	switch(from_wp.action)
 	{
 		case FLIGHT_LINE:
