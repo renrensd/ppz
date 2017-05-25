@@ -38,10 +38,11 @@
 
 
 /**** Declaration of variables ****/
-
+extern uint8_t debug_sn_code;
 
 /**** Declaration of functions ****/
-
+extern void eng_app_set_debug_sn_code(uint8_t sn);
+extern bool_t eng_app_check_debug_sn(void);
 
 #endif /*_ENG_APP_H_*/
 
