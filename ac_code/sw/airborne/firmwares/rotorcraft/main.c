@@ -116,6 +116,8 @@ PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BO
 #include "subsystems/fram/fram_if.h"
 #endif	/* FRAM_OPTION */
 
+#include "math/dim2_geometry.h"
+
 /* if PRINT_CONFIG is defined, print some config options */
 PRINT_CONFIG_VAR(PERIODIC_FREQUENCY)
 
@@ -334,6 +336,7 @@ STATIC_INLINE void handle_periodic_tasks(void)
   {
 	if (sys_time_check_and_ack_timer(radio_control_tid)) {
     	radio_control_periodic_task();
+    	dim2_geometry_test();
   	}
   } 
   if (sys_time_check_and_ack_timer(failsafe_tid)) {
