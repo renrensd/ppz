@@ -311,8 +311,7 @@ module XB = struct (** XBee module *)
     let frame_data =
       if !Xbee.mode868 then
         (*Xbee.api_tx64 ~frame_id (Int64.of_int ac_id) rf_data*)
-        Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414F1F82) rf_data  (*no1*)
-        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20040fba080) rf_data*)(*debugpc*)
+        Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A20040fba080) rf_data (*test_board*)
         (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414f1f81) rf_data*) (*no9*)
         (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200415201fe) rf_data*) (*no8*)
         (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A2004146f1c2) rf_data*) (*no7*)

@@ -5,23 +5,121 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="0.5" y="-0.3"/>
-    <waypoint name="CLIMB" x="-4.4" y="0.7"/>
-    <waypoint name="STDBY" x="-13.8" y="-9.9"/>
-    <waypoint name="p1" x="11.5" y="2.0"/>
-    <waypoint name="TD" x="-7.1" y="-0.8"/>
-    <waypoint name="S1" x="-13.8" y="-10.0"/>
-    <waypoint name="S2" x="5.9" y="-9.3"/>
-    <waypoint name="S3" x="5.8" y="-3.4"/>
-    <waypoint name="S4" x="-13.8" y="-3.8"/>
-    <waypoint name="S5" x="9.3" y="-5.7"/>
-    <waypoint name="S6" x="8.1" y="-3.7"/>
-    <waypoint name="p2" x="30" y="-11.5"/>
+    <waypoint alt="27.5" name="HOME" x="-694.1" y="-2.5"/>
+    <waypoint name="S1" x="33.3" y="164.3"/>
+    <waypoint name="S2" x="28.8" y="164.1"/>
+    <waypoint name="S3" x="45.5" y="258.7"/>
+    <waypoint name="S4" x="52.0" y="257.9"/>
+    <waypoint alt="27.5" name="O1" x="-1584.4" y="471.2"/>
+    <waypoint name="O2" x="-1110.0" y="525.0"/>
+    <waypoint name="O3" x="65.3" y="205.4"/>
+    <waypoint name="O4" x="115.4" y="205.3"/>
+    <waypoint name="O5" x="170.6" y="199.8"/>
+    <waypoint name="From" x="-68.1" y="68.2"/>
+    <waypoint name="Next" x="72.5" y="397.9"/>
+    <waypoint name="P0" x="-1347.6" y="-77.3"/>
+    <waypoint alt="27.5" name="P1" x="-1340.1" y="88.3"/>
+    <waypoint alt="27.5" name="P2" x="-1340.9" y="258.4"/>
+    <waypoint alt="27.5" name="P3" x="-1365.3" y="882.9"/>
+    <waypoint alt="27.5" name="P4" x="-953.9" y="915.3"/>
+    <waypoint name="P5" x="-951.8" y="1153.9"/>
+    <waypoint name="P6" x="-683.3" y="1165.4"/>
+    <waypoint name="P7" x="-659.8" y="943.7"/>
+    <waypoint name="P8" x="-182.7" y="883.6"/>
+    <waypoint name="P9" x="-178.9" y="715.0"/>
+    <waypoint name="P10" x="-177.8" y="528.6"/>
+    <waypoint name="P11" x="-169.1" y="342.2"/>
+    <waypoint name="P12" x="-165.4" y="190.8"/>
+    <waypoint name="P13" x="-180.4" y="26.5"/>
+    <waypoint name="P14" x="-454.0" y="317.7"/>
+    <waypoint name="P15" x="-651.4" y="315.9"/>
+    <waypoint name="P16" x="-854.0" y="105.1"/>
+    <waypoint name="P17" x="-1016.9" y="109.6"/>
+    <waypoint name="P18" x="-1144.2" y="100.7"/>
+    <waypoint name="P19" x="-1140.7" y="-62.2"/>
+    <waypoint name="wp1" x="-24" y="239"/>
+    <waypoint name="V0" x="0" y="0"/>
+    <waypoint name="V1" x="0" y="0"/>
+    <waypoint name="V2" x="0" y="0"/>
+    <waypoint name="V3" x="0" y="0"/>
+    <waypoint name="V4" x="0" y="0"/>
+    <waypoint name="V5" x="0" y="0"/>
+    <waypoint name="V6" x="0" y="0"/>
+    <waypoint name="V7" x="0" y="0"/>
+    <waypoint name="V8" x="0" y="0"/>
+    <waypoint name="V9" x="0" y="0"/>
+    <waypoint name="V10" x="0" y="0"/>
+    <waypoint name="V11" x="0" y="0"/>
+    <waypoint name="V12" x="0" y="0"/>
+    <waypoint name="V13" x="0" y="0"/>
+    <waypoint name="V14" x="0" y="0"/>
+    <waypoint name="V15" x="0" y="0"/>
+    <waypoint name="V16" x="0" y="0"/>
+    <waypoint name="V17" x="0" y="0"/>
+    <waypoint name="V18" x="0" y="0"/>
+    <waypoint name="V19" x="0" y="0"/>
+    <waypoint name="V20" x="0" y="0"/>
   </waypoints>
+  <sectors>
+    <sector name="spray_area" type="dynamic">
+      <corner name="P0"/>
+      <corner name="P1"/>
+      <corner name="P2"/>
+      <corner name="P3"/>
+      <corner name="P4"/>
+      <corner name="P5"/>
+      <corner name="P6"/>
+      <corner name="P7"/>
+      <corner name="P8"/>
+      <corner name="P9"/>
+      <corner name="P10"/>
+      <corner name="P11"/>
+      <corner name="P12"/>
+      <corner name="P13"/>
+      <corner name="P14"/>
+      <corner name="P15"/>
+      <corner name="P16"/>
+      <corner name="P17"/>
+      <corner name="P18"/>
+      <corner name="P19"/>
+    </sector>
+    <sector name="valid_area" type="dynamic">
+      <corner name="V0"/>
+      <corner name="V1"/>
+      <corner name="V2"/>
+      <corner name="V3"/>
+      <corner name="V4"/>
+      <corner name="V5"/>
+      <corner name="V6"/>
+      <corner name="V7"/>
+      <corner name="V8"/>
+      <corner name="V9"/>
+      <corner name="V10"/>
+      <corner name="V11"/>
+      <corner name="V12"/>
+      <corner name="V13"/>
+      <corner name="V14"/>
+      <corner name="V15"/>
+      <corner name="V16"/>
+      <corner name="V17"/>
+      <corner name="V18"/>
+      <corner name="V19"/>
+      <corner name="V20"/>
+    </sector>
+    <sector name="line" type="dynamic">
+      <corner name="O1"/>
+      <corner name="O2"/>
+      <corner name="O1"/>
+    </sector>
+  </sectors>
   <blocks>
+    <block name="circle">
+      <circle radius="7" wp="O1"/>
+    </block>
     <block name="Wait GPS">
       <call fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid()"/>
+      <circle radius="7" wp="O1"/>
     </block>
     <block name="Geo init">
       <while cond="LessThan(NavBlockTime(), 10)"/>
@@ -32,53 +130,6 @@
     </block>
     <block name="Start Engine">
       <call fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Takeoff" post_call="NavSetWaypointHere(WP_CLIMB)" strip_button="Takeoff" strip_icon="up.png">
-      <exception cond="stateGetPositionEnu_f()->z > 0.3" deroute="Climb"/>
-      <call fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay height="1.2" wp="CLIMB"/>
-    </block>
-    <block name="Climb">
-      <exception cond="stateGetPositionEnu_f()->z > 1.0" deroute="Standby"/>
-      <stay height="1.2" wp="CLIMB"/>
-    </block>
-    <block name="Standby" strip_button="Standby" strip_icon="standby.png">
-      <stay wp="STDBY"/>
-    </block>
-    <block name="s1-s2" strip_button="s1-s2" strip_icon="waypoint_one.png">
-      <call fun="nav_set_heading_towards_waypoint(WP_S2)"/>
-      <go from="S1" hmode="route" wp="S2"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S5)"/>
-      <go from="S2" hmode="route" wp="S5"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S6)"/>
-      <go from="S5" hmode="route" wp="S6"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S3)"/>
-      <go from="S6" hmode="route" wp="S3"/>
-    </block>
-    <block name="s3-s4" strip_button="s3-s4" strip_icon="waypoint_one.png">
-      <call fun="nav_set_heading_towards_waypoint(WP_S4)"/>
-      <go from="S3" hmode="route" wp="S4"/>
-      <deroute block="Standby"/>
-    </block>
-    <block name="circle3" strip_button="circle_-2m" strip_icon="circle-left.png">
-      <set value="-2.0" var="nav_radius"/>
-      <circle radius="nav_radius" until="NavCircleCount() > 2.0" wp="TD"/>
-      <deroute block="Standby"/>
-    </block>
-    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
-      <call fun="NavSetWaypointHere(WP_TD)"/>
-    </block>
-    <block name="land">
-      <go wp="TD"/>
-    </block>
-    <block name="flare">
-      <exception cond="0.36 > stateGetPositionEnu_f()->z" deroute="Holding point"/>
-      <exception cond="!nav_is_in_flight()" deroute="landed"/>
-      <call fun="NavStartDetectGround()"/>
-      <stay climb="-0.15" vmode="climb" wp="TD"/>
-    </block>
-    <block name="landed">
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
