@@ -1367,6 +1367,8 @@
     <field name="acc_z_pid_out"      type="float" />
     <field name="speed_z_pid_out"      type="float" />
     <field name="pos_z_pid_out"      type="float" />
+    <field name="err1"      type="uint8" />
+    <field name="err2"      type="uint8" />
   </message>
 
 

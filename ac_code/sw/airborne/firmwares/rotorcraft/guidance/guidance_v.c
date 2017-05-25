@@ -63,11 +63,13 @@ static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
 {
 	uint8_t gv_mode = guid_v.mode;
 	uint8_t vert_mode = vertical_mode;
+	uint8_t err1 = guidance_v_get_thrust_error_1();
+	uint8_t err2 = guidance_v_get_thrust_error_2();
 
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_VERT_LOOP(trans, dev, AC_ID, &gv_mode, &vert_mode, &guid_v.UP_z_acc, &guid_v.UP_z_speed,
 			&guid_v.UP_z_pos, &guid_v.ref_acc_z, &guid_v.ref_speed_z, &guid_v.ref_pos_z, &guid_v.acc_z_pid.out,
-			&guid_v.speed_z_pid.out, &guid_v.pos_z_pid.out);
+			&guid_v.speed_z_pid.out, &guid_v.pos_z_pid.out, &err1, &err2);
 }
 
 #include "subsystems/ins/ins_int.h"
