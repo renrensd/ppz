@@ -139,6 +139,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			break;
 			
 		case GCS_CMD_BHOME:
+			spray_switch_flag = FALSE;
 			gcs_task_cmd = GCS_CMD_BHOME;
 			gcs_cmd_interrupt = TRUE;
 			break;
