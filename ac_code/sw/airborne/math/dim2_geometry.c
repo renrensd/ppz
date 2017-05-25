@@ -14,6 +14,7 @@
 #include "mcu_periph/sys_time.h"
 #include "generated/flight_plan.h"
 #include "subsystems/navigation/waypoints.h"
+#include "subsystems/mission/task_manage.h"
 
 #define DATA_TOLERANCE	(1e-6)
 #define OA_TOLERANCE		(1)
@@ -25,20 +26,70 @@
  * TEST_FUNCTION
  */
 
-#define P_NUM	(20)
-#define V_NUM	(21)
-#define O_NUM	(5)
+#define P_NUM	(OA_MAX_BOUNDARY_VERTICES_NUM)
+#define V_NUM	(OA_MAX_BOUNDARY_VERTICES_NUM + 1)
+#define O_NUM	(OA_MAX_OBSTACLES_NUM * OA_OBSTACLE_CORNER_NUM)
 
 struct FloatVect2 home = {0,0};
-struct FloatVect2 P_array[P_NUM];
+struct FloatVect2 P_array[OA_MAX_BOUNDARY_VERTICES_NUM];
 struct FloatVect2 O_array[O_NUM];
 struct FloatVect2 valid_area_boundary_vertices_array[P_NUM + 1];
 struct _s_polygon P_polygon;
 struct _s_polygon test_valid_area;
+
+struct _s_polygon spray_area;
+struct _s_polygon flight_area;
+struct _s_polygon obstacles[OA_MAX_OBSTACLES_NUM];
+
 float time_elapse;
 
-struct FloatVect2 obstacles_vertices[O_NUM][4];
-struct _s_polygon obstacles[O_NUM];
+struct FloatVect2 obstacles_vertices[OA_MAX_OBSTACLES_NUM][OA_OBSTACLE_CORNER_NUM];
+
+void dim2_geometry_update_flightplan(void)
+{
+	struct EnuCoor_f c;
+	c.z = 0;
+
+	if(check_oa_data_valid())
+	{
+		polygon_init(&spray_area, oa_data.spray_boundary_vertices_array, oa_data.spray_boundary_vertices_num);
+
+		if (oa_data.obstacles_num <= OA_MAX_OBSTACLES_NUM)
+		{
+			for (uint8_t i = 0; i < oa_data.obstacles_num; ++i)
+			{
+				polygon_init(&(obstacles[i]), oa_data.obstacles_vertices_array[i], OA_OBSTACLE_CORNER_NUM);
+			}
+		}
+
+		for (uint8_t i = 0; i < P_NUM; ++i)
+		{
+			if (i < spray_area.n)
+			{
+				VECT2_COPY(c, spray_area.v[i]);
+				waypoint_set_enu(WP_P0 + i, &c);
+			}
+			else
+			{
+				VECT2_COPY(c, spray_area.v[spray_area.n - 1]);
+				waypoint_set_enu(WP_P0 + i, &c);
+			}
+		}
+		for (uint8_t i = 0; i < O_NUM; ++i)
+		{
+			if (i < oa_data.obstacles_vertices_num)
+			{
+				VECT2_COPY(c, oa_data.obstacles_vertices_array[i/4][i%4]);
+				waypoint_set_enu(WP_O00 + i, &c);
+			}
+			else
+			{
+				VECT2_ASSIGN(c, 0, 0);
+				waypoint_set_enu(WP_O00 + i, &c);
+			}
+		}
+	}
+}
 
 void dim2_geometry_test(void)
 {
@@ -69,7 +120,7 @@ void dim2_geometry_test(void)
 	}
 	for (int i = 0; i < O_NUM; ++i)
 	{
-		VECT2_COPY(O_array[i], waypoints[WP_O1+i].enu_f);
+		VECT2_COPY(O_array[i], waypoints[WP_O00+i].enu_f);
 	}
 
 	VECT2_COPY(home, waypoints[WP_HOME].enu_f);
@@ -111,7 +162,6 @@ void dim2_geometry_test(void)
 
 	}
 	VECT2_COPY(c, O_array[2]);
-	waypoint_set_enu(WP_O3, &c);
 
 
 	time_elapse = get_sys_time_float() - time_elapse;

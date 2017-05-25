@@ -5,18 +5,33 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint alt="27.5" name="HOME" x="-694.1" y="-2.5"/>
+    <waypoint alt="27.5" name="HOME" x="-651.0" y="-29.9"/>
+    <waypoint name="From" x="-68.1" y="68.2"/>
+    <waypoint name="Next" x="72.5" y="397.9"/>
     <waypoint name="S1" x="33.3" y="164.3"/>
     <waypoint name="S2" x="28.8" y="164.1"/>
     <waypoint name="S3" x="45.5" y="258.7"/>
     <waypoint name="S4" x="52.0" y="257.9"/>
-    <waypoint alt="27.5" name="O1" x="-1584.4" y="471.2"/>
-    <waypoint name="O2" x="-1110.0" y="525.0"/>
-    <waypoint name="O3" x="65.3" y="205.4"/>
-    <waypoint name="O4" x="115.4" y="205.3"/>
-    <waypoint name="O5" x="170.6" y="199.8"/>
-    <waypoint name="From" x="-68.1" y="68.2"/>
-    <waypoint name="Next" x="72.5" y="397.9"/>
+    <waypoint name="O00" x="0" y="0"/>
+    <waypoint name="O01" x="0" y="0"/>
+    <waypoint name="O02" x="0" y="0"/>
+    <waypoint name="O03" x="0" y="0"/>
+    <waypoint name="O10" x="0" y="0"/>
+    <waypoint name="O11" x="0" y="0"/>
+    <waypoint name="O12" x="0" y="0"/>
+    <waypoint name="O13" x="0" y="0"/>
+    <waypoint name="O20" x="0" y="0"/>
+    <waypoint name="O21" x="0" y="0"/>
+    <waypoint name="O22" x="0" y="0"/>
+    <waypoint name="O23" x="0" y="0"/>
+    <waypoint name="O30" x="0" y="0"/>
+    <waypoint name="O31" x="0" y="0"/>
+    <waypoint name="O32" x="0" y="0"/>
+    <waypoint name="O33" x="0" y="0"/>
+    <waypoint name="O40" x="0" y="0"/>
+    <waypoint name="O41" x="0" y="0"/>
+    <waypoint name="O42" x="0" y="0"/>
+    <waypoint name="O43" x="0" y="0"/>
     <waypoint name="P0" x="-1347.6" y="-77.3"/>
     <waypoint alt="27.5" name="P1" x="-1340.1" y="88.3"/>
     <waypoint alt="27.5" name="P2" x="-1340.9" y="258.4"/>
@@ -37,7 +52,6 @@
     <waypoint name="P17" x="-1016.9" y="109.6"/>
     <waypoint name="P18" x="-1144.2" y="100.7"/>
     <waypoint name="P19" x="-1140.7" y="-62.2"/>
-    <waypoint name="wp1" x="-24" y="239"/>
     <waypoint name="V0" x="0" y="0"/>
     <waypoint name="V1" x="0" y="0"/>
     <waypoint name="V2" x="0" y="0"/>
@@ -107,30 +121,44 @@
       <corner name="V20"/>
     </sector>
     <sector name="line" type="dynamic">
-      <corner name="O1"/>
-      <corner name="O2"/>
-      <corner name="O1"/>
+      <corner name="From"/>
+      <corner name="Next"/>
+      <corner name="From"/>
+    </sector>
+    <sector name="O0" type="dynamic">
+      <corner name="O00"/>
+      <corner name="O01"/>
+      <corner name="O02"/>
+      <corner name="O03"/>
+    </sector>
+    <sector name="O1" type="dynamic">
+      <corner name="O10"/>
+      <corner name="O11"/>
+      <corner name="O12"/>
+      <corner name="O13"/>
+    </sector>
+    <sector name="O2" type="dynamic">
+      <corner name="O20"/>
+      <corner name="O21"/>
+      <corner name="O22"/>
+      <corner name="O23"/>
+    </sector>
+    <sector name="O3" type="dynamic">
+      <corner name="O30"/>
+      <corner name="O31"/>
+      <corner name="O32"/>
+      <corner name="O33"/>
+    </sector>
+    <sector name="O4" type="dynamic">
+      <corner name="O40"/>
+      <corner name="O41"/>
+      <corner name="O42"/>
+      <corner name="O43"/>
     </sector>
   </sectors>
   <blocks>
     <block name="circle">
-      <circle radius="7" wp="O1"/>
-    </block>
-    <block name="Wait GPS">
-      <call fun="NavKillThrottle()"/>
-      <while cond="!GpsFixValid()"/>
-      <circle radius="7" wp="O1"/>
-    </block>
-    <block name="Geo init">
-      <while cond="LessThan(NavBlockTime(), 10)"/>
-    </block>
-    <block name="Holding point">
-      <call fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Start Engine">
-      <call fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <circle radius="1" wp="HOME"/>
     </block>
   </blocks>
 </flight_plan>

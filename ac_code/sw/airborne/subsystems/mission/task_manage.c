@@ -25,7 +25,7 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/monitoring/monitoring.h"  
 #include "subsystems/datalink/downlink.h"
-
+#include "math/dim2_geometry.h"
 
 struct Task_Wp task_wp[NB_TASK];   //unfinished task, with relative waypoints/action/id
 uint16_t nb_pending_wp;             //number of waypoints in  unfinished task
@@ -105,6 +105,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 				 || GCS_CMD_NONE==gcs_task_cmd
 				 || GCS_CMD_START==gcs_task_cmd)
 			{
+				//dim2_geometry_update_flightplan();
 				gcs_task_cmd = GCS_CMD_START;
 				Flag_AC_Flight_Ready=TRUE;	//add by lg
 				gcs_cmd_interrupt = TRUE;    //record command interrupt to get rid of emergency
@@ -607,6 +608,7 @@ static bool_t add_obstacles_vertex(struct FloatVect2 *v, uint8_t max)
 	++oa_data.obstacles_vertices_num;
 	if (oa_data.obstacles_vertices_num == (max * OA_OBSTACLE_CORNER_NUM))
 	{
+		oa_data.obstacles_num = max;
 		oa_data.obstacles_valid = TRUE;
 	}
 

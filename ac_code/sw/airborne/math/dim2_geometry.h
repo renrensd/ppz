@@ -48,6 +48,7 @@ extern float vector_angle(struct FloatVect2 *v0, struct FloatVect2 *v1, bool_t n
 extern float CCW_angle(float angle);
 extern float CW_angle(float angle);
 extern void dim2_geometry_test(void);
+extern void dim2_geometry_update_flightplan(void);
 extern int polygon_init(struct _s_polygon *polygon, struct FloatVect2 *vertices, uint8_t num);
 extern float polygon_area(struct _s_polygon *polygon);
 extern bool_t is_relation_collineation(enum _e_segment_relation relation);

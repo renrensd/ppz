@@ -137,6 +137,7 @@ struct _s_oa_data
 	uint8_t spray_boundary_vertices_num;
 	struct FloatVect2 obstacles_vertices_array[OA_MAX_OBSTACLES_NUM][OA_OBSTACLE_CORNER_NUM];
 	uint8_t obstacles_vertices_num;
+	uint8_t obstacles_num;
 	struct FloatVect2 home;
 	bool_t spray_boundary_valid;
 	bool_t obstacles_valid;

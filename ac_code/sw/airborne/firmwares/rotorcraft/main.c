@@ -336,7 +336,7 @@ STATIC_INLINE void handle_periodic_tasks(void)
   {
 	if (sys_time_check_and_ack_timer(radio_control_tid)) {
     	radio_control_periodic_task();
-    	dim2_geometry_test();
+    	//dim2_geometry_test();
   	}
   } 
   if (sys_time_check_and_ack_timer(failsafe_tid)) {
