@@ -424,6 +424,7 @@ bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon)
 bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _s_polygon *polygon)
 {
 	uint8_t i, j;
+	struct FloatVect2 P;
 
 	if (!is_point_in_polygon(v0, polygon))
 	{
@@ -433,6 +434,15 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 	{
 		return FALSE;
 	}
+	VECT2_COPY(P, *v1);
+	VECT2_DIFF(P, P, *v0);
+	VECT2_SDIV(P, P, 2);
+	VECT2_SUM(P, P, *v0);
+	if (!is_point_in_polygon(&P, polygon))
+	{
+		return FALSE;
+	}
+
 	for (i = 0; i < polygon->n; ++i)
 	{
 		j = (i + 1) % polygon->n;
