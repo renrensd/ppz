@@ -2250,8 +2250,7 @@
    </message>
 
   <message name="PLANED_OA" id="234">
-    <field name="gcs_task_cmd" type="uint8" unit="m"/>
-    <field name="y" type="float" unit="m"/>
+    <field name="spray_boundary_vaild_flag" type="uint8[20]" unit="m"/>
     <field name="test_on" type="uint8" unit="bool"/>
     <field name="planed_oa_ready" type="uint8" unit="bool"/>
     <field name="obstacle_flag" type="uint8[5]" unit="bool"/>

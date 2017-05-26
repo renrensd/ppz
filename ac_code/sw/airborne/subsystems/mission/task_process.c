@@ -141,8 +141,7 @@ bool_t achieve_next_wp(void)
 	from_wp.wp_id = next_wp.wp_id;
 	struct EnuCoor_i distance_wp;
 	
-	do
-	{
+
 		VECT2_DIFF(distance_wp,from_wp.wp_en,task_wp[0].wp_en);
 		/*get waypoint info from task_wp*/
 		VECT2_COPY(next_wp.wp_en, task_wp[0].wp_en);
@@ -157,10 +156,6 @@ bool_t achieve_next_wp(void)
 		{
 			return FALSE;
 		}
-	}
-	
-	while(!((abs(distance_wp.x)<POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100))
-		&&(abs(distance_wp.y)<POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100))));
 	
 	/*remove forepart waypoint*/
 

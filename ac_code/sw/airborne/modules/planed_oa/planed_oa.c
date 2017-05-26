@@ -980,6 +980,11 @@ static void get_task_wp(void)
 		ENU_FLOAT_VECT2_OF_BFP(planed_oa.pre_from_wp, from_wp.wp_en);
 		ENU_FLOAT_VECT2_OF_BFP(planed_oa.pre_next_wp, next_wp.wp_en);
 	}
+
+	//close for debug:
+	/* define from, next wp */
+	waypoint_set_vect2(WP_Pre_From, &planed_oa.pre_from_wp);
+	waypoint_set_vect2(WP_Pre_Next, &planed_oa.pre_next_wp);
 }
 
 /*
@@ -1088,7 +1093,6 @@ static void planed_oa_run(void)
 	if (oa_wp_search_state == not_search)
 	{
 		/* define from, next wp */
-		get_task_wp();
 
 		start_search_time = usec_of_sys_time_ticks(sys_time.nb_tick);
 
@@ -1350,6 +1354,8 @@ void planed_oa_periodic_run(void)
 
 	if (planed_oa.test_on && oa_wp_search_state < 2)
 	{
+		get_task_wp();
+
 		if (planed_oa.manual_prepare_flag)
 		{
 			planed_oa_prepare();
@@ -1392,30 +1398,6 @@ void planed_oa_periodic_run(void)
 			waypoint_set_vect2(WP_HOME, &oa_data.home);
 		}
 
-		//close for debug:
-		/* define from, next wp */
-		if (FLIGHT_LINE == from_wp.action)
-		{
-			waypoint_set_enu_i(WP_Pre_From, &from_wp.wp_en);
-			waypoint_set_enu_i(WP_Pre_Next, &next_wp.wp_en);
-		}
-
-		if (planed_oa.back_home_ready)
-		{
-			waypoint_set_enu_i(WP_Pre_From, &interrupt_wp_scene);
-			waypoint_set_enu_i(WP_Pre_Next, &home_wp_enu);
-		}
-		else if (TERMINATION == from_wp.action)
-		{
-			waypoint_set_enu_i(WP_Pre_From, &from_wp.wp_en);
-			waypoint_set_enu_i(WP_Pre_Next, &home_wp_enu);
-		}
-		else
-		{
-			waypoint_set_enu_i(WP_Pre_From, &from_wp.wp_en);
-			waypoint_set_enu_i(WP_Pre_Next, &next_wp.wp_en);
-		}
-
 		if (flight_state == landing)
 		{
 			planed_oa.planed_oa_ready = FALSE;
@@ -1431,8 +1413,7 @@ void planed_oa_periodic_run(void)
 			{
 				xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 				DOWNLINK_SEND_PLANED_OA(DefaultChannel, DefaultDevice,
-						&gcs_task_cmd,
-						&planed_oa.plane_pos.y,
+						&spray_boundary_vaild_flag[0],
 						&planed_oa.test_on,
 						&planed_oa.planed_oa_ready,
 						&o_flag[0],
