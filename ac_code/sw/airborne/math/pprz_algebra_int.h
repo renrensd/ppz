@@ -226,6 +226,26 @@ struct Int64Vect3 {
 
 #define INT_MULT_RSHIFT(_a, _b, _r) (((_a)*(_b))>>(_r))
 
+#define FLOAT_VECT2_ENU_OF_NED(_o,_i) {    \
+    (_o).x = (_i).y;        \
+    (_o).y = (_i).x;        \
+  }
+#define ENU_OF_NED_FLOAT_VECT2_OF_BFP(_o, _i) {      \
+    (_o).y = POS_FLOAT_OF_BFP((_i).x);  \
+    (_o).x = POS_FLOAT_OF_BFP((_i).y);  \
+  }
+#define ENU_OF_NED_FLOAT_VECT2_OF_REAL(_o, _i) {      \
+    (_o).y = POS_BFP_OF_REAL((_i).x);  \
+    (_o).x = POS_BFP_OF_REAL((_i).y);  \
+  }
+#define ENU_FLOAT_VECT2_OF_BFP(_o, _i) {      \
+    (_o).x = POS_FLOAT_OF_BFP((_i).x);  \
+    (_o).y = POS_FLOAT_OF_BFP((_i).y);  \
+  }
+#define ENU_BFP_VECT2_OF_REAL(_o, _i) {       \
+    (_o).x = POS_BFP_OF_REAL((_i).x);   \
+    (_o).y = POS_BFP_OF_REAL((_i).y);   \
+  }
 
 extern uint32_t int32_sqrt(uint32_t in);
 #define INT32_SQRT(_out,_in) { _out = int32_sqrt(_in); }

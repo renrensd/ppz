@@ -569,16 +569,16 @@ static bool_t check_if_point_in_concave(struct FloatVect2 *P, struct _s_polygon 
 	struct FloatVect2 v_end;
 	struct _s_polygon concave;
 	bool_t concave_start = FALSE;
-	bool_t concave_corner_flag[MAX_BOUNDARY_VERTICES_NUM];
-	uint8_t concave_corner_edge[MAX_BOUNDARY_VERTICES_NUM];	// rising: 1    falling: 2
+	bool_t concave_corner_flag[OA_MAX_BOUNDARY_VERTICES_NUM];
+	uint8_t concave_corner_edge[OA_MAX_BOUNDARY_VERTICES_NUM];	// rising: 1    falling: 2
 	uint8_t concave_corner_num = 0;
-	struct FloatVect2 concave_vertices[MAX_BOUNDARY_VERTICES_NUM];
+	struct FloatVect2 concave_vertices[OA_MAX_BOUNDARY_VERTICES_NUM];
 	bool_t in_concave = FALSE;
 
 	polygon->dir = (polygon_area(polygon) > 0);
 
 	// check concave
-	for (i = 0; i < MAX_BOUNDARY_VERTICES_NUM; ++i)
+	for (i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
 	{
 		concave_corner_flag[i] = FALSE;
 		concave_corner_edge[i] = 0;
@@ -713,8 +713,8 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	uint8_t index_end;
 	bool_t in_concave;
 
-	struct FloatVect2 spoly_vertices[MAX_BOUNDARY_VERTICES_NUM];
-	uint8_t spoly_index[MAX_BOUNDARY_VERTICES_NUM];
+	struct FloatVect2 spoly_vertices[OA_MAX_BOUNDARY_VERTICES_NUM];
+	uint8_t spoly_index[OA_MAX_BOUNDARY_VERTICES_NUM];
 	struct _s_polygon spoly;
 
 	if ((valid_area == NULL) || (spray_area == NULL) || (spray_area->v == NULL) || (land_point == NULL)

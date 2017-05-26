@@ -189,10 +189,6 @@
       <message name="FILTER_ALIGNER"    period="0.02"/>
     </mode-->
 
-    <mode name="low_data">
-      <message name="ALIVE"             period="2"/>
-    </mode>
-
     <!--mode name="black_box">
       <message name="ALIVE"                  period="2.0"/>
       <message name="DL_VALUE"               period="2.0"/>

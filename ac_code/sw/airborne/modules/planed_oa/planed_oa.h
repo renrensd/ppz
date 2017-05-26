@@ -1,67 +1,14 @@
 #ifndef _RADAR_PLANED_OA_
 #define _RADAR_PLANED_OA_
 
-/*here is the function that apply radar sensor, which can read the distance from body to obstacle defined in navigation.c
-inputs: current position of body, position of obstacle
-output: obstacle distance and obstacle angle;
-*/
-
+#include "math/pprz_algebra_float.h"
 #include "math/pprz_geodetic_int.h"
-#include "math/pprz_geodetic_float.h"
-#include "subsystems/mission/task_manage.h"
-#include "firmwares/rotorcraft/navigation.h"
-#include "subsystems/mission/task_manage.h"
-#include "firmwares/rotorcraft/guidance/guidance_h.h"
-#include "std.h"
-#include "mcu_periph/sys_time.h"
 #include "math/dim2_geometry.h"
-
-/* _vo=v1xv2 in NED, if _v2 is antilockwise of _v1, the result is postive */
-#define VECT2_CROSS_PRODUCT(_v1, _v2) ((_v1).x*(_v2).y - (_v1).y*(_v2).x)
-
-#define FLOAT_VECT2_ENU_OF_NED(_o,_i) {    \
-    (_o).x = (_i).y;        \
-    (_o).y = (_i).x;        \
-  }
-#define ENU_OF_NED_FLOAT_VECT2_OF_BFP(_o, _i) {      \
-    (_o).y = POS_FLOAT_OF_BFP((_i).x);  \
-    (_o).x = POS_FLOAT_OF_BFP((_i).y);  \
-  }
-#define ENU_OF_NED_FLOAT_VECT2_OF_REAL(_o, _i) {      \
-    (_o).y = POS_BFP_OF_REAL((_i).x);  \
-    (_o).x = POS_BFP_OF_REAL((_i).y);  \
-  }
-#define ENU_FLOAT_VECT2_OF_BFP(_o, _i) {      \
-    (_o).x = POS_FLOAT_OF_BFP((_i).x);  \
-    (_o).y = POS_FLOAT_OF_BFP((_i).y);  \
-  }
-#define ENU_BFP_VECT2_OF_REAL(_o, _i) {       \
-    (_o).x = POS_BFP_OF_REAL((_i).x);   \
-    (_o).y = POS_BFP_OF_REAL((_i).y);   \
-  }
-#define max(a,b)	((a)>(b)?(a):(b))
-
-#define PI            3.1415926
-
-#define INT32_ANGLE   0.0139882
-#define INT32_RAD     0.00024414   //1/2^12;
-
-#define ANGLE_RAD     0.01745329   //PI/180.0
-#define RAD_ANGLE     57.2957795   //180.0/PI
-
-#define OA_SAFE_DIST    2.0
-#define V_MAX_DIST_F    OA_SAFE_DIST * 2
-
-#define OA_MAX_SPEED 2.0
-#define OA_MAX_ACCEL 1.5
-
-#define PROJ_NUM   OA_MAX_OBSTACLES_NUM*OA_OBSTACLE_CORNER_NUM
-
 
 struct _s_planed_obstacle
 {
    struct FloatVect2 pos;
-   struct FloatVect2 v[OA_OBSTACLE_CORNER_NUM];
+   struct _s_polygon polygon;
    float raduis;
    bool_t obstacle_flag;
 };
@@ -113,7 +60,11 @@ struct _s_planed_oa
    struct EnuCoor_i from_wp_i;
    struct EnuCoor_i next_wp_i;
 
-   struct _s_planed_obstacle o[OA_MAX_OBSTACLES_NUM];
+   struct _s_planed_obstacle obstacles[OA_MAX_OBSTACLES_NUM];
+   uint8_t obstacles_num;
+   struct _s_polygon spray_area;
+   struct _s_polygon flight_area;
+   struct FloatVect2 flight_boundary_vertices_array[OA_MAX_BOUNDARY_VERTICES_NUM + 1];
 
    struct _s_oa_wp oa_wp;
 
@@ -166,26 +117,12 @@ extern enum Obstacle_Avoidance_Wp_Search_Direction oa_wp_search_direction;
 extern enum Obstacle_Avoidance_State planed_oa_state;
 
 void planed_oa_data_init(void);
-void planed_oa_run(void);
-void creat_a_fake_oa_line(void);
+void planed_oa_periodic_run(void);
+
 extern void oa_error_force_recover(void);
 extern void planed_oa_prepare(void);
+extern void planed_oa_data_reset(void);
 extern bool_t oa_task_nav_path( struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp );
-void get_vaild_spray_edge(void);
 extern bool_t planed_oa_search_valid(void);
-extern float vector_angle_calc(struct FloatVect2 *vect_a, struct FloatVect2 *vect_b);
-float points_length_calc(struct FloatVect2 *point1, struct FloatVect2 *point2);
-float vector_length_calc(struct FloatVect2 *vect);
-extern void get_project_point(struct FloatVect2 *proj_point, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp, struct FloatVect2 *point);
-uint8_t min_dist_select(float *dist, uint8_t n);
-uint8_t max_dist_select(float *dist, uint8_t n);
-bool_t get_start_end_oa_wp( struct FloatVect2 *start_oa_wp, struct FloatVect2 *end_oa_wp, struct _s_planed_obstacle *obstacle, uint8_t o_num, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp );
-void get_oa_search_direction(void);
-void oa_wp_generation(void);
-void guidance_h_trajectory_tracking_brake_setting_release(void);
-bool_t achieve_next_oa_wp(void);
-void get_task_wp(void);
-extern void get_oa_from_next_wp(void);
-void planed_oa_periodic_run(void);
 
 #endif
