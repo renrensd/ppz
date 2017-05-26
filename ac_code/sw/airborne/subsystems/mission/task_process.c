@@ -163,6 +163,16 @@ bool_t achieve_next_wp(void)
 		&&(abs(distance_wp.y)<POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100))));
 	
 	/*remove forepart waypoint*/
+
+
+
+	#ifdef USE_PLANED_OA
+    if( planed_oa.test_on )
+	{
+	     planed_oa.wp_move_done_flag = TRUE;
+    }
+    #endif
+	
 	
 	return TRUE;
 }
@@ -178,6 +188,7 @@ bool_t get_start_line(void)
 	/*request nb_pending_wp at least 2*/
 	if( nb_pending_wp > 1 )
 	{
+		VECT2_COPY(task_wp[0].wp_en, wp_home);
 		achieve_next_wp();
 		achieve_next_wp();
 		from_wp_useful = TRUE;
@@ -242,14 +253,25 @@ Gcs_State gcs_task_run(void)
 			
 		case GCS_CMD_PAUSE:
 			gcs_state = GCS_RUN_PAUSE;
-			save_task_cmd = last_task_cmd;
+			if( last_task_cmd != gcs_task_cmd)
+			{
+				save_task_cmd = last_task_cmd;
+			}
 			gcs_hover_enter();   //for stop spray
 			set_auto_stop_brake();		
 			
 			break;
 			
 		case GCS_CMD_CONTI:
-			gcs_task_cmd = save_task_cmd;
+            gcs_task_cmd = save_task_cmd;
+
+            #ifdef USE_PLANED_OA
+			/*if( planed_oa.test_on && (oa_wp_search_state > 2) )
+			{
+			    oa_error_force_recover();
+			}*/
+            #endif
+
 			release_stop_brake();
 			
 			break;
@@ -262,17 +284,44 @@ Gcs_State gcs_task_run(void)
 				set_stop_brake(SMOOTH_BRAKE);
 				spray_break_and_continual();
 				VECT2_COPY(home_wp_enu, wp_home);
+
+                #ifdef USE_PLANED_OA
+				if( planed_oa.test_on )
+				{
+				    planed_oa_data_reset();
+				}
+                #endif
 			}
 			else
 			{
 				if(task_nav_pre_path(interrupt_wp_scene, home_wp_enu, FLIGHT_PATH))
 				{
+					#ifdef USE_PLANED_OA
+					if( planed_oa.test_on )
+					{
+						planed_oa.back_home_ready = TRUE;
+
+						if( planed_oa.oa_home_flag )
+						{
+							planed_oa.wp_move_done_flag = TRUE;
+							planed_oa.oa_home_flag = FALSE;
+						}
+					}
+                    #endif
+
 					release_stop_brake();
 					if( !task_nav_path(interrupt_wp_scene, home_wp_enu) ) 
 					{
 						/*no more task_wp to run, do land motion*/
 						task_nav_hover(home_wp_enu);
 						gcs_state = GCS_RUN_LANDING;
+						
+                        #ifdef USE_PLANED_OA
+						if( planed_oa.test_on )
+						{
+						    planed_oa.back_home_ready = FALSE;
+						}
+						#endif
 					}
 				}
 			}
@@ -815,12 +864,28 @@ static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCo
 */
 static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp)
 {
-  //Check proximity and wait for 'duration' seconds in proximity circle if desired 
-  if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) ) 
-  {
-  	   return FALSE;
-  }
-  
+
+#ifdef USE_PLANED_OA
+	if( planed_oa.test_on )
+	{
+		bool_t oa_task_flag = oa_task_nav_path( p_start_wp, p_end_wp );
+		return oa_task_flag;
+	}
+	else
+	{
+		if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) )
+		{
+			return FALSE;
+		}
+	}
+#else
+	//Check proximity and wait for 'duration' seconds in proximity circle if desired 
+	if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) ) 
+	{
+		return FALSE;
+	}
+#endif
+
   horizontal_mode = HORIZONTAL_MODE_ROUTE;
   nav_route(&p_start_wp, &p_end_wp);
   //NavVerticalAltitudeMode(flight_height, 0.);  

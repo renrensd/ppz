@@ -42,6 +42,12 @@ struct Task_Wp_Enu next_wp;       //end wp of current flight line
 struct _s_oa_data oa_data;
 
 bool_t Flag_AC_Flight_Ready;
+
+#ifdef USE_PLANED_OA
+struct Task_Wp_Enu oa_from_wp; //use for store from waypoint
+struct Task_Wp_Enu oa_next_wp; //use for store next waypoint
+#endif
+
 static int8_t parse_land_task_home(struct Land_Info dl_land_info);
 static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t offset);
 
@@ -100,12 +106,30 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 	switch (gcs_cmd)
 	{	
 		case GCS_CMD_START:
+            #ifdef USE_PLANED_OA
+			if( check_oa_data_valid() )
+			{
+				planed_oa.test_on = TRUE;
+
+				planed_oa_prepare();
+
+				if(   oa_wp_search_state == area_generate_error_parameter_invild
+				   || oa_wp_search_state == area_generate_error_cant_gen_area    )
+				{
+					response = oa_wp_search_state; //area generate error
+				}
+			}
+			else
+			{
+				response = search_error_obstacle_invaild;
+				planed_oa.test_on = FALSE;
+			}
+            #endif
 			//pause to start need add confirm
 			if( (GCS_CMD_PAUSE==gcs_task_cmd && FALSE==from_wp_useful)
 				 || GCS_CMD_NONE==gcs_task_cmd
 				 || GCS_CMD_START==gcs_task_cmd)
 			{
-				//dim2_geometry_update_flightplan();
 				gcs_task_cmd = GCS_CMD_START;
 				Flag_AC_Flight_Ready=TRUE;	//add by lg
 				gcs_cmd_interrupt = TRUE;    //record command interrupt to get rid of emergency
@@ -453,7 +477,7 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 				struct EnuCoor_i temp_pos = *stateGetPositionEnu_i();
 				struct EnuCoor_i diff_pos;
 				VECT2_DIFF(diff_pos, temp_pos, enu_home)
-				if( abs(diff_pos.x)<POS_BFP_OF_REAL(1.0) && abs(diff_pos.y)<POS_BFP_OF_REAL(1.0) )
+				//if( abs(diff_pos.x)<POS_BFP_OF_REAL(1.0) && abs(diff_pos.y)<POS_BFP_OF_REAL(1.0) )
 				{
 					VECT2_COPY(wp_home, temp_pos);
 				}

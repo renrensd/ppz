@@ -618,6 +618,7 @@ static void guidance_h_trajectory_tracking_ini(void)
 	guidance_h_trajectory_tracking_set_min_brake_len(2.0f);
 	guidance_h_trajectory_tracking_set_emergency_brake_acc(3.0f);
 	traj.test_length = 20.0f;
+    traj.max_acc_backup = traj.max_acc;
 }
 
 static void guidance_h_trajectory_tracking_state_machine(void)

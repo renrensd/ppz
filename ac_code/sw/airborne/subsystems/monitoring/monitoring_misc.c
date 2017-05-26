@@ -42,6 +42,7 @@
 #include "subsystems/fram/fram_if.h"
 #include "modules/gps/gps2_ublox.h"
 #include "modules/mag_cali/mag_cali.h"
+#include "modules/planed_oa/planed_oa.h"
 
 
 /*===VARIABLES========================================================*/
@@ -265,6 +266,47 @@ void gps_flight_check(void)
 	else
 	{
 		set_except_mission(GPS_UBLOX_FAIL, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+	}
+#endif
+
+#ifdef USE_PLANED_OA
+	if(planed_oa_search_valid())
+	{
+		em[NO_AVOID_PATH].active = 0;
+		em[P_IN_OBS_AREA].finished = 0;
+
+		em[P_IN_OBS_AREA].active = 0;
+		em[P_IN_OBS_AREA].finished = 0;
+
+		em[NO_VALID_P].active = 0;
+		em[NO_VALID_P].finished = 0;
+
+		em[OBS_INFO_ERROR].active = 0;
+		em[OBS_INFO_ERROR].finished = 0;
+	}
+	else
+	{
+		switch( oa_wp_search_state )
+		{
+			case search_error_no_path:
+				set_except_mission(NO_AVOID_PATH, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+				break;
+
+			case search_error_obstacle_invaild:
+				set_except_mission(P_IN_OBS_AREA, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+				break;
+
+			case search_error_no_vaild_insert_wp:
+				set_except_mission(NO_VALID_P, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+				break;
+
+			case search_error_obstacle_flag_wrong:
+				set_except_mission(OBS_INFO_ERROR, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+				break;
+
+			default:
+				break;
+		}
 	}
 #endif
 }

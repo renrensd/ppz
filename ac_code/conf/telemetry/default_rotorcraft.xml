@@ -3,6 +3,26 @@
 <telemetry>
   <process name="Main">
 
+    <mode name="obstacle_avoidance" >
+      <message name="GPS_INT"                period="2.0"/>
+      <message name="DEBUG_GPS"  	     period="1.0"/>
+      <message name="INS"                    period="2.0"/>
+      <message name="INS_REF"                period="2.0"/>
+      <message name="ROTORCRAFT_NAV_STATUS"  period="2.0"/>
+      <message name="ROTORCRAFT_STATUS"      period="2.0"/>
+      <message name="ROTORCRAFT_FP"          period="1.0"/>
+      <message name="ALIVE"                  period="5"/>
+      <message name="SUPERBITRF"             period="5"/>
+      <message name="WP_MOVED"               period="0.05"/>
+      <message name="MONI_MSG"               period="0.5"/>
+    </mode>
+
+    <mode name="low_data">
+      <message name="ALIVE"             period="2.0"/>
+      <message name="INS"               period="2.0"/>
+      <message name="DEBUG_GPS"  	     period="2.0"/>
+    </mode>
+
     <mode name="default" key_press="d">
       <!--message name="ROTORCRAFT_CMD"         period="0.5"/-->
       <message name="DL_VALUE"                 period="0.5"/>

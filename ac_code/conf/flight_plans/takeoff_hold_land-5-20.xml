@@ -1,0 +1,127 @@
+<!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
+
+<flight_plan alt="17.5" ground_alt="16" lat0="22.540656" lon0="113.923446" max_dist_from_home="10000" name="Rotorcraft Basic (Enac)" security_height="1">
+  <header>
+#include "autopilot.h"
+</header>
+  <waypoints>
+    <waypoint alt="1" name="HOME" x="0" y="0"/>
+    <waypoint name="S1" x="0" y="0"/>
+    <waypoint name="S2" x="0" y="0"/>
+    <waypoint name="S3" x="0" y="0"/>
+    <waypoint name="S4" x="0" y="0"/>
+    <waypoint name="From" x="-48.2" y="-1.8"/>
+    <waypoint name="Next" x="-21.1" y="-16.4"/>
+    <waypoint name="V0" x="0.688" y="-8.637"/>
+    <waypoint name="V1" x="-15.988" y="22.01"/>
+    <waypoint name="V2" x="-79.880" y="-11.617"/>
+    <waypoint name="V3" x="-63.098" y="-43.528"/>
+    <waypoint name="V4" x="-63.098" y="-43.528"/>
+    <waypoint name="V5" x="-63.098" y="-43.528"/>
+    <waypoint name="V6" x="-63.098" y="-43.528"/>
+    <waypoint name="V7" x="-63.098" y="-43.528"/>
+    <waypoint name="V8" x="-63.098" y="-43.528"/>
+    <waypoint name="V9" x="-63.098" y="-43.528"/>
+    <waypoint name="V10" x="-63.098" y="-43.528"/>
+    <waypoint name="V11" x="-63.098" y="-43.528"/>
+    <waypoint name="V12" x="-63.098" y="-43.528"/>
+    <waypoint name="V13" x="-63.098" y="-43.528"/>
+    <waypoint name="V14" x="-63.098" y="-43.528"/>
+    <waypoint name="V15" x="-63.098" y="-43.528"/>
+    <waypoint name="V16" x="-63.098" y="-43.528"/>
+    <waypoint name="V17" x="-63.098" y="-43.528"/>
+    <waypoint name="V18" x="-63.098" y="-43.528"/>
+    <waypoint name="V19" x="-63.098" y="-43.528"/>
+    <waypoint name="O11" x="-25.938" y="-18.09"/>
+    <waypoint name="O12" x="-29.297" y="-10.668"/>
+    <waypoint name="O13" x="-22.34" y="-6.988"/>
+    <waypoint name="O14" x="-18.930" y="-14.406"/>
+    <waypoint name="O21" x="-47.598" y="-9.399"/>
+    <waypoint name="O22" x="-50.317" y="-3.437"/>
+    <waypoint name="O23" x="-45.200" y="-0.7695"/>
+    <waypoint name="O24" x="-42.488" y="-6.679"/>
+    <waypoint name="O31" x="0" y="0"/>
+    <waypoint name="O32" x="0" y="0"/>
+    <waypoint name="O33" x="0" y="0"/>
+    <waypoint name="O34" x="0" y="0"/>
+    <waypoint name="O41" x="0" y="0"/>
+    <waypoint name="O42" x="0" y="0"/>
+    <waypoint name="O43" x="0" y="0"/>
+    <waypoint name="O44" x="0" y="0"/>
+    <waypoint name="O51" x="0" y="0"/>
+    <waypoint name="O52" x="0" y="0"/>
+    <waypoint name="O53" x="0" y="0"/>
+    <waypoint name="O54" x="0" y="0"/>
+  </waypoints>
+  <sectors>
+    <sector name="valid_area" type="dynamic">
+      <corner name="V0"/>
+      <corner name="V1"/>
+      <corner name="V2"/>
+      <corner name="V3"/>
+      <corner name="V4"/>
+      <corner name="V5"/>
+      <corner name="V6"/>
+      <corner name="V7"/>
+      <corner name="V8"/>
+      <corner name="V9"/>
+      <corner name="V10"/>
+      <corner name="V11"/>
+      <corner name="V12"/>
+      <corner name="V13"/>
+      <corner name="V14"/>
+      <corner name="V15"/>
+      <corner name="V16"/>
+      <corner name="V17"/>
+      <corner name="V18"/>
+      <corner name="V19"/>
+    </sector>
+    <sector name="obstacle_area1" type="dynamic">
+      <corner name="O11"/>
+      <corner name="O12"/>
+      <corner name="O13"/>
+      <corner name="O14"/>
+    </sector>
+    <sector name="obstacle_area2" type="dynamic">
+      <corner name="O21"/>
+      <corner name="O22"/>
+      <corner name="O23"/>
+      <corner name="O24"/>
+    </sector>
+    <sector name="obstacle_area3" type="dynamic">
+      <corner name="O31"/>
+      <corner name="O32"/>
+      <corner name="O33"/>
+      <corner name="O34"/>
+    </sector>
+    <sector name="obstacle_area4" type="dynamic">
+      <corner name="O41"/>
+      <corner name="O42"/>
+      <corner name="O43"/>
+      <corner name="O44"/>
+    </sector>
+    <sector name="obstacle_area5" type="dynamic">
+      <corner name="O51"/>
+      <corner name="O52"/>
+      <corner name="O53"/>
+      <corner name="O54"/>
+    </sector>
+  </sectors>
+  <blocks>
+    <block name="Wait GPS">
+      <call fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+    </block>
+    <block name="Holding point">
+      <call fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine">
+      <call fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>

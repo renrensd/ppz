@@ -5,98 +5,82 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint alt="27.5" name="HOME" x="-651.0" y="-29.9"/>
-    <waypoint name="From" x="-68.1" y="68.2"/>
-    <waypoint name="Next" x="72.5" y="397.9"/>
-    <waypoint name="S1" x="33.3" y="164.3"/>
-    <waypoint name="S2" x="28.8" y="164.1"/>
-    <waypoint name="S3" x="45.5" y="258.7"/>
-    <waypoint name="S4" x="52.0" y="257.9"/>
-    <waypoint name="O00" x="0" y="0"/>
-    <waypoint name="O01" x="0" y="0"/>
-    <waypoint name="O02" x="0" y="0"/>
-    <waypoint name="O03" x="0" y="0"/>
-    <waypoint name="O10" x="0" y="0"/>
-    <waypoint name="O11" x="0" y="0"/>
-    <waypoint name="O12" x="0" y="0"/>
-    <waypoint name="O13" x="0" y="0"/>
-    <waypoint name="O20" x="0" y="0"/>
-    <waypoint name="O21" x="0" y="0"/>
-    <waypoint name="O22" x="0" y="0"/>
-    <waypoint name="O23" x="0" y="0"/>
-    <waypoint name="O30" x="0" y="0"/>
-    <waypoint name="O31" x="0" y="0"/>
-    <waypoint name="O32" x="0" y="0"/>
-    <waypoint name="O33" x="0" y="0"/>
-    <waypoint name="O40" x="0" y="0"/>
-    <waypoint name="O41" x="0" y="0"/>
-    <waypoint name="O42" x="0" y="0"/>
-    <waypoint name="O43" x="0" y="0"/>
-    <waypoint name="P0" x="-1347.6" y="-77.3"/>
-    <waypoint alt="27.5" name="P1" x="-1340.1" y="88.3"/>
-    <waypoint alt="27.5" name="P2" x="-1340.9" y="258.4"/>
-    <waypoint alt="27.5" name="P3" x="-1365.3" y="882.9"/>
-    <waypoint alt="27.5" name="P4" x="-953.9" y="915.3"/>
-    <waypoint name="P5" x="-951.8" y="1153.9"/>
-    <waypoint name="P6" x="-683.3" y="1165.4"/>
-    <waypoint name="P7" x="-659.8" y="943.7"/>
-    <waypoint name="P8" x="-182.7" y="883.6"/>
-    <waypoint name="P9" x="-178.9" y="715.0"/>
-    <waypoint name="P10" x="-177.8" y="528.6"/>
-    <waypoint name="P11" x="-169.1" y="342.2"/>
-    <waypoint name="P12" x="-165.4" y="190.8"/>
-    <waypoint name="P13" x="-180.4" y="26.5"/>
-    <waypoint name="P14" x="-454.0" y="317.7"/>
-    <waypoint name="P15" x="-651.4" y="315.9"/>
-    <waypoint name="P16" x="-854.0" y="105.1"/>
-    <waypoint name="P17" x="-1016.9" y="109.6"/>
-    <waypoint name="P18" x="-1144.2" y="100.7"/>
-    <waypoint name="P19" x="-1140.7" y="-62.2"/>
-    <waypoint name="V0" x="0" y="0"/>
-    <waypoint name="V1" x="0" y="0"/>
-    <waypoint name="V2" x="0" y="0"/>
-    <waypoint name="V3" x="0" y="0"/>
-    <waypoint name="V4" x="0" y="0"/>
-    <waypoint name="V5" x="0" y="0"/>
-    <waypoint name="V6" x="0" y="0"/>
-    <waypoint name="V7" x="0" y="0"/>
-    <waypoint name="V8" x="0" y="0"/>
-    <waypoint name="V9" x="0" y="0"/>
-    <waypoint name="V10" x="0" y="0"/>
-    <waypoint name="V11" x="0" y="0"/>
-    <waypoint name="V12" x="0" y="0"/>
-    <waypoint name="V13" x="0" y="0"/>
-    <waypoint name="V14" x="0" y="0"/>
-    <waypoint name="V15" x="0" y="0"/>
-    <waypoint name="V16" x="0" y="0"/>
-    <waypoint name="V17" x="0" y="0"/>
-    <waypoint name="V18" x="0" y="0"/>
-    <waypoint name="V19" x="0" y="0"/>
-    <waypoint name="V20" x="0" y="0"/>
+    <waypoint alt="1.0" name="HOME" x="0" y="0"/>
+    <waypoint name="S1" x="0" y="0"/>
+    <waypoint name="S2" x="0" y="0"/>
+    <waypoint name="S3" x="0" y="0"/>
+    <waypoint name="S4" x="0" y="0"/>
+    <waypoint name="From" x="-59.2" y="-36.0"/>
+    <waypoint name="Next" x="-4.2" y="16.8"/>
+    <waypoint name="V0" x="8.4" y="-20.6"/>
+    <waypoint name="V1" x="11.4" y="-8.8"/>
+    <waypoint name="V2" x="7.6" y="6.3"/>
+    <waypoint name="V3" x="3.7" y="14.2"/>
+    <waypoint name="V4" x="-4.2" y="24.3"/>
+    <waypoint name="V5" x="-18.8" y="24.5"/>
+    <waypoint name="V6" x="-31.8" y="21.4"/>
+    <waypoint name="V7" x="-45.0" y="15.9"/>
+    <waypoint name="V8" x="-56.1" y="10.5"/>
+    <waypoint name="V9" x="-72.1" y="0.8"/>
+    <waypoint name="V10" x="-83.3" y="-7.9"/>
+    <waypoint name="V11" x="-84.2" y="-22.0"/>
+    <waypoint name="V12" x="-78.9" y="-35.9"/>
+    <waypoint name="V13" x="-69.9" y="-47.9"/>
+    <waypoint name="V14" x="-58.4" y="-51.9"/>
+    <waypoint name="V15" x="-46.4" y="-51.2"/>
+    <waypoint name="V16" x="-36.1" y="-49.1"/>
+    <waypoint name="V17" x="-20.5" y="-45.5"/>
+    <waypoint name="V18" x="-11.1" y="-37.9"/>
+    <waypoint name="V19" x="-1.7" y="-30.2"/>
+    <waypoint name="A0" x="8.4" y="-20.6"/>
+    <waypoint name="A1" x="11.4" y="-8.8"/>
+    <waypoint name="A2" x="7.6" y="6.3"/>
+    <waypoint name="A3" x="3.7" y="14.2"/>
+    <waypoint name="A4" x="-4.2" y="24.3"/>
+    <waypoint name="A5" x="-18.8" y="24.5"/>
+    <waypoint name="A6" x="-31.8" y="21.4"/>
+    <waypoint name="A7" x="-45.0" y="15.9"/>
+    <waypoint name="A8" x="-56.1" y="10.5"/>
+    <waypoint name="A9" x="-72.1" y="0.8"/>
+    <waypoint name="A10" x="-83.3" y="-7.9"/>
+    <waypoint name="A11" x="-84.2" y="-22.0"/>
+    <waypoint name="A12" x="-78.9" y="-35.9"/>
+    <waypoint name="A13" x="-69.9" y="-47.9"/>
+    <waypoint name="A14" x="-58.4" y="-51.9"/>
+    <waypoint name="A15" x="-46.4" y="-51.2"/>
+    <waypoint name="A16" x="-36.1" y="-49.1"/>
+    <waypoint name="A17" x="-20.5" y="-45.5"/>
+    <waypoint name="A18" x="-11.1" y="-37.9"/>
+    <waypoint name="A19" x="-1.7" y="-30.2"/>
+    <waypoint name="A20" x="-1.7" y="-30.2"/>
+    <waypoint name="O11" x="-29.9" y="-19.8"/>
+    <waypoint name="O12" x="-34.4" y="-8.2"/>
+    <waypoint name="O13" x="-22.4" y="-3.5"/>
+    <waypoint name="O14" x="-17.6" y="-15.1"/>
+    <waypoint name="O21" x="-42.3" y="-18.3"/>
+    <waypoint name="O22" x="-60.4" y="13.5"/>
+    <waypoint name="O23" x="-55.0" y="16.1"/>
+    <waypoint name="O24" x="-37.4" y="-16.2"/>
+    <waypoint name="O31" x="-52.3" y="-42.1"/>
+    <waypoint name="O32" x="-37.2" y="-36.2"/>
+    <waypoint name="O33" x="-45.5" y="-16.4"/>
+    <waypoint name="O34" x="-60.4" y="-22.6"/>
+    <waypoint name="O41" x="-7.2" y="4.2"/>
+    <waypoint name="O42" x="-13.5" y="0.3"/>
+    <waypoint name="O43" x="-17.9" y="6.7"/>
+    <waypoint name="O44" x="-11.5" y="10.8"/>
+    <waypoint name="O51" x="10.0" y="-33.2"/>
+    <waypoint name="O52" x="2.3" y="-37.0"/>
+    <waypoint name="O53" x="-13.5" y="-9.9"/>
+    <waypoint name="O54" x="-6.7" y="-6.7"/>
+    <waypoint name="Pre_From" x="0" y="0"/>
+    <waypoint name="Pre_Next" x="0" y="0"/>
+    <waypoint name="T1" x="0" y="0"/>
+    <waypoint name="T4" x="0" y="0"/>
+    <waypoint name="T0" x="0" y="0"/>
+    <waypoint name="T5" x="0" y="0"/>
   </waypoints>
   <sectors>
-    <sector name="spray_area" type="dynamic">
-      <corner name="P0"/>
-      <corner name="P1"/>
-      <corner name="P2"/>
-      <corner name="P3"/>
-      <corner name="P4"/>
-      <corner name="P5"/>
-      <corner name="P6"/>
-      <corner name="P7"/>
-      <corner name="P8"/>
-      <corner name="P9"/>
-      <corner name="P10"/>
-      <corner name="P11"/>
-      <corner name="P12"/>
-      <corner name="P13"/>
-      <corner name="P14"/>
-      <corner name="P15"/>
-      <corner name="P16"/>
-      <corner name="P17"/>
-      <corner name="P18"/>
-      <corner name="P19"/>
-    </sector>
     <sector name="valid_area" type="dynamic">
       <corner name="V0"/>
       <corner name="V1"/>
@@ -118,47 +102,81 @@
       <corner name="V17"/>
       <corner name="V18"/>
       <corner name="V19"/>
-      <corner name="V20"/>
     </sector>
-    <sector name="line" type="dynamic">
-      <corner name="From"/>
-      <corner name="Next"/>
-      <corner name="From"/>
+    <sector name="oa_area" type="dynamic">
+      <corner name="A0"/>
+      <corner name="A1"/>
+      <corner name="A2"/>
+      <corner name="A3"/>
+      <corner name="A4"/>
+      <corner name="A5"/>
+      <corner name="A6"/>
+      <corner name="A7"/>
+      <corner name="A8"/>
+      <corner name="A9"/>
+      <corner name="A10"/>
+      <corner name="A11"/>
+      <corner name="A12"/>
+      <corner name="A13"/>
+      <corner name="A14"/>
+      <corner name="A15"/>
+      <corner name="A16"/>
+      <corner name="A17"/>
+      <corner name="A18"/>
+      <corner name="A19"/>
+      <corner name="A20"/>
     </sector>
-    <sector name="O0" type="dynamic">
-      <corner name="O00"/>
-      <corner name="O01"/>
-      <corner name="O02"/>
-      <corner name="O03"/>
-    </sector>
-    <sector name="O1" type="dynamic">
-      <corner name="O10"/>
+    <sector name="obstacle_area1" type="dynamic">
       <corner name="O11"/>
       <corner name="O12"/>
       <corner name="O13"/>
+      <corner name="O14"/>
     </sector>
-    <sector name="O2" type="dynamic">
-      <corner name="O20"/>
+    <sector name="obstacle_area2" type="dynamic">
       <corner name="O21"/>
       <corner name="O22"/>
       <corner name="O23"/>
+      <corner name="O24"/>
     </sector>
-    <sector name="O3" type="dynamic">
-      <corner name="O30"/>
+    <sector name="obstacle_area3" type="dynamic">
       <corner name="O31"/>
       <corner name="O32"/>
       <corner name="O33"/>
+      <corner name="O34"/>
     </sector>
-    <sector name="O4" type="dynamic">
-      <corner name="O40"/>
+    <sector name="obstacle_area4" type="dynamic">
       <corner name="O41"/>
       <corner name="O42"/>
       <corner name="O43"/>
+      <corner name="O44"/>
+    </sector>
+    <sector name="obstacle_area5" type="dynamic">
+      <corner name="O51"/>
+      <corner name="O52"/>
+      <corner name="O53"/>
+      <corner name="O54"/>
+    </sector>
+    <sector name="from_next" type="dynamic">
+      <corner name="T0"/>
+      <corner name="T0"/>
+      <corner name="T5"/>
     </sector>
   </sectors>
   <blocks>
-    <block name="circle">
-      <circle radius="1" wp="HOME"/>
+    <block name="Wait GPS">
+      <call fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+    </block>
+    <block name="Holding point">
+      <call fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine">
+      <call fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
 </flight_plan>

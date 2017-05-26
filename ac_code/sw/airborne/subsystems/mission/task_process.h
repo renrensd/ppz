@@ -22,6 +22,12 @@
 
 #include "subsystems/mission/task_manage.h"
 
+#ifdef USE_PLANED_OA
+#include "modules/planed_oa/planed_oa.h"
+#include "generated/flight_plan.h"
+#include "subsystems/navigation/waypoints.h"
+#endif
+
 typedef enum Gcs_Run_State
 {
 	GCS_RUN_NONE = 0,
@@ -56,5 +62,8 @@ extern bool_t auto_task_ready_check(void);
 extern Gcs_State gcs_task_run(void);
 extern void send_task_info_pc(void); 
 extern bool_t spray_switch_flag;
+extern struct EnuCoor_i home_wp_enu;
+extern struct EnuCoor_i interrupt_wp_scene;
+
 #endif /*_TASK_MANAGE_H_*/
 /****************************** END OF FILE ***************************/

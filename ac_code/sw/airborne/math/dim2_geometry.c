@@ -11,182 +11,9 @@
 #include <math.h>
 #include "pprz_algebra.h"
 
-#include "mcu_periph/sys_time.h"
-#include "generated/flight_plan.h"
-#include "subsystems/navigation/waypoints.h"
-#include "subsystems/mission/task_manage.h"
-
 #define DATA_TOLERANCE	(1e-6)
+#define OA_STRICT_TOLERANCE		(0.3)
 #define OA_TOLERANCE		(1)
-
-#define MAX_BOUNDARY_VERTICES_NUM	(20)
-#define MAX_OBSTACLES_NUM					(5)
-
-/*
- * TEST_FUNCTION
- */
-
-#define P_NUM	(OA_MAX_BOUNDARY_VERTICES_NUM)
-#define V_NUM	(OA_MAX_BOUNDARY_VERTICES_NUM + 1)
-#define O_NUM	(OA_MAX_OBSTACLES_NUM * OA_OBSTACLE_CORNER_NUM)
-
-struct FloatVect2 home = {0,0};
-struct FloatVect2 P_array[OA_MAX_BOUNDARY_VERTICES_NUM];
-struct FloatVect2 O_array[O_NUM];
-struct FloatVect2 valid_area_boundary_vertices_array[P_NUM + 1];
-struct _s_polygon P_polygon;
-struct _s_polygon test_valid_area;
-
-struct _s_polygon spray_area;
-struct _s_polygon flight_area;
-struct _s_polygon obstacles[OA_MAX_OBSTACLES_NUM];
-
-float time_elapse;
-
-struct FloatVect2 obstacles_vertices[OA_MAX_OBSTACLES_NUM][OA_OBSTACLE_CORNER_NUM];
-
-void dim2_geometry_update_flightplan(void)
-{
-	struct EnuCoor_f c;
-	c.z = 0;
-
-	if(check_oa_data_valid())
-	{
-		polygon_init(&spray_area, oa_data.spray_boundary_vertices_array, oa_data.spray_boundary_vertices_num);
-
-		if (oa_data.obstacles_num <= OA_MAX_OBSTACLES_NUM)
-		{
-			for (uint8_t i = 0; i < oa_data.obstacles_num; ++i)
-			{
-				polygon_init(&(obstacles[i]), oa_data.obstacles_vertices_array[i], OA_OBSTACLE_CORNER_NUM);
-			}
-		}
-
-		for (uint8_t i = 0; i < P_NUM; ++i)
-		{
-			if (i < spray_area.n)
-			{
-				VECT2_COPY(c, spray_area.v[i]);
-				waypoint_set_enu(WP_P0 + i, &c);
-			}
-			else
-			{
-				VECT2_COPY(c, spray_area.v[spray_area.n - 1]);
-				waypoint_set_enu(WP_P0 + i, &c);
-			}
-		}
-		for (uint8_t i = 0; i < O_NUM; ++i)
-		{
-			if (i < oa_data.obstacles_vertices_num)
-			{
-				VECT2_COPY(c, oa_data.obstacles_vertices_array[i/4][i%4]);
-				waypoint_set_enu(WP_O00 + i, &c);
-			}
-			else
-			{
-				VECT2_ASSIGN(c, 0, 0);
-				waypoint_set_enu(WP_O00 + i, &c);
-			}
-		}
-	}
-}
-
-void dim2_geometry_test(void)
-{
-	static bool_t ini = FALSE;
-
-	if(!ini)
-	{
-		ini = TRUE;
-
-		struct EnuCoor_f c;
-		c.z = 0;
-		for (int i = 0; i < P_NUM; ++i)
-		{
-			VECT2_COPY(c, waypoints[WP_P0+i].enu_f);
-			VECT2_SDIV(c,c,10);
-			waypoint_set_enu(WP_P0 + i, &c);
-		}
-	}
-
-	for (int i = 0; i < O_NUM; ++i)
-	{
-		polygon_init (&(obstacles[i]), obstacles_vertices[i], 4);
-	}
-
-	for (int i = 0; i < P_NUM; ++i)
-	{
-		VECT2_COPY(P_array[i], waypoints[WP_P0+i].enu_f);
-	}
-	for (int i = 0; i < O_NUM; ++i)
-	{
-		VECT2_COPY(O_array[i], waypoints[WP_O00+i].enu_f);
-	}
-
-	VECT2_COPY(home, waypoints[WP_HOME].enu_f);
-
-	polygon_init(&P_polygon, P_array, P_NUM);
-	polygon_init(&test_valid_area, valid_area_boundary_vertices_array, 0);
-	generate_valid_area(&test_valid_area, &P_polygon, &home);
-	if(is_line_in_polygon(&(O_array[0]), &(O_array[1]), &test_valid_area))
-	{
-		O_array[2].x = 0;
-		O_array[2].y = 0;
-	}
-	else
-	{
-		O_array[2].x = 100;
-		O_array[2].y = 100;
-	}
-	//point_close_2_segment(&home, &(O_array[0]), &(O_array[1]));
-
-	struct EnuCoor_f c;
-	c.z = 0;
-	for (int i = 0; i < V_NUM; ++i)
-	{
-		if (i < test_valid_area.n)
-		{
-			VECT2_COPY(c, test_valid_area.v[i]);
-			waypoint_set_enu(WP_V0 + i, &c);
-		}
-		else
-		{
-			VECT2_COPY(c, test_valid_area.v[test_valid_area.n - 1]);
-			waypoint_set_enu(WP_V0 + i, &c);
-		}
-	}
-	for (int i = 0; i < O_NUM; ++i)
-	{
-		VECT2_COPY(c, O_array[i]);
-		//waypoint_set_enu(WP_O1 + i, &c);
-
-	}
-	VECT2_COPY(c, O_array[2]);
-
-
-	time_elapse = get_sys_time_float() - time_elapse;
-
-		/*
-		time_elapse = get_sys_time_float();
-		struct FloatVect2 a;
-		struct FloatVect2 b;
-		float angle,ccw,cw;
-		VECT2_DIFF(a, P_array[1], P_array[0]);
-		VECT2_DIFF(b, P_array[2], P_array[0]);
-		angle = vector_angle(&a, &b, FALSE);
-		float_vect2_normalize(&a);
-		float_vect2_normalize(&b);
-		angle = vector_angle(&a, &b, TRUE);
-		ccw = CCW_angle(angle);
-		cw = CW_angle(angle);
-*/
-		//polygon_area(&P_polygon);
-		/*
-		for(int i=0;i<1000;++i)
-		{
-			is_line_in_polygon(&(O_array[0]), &(O_array[1]), &test_valid_area);
-		}*/
-}
 
 int polygon_init(struct _s_polygon *polygon, struct FloatVect2 *vertices, uint8_t num)
 {
@@ -321,6 +148,93 @@ enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct F
 }
 
 /*
+ * check 2 line relation
+ * v0-v1 : line 1
+ * v2-v3 : line 2
+ */
+enum _e_segment_relation get_2_segments_strict_relation(struct FloatVect2 *v0, struct FloatVect2 *v1,
+		struct FloatVect2 *v2, struct FloatVect2 *v3)
+{
+	float detL1 = determinant(v0->x, v0->y, v1->x, v1->y);
+	float detL2 = determinant(v2->x, v2->y, v3->x, v3->y);
+	float x0_x1 = v0->x - v1->x;
+	float x2_x3 = v2->x - v3->x;
+	float y0_y1 = v0->y - v1->y;
+	float y2_y3 = v2->y - v3->y;
+
+	float xnum = determinant(detL1, x0_x1, detL2, x2_x3);
+	float ynum = determinant(detL1, y0_y1, detL2, y2_y3);
+	float denom = determinant(x0_x1, y0_y1, x2_x3, y2_y3);
+
+	if (fabsf(denom) < DATA_TOLERANCE)	// parallel
+	{
+		float area = v0->x * (v1->y - v2->y) + v1->x * (v2->y - v0->y) + v2->x * (v0->y - v1->y);
+		if (fabsf(area) < DATA_TOLERANCE)
+		{
+			if (is_on_segment(v2, v0, v3))
+			{
+				if (is_on_segment(v2, v1, v3))
+				{
+					return SR_COLLINEATION_INSIDE;
+				}
+				else
+				{
+					return SR_COLLINEATION_OVERLAP;
+				}
+			}
+			else
+			{
+				if (is_on_segment(v2, v1, v3))
+				{
+					return SR_COLLINEATION_OVERLAP;
+				}
+				else
+				{
+					if(is_on_segment(v0, v2, v1))
+					{
+						return SR_COLLINEATION_CONTAIN;
+					}
+					else
+					{
+						return SR_COLLINEATION_SEPARATION;
+					}
+				}
+			}
+		}
+		else
+		{
+			return SR_PARALLEL;
+		}
+	}
+	else
+	{
+		struct FloatVect2 P;
+		P.x = xnum / denom;
+		P.y = ynum / denom;
+		if (is_on_segment(v0, &P, v1) && is_on_segment(v2, &P, v3))
+		{
+			float dis0 = point2_distance(&P, v0);
+			float dis1 = point2_distance(&P, v1);
+			float dis2 = point2_distance(&P, v2);
+			float dis3 = point2_distance(&P, v3);
+			if((dis0 < OA_STRICT_TOLERANCE) || (dis1 < OA_STRICT_TOLERANCE) ||
+					(dis2 < OA_STRICT_TOLERANCE) || (dis3 < OA_STRICT_TOLERANCE))
+			{
+				return SR_INTERSECTION_OUTSIDE;
+			}
+			else
+			{
+				return SR_INTERSECTION_INSIDE;
+			}
+		}
+		else
+		{
+			return SR_INTERSECTION_OUTSIDE;
+		}
+	}
+}
+
+/*
  * check if horizon ray start from p intersect with edge
  * P : through point
  * v0-v1 : edge
@@ -399,6 +313,23 @@ float point_close_2_segment(struct FloatVect2 *P, struct FloatVect2 *v0, struct 
 		{
 			return FALSE;
 		}
+	}
+}
+
+float Multiply(struct FloatVect2 *p1, struct FloatVect2 *p2, struct FloatVect2 *p0)
+{
+    return ( (p1->x - p0->x) * (p2->y - p0->y) - (p2->x - p0->x) * (p1->y - p0->y) );
+}
+
+bool_t is_point_in_rectangle(struct FloatVect2 *P1, struct FloatVect2 *P2, struct FloatVect2 *P3, struct FloatVect2 *P4, struct FloatVect2 *P)
+{
+    if ( (Multiply(P, P1, P2) * Multiply(P, P4, P3) <= 0)  && (Multiply(P, P4, P1) * Multiply(P, P3, P2) <= 0) )
+    {
+        return TRUE;
+    }
+	else
+	{
+        return FALSE;
 	}
 }
 
@@ -917,9 +848,6 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 			break;
 		}
 	}
-
-	//TEST_CASE
-	valid_area->v[valid_area->n-1].y -= 50;
 
 	return 0;
 }

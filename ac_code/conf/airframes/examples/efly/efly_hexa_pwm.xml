@@ -73,6 +73,7 @@
     <load name="mag_cali.xml"/>
     <load name="gps2_ublox.xml"/>
     <load name="ins_ublox.xml"/>
+    <load name="planed_oa.xml"/>
     <!--load name="sonar_uart_MB12xx.xml"/-->
     <!--load name="sonar_i2c_mb1242.xml"/-->
     <!--load name="sonar_uart_US100.xml"/-->
