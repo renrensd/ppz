@@ -102,10 +102,10 @@ static void get_task_wp(void);
 static void get_oa_from_next_wp(void);
 
 static bool_t get_initial_start_end_oa_wp(struct FloatVect2 *init_start_oa_wp, struct FloatVect2 *init_end_oa_wp,
-		struct _s_planed_obstacle *obstacle, uint8_t o_num, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
+		struct _s_planed_obstacle *obstacles, uint8_t o_num, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static void get_s1_s4_wp(struct FloatVect2 *start_oa_wp, struct FloatVect2 *end_oa_wp, struct FloatVect2 *init_start_oa_wp,
 		struct FloatVect2 *init_end_oa_wp, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
-static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacle, uint8_t o_num,
+static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacles, uint8_t o_num,
 		struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 /*
  * Initialize oa data when power on
@@ -363,7 +363,7 @@ static uint8_t min_dist_select(float *dist, uint8_t n)
  * Get initial wp (s1 and s4) by inputed start wp, end wp
  */
 static bool_t get_initial_start_end_oa_wp(struct FloatVect2 *init_start_oa_wp, struct FloatVect2 *init_end_oa_wp,
-		struct _s_planed_obstacle *obstacle, uint8_t o_num, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp)
+		struct _s_planed_obstacle *obstacles, uint8_t o_num, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp)
 {
 	if (o_num <= 0)
 	{
@@ -383,11 +383,11 @@ static bool_t get_initial_start_end_oa_wp(struct FloatVect2 *init_start_oa_wp, s
 
 	for (int i = 0; i < o_num; i++)
 	{
-		if (obstacle[i].obstacle_flag)
+		if (obstacles[i].obstacle_flag)
 		{
 			for (int j = 0; j < OA_OBSTACLE_CORNER_NUM; j++)
 			{
-				get_project_point(&(project_point[i * OA_OBSTACLE_CORNER_NUM + j]), start_wp, end_wp, &(planed_oa.obstacles[i].polygon.v[j]));
+				get_project_point(&(project_point[i * OA_OBSTACLE_CORNER_NUM + j]), start_wp, end_wp, &(obstacles[i].polygon.v[j]));
 				proj_start_dist[i * OA_OBSTACLE_CORNER_NUM + j] = points_length_calc(&(project_point[i * OA_OBSTACLE_CORNER_NUM + j]), start_wp);
 				proj_end_dist[i * OA_OBSTACLE_CORNER_NUM + j] = points_length_calc(&(project_point[i * OA_OBSTACLE_CORNER_NUM + j]), end_wp);
 
@@ -473,7 +473,7 @@ static void get_s1_s4_wp(struct FloatVect2 *start_oa_wp, struct FloatVect2 *end_
  * Return TRUE: need oa; FALSE: not need oa; 
  * Get: obstacle[i].obstacle_flag
  */
-static bool_t rectangle_obstacle_on_nav_route(struct _s_planed_obstacle *obstacle, uint8_t o_num,
+static bool_t rectangle_obstacle_on_nav_route(struct _s_planed_obstacle *obstacles, uint8_t o_num,
 		struct FloatVect2 *start_wp, struct FloatVect2 *end_wp)
 {
 	for (int i = 0; i < o_num; i++)
@@ -485,17 +485,17 @@ static bool_t rectangle_obstacle_on_nav_route(struct _s_planed_obstacle *obstacl
 		 || get_2_segments_strict_relation( start_wp, end_wp, &(obstacle[i].v[0]), &(obstacle[i].v[2]) ) == SR_INTERSECTION_INSIDE
 		 || get_2_segments_strict_relation( start_wp, end_wp, &(obstacle[i].v[1]), &(obstacle[i].v[3]) ) == SR_INTERSECTION_INSIDE )*/
 		enum _e_segment_relation rel_12 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[0]), &(planed_oa.obstacles[i].polygon.v[1]));
+				&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[1]));
 		enum _e_segment_relation rel_23 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[1]), &(planed_oa.obstacles[i].polygon.v[2]));
+				&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[2]));
 		enum _e_segment_relation rel_34 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[2]), &(planed_oa.obstacles[i].polygon.v[3]));
+				&(obstacles[i].polygon.v[2]), &(obstacles[i].polygon.v[3]));
 		enum _e_segment_relation rel_41 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[3]), &(planed_oa.obstacles[i].polygon.v[0]));
+				&(obstacles[i].polygon.v[3]), &(obstacles[i].polygon.v[0]));
 		enum _e_segment_relation rel_13 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[0]), &(planed_oa.obstacles[i].polygon.v[2]));
+				&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[2]));
 		enum _e_segment_relation rel_24 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[1]), &(planed_oa.obstacles[i].polygon.v[3]));
+				&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[3]));
 
 		if (rel_13 == SR_INTERSECTION_INSIDE
 				|| rel_24 == SR_INTERSECTION_INSIDE
@@ -504,17 +504,17 @@ static bool_t rectangle_obstacle_on_nav_route(struct _s_planed_obstacle *obstacl
 				|| rel_34 == SR_INTERSECTION_INSIDE
 				|| rel_41 == SR_INTERSECTION_INSIDE)
 		{
-			obstacle[i].obstacle_flag = TRUE;
+			obstacles[i].obstacle_flag = TRUE;
 		}
 		else
 		{
-			obstacle[i].obstacle_flag = FALSE;
+			obstacles[i].obstacle_flag = FALSE;
 		}
 	}
 
 	for (int i = 0; i < o_num; i++)
 	{
-		if (obstacle[i].obstacle_flag)
+		if (obstacles[i].obstacle_flag)
 		{
 			return TRUE;
 		}
@@ -526,7 +526,7 @@ static bool_t rectangle_obstacle_on_nav_route(struct _s_planed_obstacle *obstacl
 /*
  * return TRUE ;
  */
-static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacle, uint8_t o_num,
+static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacles, uint8_t o_num,
 		struct FloatVect2 *start_wp, struct FloatVect2 *end_wp)
 {
 	bool_t obstacle_flag[OA_MAX_OBSTACLES_NUM];
@@ -550,17 +550,17 @@ static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacle
 		 }*/
 
 		enum _e_segment_relation rel_12 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[0]), &(planed_oa.obstacles[i].polygon.v[1]));
+				&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[1]));
 		enum _e_segment_relation rel_23 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[1]), &(planed_oa.obstacles[i].polygon.v[2]));
+				&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[2]));
 		enum _e_segment_relation rel_34 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[2]), &(planed_oa.obstacles[i].polygon.v[3]));
+				&(obstacles[i].polygon.v[2]), &(obstacles[i].polygon.v[3]));
 		enum _e_segment_relation rel_41 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[3]), &(planed_oa.obstacles[i].polygon.v[0]));
+				&(obstacles[i].polygon.v[3]), &(obstacles[i].polygon.v[0]));
 		enum _e_segment_relation rel_13 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[0]), &(planed_oa.obstacles[i].polygon.v[2]));
+				&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[2]));
 		enum _e_segment_relation rel_24 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(planed_oa.obstacles[i].polygon.v[1]), &(planed_oa.obstacles[i].polygon.v[3]));
+				&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[3]));
 
 		if (rel_13 == SR_INTERSECTION_INSIDE
 				|| rel_24 == SR_INTERSECTION_INSIDE
