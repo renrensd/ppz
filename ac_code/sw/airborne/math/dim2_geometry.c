@@ -294,7 +294,7 @@ float point_close_2_segment(struct FloatVect2 *P, struct FloatVect2 *v0, struct 
 	struct FloatVect2 v, r;
 
 	v.x = v1->y - v0->y;
-	v.y = v1->x - v0->x;
+	v.y = v0->x - v1->x;
 	VECT2_DIFF(r, *P, *v0);
 	float_vect2_normalize(&v);
 	dis3 = fabsf(VECT2_DOT_PRODUCT(v, r));
