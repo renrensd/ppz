@@ -427,7 +427,7 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 {
 	int8_t response = 0;
 	/*add/update home waypoint, add operation request wp_home_useful==FASLE, update is opposite*/
-	if( (LAND_TASK_ADD==dl_land_info.operation_type && !wp_home_useful)
+	if( (LAND_TASK_ADD==dl_land_info.operation_type)
 		 || (LAND_TASK_UPDATE==dl_land_info.operation_type && wp_home_useful))  
 	{
 		if( 1 <= dl_land_info.waypoints_length )
