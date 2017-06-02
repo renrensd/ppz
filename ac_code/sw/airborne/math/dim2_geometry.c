@@ -316,23 +316,6 @@ float point_close_2_segment(struct FloatVect2 *P, struct FloatVect2 *v0, struct 
 	}
 }
 
-float Multiply(struct FloatVect2 *p1, struct FloatVect2 *p2, struct FloatVect2 *p0)
-{
-    return ( (p1->x - p0->x) * (p2->y - p0->y) - (p2->x - p0->x) * (p1->y - p0->y) );
-}
-
-bool_t is_point_in_rectangle(struct FloatVect2 *P1, struct FloatVect2 *P2, struct FloatVect2 *P3, struct FloatVect2 *P4, struct FloatVect2 *P)
-{
-    if ( (Multiply(P, P1, P2) * Multiply(P, P4, P3) <= 0)  && (Multiply(P, P4, P1) * Multiply(P, P3, P2) <= 0) )
-    {
-        return TRUE;
-    }
-	else
-	{
-        return FALSE;
-	}
-}
-
 /*
  * check if point in polygon
  */
@@ -535,11 +518,6 @@ float CW_angle(float angle)
 	{
 		return -angle;
 	}
-}
-
-bool_t is_corner_concave(struct _s_polygon *polygon, uint8_t corner)
-{
-	return FALSE;
 }
 
 /*
