@@ -32,6 +32,7 @@
 #include "subsystems/rc_nav/rc_nav_xbee.h"
 #include "subsystems/mission/gcs_nav_xbee.h"
 #include "subsystems/ins/ins_int.h"
+#include "subsystems/eng/eng_app.h"
 
 #include "led.h"
 
@@ -373,6 +374,11 @@ void ground_monitoring(void)
 	if (get_sys_time_msec() < 5000)
 		return;
 
+	if(eng_app_check_debug_sn())
+	{
+		ground_check_step = RC_CONNECT + 1;
+		ground_check_pass = TRUE;
+	}
 	switch (ground_check_step)
 	{
 	case BATTERY_CHECK:
@@ -644,9 +650,12 @@ static void except_mission_manage(void)
 		gcs_cmd_interrupt = FALSE;
 		return;
 	}
-
 	else
 	{
+		if((task_state != GCS_RUN_NORMAL) && (em_alert_grade <= 2))
+		{
+			return;
+		}
 		if (monitor_cmd == CM_LAND)
 		{
 			return;   //land can not interrupt

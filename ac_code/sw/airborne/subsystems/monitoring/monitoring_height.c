@@ -132,20 +132,20 @@ void height_flight_check(void)
 static inline void baro_flight_check(void)
 {
 	/*baro information*/
-	if( h_moni.baro_status)   //error
+	if (ins_int_is_baro_valid())   //error
 	{
-		set_except_mission(HEIGHT_BARO,TRUE,FALSE, FALSE,0, FALSE,FALSE,1);
-        #if TEST_MSG
-		baro_status=1;
-		#endif
+		set_except_mission(HEIGHT_BARO, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+#if TEST_MSG
+		baro_status = 1;
+#endif
 	}
 	else
 	{
-		em[HEIGHT_BARO].active=FALSE;
-		em[HEIGHT_BARO].finished=FALSE;
-		#if TEST_MSG
-		baro_status=0;
-		#endif
+		em[HEIGHT_BARO].active = FALSE;
+		em[HEIGHT_BARO].finished = FALSE;
+#if TEST_MSG
+		baro_status = 0;
+#endif
 	}
 }
 

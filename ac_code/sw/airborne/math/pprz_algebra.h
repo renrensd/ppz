@@ -115,6 +115,7 @@ extern "C" {
 
 /* _vo=v1*v2 */
 #define VECT2_DOT_PRODUCT(_v1, _v2) ((_v1).x*(_v2).x + (_v1).y*(_v2).y)
+#define VECT2_CROSS_PRODUCT(_v1, _v2) ((_v1).x*(_v2).y - (_v1).y*(_v2).x)
 
 #define VECT2_NORM2(_v) ((_v).x*(_v).x + (_v).y*(_v).y)
 

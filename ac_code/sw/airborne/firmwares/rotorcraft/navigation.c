@@ -181,6 +181,8 @@ static void send_wp_moved(struct transport_tx *trans, struct link_device *dev)
                              &(waypoints[i].enu_i.x),
                              &(waypoints[i].enu_i.y),
                              &(waypoints[i].enu_i.z));
+  int32_t hmsl = waypoints[i].lla.alt - state.ned_origin_i.lla.alt + state.ned_origin_i.hmsl;
+  pprz_msg_send_WP_MOVED_LLA(trans, dev, AC_ID, &i, &(waypoints[i].lla.lat), &(waypoints[i].lla.lon), &hmsl);
 }
 #endif
 
@@ -194,7 +196,7 @@ void nav_init(void)
   flight_altitude = SECURITY_ALT;
   VECT3_COPY(navigation_target, waypoints[WP_HOME].enu_i);
   VECT3_COPY(navigation_carrot, waypoints[WP_HOME].enu_i);
-  VECT3_COPY(navigation_obstacle, waypoints[WP_S5].enu_i);
+  //VECT3_COPY(navigation_obstacle, waypoints[WP_S5].enu_i);
  #ifndef NPS_SIMU
   nav_flight_init();   //could run with flight_plan together
  #endif
@@ -257,7 +259,7 @@ void nav_run(void)
 #if GUIDANCE_H_USE_REF
   // if GUIDANCE_H_USE_REF, CARROT_DIST is not used
   VECT2_COPY(navigation_carrot, navigation_target);
-  VECT3_COPY(navigation_obstacle, waypoints[WP_S5].enu_i);
+  //VECT3_COPY(navigation_obstacle, waypoints[WP_S5].enu_i);
 #else
   nav_advance_carrot();
 #endif

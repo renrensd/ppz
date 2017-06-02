@@ -144,7 +144,8 @@ void send_heart_beat_A2G_msg(void)
    	                                     &battery_remain, 
    	                                     &pesticides_remain,
    	                                     &error_code,
-   	                                     &selftest_code);
+   	                                     &selftest_code,
+   	                                     &AC_action);
    
 }
 

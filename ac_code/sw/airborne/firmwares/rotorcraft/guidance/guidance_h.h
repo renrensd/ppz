@@ -106,6 +106,7 @@ struct _s_trajectory_tracking
 	float ref_speed;
 	float pos_along_brake_len;
 	float max_acc;
+	float max_acc_backup;
 	float emergency_brake_acc;
 	float min_brake_len;
 	float brake_margin;

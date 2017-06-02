@@ -43,7 +43,7 @@ void waypoints_init(void)
     /* clear all flags */
     waypoints[i].flags = 0;
     /* init waypoint as global LLA or local ENU */
-    if (is_global[i]) {
+    if (1) {
       waypoint_set_global_flag(i);
       waypoint_set_lla(i, &wp_tmp_lla_i[i]);
     } else {

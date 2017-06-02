@@ -320,8 +320,8 @@ static void ept_ms_run(void)
 			flight_step = monitor_cmd + 2;    //change nav_flight step,so it will do monitor_cmd
 			if(monitor_cmd==CM_HOVER)
 			{
-				rc_motion_cmd_execution(0);   //send hover cmd
-				RC_HOVER();     //make sure do hover
+				//rc_motion_cmd_execution(0);   //send hover cmd
+				//RC_HOVER();     //make sure do hover
 			}
 			else if(monitor_cmd==CM_HOME)
 			{
@@ -353,7 +353,7 @@ static void ept_ms_run(void)
 				last_cmd = monitor_cmd;
 				break;
 			case CM_HOVER:
-				if(gcs_task_cmd < GCS_CMD_PAUSE)
+				if(gcs_task_cmd <= GCS_CMD_BHOME)
 				{
 					gcs_task_cmd = GCS_CMD_PAUSE;
 					last_cmd = monitor_cmd;

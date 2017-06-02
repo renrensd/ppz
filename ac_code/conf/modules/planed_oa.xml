@@ -1,0 +1,33 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="planed_oa">
+  <doc>
+    <description>
+     Reads the obstacle info and generate oa wp
+    </description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings name="Planed_oa">
+   	   <dl_setting var="planed_oa.test_on" min="0" step="1" max="1" module="modules/planed_oa/planed_oa" values="OFF|ON" shortname="oa_test" />
+   	   <dl_setting var="planed_oa.manual_prepare_flag" min="0" step="1" max="1" module="modules/planed_oa/planed_oa" values="CLEAN|GENERATE" shortname="manual_prepare" />
+   	   <dl_setting var="planed_oa.manual_callback_flag" min="0" step="1" max="1" module="modules/planed_oa/planed_oa" values="DoNothing|Callback" shortname="manual_callback" />
+   	   <dl_setting var="gcs_task_cmd" min="0" step="1" max="4" module="subsystems/mission/task_process" values="NONE|START|PAUSE|CONTI|BHOME" shortname="cmd" />
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="planed_oa.h"/>
+  </header>
+  <init fun="planed_oa_data_init()"/>
+  <periodic fun="planed_oa_periodic_run()"freq="50"/>
+  <makefile target="ap">
+    <file name="planed_oa.c"/>
+  </makefile>
+  
+  <makefile target="ap">
+    <define name="USE_PLANED_OA" value="true" />
+  </makefile>
+
+</module>
+

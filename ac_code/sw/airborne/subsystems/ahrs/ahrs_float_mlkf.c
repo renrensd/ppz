@@ -74,6 +74,7 @@ static void ahrs_mlkf_update_mag_2d_new(struct Int32Vect3 *mag);
 static void ahrs_mlkf_update_mag_full(struct Int32Vect3 *mag);
 static void ahrs_mlkf_update_gps_heading(struct GpsState *gps_s);
 static void ahrs_mlkf_P_init(void);
+static bool_t ahrs_mlkf_is_rtk_power_up_heading_valid(void);
 
 struct AhrsMlkf ahrs_mlkf;
 
@@ -525,9 +526,15 @@ bool_t ahrs_mlkf_is_rtk_heading_valid(void)
 	return gps.h_stable && ahrs_mlkf.virtual_rtk_heading_valid;
 }
 
+static bool_t ahrs_mlkf_is_rtk_power_up_heading_valid(void)
+{
+	 return (ahrs_mlkf_is_rtk_heading_valid() && (gps.head_stanum > 14));
+}
+
 void ahrs_mlkf_task(void)
 {
 	static bool_t gps_heading_aligned = FALSE;
+	static bool_t rtk_power_up = FALSE;
 
 	if (ahrs_mlkf_is_rtk_heading_valid())
 	{
@@ -539,7 +546,18 @@ void ahrs_mlkf_task(void)
 			{
 				if (!autopilot_in_flight)
 				{
-					ahrs_mlkf.heading_state = AMHS_GPS;
+					if(!rtk_power_up)
+					{
+						if(ahrs_mlkf_is_rtk_power_up_heading_valid())
+						{
+							ahrs_mlkf.heading_state = AMHS_GPS;
+							rtk_power_up = TRUE;
+						}
+					}
+					else
+					{
+						ahrs_mlkf.heading_state = AMHS_GPS;
+					}
 				}
 			}
 			else if (ahrs_mlkf.heading_state == AMHS_GPS)

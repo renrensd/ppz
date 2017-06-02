@@ -262,6 +262,7 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 			
 		case DELETE_ALL_TASK:
 			response = command_delete_all_task();
+			task_init();
 			break;
 
 		case OPS_SELFCLEAN:

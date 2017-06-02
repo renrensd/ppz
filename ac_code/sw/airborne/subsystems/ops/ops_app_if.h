@@ -55,6 +55,9 @@ struct OPS_INFO
 	uint16_t  o_bat_tem;
 	int8_t    o_bat_rep_percent;
 	//#endif
+	uint16_t fw_version;
+	uint16_t cycle_count;
+	uint8_t spraying_flow[4];
 	uint8_t  sys_error;
 	uint8_t  mcu_info;
 
