@@ -178,11 +178,10 @@ bool_t achieve_next_wp(void)
 bool_t get_start_line(void)
 {
 	/*request nb_pending_wp at least 2*/
-	if( nb_pending_wp > 1 )
+	if( nb_pending_wp >= 1 )
 	{
-		VECT2_COPY(task_wp[0].wp_en, wp_home);
 		achieve_next_wp();
-		achieve_next_wp();
+		VECT2_COPY(from_wp.wp_en, wp_home);
 		from_wp_useful = TRUE;
 		return TRUE;
 	}
