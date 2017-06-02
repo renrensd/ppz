@@ -183,9 +183,26 @@ void gps_flight_check(void)
 	static float diff_sum = 0;
 	static bool_t diff_err = FALSE;
 
+	bool_t rtk_pos_valid = FALSE;
+	bool_t rtk_heading_valid = FALSE;
+	bool_t ublox_valid = FALSE;
+
+	if(autopilot_in_flight)
+	{
+		rtk_pos_valid = ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid();
+		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid();
+		ublox_valid = gps2.p_stable;
+	}
+	else
+	{
+		rtk_pos_valid = ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid() && rtk_power_up_stable();
+		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid() && rtk_power_up_stable();
+		ublox_valid = gps2.p_stable;
+	}
+
 	if(GpsFixValid())
 	{
-		if (ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid())
+		if (rtk_pos_valid)
 		{   //could be recovered
 			em[GPS_ACC].active = 0;
 			em[GPS_ACC].finished = 0;
@@ -220,7 +237,7 @@ void gps_flight_check(void)
 	}
 
 #ifdef USE_GPS_HEADING
-	if(ahrs_mlkf_is_rtk_heading_valid())
+	if(rtk_heading_valid)
 	{
 		if(!diff_err)
 		{
@@ -257,7 +274,7 @@ void gps_flight_check(void)
 #endif
 
 #ifdef USE_GPS2_UBLOX
-	if(gps2.p_stable)
+	if(ublox_valid)
 	{
 		em[GPS_UBLOX_FAIL].active = 0;
 		em[GPS_UBLOX_FAIL].finished = 0;

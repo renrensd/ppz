@@ -35,7 +35,10 @@ bool_t flight_prepare(bool_t reset)
 #if 0
 #else
 		if (!rtk_power_up_stable())
+		{
+			NavKillMode();
 			return TRUE;   //wait GPS fixed,it will change to wait LC connect
+		}
 #endif
 		step_p++;
 		break;
