@@ -142,20 +142,16 @@ bool_t achieve_next_wp(void)
 	struct EnuCoor_i distance_wp;
 	
 
-		VECT2_DIFF(distance_wp,from_wp.wp_en,task_wp[0].wp_en);
-		/*get waypoint info from task_wp*/
-		VECT2_COPY(next_wp.wp_en, task_wp[0].wp_en);
-		next_wp.action = task_wp[0].action;
-		next_wp.wp_id = task_wp[0].wp_id;
-		for(uint8_t i=0; i<nb_pending_wp; i++)
-		{
-			TASK_WP_LEFT_SHIFT(i+1, 1);
-		}
-		nb_pending_wp--;
-		if(nb_pending_wp < 1) 
-		{
-			return FALSE;
-		}
+	VECT2_DIFF(distance_wp,from_wp.wp_en,task_wp[0].wp_en);
+	/*get waypoint info from task_wp*/
+	VECT2_COPY(next_wp.wp_en, task_wp[0].wp_en);
+	next_wp.action = task_wp[0].action;
+	next_wp.wp_id = task_wp[0].wp_id;
+	for(uint8_t i=0; i<nb_pending_wp; i++)
+	{
+		TASK_WP_LEFT_SHIFT(i+1, 1);
+	}
+	nb_pending_wp--;
 	
 	/*remove forepart waypoint*/
 

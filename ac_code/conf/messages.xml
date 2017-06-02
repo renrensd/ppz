@@ -2266,7 +2266,8 @@
     <field name="back_home_ready" type="uint8" unit="bool"/>
     <field name="nav_north_angle" type="float" unit="m"/>
     <field name="total_search_time" type="uint32" unit="m"/>
-    <field name="run_time" type="uint32" unit="m"/>
+    <field name="error_spray" type="uint8[40]" unit="m"/>
+    <field name="error_spray_cord" type="float[40]" unit="m"/>
     <field name="oa_necessity_flag" type="uint8" unit="bool"/>
   </message>
 

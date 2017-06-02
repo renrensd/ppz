@@ -109,9 +109,9 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
             #ifdef USE_PLANED_OA
 			if( check_oa_data_valid() )
 			{
-				planed_oa.test_on = TRUE;
-
 				planed_oa_prepare();
+
+				planed_oa.test_on = TRUE;
 
 				if(   oa_wp_search_state == area_generate_error_parameter_invild
 				   || oa_wp_search_state == area_generate_error_cant_gen_area    )
