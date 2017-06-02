@@ -609,21 +609,17 @@ int8_t check_oa_data_valid(void)
 {
 	bool_t ok = FALSE;
 
-	ok = oa_data.spray_boundary_valid && oa_data.obstacles_valid && oa_data.home_valid;
-	ok &= (oa_data.spray_boundary_vertices_num > 2);
-	ok &= ((oa_data.obstacles_num * OA_OBSTACLE_CORNER_NUM) == oa_data.obstacles_vertices_num);
-
-	if(oa_data.obstacles_num == 0)
+	if (oa_data.obstacles_num == 0)
 	{
-		return 0;
-	}
-	if(ok)
-	{
-		return 1;
+		ok = oa_data.spray_boundary_valid && oa_data.home_valid && (oa_data.spray_boundary_vertices_num > 2);
+		return (ok ? 0 : -1);
 	}
 	else
 	{
-		return -1;
+		ok = oa_data.spray_boundary_valid && oa_data.obstacles_valid && oa_data.home_valid;
+		ok &= (oa_data.spray_boundary_vertices_num > 2);
+		ok &= ((oa_data.obstacles_num * OA_OBSTACLE_CORNER_NUM) == oa_data.obstacles_vertices_num);
+		return (ok ? 1 : -1);
 	}
 }
 
