@@ -86,7 +86,7 @@ static uint8_t spray_i;
 static uint8_t insert_i;
 
 uint32_t start_search_time;
-uint32_t run_time[50];
+uint32_t run_time[10];
 
 static void update_obstacles_info(void);
 static void planed_oa_run(void);
@@ -168,10 +168,22 @@ void planed_oa_data_init(void)
 
 	memset(spray_boundary_vaild_flag, 0, sizeof(spray_boundary_vaild_flag));
 	memset(o_flag, 0, sizeof(o_flag));
-	memset(run_time, 0, sizeof(run_time));
-	memset(error_spray, 1, sizeof(error_spray));
-	memset(error_spray_cord, 0.0f, sizeof(error_spray_cord));
-	memset(insert_start_end_cord, 0.0f, sizeof(insert_start_end_cord));
+
+	for(int i = 0; i < (OA_MAX_BOUNDARY_VERTICES_NUM * 2); i++)
+	{
+		error_spray[i] = TRUE;
+		error_spray_cord[i] = 0.0f;
+	}
+
+	for(int i = 0; i < 4; i++)
+	{
+		insert_start_end_cord[i] = 0.0f;
+	}
+
+	for(int i = 0; i < 10; i++)
+	{
+		run_time[i] = 0;
+	}
 }
 
 /*
@@ -212,9 +224,22 @@ void planed_oa_data_reset(void)
 	insert_i = 0;
 
 	memset(o_flag, 0, sizeof(o_flag));
-	memset(error_spray, 1, sizeof(error_spray));
-	memset(error_spray_cord, 0.0f, sizeof(error_spray_cord));
-	memset(insert_start_end_cord, 0.0f, sizeof(insert_start_end_cord));
+
+	for(int i = 0; i < (OA_MAX_BOUNDARY_VERTICES_NUM * 2); i++)
+	{
+		error_spray[i] = TRUE;
+		error_spray_cord[i] = 0.0f;
+	}
+
+	for(int i = 0; i < 4; i++)
+	{
+		insert_start_end_cord[i] = 0.0f;
+	}
+
+	for(int i = 0; i < 10; i++)
+	{
+		run_time[i] = 0;
+	}
 
 	for (int i = 0; i < OA_MAX_OBSTACLES_NUM; i++)
 	{
