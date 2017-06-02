@@ -103,107 +103,118 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 		return response;
 	}
 	
+	int8_t oa_ok;
 	switch (gcs_cmd)
-	{	
-		case GCS_CMD_START:
-            #ifdef USE_PLANED_OA
-			if( check_oa_data_valid() )
-			{
-				planed_oa_prepare();
+	{
+	case GCS_CMD_START:
+		#ifdef USE_PLANED_OA
+		oa_ok = check_oa_data_valid();
+		planed_oa.test_on = FALSE;
+		if (oa_ok < 0)
+		{
+			response = search_error_obstacle_invaild;
+			break;
+		}
+		else if(oa_ok == 0)
+		{
+			// no obstacles
+		}
+		else
+		{
+			planed_oa_prepare();
 
+			if (oa_wp_search_state == area_generate_error_parameter_invild
+					|| oa_wp_search_state == area_generate_error_cant_gen_area)
+			{
+				response = oa_wp_search_state; //area generate error
+				break;
+			}
+			else
+			{
 				planed_oa.test_on = TRUE;
+			}
+		}
+		#endif
+		//pause to start need add confirm
+		if ((GCS_CMD_PAUSE == gcs_task_cmd && FALSE == from_wp_useful)
+				|| GCS_CMD_NONE == gcs_task_cmd
+				|| GCS_CMD_START == gcs_task_cmd)
+		{
+			gcs_task_cmd = GCS_CMD_START;
+			Flag_AC_Flight_Ready = TRUE;	//add by lg
+			gcs_cmd_interrupt = TRUE;    //record command interrupt to get rid of emergency
+		}
+		else
+		{
+			response = 2; /*conflict cmd*/
+		}
+		break;
 
-				if(   oa_wp_search_state == area_generate_error_parameter_invild
-				   || oa_wp_search_state == area_generate_error_cant_gen_area    )
-				{
-					response = oa_wp_search_state; //area generate error
-				}
-			}
-			else
-			{
-				response = search_error_obstacle_invaild;
-				planed_oa.test_on = FALSE;
-			}
-            #endif
-			//pause to start need add confirm
-			if( (GCS_CMD_PAUSE==gcs_task_cmd && FALSE==from_wp_useful)
-				 || GCS_CMD_NONE==gcs_task_cmd
-				 || GCS_CMD_START==gcs_task_cmd)
-			{
-				gcs_task_cmd = GCS_CMD_START;
-				Flag_AC_Flight_Ready=TRUE;	//add by lg
-				gcs_cmd_interrupt = TRUE;    //record command interrupt to get rid of emergency
-			}
-			else
-			{
-				response = 2;  /*conflict cmd*/
-			}
-			break;
-			
-		case GCS_CMD_PAUSE:
-			if(GCS_CMD_CONTI != gcs_task_cmd)
-			{
-				gcs_task_cmd = GCS_CMD_PAUSE;
-				gcs_cmd_interrupt = TRUE;
-				manual_pause_flag = TRUE;   //record brake signal
-			}
-			else
-			{
-				response = 2;
-			}
-			break;
-			
-		case GCS_CMD_CONTI:
-			if(GCS_CMD_CONTI==gcs_task_cmd || GCS_CMD_PAUSE==gcs_task_cmd)
-			{
-				if(em_alert_grade > 2)
-				{
-					response = 2;
-				}
-				else
-				{
-					gcs_task_cmd = GCS_CMD_CONTI;
-					gcs_cmd_interrupt = TRUE;
-				}
-			}
-			else
-			{
-				response = 2;
-			}
-			break;
-			
-		case GCS_CMD_BHOME:
-			spray_switch_flag = FALSE;
-			gcs_task_cmd = GCS_CMD_BHOME;
+	case GCS_CMD_PAUSE:
+		if (GCS_CMD_CONTI != gcs_task_cmd)
+		{
+			gcs_task_cmd = GCS_CMD_PAUSE;
 			gcs_cmd_interrupt = TRUE;
-			break;
-			
-		case GCS_CMD_RELAND:
-			if( 0 >= nb_pending_reland )
+			manual_pause_flag = TRUE;   //record brake signal
+		}
+		else
+		{
+			response = 2;
+		}
+		break;
+
+	case GCS_CMD_CONTI:
+		if (GCS_CMD_CONTI == gcs_task_cmd || GCS_CMD_PAUSE == gcs_task_cmd)
+		{
+			if (em_alert_grade > 2)
 			{
 				response = 2;
 			}
 			else
 			{
-				gcs_task_cmd = GCS_CMD_RELAND;
+				gcs_task_cmd = GCS_CMD_CONTI;
 				gcs_cmd_interrupt = TRUE;
 			}
-			break;
+		}
+		else
+		{
+			response = 2;
+		}
+		break;
 
-		case GCS_CMD_DLAND:
-			gcs_task_cmd = GCS_CMD_DLAND;
+	case GCS_CMD_BHOME:
+		spray_switch_flag = FALSE;
+		gcs_task_cmd = GCS_CMD_BHOME;
+		gcs_cmd_interrupt = TRUE;
+		break;
+
+	case GCS_CMD_RELAND:
+		if (0 >= nb_pending_reland)
+		{
+			response = 2;
+		}
+		else
+		{
+			gcs_task_cmd = GCS_CMD_RELAND;
 			gcs_cmd_interrupt = TRUE;
-			break;
+		}
+		break;
 
-		case GCS_CMD_LOCK:
-			gcs_task_cmd = GCS_CMD_LOCK;
-			NavKillMode();
-			gcs_cmd_interrupt = TRUE;
-			break;
+	case GCS_CMD_DLAND:
+		gcs_task_cmd = GCS_CMD_DLAND;
+		gcs_cmd_interrupt = TRUE;
+		break;
 
-		default:
-			response = 1;  /*parse error*/
-			break;
+	case GCS_CMD_LOCK:
+		gcs_task_cmd = GCS_CMD_LOCK;
+		NavKillMode()
+		;
+		gcs_cmd_interrupt = TRUE;
+		break;
+
+	default:
+		response = 1; /*parse error*/
+		break;
 	}
 	return response;
 }
@@ -594,13 +605,34 @@ int8_t command_delete_all_task(void)
 	return response;
 }
 
-bool_t check_oa_data_valid(void)
+int8_t check_oa_data_valid(void)
 {
-	return oa_data.spray_boundary_valid && oa_data.obstacles_valid && oa_data.home_valid;
+	bool_t ok = FALSE;
+
+	ok = oa_data.spray_boundary_valid && oa_data.obstacles_valid && oa_data.home_valid;
+	ok &= (oa_data.spray_boundary_vertices_num > 2);
+	ok &= ((oa_data.obstacles_num * OA_OBSTACLE_CORNER_NUM) == oa_data.obstacles_vertices_num);
+
+	if(oa_data.obstacles_num == 0)
+	{
+		return 0;
+	}
+	if(ok)
+	{
+		return 1;
+	}
+	else
+	{
+		return -1;
+	}
 }
 
 static bool_t add_boundary_vertex(struct FloatVect2 *v, uint8_t max)
 {
+	if(oa_data.spray_boundary_valid)
+	{
+		return FALSE;
+	}
 	if(oa_data.spray_boundary_vertices_num >= max)
 	{
 		return FALSE;
@@ -621,6 +653,10 @@ static bool_t add_boundary_vertex(struct FloatVect2 *v, uint8_t max)
 
 static bool_t add_obstacles_vertex(struct FloatVect2 *v, uint8_t max)
 {
+	if(oa_data.obstacles_valid)
+	{
+		return FALSE;
+	}
 	if (oa_data.obstacles_vertices_num >= (max * OA_OBSTACLE_CORNER_NUM))
 	{
 		return FALSE;
@@ -666,7 +702,10 @@ int8_t parse_add_border(struct bp_Info m_bp_info)
 			struct FloatVect2 v;
 			v.x = POS_FLOAT_OF_BFP(temp_enu.x);
 			v.y = POS_FLOAT_OF_BFP(temp_enu.y);
-			add_boundary_vertex(&v, m_bp_info.total_bp_num);
+			if (!add_boundary_vertex(&v, m_bp_info.total_bp_num))
+			{
+				return 4;
+			}
 		}
 		else
 		{
@@ -704,7 +743,10 @@ int8_t parse_add_obstacle(struct op_Info m_op_info)
 			struct FloatVect2 v;
 			v.x = POS_FLOAT_OF_BFP(temp_enu.x);
 			v.y = POS_FLOAT_OF_BFP(temp_enu.y);
-			add_obstacles_vertex(&v, m_op_info.total_op_num);
+			if (!add_obstacles_vertex(&v, m_op_info.total_op_num))
+			{
+				return 4;
+			}
 		}
 		else
 		{

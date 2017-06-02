@@ -95,6 +95,7 @@ void avoid_obstacle_init()
 	oa_data.home_valid = FALSE;
 	oa_data.spray_boundary_vertices_num = 0;
 	oa_data.obstacles_vertices_num = 0;
+	oa_data.obstacles_num = 0;
 }
 
 void task_init(void)

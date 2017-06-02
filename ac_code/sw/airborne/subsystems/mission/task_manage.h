@@ -213,7 +213,7 @@ extern int8_t parse_land_task(struct Land_Info dl_land_info);
 extern int8_t command_delete_all_task(void);
 extern int8_t parse_add_border(struct bp_Info m_bp_info);
 extern int8_t parse_add_obstacle(struct op_Info m_op_info);
-extern bool_t check_oa_data_valid(void);
+extern int8_t check_oa_data_valid(void);
 
 #endif /*_TASK_MANAGE_H_*/
 
