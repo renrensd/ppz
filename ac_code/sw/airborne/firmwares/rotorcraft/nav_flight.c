@@ -281,7 +281,7 @@ void nav_flight(void)
 				task_init();  /*reset task*/
 				if(!autopilot_rc)
 				{
-					NavKillMode();
+					NavKillThrottle();
 				}
 				flight_step = 1;  /*land motion finished,jump to ready state*/
 			}
