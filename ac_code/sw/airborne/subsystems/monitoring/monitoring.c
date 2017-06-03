@@ -378,6 +378,8 @@ void ground_monitoring(void)
 	{
 		ground_check_step = RC_CONNECT + 1;
 		ground_check_pass = TRUE;
+		run_monitoring_flag = FALSE;
+		monitoring_state = FLIGHT_MONITORING;
 	}
 	switch (ground_check_step)
 	{
