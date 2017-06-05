@@ -5,7 +5,7 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint alt="1.0" name="HOME" x="0" y="0"/>
+    <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="S1" x="0" y="0"/>
     <waypoint name="S2" x="0" y="0"/>
     <waypoint name="S3" x="0" y="0"/>

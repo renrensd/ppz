@@ -107,13 +107,42 @@ static void guidance_h_trajectory_tracking_brake_setting_release(void);
 static bool_t achieve_next_oa_wp(void);
 static void get_task_wp(void);
 static void get_oa_from_next_wp(void);
-
+static void send_point_to_pprz(void);
 static bool_t get_initial_start_end_oa_wp(struct FloatVect2 *init_start_oa_wp, struct FloatVect2 *init_end_oa_wp,
 		struct _s_planed_obstacle *obstacles, uint8_t o_num, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static void get_s1_s4_wp(struct FloatVect2 *start_oa_wp, struct FloatVect2 *end_oa_wp, struct FloatVect2 *init_start_oa_wp,
 		struct FloatVect2 *init_end_oa_wp, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacles, uint8_t o_num,
 		struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
+static void planed_oa_test(void);
+
+static void planed_oa_test(void)
+{
+	static bool_t ini = FALSE;
+
+	if (!ini)
+	{
+		ini = TRUE;
+		for (uint8_t i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
+		{
+			VECT2_COPY(oa_data.spray_boundary_vertices_array[i], waypoints[WP_V0 + i].enu_f);
+		}
+		oa_data.spray_boundary_vertices_num = OA_MAX_BOUNDARY_VERTICES_NUM;
+
+		for (uint8_t i = 0; i < OA_MAX_OBSTACLES_NUM * OA_OBSTACLE_CORNER_NUM; ++i)
+		{
+			VECT2_COPY(oa_data.obstacles_vertices_array[i / 4][i % 4], waypoints[WP_O11 + i].enu_f);
+		}
+		oa_data.obstacles_num = OA_MAX_OBSTACLES_NUM;
+
+		VECT2_COPY(oa_data.home, waypoints[WP_HOME].enu_f);
+
+		planed_oa_geometry_prepare();
+
+		send_point_to_pprz();
+	}
+}
+
 /*
  * Initialize oa data when power on
  */
@@ -1407,7 +1436,9 @@ static void waypoint_set_vect2(uint8_t wp_id, struct FloatVect2 *v)
 
 static void send_point_to_pprz(void)
 {
-	for (uint8_t i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
+	uint8_t i, j;
+
+	for (i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
 	{
 		if (i < planed_oa.spray_area.n)
 		{
@@ -1419,21 +1450,19 @@ static void send_point_to_pprz(void)
 		}
 	}
 
-	for (uint8_t i = 0; i < OA_MAX_OBSTACLES_NUM; ++i)
-	{
-		struct EnuCoor_f c;
-		c.z = 0;
 
+	for (i = 0; i < OA_MAX_OBSTACLES_NUM; ++i)
+	{
 		if (i < planed_oa.obstacles_num)
 		{
-			for (uint8_t j = 0; j < OA_OBSTACLE_CORNER_NUM; j++)
+			for (j = 0; j < OA_OBSTACLE_CORNER_NUM; j++)
 			{
 				waypoint_set_vect2(WP_O11 + (OA_OBSTACLE_CORNER_NUM * i + j), &(planed_oa.obstacles[i].polygon.v[j]));
 			}
 		}
 		else
 		{
-			for (uint8_t j = 0; j < 4; j++)
+			for (j = 0; j < OA_OBSTACLE_CORNER_NUM; j++)
 			{
 				struct FloatVect2 v = {0, 0 };
 				waypoint_set_vect2(WP_O11 + (OA_OBSTACLE_CORNER_NUM * i + j), &v);
@@ -1441,7 +1470,7 @@ static void send_point_to_pprz(void)
 		}
 	}
 
-	for (int i = 0; i <= OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
+	for (i = 0; i <= OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
 	{
 		if (i < planed_oa.flight_area.n)
 		{
@@ -1452,6 +1481,7 @@ static void send_point_to_pprz(void)
 			waypoint_set_vect2(WP_A0 + i, &(planed_oa.flight_area.v[planed_oa.flight_area.n - 1]));
 		}
 	}
+
 }
 
 /*
@@ -1473,6 +1503,7 @@ void planed_oa_prepare(void)
 void planed_oa_periodic_run(void)
 {
 	//run_time[0] = usec_of_sys_time_ticks(sys_time.nb_tick);
+	planed_oa_test();
 
 	if (planed_oa.test_on && from_wp_useful)
 	{
