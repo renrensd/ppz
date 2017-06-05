@@ -129,6 +129,8 @@ bool_t eng_app_check_debug_sn(void)
 {
 	static bool_t ini = FALSE;
 	static uint8_t sn[12];
+	static uint8_t *debug_str = "DEBUG0000000";
+
 	if (!ini)
 	{
 		ini = TRUE;
@@ -139,7 +141,15 @@ bool_t eng_app_check_debug_sn(void)
 		sn[11] = 48;
 	}
 
-	return (strcmp(sn, "DEBUG0000000") == 0);
+	for (uint8_t i = 0; i < 12; ++i)
+	{
+		if(sn[i] != debug_str[i])
+		{
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 static void eng_update_components_info(void)
