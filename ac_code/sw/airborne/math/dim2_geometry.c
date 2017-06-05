@@ -66,7 +66,7 @@ bool_t is_relation_collineation(enum _e_segment_relation relation)
  * v2-v3 : line 2
  */
 enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct FloatVect2 *v1,
-		struct FloatVect2 *v2, struct FloatVect2 *v3)
+		struct FloatVect2 *v2, struct FloatVect2 *v3, struct FloatVect2 *intersect_point)
 {
 	float detL1 = determinant(v0->x, v0->y, v1->x, v1->y);
 	float detL2 = determinant(v2->x, v2->y, v3->x, v3->y);
@@ -124,6 +124,10 @@ enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct F
 		struct FloatVect2 P;
 		P.x = xnum / denom;
 		P.y = ynum / denom;
+		if(intersect_point != NULL)
+		{
+			VECT2_COPY(*intersect_point, P);
+		}
 		if (is_on_segment(v0, &P, v1) && is_on_segment(v2, &P, v3))
 		{
 			float dis0 = point2_distance(&P, v0);
@@ -316,23 +320,6 @@ float point_close_2_segment(struct FloatVect2 *P, struct FloatVect2 *v0, struct 
 	}
 }
 
-float Multiply(struct FloatVect2 *p1, struct FloatVect2 *p2, struct FloatVect2 *p0)
-{
-    return ( (p1->x - p0->x) * (p2->y - p0->y) - (p2->x - p0->x) * (p1->y - p0->y) );
-}
-
-bool_t is_point_in_rectangle(struct FloatVect2 *P1, struct FloatVect2 *P2, struct FloatVect2 *P3, struct FloatVect2 *P4, struct FloatVect2 *P)
-{
-    if ( (Multiply(P, P1, P2) * Multiply(P, P4, P3) <= 0)  && (Multiply(P, P4, P1) * Multiply(P, P3, P2) <= 0) )
-    {
-        return TRUE;
-    }
-	else
-	{
-        return FALSE;
-	}
-}
-
 /*
  * check if point in polygon
  */
@@ -425,6 +412,8 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 {
 	uint8_t i, j;
 	struct FloatVect2 P;
+	struct FloatVect2 intersection_points[OA_MAX_BOUNDARY_VERTICES_NUM];
+	uint8_t intersection_num = 0;
 
 	if (!is_point_in_polygon(v0, polygon))
 	{
@@ -434,34 +423,54 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 	{
 		return FALSE;
 	}
-	VECT2_COPY(P, *v1);
-	VECT2_DIFF(P, P, *v0);
-	VECT2_SDIV(P, P, 2);
-	VECT2_SUM(P, P, *v0);
-	if (!is_point_in_polygon(&P, polygon))
-	{
-		return FALSE;
-	}
 
 	for (i = 0; i < polygon->n; ++i)
 	{
 		j = (i + 1) % polygon->n;
 
-		enum _e_segment_relation rel = get_2_segments_relation(v0, v1, &(polygon->v[i]), &(polygon->v[j]));
+		enum _e_segment_relation rel = get_2_segments_relation(v0, v1, &(polygon->v[i]), &(polygon->v[j]), &P);
 
-		if((rel == SR_INTERSECTION_INSIDE) ||
-				(rel == SR_COLLINEATION_CONTAIN) ||
-				(rel == SR_COLLINEATION_OVERLAP))
+		if ((rel == SR_COLLINEATION_CONTAIN) || (rel == SR_COLLINEATION_OVERLAP))
 		{
-			if (point_close_2_segment(v0, &(polygon->v[i]), &(polygon->v[j])) && point_close_2_segment(v1, &(polygon->v[i]), &(polygon->v[j])))
+			if (point_close_2_segment(v0, &(polygon->v[i]), &(polygon->v[j]))
+					&& point_close_2_segment(v1, &(polygon->v[i]), &(polygon->v[j])))
 			{
 				return TRUE;
 			}
-			return FALSE;
+		}
+		else if (rel == SR_INTERSECTION_INSIDE)
+		{
+			VECT2_COPY(intersection_points[intersection_num], P);
+			if (++intersection_num >= OA_MAX_BOUNDARY_VERTICES_NUM)
+			{
+				return FALSE;
+			}
 		}
 	}
 
-	return TRUE;
+	if(intersection_num >= 2)
+	{
+		for (i = 0; i < intersection_num - 1; ++i)
+		{
+			j = (i + 1) % intersection_num;
+
+			VECT2_COPY(P, polygon->v[j]);
+			VECT2_DIFF(P, P, polygon->v[i]);
+			VECT2_SDIV(P, P, 2);
+			VECT2_SUM(P, P, polygon->v[i]);
+			if (!is_point_in_polygon(&P, polygon))
+			{
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+	else
+	{
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 float vector_angle(struct FloatVect2 *v0, struct FloatVect2 *v1, bool_t normalized)
@@ -535,11 +544,6 @@ float CW_angle(float angle)
 	{
 		return -angle;
 	}
-}
-
-bool_t is_corner_concave(struct _s_polygon *polygon, uint8_t corner)
-{
-	return FALSE;
 }
 
 /*
