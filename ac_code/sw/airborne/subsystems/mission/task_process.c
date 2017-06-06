@@ -1072,6 +1072,54 @@ void send_current_task(uint8_t wp_state)
 }
 
 
+bool_t nav_vrc_back_home(bool_t reset)
+{
+	static struct EnuCoor_i tem_pos;
+	static struct EnuCoor_i tem_home;
+	static uint8_t transfer_step;
+	if(reset)
+	{ 
+		transfer_step = 0;
+		tem_pos = *stateGetPositionEnu_i();
+		VECT2_COPY(tem_home, wp_home);
+		return FALSE;
+	}
+	else 
+	{
+		if(transfer_step == 0)
+		{
+			if(task_nav_pre_path(tem_pos, tem_home, FLIGHT_PATH))
+			{
+				if( !task_nav_path( tem_pos , tem_home ) )
+				{
+					if(p_transfer_useful = FALSE) //no transfer
+					{
+						task_nav_hover(tem_home);
+						return TRUE;
+					}
+					else
+					{
+						VECT2_COPY(vertipad_enu, vertipad);
+						transfer_step++;
+					}
+					
+				}
+			}
+		}
+		else if(transfer_step == 1)
+		{
+			if(task_nav_pre_path(home_wp_enu, vertipad_enu, FLIGHT_PATH))
+			{
+				if( !task_nav_path(home_wp_enu, vertipad_enu) ) 
+				{
+					task_nav_hover(vertipad_enu);
+					return TRUE;
+				}
+			}
+		}
+		
+	}
+}
 
 
 

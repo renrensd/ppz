@@ -229,7 +229,7 @@ void nav_flight(void)
 						wp_take_off.z = POS_BFP_OF_REAL(2.0);
 					}
 					
-					nav_rc_go_home(&wp_take_off,TRUE);   //reset the step
+					nav_vrc_back_home(TRUE);   //reset the step
 					flight_step = 4;          //goto home
 				}
 				//else: execution rc_cmd
@@ -259,7 +259,7 @@ void nav_flight(void)
 				}
 
 				/*run back home */
-				if(0 == nav_rc_go_home(&wp_take_off,FALSE))    
+				if(nav_vrc_back_home(FALSE))    
 				{
 					rc_set_info.vtol = LAND;
 					rc_set_info.home = FALSE;
