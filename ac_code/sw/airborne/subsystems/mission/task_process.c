@@ -195,6 +195,7 @@ bool_t get_start_line(void)
 			VECT2_COPY(from_wp.wp_en, vertipad);
 			from_wp.action = FLIGHT_LINE;
 		}
+		from_wp_useful = TRUE;
 		from_wp.wp_id = NULL;
 		return TRUE;
 	}
@@ -1077,22 +1078,21 @@ bool_t nav_vrc_back_home(bool_t reset)
 	static struct EnuCoor_i tem_pos;
 	static struct EnuCoor_i tem_home;
 	static uint8_t transfer_step;
-	if(reset)
-	{ 
+	if (reset)
+	{
 		transfer_step = 0;
 		tem_pos = *stateGetPositionEnu_i();
 		VECT2_COPY(tem_home, wp_home);
-		return FALSE;
 	}
-	else 
+	else
 	{
-		if(transfer_step == 0)
+		if (transfer_step == 0)
 		{
-			if(task_nav_pre_path(tem_pos, tem_home, FLIGHT_PATH))
+			if (task_nav_pre_path(tem_pos, tem_home, FLIGHT_PATH))
 			{
-				if( !task_nav_path( tem_pos , tem_home ) )
+				if (!task_nav_path(tem_pos, tem_home))
 				{
-					if(p_transfer_useful = FALSE) //no transfer
+					if (p_transfer_useful == FALSE) //no transfer
 					{
 						task_nav_hover(tem_home);
 						return TRUE;
@@ -1102,23 +1102,22 @@ bool_t nav_vrc_back_home(bool_t reset)
 						VECT2_COPY(vertipad_enu, vertipad);
 						transfer_step++;
 					}
-					
 				}
 			}
 		}
-		else if(transfer_step == 1)
+		else if (transfer_step == 1)
 		{
-			if(task_nav_pre_path(home_wp_enu, vertipad_enu, FLIGHT_PATH))
+			if (task_nav_pre_path(home_wp_enu, vertipad_enu, FLIGHT_PATH))
 			{
-				if( !task_nav_path(home_wp_enu, vertipad_enu) ) 
+				if (!task_nav_path(home_wp_enu, vertipad_enu))
 				{
 					task_nav_hover(vertipad_enu);
 					return TRUE;
 				}
 			}
 		}
-		
 	}
+	return FALSE;
 }
 
 
