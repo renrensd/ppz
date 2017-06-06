@@ -182,6 +182,7 @@ bool_t get_start_line(void)
 	{
 		achieve_next_wp();
 		VECT2_COPY(from_wp.wp_en, wp_home);
+		from_wp.action = FLIGHT_LINE;
 		from_wp_useful = TRUE;
 		return TRUE;
 	}
