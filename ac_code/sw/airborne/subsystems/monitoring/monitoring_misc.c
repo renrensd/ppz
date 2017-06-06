@@ -192,13 +192,13 @@ void gps_flight_check(void)
 	{
 		rtk_pos_valid = ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid();
 		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid();
-		ublox_valid = gps2.p_stable;
+		ublox_valid = ins_int_is_ublox_pos_valid();
 	}
 	else
 	{
 		rtk_pos_valid = ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid() && rtk_power_up_stable();
 		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid() && rtk_power_up_stable();
-		ublox_valid = gps2.p_stable;
+		ublox_valid = ins_int_is_ublox_pos_valid();
 	}
 
 	if(GpsFixValid())

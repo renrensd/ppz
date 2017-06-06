@@ -457,7 +457,7 @@ void ground_monitoring(void)
 		break;
 	case UBLOX_CHECK:
 		#ifdef USE_GPS2_UBLOX
-		if (gps2.p_stable)
+		if (ins_int_is_ublox_pos_valid())
 		#else
 		if (1)
 #endif
