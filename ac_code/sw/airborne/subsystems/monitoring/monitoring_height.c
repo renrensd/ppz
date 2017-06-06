@@ -132,7 +132,7 @@ void height_flight_check(void)
 static inline void baro_flight_check(void)
 {
 	/*baro information*/
-	if (ins_int_is_baro_valid())   //error
+	if (!ins_int_is_baro_valid())   //error
 	{
 		set_except_mission(HEIGHT_BARO, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 #if TEST_MSG
