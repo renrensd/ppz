@@ -1041,18 +1041,24 @@ static void get_oa_from_next_wp(void)
 {
 	if (insert_state == insert_frist_wp)
 	{
-		planed_oa.from_wp = planed_oa.pre_from_wp;
-		planed_oa.next_wp = planed_oa.insert_oa_wp;
+		VECT2_COPY(planed_oa.from_wp, planed_oa.pre_from_wp);
+		VECT2_COPY(planed_oa.next_wp, planed_oa.insert_oa_wp);
+		//planed_oa.from_wp = planed_oa.pre_from_wp;
+		//planed_oa.next_wp = planed_oa.insert_oa_wp;
 	}
 	else if (insert_state == insert_second_wp)
 	{
-		planed_oa.from_wp = planed_oa.insert_oa_wp;
-		planed_oa.next_wp = planed_oa.pre_next_wp;
+		VECT2_COPY(planed_oa.from_wp, planed_oa.insert_oa_wp);
+		VECT2_COPY(planed_oa.next_wp, planed_oa.pre_next_wp);
+		//planed_oa.from_wp = planed_oa.insert_oa_wp;
+		//planed_oa.next_wp = planed_oa.pre_next_wp;
 	}
 	else
 	{
-		planed_oa.from_wp = planed_oa.pre_from_wp;
-		planed_oa.next_wp = planed_oa.pre_next_wp;
+		VECT2_COPY(planed_oa.from_wp, planed_oa.pre_from_wp);
+		VECT2_COPY(planed_oa.next_wp, planed_oa.pre_next_wp);
+		//planed_oa.from_wp = planed_oa.pre_from_wp;
+		//planed_oa.next_wp = planed_oa.pre_next_wp;
 	}
 
 	ENU_BFP_VECT2_OF_REAL(planed_oa.from_wp_i, planed_oa.from_wp);
@@ -1407,6 +1413,15 @@ static void waypoint_set_vect2(uint8_t wp_id, struct FloatVect2 *v)
 
 static void send_point_to_pprz(void)
 {
+	struct FloatVect2 temp; 
+	if(p_transfer_useful == TRUE)
+	{
+		temp.x = POS_FLOAT_OF_BFP(vertipad.x);
+		temp.y = POS_FLOAT_OF_BFP(vertipad.y);
+		waypoint_set_vect2(WP_TP, &temp);
+	}
+	
+	
 	for (uint8_t i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
 	{
 		if (i < planed_oa.spray_area.n)

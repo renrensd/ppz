@@ -49,8 +49,9 @@ enum Gcs_Task_Cmd
 
 enum Land_Type
 {
-	HOME_LAND = 1,
-	RESERVE_LAND = 2
+	LAND_POINT = 1,
+	RESERVE_LAND = 2,
+	TRANS_POINT = 3
 };
 
 //operation_type: add=1, update=2, delete=3
@@ -69,7 +70,8 @@ enum Task_Action
 	SPRAY_CONVERT,
 	HOVERING,
 	TERMINATION,
-	AVOID_OBSTACLE
+	AVOID_OBSTACLE,
+	TRANSFER
 };
 /*
 <field name="task_code" type="uint8"/>
@@ -189,6 +191,8 @@ extern uint16_t nb_pending_wp;
 
 extern struct Int32Vect2 wp_home;
 extern bool_t wp_home_useful;
+extern struct Int32Vect2 vertipad;
+extern bool_t p_transfer_useful;
 extern struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];
 extern uint8_t nb_pending_reland; 
 

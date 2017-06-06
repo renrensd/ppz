@@ -62,6 +62,7 @@ struct EnuCoor_i current_wp_scene;    /*use to save pos for exceptional interrup
 struct EnuCoor_i interrupt_wp_scene;    /*use to save pos of ac exceptional interrupt hover */
 
 struct EnuCoor_i home_wp_enu;
+struct EnuCoor_i vertipad_enu;
 struct EnuCoor_i reland_wp_enu;
 
 enum Task_Action AC_action;
@@ -112,6 +113,7 @@ void task_process_init(void)
 	last_task_cmd = GCS_CMD_NONE;
 	task_error_state = TASK_NORMAL;
 	from_wp_useful = FALSE;
+	p_transfer_useful = FALSE;
 	hover_flag = FALSE;
 	manual_pause_flag = FALSE;
 	spray_switch_flag = FALSE;
@@ -177,16 +179,40 @@ bool_t achieve_next_wp(void)
 ***********************************************************************/
 bool_t get_start_line(void)
 {
+	if(nb_pending_wp >=1)
+	{
+		if(p_transfer_useful == TRUE) //vertipad -- transfer -- first task point
+		{
+			VECT2_COPY(from_wp.wp_en, vertipad);
+			VECT2_COPY(next_wp.wp_en, wp_home);
+			from_wp.action = TRANSFER;
+			next_wp.action = FLIGHT_LINE;
+			next_wp.wp_id = NULL;
+		}
+		else                         //vertipad=wp_home  (direct to first task point)
+		{
+			achieve_next_wp();
+			VECT2_COPY(from_wp.wp_en, vertipad);
+			from_wp.action = FLIGHT_LINE;
+		}
+		from_wp.wp_id = NULL;
+		return TRUE;
+	}
+	return FALSE;
+	
 	/*request nb_pending_wp at least 2*/
-	if( nb_pending_wp >= 1 )
+/*	if( nb_pending_wp > 1 )
 	{
 		achieve_next_wp();
 		VECT2_COPY(from_wp.wp_en, wp_home);
-		from_wp.action = FLIGHT_LINE;
+		//VECT2_COPY(task_wp[0].wp_en, wp_home);
+		//achieve_next_wp();
+		//achieve_next_wp();
 		from_wp_useful = TRUE;
 		return TRUE;
 	}
 	return FALSE;
+	*/
 }
 
 /***********************************************************************
@@ -219,6 +245,7 @@ bool_t auto_task_ready_check(void)
 ***********************************************************************/
 Gcs_State gcs_task_run(void)
 {
+	static uint8_t transfer_step;
 	Gcs_State gcs_state = GCS_RUN_NORMAL;
 	switch(gcs_task_cmd)
 	{
@@ -273,6 +300,7 @@ Gcs_State gcs_task_run(void)
 			AC_action = TERMINATION;
 			if( gcs_hover_enter() )
 			{
+				transfer_step = 0;
 				set_stop_brake(SMOOTH_BRAKE);
 				spray_break_and_continual();
 				VECT2_COPY(home_wp_enu, wp_home);
@@ -286,34 +314,56 @@ Gcs_State gcs_task_run(void)
 			}
 			else
 			{
-				if(task_nav_pre_path(interrupt_wp_scene, home_wp_enu, FLIGHT_PATH))
+				if(transfer_step == 0)
 				{
-					#ifdef USE_PLANED_OA
-					if( planed_oa.test_on )
+					if(task_nav_pre_path(interrupt_wp_scene, home_wp_enu, FLIGHT_PATH))
 					{
-						planed_oa.back_home_ready = TRUE;
-
-						if( planed_oa.oa_home_flag )
-						{
-							planed_oa.wp_move_done_flag = TRUE;
-							planed_oa.oa_home_flag = FALSE;
-						}
-					}
-                    #endif
-
-					release_stop_brake();
-					if( !task_nav_path(interrupt_wp_scene, home_wp_enu) ) 
-					{
-						/*no more task_wp to run, do land motion*/
-						task_nav_hover(home_wp_enu);
-						gcs_state = GCS_RUN_LANDING;
-						
-                        #ifdef USE_PLANED_OA
+						#ifdef USE_PLANED_OA
 						if( planed_oa.test_on )
 						{
-						    planed_oa.back_home_ready = FALSE;
+							planed_oa.back_home_ready = TRUE;
+
+							if( planed_oa.oa_home_flag )
+							{
+								planed_oa.wp_move_done_flag = TRUE;
+								planed_oa.oa_home_flag = FALSE;
+							}
 						}
-						#endif
+	                    #endif
+
+						release_stop_brake();
+						if( !task_nav_path(interrupt_wp_scene, home_wp_enu) ) 
+						{
+							/*no more task_wp to run, do land motion*/
+							task_nav_hover(home_wp_enu);
+							if(p_transfer_useful == FALSE)
+							{
+								gcs_state = GCS_RUN_LANDING;
+							}
+							else 
+							{
+								VECT2_COPY(vertipad_enu, vertipad);
+								transfer_step++;
+							}
+							
+	                        #ifdef USE_PLANED_OA
+							if( planed_oa.test_on )
+							{
+							    planed_oa.back_home_ready = FALSE;
+							}
+							#endif
+						}
+					}
+				}
+				else if(transfer_step == 1)
+				{
+					if(task_nav_pre_path(home_wp_enu, vertipad_enu, FLIGHT_PATH))
+					{
+						if( !task_nav_path(home_wp_enu, vertipad_enu) )
+						{
+							task_nav_hover(vertipad_enu);
+							gcs_state = GCS_RUN_LANDING;
+						}
 					}
 				}
 			}
@@ -620,13 +670,50 @@ bool_t run_normal_task(void)
 			}
 			else
 			{
-				if(task_nav_pre_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH))
+				if(p_transfer_useful == FALSE) //no transfer
 				{
-					if( !task_nav_path(from_wp.wp_en, home_wp_enu) ) 
+					if(task_nav_pre_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH))
+					{
+						if( !task_nav_path(from_wp.wp_en, home_wp_enu) ) 
+						{
+							wp_state = 1;
+							task_nav_hover(home_wp_enu);
+							return TRUE;  /*task is finished, next to do land*/
+						}
+					}
+				}
+				else 
+				{
+					if(task_nav_pre_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH))
+					{
+						if( !task_nav_path(from_wp.wp_en, home_wp_enu) ) 
+						{
+							from_wp.wp_en = home_wp_enu;
+							from_wp.action = TRANSFER;
+							VECT2_COPY(next_wp.wp_en, vertipad);	
+						}
+					}
+				}
+				
+			}
+			break;
+		}
+		case TRANSFER:	
+		{
+			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH))
+			{
+				spray_switch_flag = FALSE;
+				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
+				{
+					if( !achieve_next_wp() )  
+					{
+						VECT2_COPY(vertipad_enu, vertipad);
+						task_nav_hover(vertipad_enu);
+						return TRUE;
+					}
+					else
 					{
 						wp_state = 1;
-						task_nav_hover(home_wp_enu);
-						return TRUE;  /*task is finished, next to do land*/
 					}
 				}
 			}

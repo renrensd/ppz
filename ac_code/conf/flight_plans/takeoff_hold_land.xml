@@ -79,6 +79,7 @@
     <waypoint name="T4" x="0" y="0"/>
     <waypoint name="T0" x="0" y="0"/>
     <waypoint name="T5" x="0" y="0"/>
+    <waypoint name="TP" x="0" y="0"/>
     <waypoint name="ERROR_F" x="100" y="0"/>
     <waypoint name="ERROR_N" x="100" y="0"/>
   </waypoints>
