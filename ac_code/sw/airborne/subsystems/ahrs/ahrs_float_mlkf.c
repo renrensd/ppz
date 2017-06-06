@@ -528,7 +528,7 @@ bool_t ahrs_mlkf_is_rtk_heading_valid(void)
 
 static bool_t ahrs_mlkf_is_rtk_power_up_heading_valid(void)
 {
-	 return (ahrs_mlkf_is_rtk_heading_valid() && (gps.head_stanum > 14));
+	 return (ahrs_mlkf_is_rtk_heading_valid() && (gps.head_stanum >= RTK_MIN_HEADING_SV_NUM));
 }
 
 void ahrs_mlkf_task(void)

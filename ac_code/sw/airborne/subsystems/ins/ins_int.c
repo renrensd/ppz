@@ -444,7 +444,7 @@ bool_t ins_int_check_hf_realign_done(void)
 
 bool_t ins_int_is_rtk_best_accu(void)
 {
-	if((gps_nmea.gps_qual == 52) && (gps.num_sv > 15) && gps.p_stable)
+	if((gps_nmea.gps_qual == 52) && (gps.num_sv >= RTK_MIN_POS_SV_NUM) && gps.p_stable)
 	{
 		return TRUE;
 	}

@@ -939,7 +939,7 @@ void get_gps_heading_stable(void)
 
 bool_t rtk_power_up_stable(void)
 {
-	 return (gps.p_stable && gps.h_stable && (gps.num_sv > 15) && (gps.head_stanum > 14));
+	 return (gps.p_stable && gps.h_stable && (gps.num_sv >= RTK_MIN_POS_SV_NUM) && (gps.head_stanum >= RTK_MIN_HEADING_SV_NUM));
 }
 
 
