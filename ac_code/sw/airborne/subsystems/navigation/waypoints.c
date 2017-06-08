@@ -122,6 +122,14 @@ void waypoint_set_enu(uint8_t wp_id, struct EnuCoor_f *enu)
   }
 }
 
+void waypoint_set_vect2(uint8_t wp_id, struct FloatVect2 *v)
+{
+	struct EnuCoor_f c;
+	c.z = 0;
+	VECT2_COPY(c, *v);
+	waypoint_set_enu(wp_id, &c);
+}
+
 void waypoint_move_enu_i(uint8_t wp_id, struct EnuCoor_i *new_pos)
 {
 #if PERIODIC_TELEMETRY

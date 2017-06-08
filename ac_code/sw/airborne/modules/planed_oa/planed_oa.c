@@ -93,7 +93,6 @@ static void planed_oa_run(void);
 static void planed_oa_geometry_prepare(void);
 static void creat_a_fake_oa_line(void);
 static void update_vaild_spray_edge(void);
-static void waypoint_set_vect2(uint8_t wp_id, struct FloatVect2 *v);
 
 static float vector_angle_calc(struct FloatVect2 *vect_a, struct FloatVect2 *vect_b);
 static float points_length_calc(struct FloatVect2 *point1, struct FloatVect2 *point2);
@@ -107,13 +106,58 @@ static void guidance_h_trajectory_tracking_brake_setting_release(void);
 static bool_t achieve_next_oa_wp(void);
 static void get_task_wp(void);
 static void get_oa_from_next_wp(void);
-
+static void send_point_to_pprz(void);
 static bool_t get_initial_start_end_oa_wp(struct FloatVect2 *init_start_oa_wp, struct FloatVect2 *init_end_oa_wp,
 		struct _s_planed_obstacle *obstacles, uint8_t o_num, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static void get_s1_s4_wp(struct FloatVect2 *start_oa_wp, struct FloatVect2 *end_oa_wp, struct FloatVect2 *init_start_oa_wp,
 		struct FloatVect2 *init_end_oa_wp, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacles, uint8_t o_num,
 		struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
+static void planed_oa_test(void);
+
+static void planed_oa_test(void)
+{
+	static bool_t ini = FALSE;
+
+	if (!ini)
+	{
+		ini = TRUE;
+		for (uint8_t i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
+		{
+			VECT2_COPY(oa_data.spray_boundary_vertices_array[i], waypoints[WP_V0 + i].enu_f);
+		}
+		oa_data.spray_boundary_vertices_num = OA_MAX_BOUNDARY_VERTICES_NUM;
+
+		for (uint8_t i = 0; i < OA_MAX_OBSTACLES_NUM * OA_OBSTACLE_CORNER_NUM; ++i)
+		{
+			VECT2_COPY(oa_data.obstacles_vertices_array[i / 4][i % 4], waypoints[WP_O11 + i].enu_f);
+		}
+		oa_data.obstacles_num = OA_MAX_OBSTACLES_NUM;
+
+		VECT2_COPY(oa_data.home, waypoints[WP_HOME].enu_f);
+
+		planed_oa_geometry_prepare();
+
+		send_point_to_pprz();
+	}
+
+	struct FloatVect2 from;
+	struct FloatVect2 next;
+	VECT2_COPY(from, waypoints[WP_From].enu_f);
+	VECT2_COPY(next, waypoints[WP_Next].enu_f);
+
+	struct FloatVect2 P;
+	if (is_line_in_polygon(&from, &next, &(planed_oa.flight_area)))
+	{
+		VECT2_ASSIGN(P, 0, 0);
+	}
+	else
+	{
+		VECT2_ASSIGN(P, 10, 10);
+	}
+	waypoint_set_vect2(WP_ERROR_N, &P);
+}
+
 /*
  * Initialize oa data when power on
  */
@@ -1403,16 +1447,10 @@ void oa_error_force_recover(void)
 	}
 }
 
-static void waypoint_set_vect2(uint8_t wp_id, struct FloatVect2 *v)
-{
-	struct EnuCoor_f c;
-	c.z = 0;
-	VECT2_COPY(c, *v);
-	waypoint_set_enu(wp_id, &c);
-}
-
 static void send_point_to_pprz(void)
 {
+	uint8_t i, j;
+
 	struct FloatVect2 temp; 
 	if(p_transfer_useful == TRUE)
 	{
@@ -1420,9 +1458,8 @@ static void send_point_to_pprz(void)
 		temp.y = POS_FLOAT_OF_BFP(vertipad.y);
 		waypoint_set_vect2(WP_TP, &temp);
 	}
-	
-	
-	for (uint8_t i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
+
+	for (i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
 	{
 		if (i < planed_oa.spray_area.n)
 		{
@@ -1434,21 +1471,18 @@ static void send_point_to_pprz(void)
 		}
 	}
 
-	for (uint8_t i = 0; i < OA_MAX_OBSTACLES_NUM; ++i)
+	for (i = 0; i < OA_MAX_OBSTACLES_NUM; ++i)
 	{
-		struct EnuCoor_f c;
-		c.z = 0;
-
 		if (i < planed_oa.obstacles_num)
 		{
-			for (uint8_t j = 0; j < OA_OBSTACLE_CORNER_NUM; j++)
+			for (j = 0; j < OA_OBSTACLE_CORNER_NUM; j++)
 			{
 				waypoint_set_vect2(WP_O11 + (OA_OBSTACLE_CORNER_NUM * i + j), &(planed_oa.obstacles[i].polygon.v[j]));
 			}
 		}
 		else
 		{
-			for (uint8_t j = 0; j < 4; j++)
+			for (j = 0; j < OA_OBSTACLE_CORNER_NUM; j++)
 			{
 				struct FloatVect2 v = {0, 0 };
 				waypoint_set_vect2(WP_O11 + (OA_OBSTACLE_CORNER_NUM * i + j), &v);
@@ -1456,7 +1490,7 @@ static void send_point_to_pprz(void)
 		}
 	}
 
-	for (int i = 0; i <= OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
+	for (i = 0; i <= OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
 	{
 		if (i < planed_oa.flight_area.n)
 		{
@@ -1467,6 +1501,7 @@ static void send_point_to_pprz(void)
 			waypoint_set_vect2(WP_A0 + i, &(planed_oa.flight_area.v[planed_oa.flight_area.n - 1]));
 		}
 	}
+
 }
 
 /*
