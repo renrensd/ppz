@@ -93,7 +93,6 @@ static void planed_oa_run(void);
 static void planed_oa_geometry_prepare(void);
 static void creat_a_fake_oa_line(void);
 static void update_vaild_spray_edge(void);
-static void waypoint_set_vect2(uint8_t wp_id, struct FloatVect2 *v);
 
 static float vector_angle_calc(struct FloatVect2 *vect_a, struct FloatVect2 *vect_b);
 static float points_length_calc(struct FloatVect2 *point1, struct FloatVect2 *point2);
@@ -141,6 +140,22 @@ static void planed_oa_test(void)
 
 		send_point_to_pprz();
 	}
+
+	struct FloatVect2 from;
+	struct FloatVect2 next;
+	VECT2_COPY(from, waypoints[WP_From].enu_f);
+	VECT2_COPY(next, waypoints[WP_Next].enu_f);
+
+	struct FloatVect2 P;
+	if (is_line_in_polygon(&from, &next, &(planed_oa.flight_area)))
+	{
+		VECT2_ASSIGN(P, 0, 0);
+	}
+	else
+	{
+		VECT2_ASSIGN(P, 10, 10);
+	}
+	waypoint_set_vect2(WP_ERROR_N, &P);
 }
 
 /*
@@ -1426,14 +1441,6 @@ void oa_error_force_recover(void)
 	}
 }
 
-static void waypoint_set_vect2(uint8_t wp_id, struct FloatVect2 *v)
-{
-	struct EnuCoor_f c;
-	c.z = 0;
-	VECT2_COPY(c, *v);
-	waypoint_set_enu(wp_id, &c);
-}
-
 static void send_point_to_pprz(void)
 {
 	uint8_t i, j;
@@ -1503,7 +1510,6 @@ void planed_oa_prepare(void)
 void planed_oa_periodic_run(void)
 {
 	//run_time[0] = usec_of_sys_time_ticks(sys_time.nb_tick);
-	planed_oa_test();
 
 	if (planed_oa.test_on && from_wp_useful)
 	{

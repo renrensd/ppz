@@ -424,6 +424,10 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 		return FALSE;
 	}
 
+	// insert start point
+	VECT2_COPY(intersection_points[intersection_num], *v0);
+	++intersection_num;
+
 	for (i = 0; i < polygon->n; ++i)
 	{
 		j = (i + 1) % polygon->n;
@@ -448,22 +452,75 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 		}
 	}
 
-	if(intersection_num >= 2)
-	{
-		for (i = 0; i < intersection_num - 1; ++i)
-		{
-			j = (i + 1) % intersection_num;
+	// insert end point
+	VECT2_COPY(intersection_points[intersection_num], *v1);
+	++intersection_num;
 
-			VECT2_COPY(P, polygon->v[j]);
-			VECT2_DIFF(P, P, polygon->v[i]);
-			VECT2_SDIV(P, P, 2);
-			VECT2_SUM(P, P, polygon->v[i]);
-			if (!is_point_in_polygon(&P, polygon))
+	// order point
+	if(intersection_num >= 4)
+	{
+		float coors[OA_MAX_BOUNDARY_VERTICES_NUM];
+		float min, temp_f, diff;
+		struct FloatVect2 temp_v2;
+		uint8_t min_index;
+
+		if (fabsf(v0->x - v1->x) > fabsf(v0->y - v1->y))
+		{
+			for (i = 0; i < intersection_num; ++i)
 			{
-				return FALSE;
+				coors[i] = intersection_points[i].x;
 			}
 		}
-		return TRUE;
+		else
+		{
+			for (i = 0; i < intersection_num; ++i)
+			{
+				coors[i] = intersection_points[i].y;
+			}
+		}
+
+		for (j = 0; j < intersection_num - 2; ++j)
+		{
+			min_index = j + 1;
+			min = fabsf(coors[j] - coors[min_index]);
+			for (i = min_index + 1; i < intersection_num; ++i)
+			{
+				diff = fabsf(coors[j] - coors[i]);
+				if (diff < min)
+				{
+					min = diff;
+					min_index = i;
+				}
+			}
+			if (min_index != (j + 1))
+			{
+				temp_f = coors[min_index];
+				coors[min_index] = coors[j + 1];
+				coors[j + 1] = temp_f;
+
+				VECT2_COPY(temp_v2, intersection_points[min_index]);
+				VECT2_COPY(intersection_points[min_index], intersection_points[j + 1]);
+				VECT2_COPY(intersection_points[j + 1], temp_v2);
+			}
+		}
+	}
+
+	if (intersection_num >= 3)
+	{
+		for (i = 0; i < intersection_num - 1; ++i)
+			{
+				j = (i + 1) % intersection_num;
+
+				VECT2_COPY(P, intersection_points[j]);
+				VECT2_DIFF(P, P, intersection_points[i]);
+				VECT2_SDIV(P, P, 2);
+				VECT2_SUM(P, P, intersection_points[i]);
+
+				if (!is_point_in_polygon(&P, polygon))
+				{
+					return FALSE;
+				}
+			}
 	}
 	else
 	{
