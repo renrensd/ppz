@@ -1083,6 +1083,7 @@ bool_t nav_vrc_back_home(bool_t reset)
 		transfer_step = 0;
 		tem_pos = *stateGetPositionEnu_i();
 		VECT2_COPY(tem_home, wp_home);
+		horizontal_mode = HORIZONTAL_MODE_ROUTE;
 	}
 	else
 	{
