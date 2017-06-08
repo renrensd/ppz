@@ -526,6 +526,7 @@ uint8_t rc_set_cmd_parse(uint8_t cmd)
 			{
 				mode_convert_a2m = TRUE;
 				spray_break_and_continual();
+				AC_action = FLIGHT_LINE;
 			}
 
 			flight_mode_enter(nav_rc_mode);
