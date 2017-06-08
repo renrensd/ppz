@@ -616,7 +616,7 @@ uint8_t rc_set_cmd_parse(uint8_t cmd)
 		break;
 
 	case RC_HOME:
-		if (flight_mode == nav_rc_mode && autopilot_in_flight && flight_state == cruising)
+		if (flight_mode == nav_rc_mode && autopilot_in_flight && flight_state == cruising && ins_int_all_using_rtk())
 		{
 			rc_set_info.home = TRUE;
 #ifdef OPS_OPTION
