@@ -223,6 +223,11 @@ static void rc_setpoint_parse(void)
 		guidance_h.vrc_heading_rate_sp = rc_motion_info.rotation_rate;
 		NavVerticalClimbMode(rc_motion_info.speed_v);
 	}
+	else
+	{
+		guidance_h_set_vrc_vel_sp_body(0, 0);
+		guidance_h.vrc_heading_rate_sp = 0;
+	}
 }
 
 /***********************************************************************
