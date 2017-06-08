@@ -202,7 +202,6 @@ void send_aircraft_info_state(void)
 	uint8_t  atomization_grade = ac_config_info.atomization_grade;  //need add
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
-	uint8_t rocker_remote_status=ac_config_info.rocker_remote_status;
 	uint8_t misc_status =((uint8_t)(ac_config_info.force_redun_status<<1)+(ac_config_info.rocker_remote_status));
 	char     ac_sn[12]="";
 	char     ac_sv[25]="";
