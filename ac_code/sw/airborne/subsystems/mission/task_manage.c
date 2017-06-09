@@ -49,7 +49,6 @@ static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t off
 void task_manage_init(void)
 {
 	nb_pending_wp = 0;           //use to sign task clean
-	wp_home_useful = FALSE;
 	p_transfer_useful = FALSE;
 	nb_pending_reland = 0;
 	
