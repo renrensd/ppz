@@ -277,6 +277,7 @@ Gcs_State gcs_task_run(void)
 			{
 				save_task_cmd = last_task_cmd;
 			}
+			spray_switch_flag = FALSE;
 			gcs_hover_enter();   //for stop spray
 			set_auto_stop_brake();		
 			
