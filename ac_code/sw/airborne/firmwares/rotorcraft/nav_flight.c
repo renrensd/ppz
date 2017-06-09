@@ -229,7 +229,7 @@ void nav_flight(void)
 						wp_take_off.z = POS_BFP_OF_REAL(2.0);
 					}
 					
-					nav_rc_go_home(&wp_take_off,TRUE);   //reset the step
+					nav_vrc_back_home(TRUE);   //reset the step
 					flight_step = 4;          //goto home
 				}
 				//else: execution rc_cmd
@@ -259,7 +259,7 @@ void nav_flight(void)
 				}
 
 				/*run back home */
-				if(0 == nav_rc_go_home(&wp_take_off,FALSE))    
+				if(nav_vrc_back_home(FALSE))    
 				{
 					rc_set_info.vtol = LAND;
 					rc_set_info.home = FALSE;
@@ -275,7 +275,7 @@ void nav_flight(void)
 
 		case 5: /*land motion(need set hover before land)*/
 			flight_state = landing;
-
+			guidance_h_set_rc_pos_sp_i(POS_FLOAT_OF_BFP(navigation_target.y), POS_FLOAT_OF_BFP(navigation_target.x));
 			if( !land_motion(FALSE) )   //doing landing
 			{
 				task_init();  /*reset task*/
@@ -320,8 +320,8 @@ static void ept_ms_run(void)
 			flight_step = monitor_cmd + 2;    //change nav_flight step,so it will do monitor_cmd
 			if(monitor_cmd==CM_HOVER)
 			{
-				rc_motion_cmd_execution(0);   //send hover cmd
-				RC_HOVER();     //make sure do hover
+				//rc_motion_cmd_execution(0);   //send hover cmd
+				//RC_HOVER();     //make sure do hover
 			}
 			else if(monitor_cmd==CM_HOME)
 			{
@@ -353,7 +353,7 @@ static void ept_ms_run(void)
 				last_cmd = monitor_cmd;
 				break;
 			case CM_HOVER:
-				if(gcs_task_cmd < GCS_CMD_PAUSE)
+				if(gcs_task_cmd <= GCS_CMD_BHOME)
 				{
 					gcs_task_cmd = GCS_CMD_PAUSE;
 					last_cmd = monitor_cmd;

@@ -289,13 +289,15 @@ static void send_debug_gps(struct transport_tx *trans, struct link_device *dev)
 
 static void ins_int_init(void)
 {
-
 #if USE_INS_NAV_INIT
   ins_init_origin_from_flightplan();
   ins_int.ltp_initialized = TRUE;
 #else
   ins_int.ltp_initialized  = FALSE;  //via NavSetGroundReferenceHere() set true
 #endif
+	ins_init_origin_from_flightplan();
+	struct EnuCoor_i o = {0, 0, 0 };
+	stateSetPositionEnu_i(&o);
 
   // Bind to BARO_ABS message,not default
 #if USE_BARO_BOARD
@@ -554,6 +556,11 @@ static void ins_int_get_recent_valid_rtk_z(float *z, float *zd)
 bool_t ins_int_v_ekf_open_loop(void)
 {
 	return (ins_int.ekf_state == INS_EKF_PURE_ACC);
+}
+
+bool_t ins_int_all_using_rtk(void)
+{
+	return (ins_int.ekf_state == INS_EKF_GPS) && (ins_int.gps_type == GPS_RTK) && (ahrs_mlkf.heading_state == AMHS_GPS);
 }
 
 static void switch_to_baro(void)

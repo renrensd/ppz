@@ -136,7 +136,7 @@ void battery_flight_check(void)
 			{
 				/*hover 10s,back home*/
 			    flag_trigger = 1;   //record error trigger
-			    set_except_mission(BAT_LOW,TRUE,FALSE, TRUE,10, TRUE,FALSE,2);	
+				set_except_mission(BAT_LOW, TRUE, FALSE, TRUE, 10, TRUE, FALSE, 3);
 				//need give special alter to RC and GCS
 		        #if TEST_MSG
 				bat_flight=1;
@@ -154,7 +154,7 @@ void battery_flight_check(void)
 		if( autopilot_flight_time >MAX_FLIGHT_TIME)
 		{   //hover 10s,back home
 		    flag_trigger = 1;   //record error trigger
-		    set_except_mission(BAT_LOW,TRUE,FALSE, FALSE,0, TRUE,FALSE,2);	
+			set_except_mission(BAT_LOW, TRUE, FALSE, FALSE, 0, TRUE, FALSE, 3);
 			//need give special alter to RC and GCS
 	        #if TEST_MSG
 			bat_flight=1;
@@ -191,13 +191,13 @@ void gps_flight_check(void)
 	{
 		rtk_pos_valid = ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid();
 		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid();
-		ublox_valid = gps2.p_stable;
+		ublox_valid = ins_int_is_ublox_pos_valid();
 	}
 	else
 	{
 		rtk_pos_valid = ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid() && rtk_power_up_stable();
 		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid() && rtk_power_up_stable();
-		ublox_valid = gps2.p_stable;
+		ublox_valid = ins_int_is_ublox_pos_valid();
 	}
 
 	if(GpsFixValid())
@@ -222,7 +222,7 @@ void gps_flight_check(void)
 			{
 				em[GPS_ACC].alert_grade = 3;
 			}
-			set_except_mission(GPS_ACC, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+			set_except_mission(GPS_ACC, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 #if TEST_MSG
 			gps_flight = 1;
 #endif
@@ -255,7 +255,7 @@ void gps_flight_check(void)
 				if (diff_sum > 20)
 				{
 					diff_err = TRUE;
-					set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+					set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 					force_use_heading_redundency(TRUE);
 				}
 				else
@@ -269,7 +269,7 @@ void gps_flight_check(void)
 	}
 	else
 	{
-		set_except_mission(GPS_HEADING,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);
+		set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
 #endif
 
@@ -281,7 +281,7 @@ void gps_flight_check(void)
 	}
 	else
 	{
-		set_except_mission(GPS_UBLOX_FAIL,TRUE,FALSE, FALSE,0, FALSE,FALSE,1);
+		set_except_mission(GPS_UBLOX_FAIL, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 	}
 #endif
 }
@@ -315,7 +315,7 @@ void ops_flight_check(void)
 	if( (ops_info.con_flag == OPS_NOT_CONNECT)
 		||(ops_info.sys_error&0x01) )//ops lost,maybe spray is open,bat_info no update
 	{
-		set_except_mission(OPS_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
+		set_except_mission(OPS_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 	}
 	else
 	{
@@ -325,13 +325,13 @@ void ops_flight_check(void)
 	
 	if(ops_info.res_cap <LESS_RES_CAP )  //no pesticide and open spray
 	{
-		set_except_mission(OPS_EMPTY,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,1);	
+		set_except_mission(OPS_EMPTY, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 1);
 	}
 	else
 	{   
 		if(ops_info.sys_error>>1)        //see spray protocol
 		{
-			set_except_mission(OPS_BLOCKED,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);			
+			set_except_mission(OPS_BLOCKED, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 		}
 		else
 		{
@@ -351,7 +351,7 @@ void rc_communication_flight_check(void)
 {
 	if(rc_lost && flight_mode == nav_rc_mode )
 	{
-		set_except_mission(RC_COM_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
+		set_except_mission(RC_COM_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
 	else
 	{
@@ -371,7 +371,7 @@ void gcs_communication_flight_check(void)
 {
 	if(gcs_lost && flight_mode == nav_gcs_mode )
 	{
-		set_except_mission(GCS_COM_LOST,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	
+		set_except_mission(GCS_COM_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
 	else
 	{
@@ -391,13 +391,13 @@ void lift_flight_check(void)
 	/*ac lower setpoint height >1m and thrust cmd >MAX_ERROR_Z_THRUST*/
 	if( thrust_command_monitor() )  
 	{
-		set_except_mission(LIFT_POWER,TRUE,FALSE, TRUE,0XFF, FALSE,FALSE,3);	//land direct
+		set_except_mission(LIFT_POWER, TRUE, FALSE, TRUE, 0XFF, FALSE, FALSE, 3);
 	}
 
     /*yaw command overrun continual 3s*/
 	if( yaw_command_monitor() )
 	{
-		set_except_mission(LIFT_POWER,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,3);	//land direct
+		set_except_mission(LIFT_POWER, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
 
 	/*keep 1s att > 60deg, lock motors direct !!!*/
@@ -417,15 +417,15 @@ void task_running_check(void)
 	}
 	else if(task_error_state==TASK_PARSE_ERROR)
 	{
-		set_except_mission(TASK_PARSE,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,2);	
+		set_except_mission(TASK_PARSE, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 	}
 	else if(task_error_state==TASK_RUN_OVER)
 	{
-		set_except_mission(TASK_NO,TRUE,FALSE, TRUE,0xFF, FALSE,FALSE,1);	
+		set_except_mission(TASK_NO, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 1);
 	}
 	else if(task_error_state==TASK_INTERRUPT)
 	{
-		set_except_mission(TASK_BREAK,TRUE,FALSE, FALSE,0, FALSE,FALSE,0);	
+		set_except_mission(TASK_BREAK, TRUE, FALSE, FALSE, 0, FALSE, FALSE, 0);
 	}
 }
 
@@ -433,7 +433,7 @@ void mode_convert_check(void)
 {
 	if(mode_convert_a2m)
 	{
-		set_except_mission(MODE_CONVERT_A2M,TRUE,FALSE, FALSE,0, FALSE,FALSE,0);	
+		set_except_mission(MODE_CONVERT_A2M, TRUE, FALSE, FALSE, 0, FALSE, FALSE, 0);
 	}
 	else
 	{

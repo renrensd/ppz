@@ -207,6 +207,7 @@ extern void guidance_h_SetNedAccFc(float Fc);
 extern void guidance_h_SetNedVelFc(float Fc);
 
 extern void guidance_h_rc_pos_sp_need_reset(void);
+extern void guidance_h_set_rc_pos_sp_i(float x, float y);
 
 void guidance_h_set_vrc_vel_sp_body(float x, float y);
 

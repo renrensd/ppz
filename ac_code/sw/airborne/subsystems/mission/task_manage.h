@@ -138,6 +138,8 @@ extern uint8_t nb_pending_wp;
 
 extern struct Int32Vect2 wp_home;
 extern bool_t wp_home_useful;
+extern struct Int32Vect2 vertipad;
+extern bool_t p_transfer_useful;
 extern struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];
 extern uint8_t nb_pending_reland; 
 

@@ -59,6 +59,9 @@ static uint32_t  checksum_result;
 static uint8_t *checksum_ptr;
 static uint16_t counter_rom_segment; 
 static uint8_t eng_con_flag = 2;
+uint8_t debug_sn_code;
+uint8_t dev_sn_code;
+uint8_t manu_sn_code;
 
 COMPONENT_VERSION_INFO eng_components_info;
 
@@ -96,6 +99,57 @@ void eng_task(void)
 	}
 	
 	RunOnceEvery(ENG_PERIODIC_FREQUENCY/5, eng_update_components_info());
+}
+
+void eng_app_set_debug_sn_code(uint8_t sn)
+{
+	uint8_t str[12] = "DEBUG0000000";
+	str[11] = sn + 48;
+	fram_write(CL_PRODUCT_SERIES_NUMBER, 0, str);
+}
+
+void eng_app_set_dev_sn_code(uint8_t sn)
+{
+	uint8_t str[12] = "162000000100";
+	str[10] = sn/10 + 48;
+	str[11] = sn%10 + 48;
+	fram_write(CL_PRODUCT_SERIES_NUMBER, 0, str);
+}
+
+void eng_app_set_manu_sn_code(uint16_t sn)
+{
+	uint8_t str[12] = "162000000000";
+	str[9] = sn / 100 + 48;
+	str[10] = (sn % 100)/10 + 48;
+	str[11] = sn % 10 + 48;
+	fram_write(CL_PRODUCT_SERIES_NUMBER, 0, str);
+}
+
+bool_t eng_app_check_debug_sn(void)
+{
+	static bool_t ini = FALSE;
+	static uint8_t sn[12];
+	static uint8_t *debug_str = "DEBUG0000000";
+
+	if (!ini)
+	{
+		ini = TRUE;
+		for (uint8_t i = 0; i < 12; i++)
+		{
+			sn[i] = manufacture_info.cl_product_sn[i];
+		}
+		sn[11] = 48;
+	}
+
+	for (uint8_t i = 0; i < 12; ++i)
+	{
+		if(sn[i] != debug_str[i])
+		{
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 static void eng_update_components_info(void)

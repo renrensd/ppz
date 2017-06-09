@@ -902,6 +902,29 @@ void send_current_task(uint8_t wp_state)
 }
 
 
+bool_t nav_vrc_back_home(bool_t reset)
+{
+	static struct EnuCoor_i tem_pos;
+	static struct EnuCoor_i tem_home;
+	if (reset)
+	{
+		tem_pos = *stateGetPositionEnu_i();
+		VECT2_COPY(tem_home, wp_home);
+		horizontal_mode = HORIZONTAL_MODE_ROUTE;
+	}
+	else
+	{
+		if (task_nav_pre_path(tem_pos, tem_home, FLIGHT_PATH))
+		{
+			if (!task_nav_path(tem_pos, tem_home))
+			{
+				task_nav_hover(tem_home);
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
 
 
 

@@ -227,6 +227,12 @@ static void guidance_h_state_update(bool_t in_flight)
 	}
 }
 
+void guidance_h_set_rc_pos_sp_i(float x, float y)
+{
+	guidance_h.rc_pos_sp_i.x = x;
+	guidance_h.rc_pos_sp_i.y = y;
+}
+
 void guidance_h_rc_pos_sp_need_reset(void)
 {
 	guidance_h.rc_pos_sp_reset = TRUE;

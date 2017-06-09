@@ -32,6 +32,8 @@ uint8_t nb_pending_wp;             //number of waypoints in  unfinished task
 
 struct Int32Vect2 wp_home;
 bool_t wp_home_useful;             //record home waypoint got
+struct Int32Vect2 vertipad;
+bool_t p_transfer_useful;
 struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];    //reserve
 uint8_t nb_pending_reland;                             //reserve
 
@@ -48,6 +50,7 @@ void task_manage_init(void)
 {
 	nb_pending_wp = 0;           //use to sign task clean
 	wp_home_useful = FALSE;
+	p_transfer_useful = FALSE;
 	nb_pending_reland = 0;
 	
 }
