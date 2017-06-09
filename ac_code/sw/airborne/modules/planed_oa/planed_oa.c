@@ -1125,10 +1125,21 @@ void find_shortest_avaliable_spray_boundary(struct FloatVect2 *spray_boundary_ar
 		insert_start_end_cord[1] = start_wp->y;
 		insert_start_end_cord[2] = end_wp->x;
 		insert_start_end_cord[3] = end_wp->y;
+
+		error_spray_cord[36] = start_wp->x;
+		error_spray_cord[37] = start_wp->y;
+		error_spray_cord[38] = end_wp->x;
+		error_spray_cord[39] = end_wp->y;
 	}
 
-	error_spray_cord[2*spray_i] = spray_boundary_array[spray_i].x;
-	error_spray_cord[2*spray_i + 1] = spray_boundary_array[spray_i].y;
+	//error_spray_cord[2*spray_i] = spray_boundary_array[spray_i].x;
+	//error_spray_cord[2*spray_i + 1] = spray_boundary_array[spray_i].y;
+
+	if(spray_i < 18)
+	{
+		error_spray_cord[2*spray_i] = planed_oa.flight_area.v[spray_i].x;
+		error_spray_cord[2*spray_i + 1] = planed_oa.flight_area.v[spray_i].y;
+	}
 
 	if( spray_i < spray_boundary_array_num )
 	{
