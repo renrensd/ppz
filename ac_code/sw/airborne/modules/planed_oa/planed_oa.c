@@ -115,6 +115,11 @@ static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacle
 		struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static void planed_oa_test(void);
 
+static void planed_oa_debug_prepare(void)
+{
+
+}
+
 static void planed_oa_test(void)
 {
 	static bool_t ini = FALSE;
@@ -1520,6 +1525,10 @@ static void send_point_to_pprz(void)
  */
 void planed_oa_prepare(void)
 {
+	if(eng_app_check_debug_sn())
+	{
+		planed_oa_debug_prepare();
+	}
 	planed_oa_data_reset();
 	planed_oa_geometry_prepare();
 	update_obstacles_info();
