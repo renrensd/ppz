@@ -328,7 +328,9 @@ bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon)
 {
 	float min_x, min_y, max_x, max_y;
 	uint8_t i, j;
-	uint8_t intersect = 0;
+	uint8_t intersect_num = 0;
+	uint32_t same_y_bits;
+	uint32_t intersected_bits;
 
 	if ((P == NULL) || (polygon == NULL) || (polygon->n < 2))
 	{
@@ -370,6 +372,16 @@ bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon)
 		return FALSE;
 	}
 
+	same_y_bits = 0;
+	intersected_bits = 0;
+	for (i = 0; i < polygon->n; ++i)
+	{
+		if( P->y == polygon->v[i].y )
+		{
+			same_y_bits |= 1 << i;
+		}
+	}
+
 	for (i = 0; i < polygon->n; ++i)
 	{
 		j = (i + 1) % polygon->n;
@@ -393,10 +405,26 @@ bool_t is_point_in_polygon(struct FloatVect2 *P, struct _s_polygon *polygon)
 
 		if (is_hray_intersect_with_edge(P, &(polygon->v[i]), &(polygon->v[j])))
 		{
-			++intersect;
+			if( ((1 << i) & intersected_bits) || ((1 << j) & intersected_bits) )
+			{
+
+			}
+			else
+			{
+				++intersect_num;
+			}
+
+			if( (1 << i) & same_y_bits )
+			{
+				intersected_bits |= 1 << i;
+			}
+			else if( (1 << j) & same_y_bits )
+			{
+				intersected_bits |= 1 << j;
+			}
 		}
 	}
-	if (intersect % 2)
+	if (intersect_num % 2)
 	{
 		return TRUE;
 	}
