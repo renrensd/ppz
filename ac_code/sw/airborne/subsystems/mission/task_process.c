@@ -19,6 +19,7 @@
 *=====================================================================*/
 
 #include "subsystems/mission/task_process.h"
+#include "subsystems/mission/task_manage.h"
 #include "subsystems/mission/task_spray_misc.h"
 
 #include "subsystems/ops/ops_msg_if.h"
@@ -35,6 +36,12 @@
 #include "modules/system/timer_if.h"
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
+
+#ifdef USE_PLANED_OA
+#include "modules/planed_oa/planed_oa.h"
+#include "generated/flight_plan.h"
+#include "subsystems/navigation/waypoints.h"
+#endif
 
 #define FLIGHT_PATH  1
 #define SPRAY_PATH  2
@@ -285,14 +292,6 @@ Gcs_State gcs_task_run(void)
 			
 		case GCS_CMD_CONTI:
             gcs_task_cmd = save_task_cmd;
-
-            #ifdef USE_PLANED_OA
-			/*if( planed_oa.test_on && (oa_wp_search_state > 2) )
-			{
-			    oa_error_force_recover();
-			}*/
-            #endif
-
 			release_stop_brake();
 			
 			break;

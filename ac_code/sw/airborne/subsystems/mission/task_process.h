@@ -22,12 +22,6 @@
 
 #include "subsystems/mission/task_manage.h"
 
-#ifdef USE_PLANED_OA
-#include "modules/planed_oa/planed_oa.h"
-#include "generated/flight_plan.h"
-#include "subsystems/navigation/waypoints.h"
-#endif
-
 typedef enum Gcs_Run_State
 {
 	GCS_RUN_NONE = 0,

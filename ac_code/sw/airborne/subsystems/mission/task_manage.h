@@ -204,8 +204,9 @@ extern struct Task_Wp_Enu next_wp;
 #include "modules/planed_oa/planed_oa.h"
 extern struct Task_Wp_Enu oa_from_wp; //use for store from oa waypoint
 extern struct Task_Wp_Enu oa_next_wp; //use for store next oa waypoint
-extern struct _s_oa_data oa_data;
 #endif
+
+extern struct _s_oa_data oa_data;
 
 extern void task_manage_init(void);
 extern uint8_t parse_gcs_cmd( uint8_t cmd);

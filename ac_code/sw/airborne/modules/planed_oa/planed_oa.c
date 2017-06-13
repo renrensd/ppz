@@ -15,6 +15,7 @@
 #include "firmwares/rotorcraft/navigation.h"
 #include "subsystems/mission/task_manage.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "subsystems/eng/eng_app.h"
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -113,6 +114,20 @@ static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacle
 		struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static void planed_oa_test(void);
 
+static void planed_oa_debug_prepare(void)
+{
+	VECT2_ASSIGN(oa_data.spray_boundary_vertices_array[0], -19.566406, -5.726562);
+	VECT2_ASSIGN(oa_data.spray_boundary_vertices_array[1], -34.109375, 19.839844);
+	VECT2_ASSIGN(oa_data.spray_boundary_vertices_array[2], -13.4375, 32.527344);
+	VECT2_ASSIGN(oa_data.spray_boundary_vertices_array[3], 1.9375, 7.207031);
+	oa_data.spray_boundary_vertices_num = 4;
+
+	VECT2_ASSIGN(oa_data.home, 0.128906, 0.316406);
+
+	VECT2_ASSIGN(planed_oa.from_wp, 0.128906, 0.316406);
+	VECT2_ASSIGN(planed_oa.next_wp, -1.25, 7.207031);
+}
+
 static void planed_oa_test(void)
 {
 	static bool_t ini = FALSE;
@@ -120,6 +135,15 @@ static void planed_oa_test(void)
 	if (!ini)
 	{
 		ini = TRUE;
+
+		planed_oa_debug_prepare();
+		planed_oa_geometry_prepare();
+		send_point_to_pprz();
+		waypoint_set_vect2(WP_From, &planed_oa.from_wp);
+		waypoint_set_vect2(WP_Next, &planed_oa.next_wp);
+		waypoint_set_vect2(WP_HOME, &oa_data.home);
+
+		/*
 		for (uint8_t i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
 		{
 			VECT2_COPY(oa_data.spray_boundary_vertices_array[i], waypoints[WP_V0 + i].enu_f);
@@ -137,15 +161,14 @@ static void planed_oa_test(void)
 		planed_oa_geometry_prepare();
 
 		send_point_to_pprz();
+		*/
 	}
 
-	struct FloatVect2 from;
-	struct FloatVect2 next;
-	VECT2_COPY(from, waypoints[WP_From].enu_f);
-	VECT2_COPY(next, waypoints[WP_Next].enu_f);
+	VECT2_COPY(planed_oa.from_wp, waypoints[WP_From].enu_f);
+	VECT2_COPY(planed_oa.next_wp, waypoints[WP_Next].enu_f);
 
 	struct FloatVect2 P;
-	if (is_line_in_polygon(&from, &next, &(planed_oa.flight_area)))
+	if (is_line_in_polygon(&planed_oa.from_wp, &planed_oa.next_wp, &(planed_oa.flight_area)))
 	{
 		VECT2_ASSIGN(P, 0, 0);
 	}
@@ -1549,6 +1572,10 @@ static void send_point_to_pprz(void)
  */
 void planed_oa_prepare(void)
 {
+	if(eng_app_check_debug_sn())
+	{
+		planed_oa_debug_prepare();
+	}
 	planed_oa_data_reset();
 	planed_oa_geometry_prepare();
 	update_obstacles_info();
@@ -1563,6 +1590,11 @@ void planed_oa_prepare(void)
 void planed_oa_periodic_run(void)
 {
 	//run_time[0] = usec_of_sys_time_ticks(sys_time.nb_tick);
+
+	if( eng_app_check_debug_sn() )
+	{
+		planed_oa_test();
+	}
 
 	if (planed_oa.test_on && from_wp_useful)
 	{
