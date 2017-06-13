@@ -5,86 +5,49 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="-4.7" y="3.8"/>
-    <waypoint name="CLIMB" x="-9.5" y="1.9"/>
-    <waypoint name="STDBY" x="19.2" y="-27.0"/>
-    <waypoint name="v0" x="11.5" y="2.0"/>
-    <waypoint name="TD" x="-12.7" y="-0.9"/>
-    <waypoint name="v9" x="7.4" y="-17.9"/>
-    <waypoint name="v8" x="18.1" y="-20.1"/>
-    <waypoint name="v5" x="35.5" y="-4.4"/>
-    <waypoint alt="27.5" name="v12" x="4.9" y="-1.1"/>
-    <waypoint name="v7" x="34.0" y="-16.7"/>
-    <waypoint name="v6" x="35.4" y="-10.6"/>
-    <waypoint name="v11" x="3.8" y="-7.9"/>
-    <waypoint name="v10" x="9.1" y="-12.0"/>
-    <waypoint name="v1" x="17.8" y="8.2"/>
-    <waypoint name="v4" x="27.7" y="-4.7"/>
-    <waypoint name="v3" x="25.7" y="1.9"/>
-    <waypoint alt="37.5" name="v2" x="27.2" y="5.6"/>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="FROM" x="0" y="0"/>
+    <waypoint name="NEXT" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
+    <waypoint name="P0" x="0" y="0"/>
   </waypoints>
+  <sectors>
+    <sector name="valid_area" type="dynamic">
+      <corner name="V0"/>
+      <corner name="V1"/>
+      <corner name="V2"/>
+      <corner name="V3"/>
+      <corner name="V4"/>
+      <corner name="V5"/>
+      <corner name="V6"/>
+      <corner name="V7"/>
+      <corner name="V8"/>
+      <corner name="V9"/>
+      <corner name="V10"/>
+      <corner name="V11"/>
+      <corner name="V12"/>
+      <corner name="V13"/>
+      <corner name="V14"/>
+      <corner name="V15"/>
+      <corner name="V16"/>
+      <corner name="V17"/>
+      <corner name="V18"/>
+      <corner name="V19"/>
+    </sector>
+  </sectors>
   <blocks>
     <block name="Wait GPS">
       <call fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid()"/>
-    </block>
-    <block name="Geo init">
-      <while cond="LessThan(NavBlockTime(), 10)"/>
-    </block>
-    <block name="Holding point">
-      <call fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Start Engine">
-      <call fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Takeoff" post_call="NavSetWaypointHere(WP_CLIMB)" strip_button="Takeoff" strip_icon="up.png">
-      <exception cond="stateGetPositionEnu_f()->z > 0.3" deroute="Climb"/>
-      <call fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay height="1.2" wp="CLIMB"/>
-    </block>
-    <block name="Climb">
-      <exception cond="stateGetPositionEnu_f()->z > 1.0" deroute="Standby"/>
-      <stay height="1.2" wp="CLIMB"/>
-    </block>
-    <block name="Standby" strip_button="Standby" strip_icon="standby.png">
-      <stay wp="STDBY"/>
-    </block>
-    <block name="s1-s2" strip_button="s1-s2" strip_icon="waypoint_one.png">
-      <call fun="nav_set_heading_towards_waypoint(WP_S2)"/>
-      <go from="S1" hmode="route" wp="S2"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S5)"/>
-      <go from="S2" hmode="route" wp="S5"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S6)"/>
-      <go from="S5" hmode="route" wp="S6"/>
-      <call fun="nav_set_heading_towards_waypoint(WP_S3)"/>
-      <go from="S6" hmode="route" wp="S3"/>
-    </block>
-    <block name="s3-s4" strip_button="s3-s4" strip_icon="waypoint_one.png">
-      <call fun="nav_set_heading_towards_waypoint(WP_S4)"/>
-      <go from="S3" hmode="route" wp="S4"/>
-      <deroute block="Standby"/>
-    </block>
-    <block name="circle3" strip_button="circle_-2m" strip_icon="circle-left.png">
-      <set value="-2.0" var="nav_radius"/>
-      <circle radius="nav_radius" until="NavCircleCount() > 2.0" wp="TD"/>
-      <deroute block="Standby"/>
-    </block>
-    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
-      <call fun="NavSetWaypointHere(WP_TD)"/>
-    </block>
-    <block name="land">
-      <go wp="TD"/>
-    </block>
-    <block name="flare">
-      <exception cond="0.36 > stateGetPositionEnu_f()->z" deroute="Holding point"/>
-      <exception cond="!nav_is_in_flight()" deroute="landed"/>
-      <call fun="NavStartDetectGround()"/>
-      <stay climb="-0.15" vmode="climb" wp="TD"/>
-    </block>
-    <block name="landed">
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
 </flight_plan>

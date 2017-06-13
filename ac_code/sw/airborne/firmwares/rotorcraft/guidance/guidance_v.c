@@ -30,6 +30,7 @@
 #include "subsystems/radio_control.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "firmwares/rotorcraft/navigation.h"
+#include "firmwares/rotorcraft/nav_flight.h"
 
 #include "state.h"
 #include "subsystems/gps.h"
@@ -418,14 +419,21 @@ static void run_hover_loop(bool_t in_flight)
 			}
 			else if (vertical_mode == VERTICAL_MODE_CLIMB)
 			{
-				guid_v.rc_pos_sp += SPEED_FLOAT_OF_BFP(nav_climb) * (1.0f / (float) GUIDANCE_V_LOOP_FREQ);
-				if (guid_v.rc_pos_sp > GUIDANCE_V_MAX_HEIGHT)
+				if(flight_mode == nav_rc_mode)
 				{
-					guid_v.rc_pos_sp = GUIDANCE_V_MAX_HEIGHT;
+					guid_v.rc_pos_sp += SPEED_FLOAT_OF_BFP(nav_climb) * (1.0f / (float) GUIDANCE_V_LOOP_FREQ);
+					if (guid_v.rc_pos_sp > GUIDANCE_V_MAX_HEIGHT)
+					{
+						guid_v.rc_pos_sp = GUIDANCE_V_MAX_HEIGHT;
+					}
+					guid_v.ref_pos_z = guid_v.rc_pos_sp;
+					pid_loop_calc_2(&guid_v.pos_z_pid, guid_v.ref_pos_z, guid_v.UP_z_pos, 0, guid_v.UP_z_speed);
+					guid_v.ref_speed_z = guid_v.pos_z_pid.out;
 				}
-				guid_v.ref_pos_z = guid_v.rc_pos_sp;
-				pid_loop_calc_2(&guid_v.pos_z_pid, guid_v.ref_pos_z, guid_v.UP_z_pos, 0, guid_v.UP_z_speed);
-				guid_v.ref_speed_z = guid_v.pos_z_pid.out;
+				else
+				{
+					guid_v.ref_speed_z = SPEED_FLOAT_OF_BFP(nav_climb);
+				}
 			}
 			else
 			{

@@ -166,8 +166,6 @@ extern void auto_nav_fp(void);
 #define HOVER_STEADY_ACCEL_H  0.3
 #define HOVER_STEADY_ATT  5.0
 #define NavGetHoverSteady() (  fabs(stateGetHorizontalSpeedNorm_f()) < (HOVER_STEADY_SPEED_H)  \
-	                           && fabs(stateGetAccelNed_f()->x) < (HOVER_STEADY_ACCEL_H)       \
-	                           && fabs(stateGetAccelNed_f()->y) < (HOVER_STEADY_ACCEL_H)       \
 	                           && fabs(stateGetNedToBodyEulers_f()->phi) < (HOVER_STEADY_ATT)  \
 	                           && fabs(stateGetNedToBodyEulers_f()->theta) < (HOVER_STEADY_ATT) )
 

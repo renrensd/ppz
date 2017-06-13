@@ -5,17 +5,22 @@
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint alt="1.0" name="HOME" x="0" y="0"/>
-    <waypoint name="S1" x="0" y="0"/>
-    <waypoint name="S2" x="0" y="0"/>
-    <waypoint name="S3" x="0" y="0"/>
-    <waypoint name="S4" x="0" y="0"/>
-    <waypoint name="From" x="-59.2" y="-36.0"/>
-    <waypoint name="Next" x="-4.2" y="16.8"/>
+    <waypoint name="HOME" x="-59.6" y="-66.9"/>
+    <waypoint name="From" x="-18.9" y="24.3"/>
+    <waypoint name="Next" x="8.1" y="-20.6"/>
+    <waypoint name="Pre_From" x="36.6" y="-9.0"/>
+    <waypoint name="Pre_Next" x="35.0" y="-1.9"/>
+    <waypoint name="ERROR_F" x="100" y="0"/>
+    <waypoint name="ERROR_N" x="100" y="0"/>
+    <waypoint name="TP" x="0" y="0"/>
+    <waypoint name="S1" x="44.9" y="40.0"/>
+    <waypoint name="S2" x="36.1" y="39.0"/>
+    <waypoint name="S3" x="45.6" y="31.8"/>
+    <waypoint name="S4" x="36.5" y="30.8"/>
     <waypoint name="V0" x="8.4" y="-20.6"/>
-    <waypoint name="V1" x="11.4" y="-8.8"/>
+    <waypoint name="V1" x="-10.8" y="-8.3"/>
     <waypoint name="V2" x="7.6" y="6.3"/>
-    <waypoint name="V3" x="3.7" y="14.2"/>
+    <waypoint name="V3" x="-19.2" y="13.7"/>
     <waypoint name="V4" x="-4.2" y="24.3"/>
     <waypoint name="V5" x="-18.8" y="24.5"/>
     <waypoint name="V6" x="-31.8" y="21.4"/>
@@ -32,27 +37,27 @@
     <waypoint name="V17" x="-20.5" y="-45.5"/>
     <waypoint name="V18" x="-11.1" y="-37.9"/>
     <waypoint name="V19" x="-1.7" y="-30.2"/>
-    <waypoint name="A0" x="8.4" y="-20.6"/>
-    <waypoint name="A1" x="11.4" y="-8.8"/>
-    <waypoint name="A2" x="7.6" y="6.3"/>
-    <waypoint name="A3" x="3.7" y="14.2"/>
-    <waypoint name="A4" x="-4.2" y="24.3"/>
-    <waypoint name="A5" x="-18.8" y="24.5"/>
-    <waypoint name="A6" x="-31.8" y="21.4"/>
-    <waypoint name="A7" x="-45.0" y="15.9"/>
-    <waypoint name="A8" x="-56.1" y="10.5"/>
-    <waypoint name="A9" x="-72.1" y="0.8"/>
-    <waypoint name="A10" x="-83.3" y="-7.9"/>
-    <waypoint name="A11" x="-84.2" y="-22.0"/>
-    <waypoint name="A12" x="-78.9" y="-35.9"/>
-    <waypoint name="A13" x="-69.9" y="-47.9"/>
-    <waypoint name="A14" x="-58.4" y="-51.9"/>
-    <waypoint name="A15" x="-46.4" y="-51.2"/>
-    <waypoint name="A16" x="-36.1" y="-49.1"/>
-    <waypoint name="A17" x="-20.5" y="-45.5"/>
-    <waypoint name="A18" x="-11.1" y="-37.9"/>
-    <waypoint name="A19" x="-1.7" y="-30.2"/>
-    <waypoint name="A20" x="-1.7" y="-30.2"/>
+    <waypoint name="A0" x="56.4" y="-20.3"/>
+    <waypoint name="A1" x="63.3" y="-8.7"/>
+    <waypoint name="A2" x="55.4" y="-7.7"/>
+    <waypoint name="A3" x="72.1" y="-9.4"/>
+    <waypoint name="A4" x="67.2" y="-1.7"/>
+    <waypoint name="A5" x="58.7" y="0.2"/>
+    <waypoint name="A6" x="51.8" y="-1.6"/>
+    <waypoint name="A7" x="67.9" y="4.0"/>
+    <waypoint name="A8" x="59.1" y="6.0"/>
+    <waypoint name="A9" x="52.9" y="-14.4"/>
+    <waypoint name="A10" x="56.0" y="-26.4"/>
+    <waypoint name="A11" x="49.0" y="-26.3"/>
+    <waypoint name="A12" x="51.3" y="-31.7"/>
+    <waypoint name="A13" x="58.7" y="-34.5"/>
+    <waypoint name="A14" x="57.2" y="-41.6"/>
+    <waypoint name="A15" x="65.9" y="-40.9"/>
+    <waypoint name="A16" x="50.2" y="-38.1"/>
+    <waypoint name="A17" x="66.3" y="-33.7"/>
+    <waypoint name="A18" x="64.3" y="-27.5"/>
+    <waypoint name="A19" x="62.7" y="-15.8"/>
+    <waypoint name="A20" x="66.4" y="-20.9"/>
     <waypoint name="O11" x="-29.9" y="-19.8"/>
     <waypoint name="O12" x="-34.4" y="-8.2"/>
     <waypoint name="O13" x="-22.4" y="-3.5"/>
@@ -71,17 +76,20 @@
     <waypoint name="O44" x="-11.5" y="10.8"/>
     <waypoint name="O51" x="10.0" y="-33.2"/>
     <waypoint name="O52" x="2.3" y="-37.0"/>
-    <waypoint name="O53" x="-13.5" y="-9.9"/>
-    <waypoint name="O54" x="-6.7" y="-6.7"/>
-    <waypoint name="Pre_From" x="0" y="0"/>
-    <waypoint name="Pre_Next" x="0" y="0"/>
-    <waypoint name="T1" x="0" y="0"/>
-    <waypoint name="T4" x="0" y="0"/>
-    <waypoint name="T0" x="0" y="0"/>
-    <waypoint name="T5" x="0" y="0"/>
-    <waypoint name="TP" x="0" y="0"/>
-    <waypoint name="ERROR_F" x="100" y="0"/>
-    <waypoint name="ERROR_N" x="100" y="0"/>
+    <waypoint name="O53" x="-8.7" y="-23.4"/>
+    <waypoint name="O54" x="0.7" y="-18.7"/>  
+    <waypoint name="T0" x="51.3" y="16.0"/>
+    <waypoint name="T1" x="41.8" y="9.4"/>
+    <waypoint name="T2" x="51.1" y="8.6"/>
+    <waypoint name="T3" x="42.0" y="16.4"/>
+    <waypoint name="T4" x="51.1" y="8.6"/>
+    <waypoint name="T5" x="42.0" y="16.4"/>
+    <waypoint name="T6" x="51.3" y="16.0"/>
+    <waypoint name="T7" x="41.8" y="9.4"/>
+    <waypoint name="T8" x="51.1" y="8.6"/>
+    <waypoint name="T9" x="42.0" y="16.4"/>
+    <waypoint name="T10" x="51.1" y="8.6"/>
+    <waypoint name="T11" x="42.0" y="16.4"/>
   </waypoints>
   <sectors>
     <sector name="valid_area" type="dynamic">
@@ -160,9 +168,9 @@
       <corner name="O54"/>
     </sector>
     <sector name="from_next" type="dynamic">
-      <corner name="T0"/>
-      <corner name="T0"/>
-      <corner name="T5"/>
+      <corner name="From"/>
+      <corner name="Next"/>
+      <corner name="From"/>
     </sector>
   </sectors>
   <blocks>

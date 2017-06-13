@@ -33,7 +33,6 @@ struct _s_polygon
 	struct FloatVect2 *v;
 };
 
-extern bool_t is_corner_concave(struct _s_polygon *polygon, uint8_t corner);
 extern float point_close_2_segment(struct FloatVect2 *P, struct FloatVect2 *v0, struct FloatVect2 *v1);
 extern float vector_angle(struct FloatVect2 *v0, struct FloatVect2 *v1, bool_t normalized);
 extern float CCW_angle(float angle);
@@ -43,7 +42,7 @@ extern int polygon_init(struct _s_polygon *polygon, struct FloatVect2 *vertices,
 extern float polygon_area(struct _s_polygon *polygon);
 extern bool_t is_relation_collineation(enum _e_segment_relation relation);
 extern enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct FloatVect2 *v1,
-		struct FloatVect2 *v2, struct FloatVect2 *v3);
+		struct FloatVect2 *v2, struct FloatVect2 *v3, struct FloatVect2 *P);
 extern enum _e_segment_relation get_2_segments_strict_relation(struct FloatVect2 *v0, struct FloatVect2 *v1,
 		struct FloatVect2 *v2, struct FloatVect2 *v3);
 extern bool_t is_hray_intersect_with_edge(struct FloatVect2 *P, struct FloatVect2 *v0, struct FloatVect2 *v1);

@@ -10,6 +10,7 @@
 #include "std.h"
 #include <math.h>
 #include "pprz_algebra.h"
+#include "modules/planed_oa/planed_oa.h"
 
 #define DATA_TOLERANCE	(1e-6)
 #define OA_STRICT_TOLERANCE		(0.3)
@@ -66,7 +67,7 @@ bool_t is_relation_collineation(enum _e_segment_relation relation)
  * v2-v3 : line 2
  */
 enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct FloatVect2 *v1,
-		struct FloatVect2 *v2, struct FloatVect2 *v3)
+		struct FloatVect2 *v2, struct FloatVect2 *v3, struct FloatVect2 *intersect_point)
 {
 	float detL1 = determinant(v0->x, v0->y, v1->x, v1->y);
 	float detL2 = determinant(v2->x, v2->y, v3->x, v3->y);
@@ -124,6 +125,10 @@ enum _e_segment_relation get_2_segments_relation(struct FloatVect2 *v0, struct F
 		struct FloatVect2 P;
 		P.x = xnum / denom;
 		P.y = ynum / denom;
+		if(intersect_point != NULL)
+		{
+			VECT2_COPY(*intersect_point, P);
+		}
 		if (is_on_segment(v0, &P, v1) && is_on_segment(v2, &P, v3))
 		{
 			float dis0 = point2_distance(&P, v0);
@@ -316,23 +321,6 @@ float point_close_2_segment(struct FloatVect2 *P, struct FloatVect2 *v0, struct 
 	}
 }
 
-float Multiply(struct FloatVect2 *p1, struct FloatVect2 *p2, struct FloatVect2 *p0)
-{
-    return ( (p1->x - p0->x) * (p2->y - p0->y) - (p2->x - p0->x) * (p1->y - p0->y) );
-}
-
-bool_t is_point_in_rectangle(struct FloatVect2 *P1, struct FloatVect2 *P2, struct FloatVect2 *P3, struct FloatVect2 *P4, struct FloatVect2 *P)
-{
-    if ( (Multiply(P, P1, P2) * Multiply(P, P4, P3) <= 0)  && (Multiply(P, P4, P1) * Multiply(P, P3, P2) <= 0) )
-    {
-        return TRUE;
-    }
-	else
-	{
-        return FALSE;
-	}
-}
-
 /*
  * check if point in polygon
  */
@@ -425,50 +413,153 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 {
 	uint8_t i, j;
 	struct FloatVect2 P;
+	struct FloatVect2 intersection_points[OA_MAX_BOUNDARY_VERTICES_NUM];
+	uint8_t intersection_num = 0;
 
 	if (!is_point_in_polygon(v0, polygon))
 	{
+		if( planed_oa.error_record_flag )
+		{
+			planed_oa.error_info[6] = 1;
+		}
 		return FALSE;
+
 	}
 	if (!is_point_in_polygon(v1, polygon))
 	{
+		if( planed_oa.error_record_flag )
+		{
+			planed_oa.error_info[7] = 1;
+		}
 		return FALSE;
 	}
-	VECT2_COPY(P, *v1);
-	VECT2_DIFF(P, P, *v0);
-	VECT2_SDIV(P, P, 2);
-	VECT2_SUM(P, P, *v0);
-	if (!is_point_in_polygon(&P, polygon))
-	{
-		return FALSE;
-	}
+
+	// insert start point
+	VECT2_COPY(intersection_points[intersection_num], *v0);
+	++intersection_num;
 
 	for (i = 0; i < polygon->n; ++i)
 	{
 		j = (i + 1) % polygon->n;
 
-		enum _e_segment_relation rel = get_2_segments_relation(v0, v1, &(polygon->v[i]), &(polygon->v[j]));
+		enum _e_segment_relation rel = get_2_segments_relation(v0, v1, &(polygon->v[i]), &(polygon->v[j]), &P);
 
-		if((rel == SR_INTERSECTION_INSIDE) ||
-				(rel == SR_COLLINEATION_CONTAIN) ||
-				(rel == SR_COLLINEATION_OVERLAP))
+		if ((rel == SR_COLLINEATION_CONTAIN) || (rel == SR_COLLINEATION_OVERLAP))
 		{
-			if (point_close_2_segment(v0, &(polygon->v[i]), &(polygon->v[j])) && point_close_2_segment(v1, &(polygon->v[i]), &(polygon->v[j])))
+			if (point_close_2_segment(v0, &(polygon->v[i]), &(polygon->v[j]))
+					&& point_close_2_segment(v1, &(polygon->v[i]), &(polygon->v[j])))
 			{
 				return TRUE;
 			}
-			return FALSE;
+		}
+		else if (rel == SR_INTERSECTION_INSIDE)
+		{
+			VECT2_COPY(intersection_points[intersection_num], P);
+			if (++intersection_num >= OA_MAX_BOUNDARY_VERTICES_NUM)
+			{
+				if( planed_oa.error_record_flag )
+				{
+					planed_oa.error_info[8] = 1;
+				}
+				return FALSE;
+			}
 		}
 	}
 
-	return TRUE;
+	// insert end point
+	VECT2_COPY(intersection_points[intersection_num], *v1);
+	++intersection_num;
+
+	// order point
+	if(intersection_num >= 4)
+	{
+		float coors[OA_MAX_BOUNDARY_VERTICES_NUM];
+		float min, temp_f, diff;
+		struct FloatVect2 temp_v2;
+		uint8_t min_index;
+
+		if (fabsf(v0->x - v1->x) > fabsf(v0->y - v1->y))
+		{
+			for (i = 0; i < intersection_num; ++i)
+			{
+				coors[i] = intersection_points[i].x;
+			}
+		}
+		else
+		{
+			for (i = 0; i < intersection_num; ++i)
+			{
+				coors[i] = intersection_points[i].y;
+			}
+		}
+
+		for (j = 0; j < intersection_num - 2; ++j)
+		{
+			min_index = j + 1;
+			min = fabsf(coors[j] - coors[min_index]);
+			for (i = min_index + 1; i < intersection_num; ++i)
+			{
+				diff = fabsf(coors[j] - coors[i]);
+				if (diff < min)
+				{
+					min = diff;
+					min_index = i;
+				}
+			}
+			if (min_index != (j + 1))
+			{
+				temp_f = coors[min_index];
+				coors[min_index] = coors[j + 1];
+				coors[j + 1] = temp_f;
+
+				VECT2_COPY(temp_v2, intersection_points[min_index]);
+				VECT2_COPY(intersection_points[min_index], intersection_points[j + 1]);
+				VECT2_COPY(intersection_points[j + 1], temp_v2);
+			}
+		}
+	}
+
+	if (intersection_num >= 3)
+	{
+		for (i = 0; i < intersection_num - 1; ++i)
+			{
+				j = (i + 1) % intersection_num;
+
+				VECT2_COPY(P, intersection_points[j]);
+				VECT2_DIFF(P, P, intersection_points[i]);
+				VECT2_SDIV(P, P, 2);
+				VECT2_SUM(P, P, intersection_points[i]);
+
+				if (!is_point_in_polygon(&P, polygon))
+				{
+					if( planed_oa.error_record_flag )
+					{
+						planed_oa.error_info[9] = 1;
+					}
+					return FALSE;
+				}
+			}
+	}
+	else
+	{
+		return TRUE;
+	}
+
+	if( planed_oa.error_record_flag )
+	{
+		planed_oa.error_info[10] = 1;
+	}
+	return FALSE;
 }
 
 float vector_angle(struct FloatVect2 *v0, struct FloatVect2 *v1, bool_t normalized)
 {
 	float dot, cross;
-	struct FloatVect2 a = *v0;
-	struct FloatVect2 b = *v1;
+	struct FloatVect2 a = *v0;//
+	struct FloatVect2 b = *v1;//
+	/*struct FloatVect2 a,b;
+	VECT2_COPY(a, *v0);
+	VECT2_COPY(b, *v1);*/
 
 	if (!normalized)
 	{
@@ -535,11 +626,6 @@ float CW_angle(float angle)
 	{
 		return -angle;
 	}
-}
-
-bool_t is_corner_concave(struct _s_polygon *polygon, uint8_t corner)
-{
-	return FALSE;
 }
 
 /*
@@ -659,7 +745,8 @@ static bool_t check_if_point_in_concave(struct FloatVect2 *P, struct _s_polygon 
 				uint8_t concave_vertices_num = get_delta(index_st, index_end, polygon->n);
 				for (i = 0; i < concave_vertices_num; ++i)
 				{
-					concave_vertices[i] = polygon->v[get_index(index_st, i, polygon->n)];
+					concave_vertices[i] = polygon->v[get_index(index_st, i, polygon->n)]; //
+					//VECT2_COPY(concave_vertices[i], polygon->v[get_index(index_st, i, polygon->n)]);
 				}
 				polygon_init(&concave, concave_vertices, concave_vertices_num);
 				if (is_point_in_polygon(P, &concave))
@@ -701,7 +788,8 @@ static bool_t check_if_point_in_concave(struct FloatVect2 *P, struct _s_polygon 
 				{
 					if (!concave_corner_flag[i])
 					{
-						spolyon->v[spolyon->n] = polygon->v[i];
+						spolyon->v[spolyon->n] = polygon->v[i];//
+						//VECT2_COPY(spolyon->v[spolyon->n], polygon->v[i]);
 						spoly_index_table[spolyon->n] = i;
 						++spolyon->n;
 					}
@@ -740,7 +828,8 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	{
 		for (i = 0; i < spray_area->n; ++i)
 		{
-			valid_area->v[i] = spray_area->v[i];
+			valid_area->v[i] = spray_area->v[i];//
+			//VECT2_COPY(valid_area->v[i], spray_area->v[i]);
 		}
 		valid_area->n = spray_area->n;
 
@@ -849,11 +938,13 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	for (i = 0; i < spray_area->n; ++i)
 	{
 		j = (index_st + i) % spray_area->n;
-		valid_area->v[i] = spray_area->v[j];
+		valid_area->v[i] = spray_area->v[j];//
+		//VECT2_COPY(valid_area->v[i], spray_area->v[j]);
 		++valid_area->n;
 		if (j == index_end)
 		{
-			valid_area->v[i + 1] = *land_point;
+			valid_area->v[i + 1] = *land_point;//
+			//VECT2_COPY(valid_area->v[i + 1], *land_point);
 			++valid_area->n;
 			break;
 		}

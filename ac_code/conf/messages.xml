@@ -2250,14 +2250,13 @@
    </message>
 
   <message name="PLANED_OA" id="234">
-    <field name="spray_boundary_vaild_flag" type="uint8[20]" unit="m"/>
     <field name="test_on" type="uint8" unit="bool"/>
     <field name="planed_oa_ready" type="uint8" unit="bool"/>
     <field name="obstacle_flag" type="uint8[5]" unit="bool"/>
     <field name="obstacles_num" type="uint8" unit="m"/>
     <field name="oa_wp_search_state" type="uint8" unit="m"/>
     <field name="wp_move_done_flag" type="uint8" unit="bool"/>
-    <field name="obstacles_boundary_insert_flag" type="uint8" unit="bool"/>
+    <field name="spray_boundary_insert_flag" type="uint8" unit="bool"/>
     <field name="vert_search_direction" type="float" unit="m"/>
     <field name="search_times" type="uint32" unit="m"/>
     <field name="planed_oa_state" type="uint8" unit="m"/>
@@ -2266,9 +2265,9 @@
     <field name="back_home_ready" type="uint8" unit="bool"/>
     <field name="nav_north_angle" type="float" unit="m"/>
     <field name="total_search_time" type="uint32" unit="m"/>
-    <field name="error_spray" type="uint8[40]" unit="m"/>
-    <field name="error_spray_cord" type="float[40]" unit="m"/>
     <field name="oa_necessity_flag" type="uint8" unit="bool"/>
+    <field name="spray_boundary_vaild_flag" type="uint8[20]" unit="bool"/>
+    <field name="error_spray_boundary" type="uint8[40]" unit="bool"/>
   </message>
 
   <message name="VISUALTARGET" id="235">
@@ -2276,9 +2275,11 @@
     <field name="y" type="uint16"></field>
   </message>
 
- <message name="SONAR" id="236">
-    <field name="sonar_meas" type="uint16"/>
-    <field name="sonar_distance" type="float" unit="m"/>
+ <message name="OA_ERROR" id="236">
+    <field name="oa_wp_search_state" type="uint8" unit="m"/>
+    <field name="error_record_flag" type="uint8" unit="bool"/>
+    <field name="error_flight_area" type="float[42]" unit="m"/>
+    <field name="error_info" type="float[15]" unit="m"/>
   </message>
 
   <message name="PAYLOAD_FLOAT" id="237">

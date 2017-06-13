@@ -275,7 +275,7 @@ void nav_flight(void)
 
 		case 5: /*land motion(need set hover before land)*/
 			flight_state = landing;
-
+			guidance_h_set_rc_pos_sp_i(POS_FLOAT_OF_BFP(navigation_target.y), POS_FLOAT_OF_BFP(navigation_target.x));
 			if( !land_motion(FALSE) )   //doing landing
 			{
 				task_init();  /*reset task*/
