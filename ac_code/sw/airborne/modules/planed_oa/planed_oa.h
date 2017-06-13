@@ -69,6 +69,11 @@ struct _s_planed_oa
    struct _s_oa_wp oa_wp;
 
    uint32_t total_search_time;
+
+   float error_info[15];
+   float error_spray_area[OA_MAX_BOUNDARY_VERTICES_NUM * 2];
+   float error_flight_area[OA_MAX_BOUNDARY_VERTICES_NUM * 2 + 2];
+   bool_t error_record_flag;
 };
 
 enum Obstacle_Avoidance_State

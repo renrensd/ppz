@@ -10,6 +10,7 @@
 #include "std.h"
 #include <math.h>
 #include "pprz_algebra.h"
+#include "modules/planed_oa/planed_oa.h"
 
 #define DATA_TOLERANCE	(1e-6)
 #define OA_STRICT_TOLERANCE		(0.3)
@@ -417,10 +418,19 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 
 	if (!is_point_in_polygon(v0, polygon))
 	{
+		if( planed_oa.error_record_flag )
+		{
+			planed_oa.error_info[6] = 1;
+		}
 		return FALSE;
+
 	}
 	if (!is_point_in_polygon(v1, polygon))
 	{
+		if( planed_oa.error_record_flag )
+		{
+			planed_oa.error_info[7] = 1;
+		}
 		return FALSE;
 	}
 
@@ -447,6 +457,10 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 			VECT2_COPY(intersection_points[intersection_num], P);
 			if (++intersection_num >= OA_MAX_BOUNDARY_VERTICES_NUM)
 			{
+				if( planed_oa.error_record_flag )
+				{
+					planed_oa.error_info[8] = 1;
+				}
 				return FALSE;
 			}
 		}
@@ -518,6 +532,10 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 
 				if (!is_point_in_polygon(&P, polygon))
 				{
+					if( planed_oa.error_record_flag )
+					{
+						planed_oa.error_info[9] = 1;
+					}
 					return FALSE;
 				}
 			}
@@ -527,14 +545,21 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 		return TRUE;
 	}
 
+	if( planed_oa.error_record_flag )
+	{
+		planed_oa.error_info[10] = 1;
+	}
 	return FALSE;
 }
 
 float vector_angle(struct FloatVect2 *v0, struct FloatVect2 *v1, bool_t normalized)
 {
 	float dot, cross;
-	struct FloatVect2 a = *v0;
-	struct FloatVect2 b = *v1;
+	struct FloatVect2 a = *v0;//
+	struct FloatVect2 b = *v1;//
+	/*struct FloatVect2 a,b;
+	VECT2_COPY(a, *v0);
+	VECT2_COPY(b, *v1);*/
 
 	if (!normalized)
 	{
@@ -720,7 +745,8 @@ static bool_t check_if_point_in_concave(struct FloatVect2 *P, struct _s_polygon 
 				uint8_t concave_vertices_num = get_delta(index_st, index_end, polygon->n);
 				for (i = 0; i < concave_vertices_num; ++i)
 				{
-					concave_vertices[i] = polygon->v[get_index(index_st, i, polygon->n)];
+					concave_vertices[i] = polygon->v[get_index(index_st, i, polygon->n)]; //
+					//VECT2_COPY(concave_vertices[i], polygon->v[get_index(index_st, i, polygon->n)]);
 				}
 				polygon_init(&concave, concave_vertices, concave_vertices_num);
 				if (is_point_in_polygon(P, &concave))
@@ -762,7 +788,8 @@ static bool_t check_if_point_in_concave(struct FloatVect2 *P, struct _s_polygon 
 				{
 					if (!concave_corner_flag[i])
 					{
-						spolyon->v[spolyon->n] = polygon->v[i];
+						spolyon->v[spolyon->n] = polygon->v[i];//
+						//VECT2_COPY(spolyon->v[spolyon->n], polygon->v[i]);
 						spoly_index_table[spolyon->n] = i;
 						++spolyon->n;
 					}
@@ -801,7 +828,8 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	{
 		for (i = 0; i < spray_area->n; ++i)
 		{
-			valid_area->v[i] = spray_area->v[i];
+			valid_area->v[i] = spray_area->v[i];//
+			//VECT2_COPY(valid_area->v[i], spray_area->v[i]);
 		}
 		valid_area->n = spray_area->n;
 
@@ -910,11 +938,13 @@ int generate_valid_area(struct _s_polygon *valid_area, struct _s_polygon *spray_
 	for (i = 0; i < spray_area->n; ++i)
 	{
 		j = (index_st + i) % spray_area->n;
-		valid_area->v[i] = spray_area->v[j];
+		valid_area->v[i] = spray_area->v[j];//
+		//VECT2_COPY(valid_area->v[i], spray_area->v[j]);
 		++valid_area->n;
 		if (j == index_end)
 		{
-			valid_area->v[i + 1] = *land_point;
+			valid_area->v[i + 1] = *land_point;//
+			//VECT2_COPY(valid_area->v[i + 1], *land_point);
 			++valid_area->n;
 			break;
 		}
