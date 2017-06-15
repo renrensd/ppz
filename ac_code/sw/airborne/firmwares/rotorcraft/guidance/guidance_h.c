@@ -504,6 +504,19 @@ void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake)
 	traj.emergency_brake = brake;
 }
 
+bool_t guidance_h_trajectory_tracking_emergency_braking(void)
+{
+	return (traj.state == TRAJ_STATUS_BRAKE);
+}
+
+bool_t guidance_h_trajectory_tracking_hover_steady(void)
+{
+	return ((fabsf(traj.vel_t.x) < 0.2f)
+			&& (fabsf(traj.vel_t.y) < 0.2f)
+			&& (fabsf(stateGetNedToBodyEulers_f()->phi) < (10.0f))
+			&& (fabsf(stateGetNedToBodyEulers_f()->theta) < (10.0f)));
+}
+
 void guidance_h_trajectory_tracking_set_hover(struct FloatVect2 point)
 {
 	guidance_h_trajectory_tracking_set_segment(point, point);
@@ -696,7 +709,7 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 				traj.guid_speed -= vel_inc;
 			}
 
-			if(fabsf(traj.vel_t.x) < 0.2f)
+			if( guidance_h_trajectory_tracking_hover_steady() )
 			{
 				traj.emergency_brake_x += traj.pos_t.x;
 				if(++traj.emergency_brake_cnt >= (2*PERIODIC_FREQUENCY))
@@ -709,9 +722,10 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 					}
 				}
 			}
-			else if(fabsf(traj.vel_t.x) > 0.2f)
+			else
 			{
 				traj.emergency_brake_cnt = 0;
+				traj.emergency_brake_x = 0;
 			}
 		}
 		else if (traj.state == TRAJ_STATUS_BRAKE_DONE)

@@ -165,10 +165,8 @@ extern void auto_nav_fp(void);
 #define HOVER_STEADY_SPEED_H  0.20
 #define HOVER_STEADY_ACCEL_H  0.3
 #define HOVER_STEADY_ATT  5.0
-#define NavGetHoverSteady() (  fabs(stateGetHorizontalSpeedNorm_f()) < (HOVER_STEADY_SPEED_H)  \
-	                           && fabs(stateGetNedToBodyEulers_f()->phi) < (HOVER_STEADY_ATT)  \
-	                           && fabs(stateGetNedToBodyEulers_f()->theta) < (HOVER_STEADY_ATT) )
 
+extern bool_t NavGetHoverSteady(void);
 
 /** Normalize a degree angle between 0 and 359 */
 #define NormCourse(x) { \

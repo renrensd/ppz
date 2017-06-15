@@ -218,9 +218,16 @@ Gcs_State gcs_task_run(void)
 			
 		case GCS_CMD_PAUSE:
 			gcs_state = GCS_RUN_PAUSE;
-			spray_switch_flag = FALSE;
-			gcs_hover_enter();   //for stop spray
-			set_auto_stop_brake();		
+			set_auto_stop_brake();
+			if( !gcs_hover_enter() )
+			{
+				spray_switch_flag = FALSE;
+				struct FloatVect2 target_wp;
+				target_wp.x = POS_FLOAT_OF_BFP(navigation_target.y);
+				target_wp.y = POS_FLOAT_OF_BFP(navigation_target.x);
+				release_stop_brake();
+				guidance_h_trajectory_tracking_set_hover(target_wp);
+			}
 			
 			break;
 			

@@ -196,6 +196,8 @@ extern void guidance_h_trajectory_tracking_set_max_acc(float acc);
 extern void guidance_h_trajectory_tracking_set_min_brake_len(float len);
 extern void guidance_h_trajectory_tracking_set_emergency_brake_acc(float acc);
 extern void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake);
+extern bool_t guidance_h_trajectory_tracking_emergency_braking(void);
+extern bool_t guidance_h_trajectory_tracking_hover_steady(void);
 extern void guidance_h_SetTrajTest(uint8_t mode);
 extern void guidance_h_SetTrajRefSpeed(float speed);
 extern void guidance_h_SetEmBrake(bool_t on);

@@ -253,6 +253,11 @@ static inline void UNUSED nav_advance_carrot(void)
   }
 }
 
+bool_t NavGetHoverSteady(void)
+{
+	return guidance_h_trajectory_tracking_hover_steady();
+}
+
 void nav_run(void)
 {
 
