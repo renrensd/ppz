@@ -523,7 +523,8 @@ uint8_t rc_set_cmd_parse(uint8_t cmd)
 
 		if (enter)
 		{
-			if (flight_state == taking_off || flight_state == landing)
+				if( flight_state == taking_off || flight_state == landing
+						|| guidance_h_trajectory_tracking_emergency_braking() )
 			{
 				break;
 			}

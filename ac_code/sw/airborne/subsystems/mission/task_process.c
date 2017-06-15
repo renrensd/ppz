@@ -284,14 +284,22 @@ Gcs_State gcs_task_run(void)
 			{
 				save_task_cmd = last_task_cmd;
 			}
-			spray_switch_flag = FALSE;
-			gcs_hover_enter();   //for stop spray
-			set_auto_stop_brake();		
-			
+
+			//gcs_hover_enter();   //for stop spray
+			set_auto_stop_brake();
+			if( !gcs_hover_enter() )
+			{
+				spray_switch_flag = FALSE;
+				struct FloatVect2 target_wp;
+				target_wp.x = POS_FLOAT_OF_BFP(navigation_target.y);
+				target_wp.y = POS_FLOAT_OF_BFP(navigation_target.x);
+				release_stop_brake();
+				guidance_h_trajectory_tracking_set_hover(target_wp);
+			}
 			break;
 			
 		case GCS_CMD_CONTI:
-            gcs_task_cmd = save_task_cmd;
+      gcs_task_cmd = save_task_cmd;
 			release_stop_brake();
 			
 			break;
