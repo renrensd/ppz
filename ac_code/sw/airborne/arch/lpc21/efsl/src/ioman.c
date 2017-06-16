@@ -61,8 +61,10 @@ void ioman_reset(IOManager *ioman)
 	memClr(ioman->itptr ,sizeof(euint8) *ioman->numbuf);
 	ioman_setError(ioman,IOMAN_NOERROR);
 
-	for(nb=0;nb<ioman->numbuf;nb++){
-		for(ni=0;ni<ioman->numit;ni++){
+	for(nb=0; nb<ioman->numbuf; nb++)
+	{
+		for(ni=0; ni<ioman->numit; ni++)
+		{
 			ioman->stack[nb][ni].sector=0;
 			ioman->stack[nb][ni].status=0;
 			ioman->stack[nb][ni].usage =0;
@@ -83,14 +85,18 @@ euint8* ioman_getBuffer(IOManager *ioman,euint8* bufferarea)
 
 void ioman_setAttr(IOManager *ioman,euint16 bufplace,euint8 attribute,euint8 val)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_SETATTROUTOFBOUNDS);
 		return; /* Out of bounds */
 	}
 
-	if(val){
+	if(val)
+	{
 		ioman->status[bufplace]|=1<<attribute;
-	}else{
+	}
+	else
+	{
 		ioman->status[bufplace]&=~(1<<attribute);
 	}
 }
@@ -98,7 +104,8 @@ void ioman_setAttr(IOManager *ioman,euint16 bufplace,euint8 attribute,euint8 val
 
 euint8 ioman_getAttr(IOManager *ioman,euint16 bufplace,euint8 attribute)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_GETATTROUTOFBOUNDS);
 		return(0xFF); /* Out of bounds */
 	}
@@ -109,7 +116,8 @@ euint8 ioman_getAttr(IOManager *ioman,euint16 bufplace,euint8 attribute)
 
 euint8 ioman_getUseCnt(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return(0x00);
 	}
@@ -120,7 +128,8 @@ euint8 ioman_getUseCnt(IOManager *ioman,euint16 bufplace)
 
 void ioman_incUseCnt(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return;
 	}
@@ -131,7 +140,8 @@ void ioman_incUseCnt(IOManager *ioman,euint16 bufplace)
 
 void ioman_decUseCnt(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return;
 	}
@@ -142,7 +152,8 @@ void ioman_decUseCnt(IOManager *ioman,euint16 bufplace)
 
 void ioman_resetUseCnt(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return;
 	}
@@ -152,7 +163,8 @@ void ioman_resetUseCnt(IOManager *ioman,euint16 bufplace)
 
 euint8 ioman_getRefCnt(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return(0x00);
 	}
@@ -162,7 +174,8 @@ euint8 ioman_getRefCnt(IOManager *ioman,euint16 bufplace)
 
 void ioman_incRefCnt(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return;
 	}
@@ -173,7 +186,8 @@ void ioman_incRefCnt(IOManager *ioman,euint16 bufplace)
 
 void ioman_decRefCnt(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return;
 	}
@@ -184,7 +198,8 @@ void ioman_decRefCnt(IOManager *ioman,euint16 bufplace)
 
 void ioman_resetRefCnt(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return;
 	}
@@ -194,7 +209,8 @@ void ioman_resetRefCnt(IOManager *ioman,euint16 bufplace)
 
 esint8 ioman_pop(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_POPEMPTYSTACK);
 		return(-1);
 	}
@@ -209,11 +225,13 @@ esint8 ioman_pop(IOManager *ioman,euint16 bufplace)
 
 esint8 ioman_push(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return(-1);
 	}
-	if(ioman->itptr[bufplace]>=IOMAN_NUMITERATIONS){
+	if(ioman->itptr[bufplace]>=IOMAN_NUMITERATIONS)
+	{
 		ioman_setError(ioman,IOMAN_ERR_PUSHBEYONDSTACK);
 		return(-1);
 	}
@@ -227,7 +245,8 @@ esint8 ioman_push(IOManager *ioman,euint16 bufplace)
 
 euint8* ioman_getPtr(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return(0);
 	}
@@ -237,7 +256,8 @@ euint8* ioman_getPtr(IOManager *ioman,euint16 bufplace)
 
 esint16 ioman_getBp(IOManager *ioman,euint8* buf)
 {
-	if(buf<(ioman->bufptr) || buf>=( ioman->bufptr+(ioman->numbuf*512) )){
+	if(buf<(ioman->bufptr) || buf>=( ioman->bufptr+(ioman->numbuf*512) ))
+	{
 		ioman_setError(ioman,IOMAN_ERR_CACHEPTROUTOFRANGE);
 		return(-1);
 	}
@@ -249,13 +269,15 @@ esint8 ioman_readSector(IOManager *ioman,euint32 address,euint8* buf)
 {
 	esint8 r;
 
-	if(buf==0){
+	if(buf==0)
+	{
 		return(-1);
 	}
 
 	r=if_readBuf(ioman->iface,address,buf);
 
-	if(r!=0){
+	if(r!=0)
+	{
 		ioman_setError(ioman,IOMAN_ERR_READFAIL);
 		return(-1);
 	}
@@ -271,7 +293,8 @@ esint8 ioman_writeSector(IOManager *ioman, euint32 address, euint8* buf)
 
 	r=if_writeBuf(ioman->iface,address,buf);
 
-	if(r<=0){
+	if(r<=0)
+	{
 		ioman_setError(ioman,IOMAN_ERR_WRITEFAIL);
 		return(-1);
 	}
@@ -281,7 +304,8 @@ esint8 ioman_writeSector(IOManager *ioman, euint32 address, euint8* buf)
 
 void ioman_resetCacheItem(IOManager *ioman,euint16 bufplace)
 {
-	if(bufplace>=ioman->numbuf){
+	if(bufplace>=ioman->numbuf)
+	{
 		ioman_setError(ioman,IOMAN_ERR_OPOUTOFBOUNDS);
 		return;
 	}
@@ -296,7 +320,8 @@ esint32 ioman_findSectorInCache(IOManager *ioman, euint32 address)
 {
 	euint16 c;
 
-	for(c=0;c<ioman->numbuf;c++){
+	for(c=0; c<ioman->numbuf; c++)
+	{
 		if(ioman_isValid(c) && ioman->sector[c] == address)return(c);
 	}
 	return(-1);
@@ -307,7 +332,8 @@ esint32 ioman_findFreeSpot(IOManager *ioman)
 {
 	euint16 c;
 
-	for(c=0;c<ioman->numbuf;c++){
+	for(c=0; c<ioman->numbuf; c++)
+	{
 		if(!ioman_isValid(c))return(c);
 	}
 	return(-1);
@@ -320,21 +346,28 @@ esint32 ioman_findUnusedSpot(IOManager *ioman)
 	euint16 c;
 	euint8 fr=0,lr=0xFF;
 
-	for(c=0;c<ioman->numbuf;c++){
-		if(ioman_getUseCnt(ioman,c)==0){
-			if(!ioman_isWritable(c) && !fr){
+	for(c=0; c<ioman->numbuf; c++)
+	{
+		if(ioman_getUseCnt(ioman,c)==0)
+		{
+			if(!ioman_isWritable(c) && !fr)
+			{
 				fr=1;
 				lr=0xFF;
 				r=-1;
 			}
-			if(ioman_isWritable(c) && !fr){
-				if(ioman_getRefCnt(ioman,c)<=lr){
+			if(ioman_isWritable(c) && !fr)
+			{
+				if(ioman_getRefCnt(ioman,c)<=lr)
+				{
 					r=c;
 					lr=ioman_getRefCnt(ioman,c);
 				}
 			}
-			if(fr && !ioman_isWritable(c)){
-				if(ioman_getRefCnt(ioman,c)<=lr){
+			if(fr && !ioman_isWritable(c))
+			{
+				if(ioman_getRefCnt(ioman,c)<=lr)
+				{
 					r=c;
 					lr=ioman_getRefCnt(ioman,c);
 				}
@@ -351,13 +384,16 @@ esint32 ioman_findOverallocableSpot(IOManager *ioman)
 	euint16 c;
 	esint32 r=-1;
 
-	for(c=0;c<ioman->numbuf;c++){
-		if(ioman->itptr[c]<ioman->numit){
+	for(c=0; c<ioman->numbuf; c++)
+	{
+		if(ioman->itptr[c]<ioman->numit)
+		{
 			points = 0;
 			if(ioman_isWritable(c))points+=0x7F;
 			points += ((euint16)(ioman->itptr[c]*0x4D))/(ioman->numit);
 			points += ((euint16)(ioman_getRefCnt(ioman,c)*0x33))/0xFF;
-			if(points<lp){
+			if(points<lp)
+			{
 				lp=points;
 				r=c;
 			}
@@ -371,11 +407,13 @@ esint8 ioman_putSectorInCache(IOManager *ioman, euint32 address, euint16 bufplac
 {
 	euint8* buf;
 
-	if((buf = ioman_getPtr(ioman,bufplace))==0){
+	if((buf = ioman_getPtr(ioman,bufplace))==0)
+	{
 		ioman_setError(ioman,IOMAN_ERR_CACHEPTROUTOFRANGE);
 		return(-1);
 	}
-	if((ioman_readSector(ioman,address,buf))){
+	if((ioman_readSector(ioman,address,buf)))
+	{
 		ioman_setError(ioman,IOMAN_ERR_READFAIL);
 		return(-1);
 	}
@@ -390,15 +428,18 @@ esint8 ioman_flushSector(IOManager *ioman, euint16 bufplace)
 {
 	euint8* buf;
 
-	if((buf = ioman_getPtr(ioman,bufplace))==0){
+	if((buf = ioman_getPtr(ioman,bufplace))==0)
+	{
 		ioman_setError(ioman,IOMAN_ERR_CACHEPTROUTOFRANGE);
 		return(-1);
 	}
-	if(!ioman_isWritable(bufplace)){
+	if(!ioman_isWritable(bufplace))
+	{
 		ioman_setError(ioman,IOMAN_ERR_WRITEREADONLYSECTOR);
 		return(-1);
 	}
-	if(!(ioman_writeSector(ioman,ioman->sector[bufplace],buf))){
+	if(!(ioman_writeSector(ioman,ioman->sector[bufplace],buf)))
+	{
 		ioman_setError(ioman,IOMAN_ERR_WRITEFAIL);
 		return(-1);
 	}
@@ -411,13 +452,19 @@ esint8 ioman_flushRange(IOManager *ioman,euint32 address_low, euint32 address_hi
 {
 	euint32 c;
 
-	if(address_low>address_high){
-		c=address_low; address_low=address_high;address_high=c;
+	if(address_low>address_high)
+	{
+		c=address_low;
+		address_low=address_high;
+		address_high=c;
 	}
 
-	for(c=0;c<ioman->numbuf;c++){
-		if((ioman->sector[c]>=address_low) && (ioman->sector[c]<=address_high) && (ioman_isWritable(c))){
-			if(ioman_flushSector(ioman,c)){
+	for(c=0; c<ioman->numbuf; c++)
+	{
+		if((ioman->sector[c]>=address_low) && (ioman->sector[c]<=address_high) && (ioman_isWritable(c)))
+		{
+			if(ioman_flushSector(ioman,c))
+			{
 				return(-1);
 			}
 			if(ioman->usage[c]==0)ioman_setNotWritable(c);
@@ -431,9 +478,12 @@ esint8 ioman_flushAll(IOManager *ioman)
 {
 	euint16 c;
 
-	for(c=0;c<ioman->numbuf;c++){
-		if(ioman_isWritable(c)){
-			if(ioman_flushSector(ioman,c)){
+	for(c=0; c<ioman->numbuf; c++)
+	{
+		if(ioman_isWritable(c))
+		{
+			if(ioman_flushSector(ioman,c))
+			{
 				return(-1);
 			}
 			if(ioman->usage[c]==0)ioman_setNotWritable(c);
@@ -447,8 +497,10 @@ euint8* ioman_getSector(IOManager *ioman,euint32 address, euint8 mode)
 {
 	esint32 bp;
 
-	if((bp=ioman_findSectorInCache(ioman,address))!=-1){
-		if(ioman_isReqRw(mode)){
+	if((bp=ioman_findSectorInCache(ioman,address))!=-1)
+	{
+		if(ioman_isReqRw(mode))
+		{
 			ioman_setWritable(bp);
 		}
 		ioman_incUseCnt(ioman,bp);
@@ -456,18 +508,23 @@ euint8* ioman_getSector(IOManager *ioman,euint32 address, euint8 mode)
 		return(ioman_getPtr(ioman,bp));
 	}
 
-	if((bp=ioman_findFreeSpot(ioman))==-1){
-		if(((bp=ioman_findUnusedSpot(ioman))!=-1)&&(ioman_isWritable(bp))){
+	if((bp=ioman_findFreeSpot(ioman))==-1)
+	{
+		if(((bp=ioman_findUnusedSpot(ioman))!=-1)&&(ioman_isWritable(bp)))
+		{
 			ioman_flushSector(ioman,bp);
 		}
 	}
 
-	if(bp!=-1){
+	if(bp!=-1)
+	{
 		ioman_resetCacheItem(ioman,bp);
-		if((ioman_putSectorInCache(ioman,address,bp))){
+		if((ioman_putSectorInCache(ioman,address,bp)))
+		{
 			return(0);
 		}
-		if(mode==IOM_MODE_READWRITE){
+		if(mode==IOM_MODE_READWRITE)
+		{
 			ioman_setWritable(bp);
 		}
 		ioman_incUseCnt(ioman,bp);
@@ -475,18 +532,23 @@ euint8* ioman_getSector(IOManager *ioman,euint32 address, euint8 mode)
 		return(ioman_getPtr(ioman,bp));
 	}
 
-	if((bp=ioman_findOverallocableSpot(ioman))!=-1){
-		if(ioman_isWritable(bp)){
+	if((bp=ioman_findOverallocableSpot(ioman))!=-1)
+	{
+		if(ioman_isWritable(bp))
+		{
 			ioman_flushSector(ioman,bp);
 		}
-		if(ioman_push(ioman,bp)){
+		if(ioman_push(ioman,bp))
+		{
 			return(0);
 		}
 		ioman_resetCacheItem(ioman,bp);
-		if((ioman_putSectorInCache(ioman,address,bp))){
+		if((ioman_putSectorInCache(ioman,address,bp)))
+		{
 			return(0);
 		}
-		if(ioman_isReqRw(mode)){
+		if(ioman_isReqRw(mode))
+		{
 			ioman_setWritable(bp);
 		}
 		ioman_incUseCnt(ioman,bp);
@@ -505,8 +567,10 @@ esint8 ioman_releaseSector(IOManager *ioman,euint8* buf)
 	bp=ioman_getBp(ioman,buf);
 	ioman_decUseCnt(ioman,bp);
 
-	if(ioman_getUseCnt(ioman,bp)==0 && ioman->itptr[bp]!=0){
-		if(ioman_isWritable(bp)){
+	if(ioman_getUseCnt(ioman,bp)==0 && ioman->itptr[bp]!=0)
+	{
+		if(ioman_isWritable(bp))
+		{
 			ioman_flushSector(ioman,bp);
 		}
 		ioman_pop(ioman,bp);
@@ -521,14 +585,17 @@ esint8 ioman_directSectorRead(IOManager *ioman,euint32 address, euint8* buf)
 	euint8* ibuf;
 	esint16 bp;
 
-	if((bp=ioman_findSectorInCache(ioman,address))!=-1){
+	if((bp=ioman_findSectorInCache(ioman,address))!=-1)
+	{
 		ibuf=ioman_getPtr(ioman,bp);
 		memCpy(ibuf,buf,512);
 		return(0);
 	}
 
-	if((bp=ioman_findFreeSpot(ioman))!=-1){
-		if((ioman_putSectorInCache(ioman,address,bp))){
+	if((bp=ioman_findFreeSpot(ioman))!=-1)
+	{
+		if((ioman_putSectorInCache(ioman,address,bp)))
+		{
 			return(-1);
 		}
 		ibuf=ioman_getPtr(ioman,bp);
@@ -536,7 +603,8 @@ esint8 ioman_directSectorRead(IOManager *ioman,euint32 address, euint8* buf)
 		return(0);
 	}
 
-	if(ioman_readSector(ioman,address,buf)){
+	if(ioman_readSector(ioman,address,buf))
+	{
 		return(-1);
 	}
 
@@ -549,14 +617,16 @@ esint8 ioman_directSectorWrite(IOManager *ioman,euint32 address, euint8* buf)
 	euint8* ibuf;
 	esint16 bp;
 
-	if((bp=ioman_findSectorInCache(ioman,address))!=-1){
+	if((bp=ioman_findSectorInCache(ioman,address))!=-1)
+	{
 		ibuf=ioman_getPtr(ioman,bp);
 		memCpy(buf,ibuf,512);
 		ioman_setWritable(bp);
 		return(0);
 	}
 
-	if((bp=ioman_findFreeSpot(ioman))!=-1){
+	if((bp=ioman_findFreeSpot(ioman))!=-1)
+	{
 		ibuf=ioman_getPtr(ioman,bp);
 		memCpy(buf,ibuf,512);
 		ioman_resetCacheItem(ioman,bp);
@@ -566,7 +636,8 @@ esint8 ioman_directSectorWrite(IOManager *ioman,euint32 address, euint8* buf)
 		return(0);
 	}
 
-	if(ioman_writeSector(ioman,address,buf)){
+	if(ioman_writeSector(ioman,address,buf))
+	{
 		return(-1);
 	}
 
@@ -580,13 +651,15 @@ void ioman_printStatus(IOManager *ioman)
 
 	DBG((TXT("IO-Manager -- Report\n====================\n")));
 	DBG((TXT("Buffer is %i sectors, from %p to %p\n"),
-	          ioman->numbuf,ioman->bufptr,ioman->bufptr+(ioman->numbuf*512)));
-	for(c=0;c<ioman->numbuf;c++){
-		if(ioman_isValid(c)){
+			 ioman->numbuf,ioman->bufptr,ioman->bufptr+(ioman->numbuf*512)));
+	for(c=0; c<ioman->numbuf; c++)
+	{
+		if(ioman_isValid(c))
+		{
 			DBG((TXT("BP %3i\t SC %8li\t\t US %i\t RF %i\t %s %s\n"),
-				c,ioman->sector[c],ioman_getUseCnt(ioman,c),ioman_getRefCnt(ioman,c),
-				ioman_isUserBuf(c) ? "USRBUF" : "      ",
-				ioman_isWritable(c) ? "WRITABLE" : "READONLY"));
+					 c,ioman->sector[c],ioman_getUseCnt(ioman,c),ioman_getRefCnt(ioman,c),
+					 ioman_isUserBuf(c) ? "USRBUF" : "      ",
+					 ioman_isWritable(c) ? "WRITABLE" : "READONLY"));
 		}
 	}
 }

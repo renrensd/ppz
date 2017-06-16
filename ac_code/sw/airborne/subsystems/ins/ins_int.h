@@ -65,74 +65,74 @@ enum _e_ins_gps_type
 /** Ins implementation state (fixed point) */
 struct InsInt
 {
-  struct LtpDef_i  ltp_def;
-  bool_t           ltp_initialized;
+	struct LtpDef_i  ltp_def;
+	bool_t           ltp_initialized;
 
-  /** request to realign horizontal filter.
-   * Sets to current position (local origin unchanged).
-   */
-  bool_t rtk_hf_realign;
+	/** request to realign horizontal filter.
+	 * Sets to current position (local origin unchanged).
+	 */
+	bool_t rtk_hf_realign;
 
-  /** request to reset vertical filter.
-   * Sets the z-position to zero and resets the the z-reference to current altitude.
-   */
-  bool_t vf_realign;
-  bool_t vf_stable;
+	/** request to reset vertical filter.
+	 * Sets the z-position to zero and resets the the z-reference to current altitude.
+	 */
+	bool_t vf_realign;
+	bool_t vf_stable;
 
-  /* output LTP NED */
-  struct NedCoor_i ltp_pos;
-  struct NedCoor_i ltp_speed;
-  struct NedCoor_i ltp_accel;
+	/* output LTP NED */
+	struct NedCoor_i ltp_pos;
+	struct NedCoor_i ltp_speed;
+	struct NedCoor_i ltp_accel;
 
-  // baro gps switch
-  enum _e_ins_ekf_status ekf_state;
-  float baro_ned_z;  ///< z-position calculated from baro in meters (NED)
-  float rtk_ned_z;
-  float rtk_ned_zd;
-  float rtk_ned_z_hist[INS_INT_RTK_Z_HIST_SIZE];
-  float rtk_ned_zd_hist[INS_INT_RTK_Z_HIST_SIZE];
-  uint8_t rtk_ned_z_hist_index;
-  bool_t rtk_z_hist_ok;
-  float raw_baro_offset;
-  struct FirstOrderLowPass baro_z_filter;
-  bool_t baro_initialized;
-  bool_t baro_valid;// not used !!!
-  float R_baro;
-  float R_baro_offset;
-  uint32_t baro_to_gps_count;
-  float baro_to_gps_offset_step;
-  float baro_to_gps_z_step;
-  bool_t virtual_rtk_pos_z_valid;
-  bool_t virtual_rtk_pos_xy_valid;
-  bool_t virtual_ublox_pos_valid;
-  bool_t virtual_baro_valid;
-  //
-  float R_rtk_pos_z_setting;
-  float R_rtk_pos_z;
-  float R_ublox_pos;
-  float R_ublox_vel;
-  bool_t ublox_hf_realign;
-  bool_t hf_realign_done;
-  enum _e_ins_gps_type gps_type;
-  enum _e_ins_gpss_status gpss_state;
+	// baro gps switch
+	enum _e_ins_ekf_status ekf_state;
+	float baro_ned_z;  ///< z-position calculated from baro in meters (NED)
+	float rtk_ned_z;
+	float rtk_ned_zd;
+	float rtk_ned_z_hist[INS_INT_RTK_Z_HIST_SIZE];
+	float rtk_ned_zd_hist[INS_INT_RTK_Z_HIST_SIZE];
+	uint8_t rtk_ned_z_hist_index;
+	bool_t rtk_z_hist_ok;
+	float raw_baro_offset;
+	struct FirstOrderLowPass baro_z_filter;
+	bool_t baro_initialized;
+	bool_t baro_valid;// not used !!!
+	float R_baro;
+	float R_baro_offset;
+	uint32_t baro_to_gps_count;
+	float baro_to_gps_offset_step;
+	float baro_to_gps_z_step;
+	bool_t virtual_rtk_pos_z_valid;
+	bool_t virtual_rtk_pos_xy_valid;
+	bool_t virtual_ublox_pos_valid;
+	bool_t virtual_baro_valid;
+	//
+	float R_rtk_pos_z_setting;
+	float R_rtk_pos_z;
+	float R_ublox_pos;
+	float R_ublox_vel;
+	bool_t ublox_hf_realign;
+	bool_t hf_realign_done;
+	enum _e_ins_gps_type gps_type;
+	enum _e_ins_gpss_status gpss_state;
 
-  //
-  struct NedCoor_i rtk_gps_pos_cm_ned;
-  struct NedCoor_i rtk_gps_speed_cm_ned;
-  struct NedCoor_i rtk_gps_sd_ned;
-  bool_t rtk_gps_update;
-  bool_t ublox_gps_update;
+	//
+	struct NedCoor_i rtk_gps_pos_cm_ned;
+	struct NedCoor_i rtk_gps_speed_cm_ned;
+	struct NedCoor_i rtk_gps_sd_ned;
+	bool_t rtk_gps_update;
+	bool_t ublox_gps_update;
 
-  struct FloatVect2 gps_pos_m_ned;
-  struct FloatVect2 gps_speed_m_ned;
+	struct FloatVect2 gps_pos_m_ned;
+	struct FloatVect2 gps_speed_m_ned;
 
-  uint8_t force_use_redundency;
+	uint8_t force_use_redundency;
 
 #if 1 //USE_SONAR
-  bool_t update_on_agl; ///< use sonar to update agl if available
+	bool_t update_on_agl; ///< use sonar to update agl if available
 #endif
 #if USE_RADAR24
-  bool_t update_radar_agl; ///< use sonar to update agl if available
+	bool_t update_radar_agl; ///< use sonar to update agl if available
 #endif
 };
 

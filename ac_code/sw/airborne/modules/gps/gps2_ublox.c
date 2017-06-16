@@ -24,23 +24,23 @@ static void send_gps2_ublox(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_GPS2_UBLOX(trans, dev, AC_ID,
-			&gps2.tow,
-			&gps2.num_sv,
-			&gps2.fix,
-			&gps2.ecef_pos.x,
-			&gps2.ecef_pos.y,
-			&gps2.ecef_pos.z,
-			&gps2.pacc,
-			&gps2.pdop,
-			&gps2.ecef_vel.x,
-			&gps2.ecef_vel.y,
-			&gps2.ecef_vel.z,
-			&gps2.sacc,
-			&gps2.ned_vel.x,
-			&gps2.ned_vel.y,
-			&gps2.ned_vel.z,
-			&gps2.course,
-			&gps2.cacc);
+													 &gps2.tow,
+													 &gps2.num_sv,
+													 &gps2.fix,
+													 &gps2.ecef_pos.x,
+													 &gps2.ecef_pos.y,
+													 &gps2.ecef_pos.z,
+													 &gps2.pacc,
+													 &gps2.pdop,
+													 &gps2.ecef_vel.x,
+													 &gps2.ecef_vel.y,
+													 &gps2.ecef_vel.z,
+													 &gps2.sacc,
+													 &gps2.ned_vel.x,
+													 &gps2.ned_vel.y,
+													 &gps2.ned_vel.z,
+													 &gps2.course,
+													 &gps2.cacc);
 }
 #endif
 
@@ -49,7 +49,7 @@ void gps2_ublox_init(void)
 	gps2_ublox.dev = &((GPS2_UBLOX_LINK).device);
 	UBX_parser_init(&gps2_ublox.parser);
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS2_UBLOX, send_gps2_ublox);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS2_UBLOX, send_gps2_ublox);
 #endif
 }
 
@@ -58,7 +58,7 @@ void gps2_ublox_event(void)
 	while (gps2_ublox.dev->char_available(gps2_ublox.dev->periph))
 	{
 		UBX_message_parse(&gps2_ublox.parser ,
-				gps2_ublox.dev->get_byte(gps2_ublox.dev->periph));
+											gps2_ublox.dev->get_byte(gps2_ublox.dev->periph));
 	}
 
 	gps2_ublox_update(&gps2_ublox.parser, &gps2);

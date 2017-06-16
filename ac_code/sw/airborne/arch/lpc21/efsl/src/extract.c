@@ -95,9 +95,9 @@ euint16 ex_getb16(euint8* buf,euint32 offset)
 euint32 ex_getb32(euint8* buf,euint32 offset)
 {
 	return(ltb_end32(((euint32)buf[offset+3]<<24)+
-	      ((euint32)buf[offset+2]<<16)+
-	      ((euint32)buf[offset+1]<<8)+
-	      ((euint32)buf[offset+0]<<0)));
+									 ((euint32)buf[offset+2]<<16)+
+									 ((euint32)buf[offset+1]<<8)+
+									 ((euint32)buf[offset+0]<<0)));
 }
 /*****************************************************************************/
 

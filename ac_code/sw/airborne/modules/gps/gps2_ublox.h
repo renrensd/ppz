@@ -14,10 +14,10 @@
 
 struct _s_gps2_ublox
 {
-  struct _s_ubx_parser parser;
-  struct link_device *dev;
+	struct _s_ubx_parser parser;
+	struct link_device *dev;
 
-  uint8_t have_velned;
+	uint8_t have_velned;
 };
 
 extern struct _s_gps2_ublox gps2_ublox;

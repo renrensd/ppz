@@ -29,70 +29,70 @@
 
 enum
 {
-    OPS_ST_IDLE,
-    OPS_ST_START, /*Only for tx*/
-    OPS_ST_A5,
-    OPS_ST_5A,
-    OPS_ST_ID,
-    OPS_ST_LEN,
-    OPS_ST_TYPE,  /*indicate is ack frame or data frame.*/
-    OPS_ST_ACK_CS,
-    OPS_ST_DATA,
-    OPS_ST_DATA_CS,
-    OPS_ST_END,/*Only for tx*/
+	OPS_ST_IDLE,
+	OPS_ST_START, /*Only for tx*/
+	OPS_ST_A5,
+	OPS_ST_5A,
+	OPS_ST_ID,
+	OPS_ST_LEN,
+	OPS_ST_TYPE,  /*indicate is ack frame or data frame.*/
+	OPS_ST_ACK_CS,
+	OPS_ST_DATA,
+	OPS_ST_DATA_CS,
+	OPS_ST_END,/*Only for tx*/
 } UART_OPS_PROCESS_STATUS;
 
 enum
 {
-    OPS_IS_SENDING_NONE,
-    OPS_IS_SENDING_ACK, 
-    OPS_IS_SENDING_FRAME,
+	OPS_IS_SENDING_NONE,
+	OPS_IS_SENDING_ACK,
+	OPS_IS_SENDING_FRAME,
 } UART_OPS_SEND_TYPE;
 
 enum
 {
-    OPS_ACK_WAIT_NONE,
-    OPS_ACK_WAITING, 
-    OPS_ACK_WAIT_TIMEOUT,
+	OPS_ACK_WAIT_NONE,
+	OPS_ACK_WAITING,
+	OPS_ACK_WAIT_TIMEOUT,
 } UART_OPS_ACK_WAIT_STATE;
 
-typedef struct 
+typedef struct
 {
-    FIFO_TYPE fifo_info;
-    U8  *pBuff;   
+	FIFO_TYPE fifo_info;
+	U8  *pBuff;
 } UART_OPS_FIFO_TYPE;
 
-typedef struct 
+typedef struct
 {
 	U8 status;/** rx status **/
 	U8 cs;/** cs  =ID^LENGTH^DATA1^DATA2^....^DATAn **/
 	U8 last_frame_id;/** received successfully at last time **/
 	U8 frame_id;/** received currentlly **/
-	U8 frame_len;/** data frame len,  not including the len byte **/ 
-	U8 byte_index; 
+	U8 frame_len;/** data frame len,  not including the len byte **/
+	U8 byte_index;
 	U8 frame_type;
 } UART_OPS_RX_INFO_TYPE;
 
-typedef struct 
+typedef struct
 {
-    BOOL req_send_sync_byte;
-    BOOL req_send_ack;
-    BOOL req_send_frame;
-    BOOL req_restart_crq;
-    U8 send_type;/*is sending ack or frame or nothing?*/
-    U8 ack_wait_state;
-    U8 status;/** tx status **/
-    U8 cs; /** cs  =ID^LENGTH^DATA1^DATA2^....^DATAn **/
-    U8 ack_id;/** id that just received and need to sent it's ack **/
-    U8 frame_id;/** id value that will be sent in a new frame**/
-    U8 frame_len; /** data frame len,  not including the len byte **/ 
-    U8 byte_index;	
+	BOOL req_send_sync_byte;
+	BOOL req_send_ack;
+	BOOL req_send_frame;
+	BOOL req_restart_crq;
+	U8 send_type;/*is sending ack or frame or nothing?*/
+	U8 ack_wait_state;
+	U8 status;/** tx status **/
+	U8 cs; /** cs  =ID^LENGTH^DATA1^DATA2^....^DATAn **/
+	U8 ack_id;/** id that just received and need to sent it's ack **/
+	U8 frame_id;/** id value that will be sent in a new frame**/
+	U8 frame_len; /** data frame len,  not including the len byte **/
+	U8 byte_index;
 } UART_OPS_TX_INFO_TYPE;
 
-typedef struct 
+typedef struct
 {
-    U16 timer_counter;/** Timer = polling period*timer_counter **/
-    U16 timeout_counter;   
+	U16 timer_counter;/** Timer = polling period*timer_counter **/
+	U16 timeout_counter;
 } UART_OPS_TIMER_TYPE;
 
 /**** Definition of macros ****/
@@ -148,7 +148,8 @@ static void uart_ops_clr_req_send_alarm(void);
 static void uart_ops_set_ack_alarm(void);
 static void uart_ops_clr_ack_alarm(void);
 static void uart_ops_set_enter_tx_alarm(void);
-;static void uart_ops_clr_enter_tx_alarm(void);
+;
+static void uart_ops_clr_enter_tx_alarm(void);
 static void  uart_ops_send_ack(U8 frame_id);
 static void uart_ops_set_restart_crq(void);
 static void uart_ops_clr_restart_crq(void);

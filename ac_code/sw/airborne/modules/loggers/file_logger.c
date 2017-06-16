@@ -37,10 +37,10 @@
 #include "firmwares/rotorcraft/stabilization.h"
 #include "state.h"
 
-//#include "ops_app.h"   
-//#include "ops_app_if.h" 
+//#include "ops_app.h"
+//#include "ops_app_if.h"
 #include "subsystems/ops/ops_msg_if.h"
-#include "subsystems/ops/ops_app_if.h" 
+#include "subsystems/ops/ops_app_if.h"
 
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
@@ -55,37 +55,37 @@
 void file_logger_start(void)
 {
 	ops_msg_direct_open_spray();
-	#if 0
-  uint32_t counter = 0;
-  char filename[512];
+#if 0
+	uint32_t counter = 0;
+	char filename[512];
 
-  // Check for available files
-  #if 0
-  sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
-  res = f_open(&flog, filename, "r");
-  if(res != FR_OK)
-  {
-    f_close(&flog);
+	// Check for available files
+#if 0
+	sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
+	res = f_open(&flog, filename, "r");
+	if(res != FR_OK)
+	{
+		f_close(&flog);
 
-    counter++;
-    sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
-  }
-  #endif
+		counter++;
+		sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
+	}
+#endif
 
-  f_open(&flog, "logger.csv", FA_CREATE_NEW);
-  f_close(&flog);
+	f_open(&flog, "logger.csv", FA_CREATE_NEW);
+	f_close(&flog);
 
 
-  res = f_open(&flog, "logger.csv", FA_WRITE);
+	res = f_open(&flog, "logger.csv", FA_WRITE);
 
-  if (res == FR_OK) 
-  {
-    f_printf(
-      &flog,
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
-    );
-  }
-  #endif
+	if (res == FR_OK)
+	{
+		f_printf(
+			&flog,
+			"counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
+		);
+	}
+#endif
 }
 
 /** Stop the logger an nicely close the file */
@@ -93,47 +93,47 @@ void file_logger_stop(void)
 {
 	ops_msg_direct_stop_spray();
 
-	#if 0
-  if (res == FR_OK) 
-  {
-    f_close(&flog);
-  }
-  #endif
+#if 0
+	if (res == FR_OK)
+	{
+		f_close(&flog);
+	}
+#endif
 }
 
 /** Log the values to a csv file */
 void file_logger_periodic(void)
 {
 
-	
-	#if 0
-  if (res != FR_OK) 
-  {
-    return;
-  }
-  static uint32_t counter;
-  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
 
-  f_printf(&flog, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
-          counter,
-          imu.gyro_unscaled.p,
-          imu.gyro_unscaled.q,
-          imu.gyro_unscaled.r,
-          imu.accel_unscaled.x,
-          imu.accel_unscaled.y,
-          imu.accel_unscaled.z,
-          imu.mag_unscaled.x,
-          imu.mag_unscaled.y,
-          imu.mag_unscaled.z,
-          stabilization_cmd[COMMAND_THRUST],
-          stabilization_cmd[COMMAND_ROLL],
-          stabilization_cmd[COMMAND_PITCH],
-          stabilization_cmd[COMMAND_YAW],
-          quat->qi,
-          quat->qx,
-          quat->qy,
-          quat->qz
-         );
-  counter++;
-  #endif
+#if 0
+	if (res != FR_OK)
+	{
+		return;
+	}
+	static uint32_t counter;
+	struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+
+	f_printf(&flog, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+					 counter,
+					 imu.gyro_unscaled.p,
+					 imu.gyro_unscaled.q,
+					 imu.gyro_unscaled.r,
+					 imu.accel_unscaled.x,
+					 imu.accel_unscaled.y,
+					 imu.accel_unscaled.z,
+					 imu.mag_unscaled.x,
+					 imu.mag_unscaled.y,
+					 imu.mag_unscaled.z,
+					 stabilization_cmd[COMMAND_THRUST],
+					 stabilization_cmd[COMMAND_ROLL],
+					 stabilization_cmd[COMMAND_PITCH],
+					 stabilization_cmd[COMMAND_YAW],
+					 quat->qi,
+					 quat->qx,
+					 quat->qy,
+					 quat->qz
+					);
+	counter++;
+#endif
 }

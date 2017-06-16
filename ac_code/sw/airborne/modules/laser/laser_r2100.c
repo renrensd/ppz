@@ -60,95 +60,95 @@ struct LASER_R2100_DATA laser_data;
 
 static inline void parse_laser(struct LASER_R2100 *t, uint8_t c)
 {
-  switch (t->status) 
-  {
-    case LASER_R2100_UNINIT:
-      if (c == LASER_R2100_STX) 
-	  {
-		t->cs = 0;
+	switch (t->status)
+	{
+	case LASER_R2100_UNINIT:
+		if (c == LASER_R2100_STX)
+		{
+			t->cs = 0;
+			t->status++;
+			t->cs ^= c;
+		}
+		break;
+	case LASER_R2100_GOT_STX:
+		if (c == LASER_R2100_TXID)
+		{
+			t->status++;
+			t->cs ^= c;
+		}
+		else
+		{
+			t->status = LASER_R2100_UNINIT;
+		}
+		break;
+	case LASER_R2100_GOT_TXID:
+		if (c == LASER_R2100_LEN)
+		{
+			t->status++;
+			t->cs ^= c;
+			t->payload_idx = 0;
+		}
+		else
+		{
+			t->status = LASER_R2100_UNINIT;
+		}
+		break;
+	case LASER_R2100_GOT_LEN:
+		if (c == LASER_R2100_CMD)
+		{
+			t->status++;
+			t->cs ^= c;
+			t->payload_idx = 0;
+		}
+		else
+		{
+			t->status = LASER_R2100_UNINIT;
+		}
+		break;
+	case LASER_R2100_GOT_CMD:
+		t->payload[t->payload_idx] = c;
+		t->cs ^= c;
+		t->payload_idx++;
+		if (t->payload_idx == LASER_R2100_PAYLOAD_LEN)
+		{
+			t->status++;
+		}
+		break;
+	case LASER_R2100_GOT_PAYLOAD:
 		t->status++;
 		t->cs ^= c;
-      }
-      break;
-    case LASER_R2100_GOT_STX:
-	  if (c == LASER_R2100_TXID) 
-	  {
-        t->status++;
-		t->cs ^= c;
-      }
-	  else
-	  {
-		t->status = LASER_R2100_UNINIT;
-	  }
-      break;
-	case LASER_R2100_GOT_TXID:
-	  if (c == LASER_R2100_LEN) 
-	  {
-        t->status++;
-		t->cs ^= c;
-		t->payload_idx = 0;
-      }
-	  else
-	  {
-		t->status = LASER_R2100_UNINIT;
-	  }
-      break;
-    case LASER_R2100_GOT_LEN:
-	  if (c == LASER_R2100_CMD) 
-	  {
-        t->status++;
-		t->cs ^= c;
-		t->payload_idx = 0;
-      }
-	  else
-	  {
-		t->status = LASER_R2100_UNINIT;
-	  }
-      break;
-	case LASER_R2100_GOT_CMD:	
-      t->payload[t->payload_idx] = c;
-	  t->cs ^= c;
-      t->payload_idx++;
-      if (t->payload_idx == LASER_R2100_PAYLOAD_LEN) 
-	  {
-        t->status++;
-      }
-      break;
-    case LASER_R2100_GOT_PAYLOAD:
-        t->status++;
-		t->cs ^= c;
 		break;
-    case LASER_R2100_GOT_REV:
-      if (c != t->cs) 
-	  {
-        goto error;
-      }
-      t->msg_received = TRUE;
-	  t->cs = 0;
-      goto restart;
-	  
-    default:
-      goto error;
-  }
-  return;
+	case LASER_R2100_GOT_REV:
+		if (c != t->cs)
+		{
+			goto error;
+		}
+		t->msg_received = TRUE;
+		t->cs = 0;
+		goto restart;
+
+	default:
+		goto error;
+	}
+	return;
 error:
-  t->error++;
+	t->error++;
 restart:
-  t->status = LASER_R2100_UNINIT;
-  return;
+	t->status = LASER_R2100_UNINIT;
+	return;
 }
 
 void laser_r2100_event(void)
-{  
+{
 	uint8_t i;
-	
+
 	if ( laserChAvailable() )
 	{
-		while ( laserChAvailable() && !laser_r2100.msg_received ) 
+		while ( laserChAvailable() && !laser_r2100.msg_received )
 		{
-	      	parse_laser( &laser_r2100, laserGetch() );
-	    }
-	    if (laser_r2100.msg_received)
+			parse_laser( &laser_r2100, laserGetch() );
+		}
+		if (laser_r2100.msg_received)
 		{
 			laser_r2100.msg_received = FALSE;
 			for(i=0; i<R2100_DIS_NUM; i++)
@@ -156,12 +156,14 @@ void laser_r2100_event(void)
 				laser_data.dis[i] = laser_r2100.payload[i*4] | (laser_r2100.payload[i*4+1] << 8);
 				laser_data.echo[i] = laser_r2100.payload[i*4+2] | (laser_r2100.payload[i*4+3] << 8);
 			}
-		#if 0//PERIODIC_TELEMETRY
-		    RunOnceEvery(10,   {
-		    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-		    DOWNLINK_SEND_LASER_DATA(DefaultChannel, DefaultDevice, &laser_data.dis[0],&laser_data.echo[0]);}    );
-		#endif
-	    }
+#if 0//PERIODIC_TELEMETRY
+			RunOnceEvery(10,
+			{
+				xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+				DOWNLINK_SEND_LASER_DATA(DefaultChannel, DefaultDevice, &laser_data.dis[0],&laser_data.echo[0]);
+			}    );
+#endif
+		}
 	}
 }
 

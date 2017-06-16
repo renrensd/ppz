@@ -36,40 +36,42 @@
 
 static inline void autopilot_parse(char c)
 {
-  ModemLinkDevice->put_byte(ModemLinkDevice->periph, c);
+	ModemLinkDevice->put_byte(ModemLinkDevice->periph, c);
 }
 
 static inline void modem_parse(char c)
 {
-  AutopilotLinkDevice->put_byte(AutopilotLinkDevice->periph, c);
+	AutopilotLinkDevice->put_byte(AutopilotLinkDevice->periph, c);
 }
 
 void fbw_datalink_periodic(void)
 {
 #ifdef MODEM_LINK_LED
-  LED_OFF(MODEM_LINK_LED);
+	LED_OFF(MODEM_LINK_LED);
 #endif
 #ifdef AUTOPILOT_LINK_LED
-  LED_OFF(AUTOPILOT_LINK_LED);
+	LED_OFF(AUTOPILOT_LINK_LED);
 #endif
 }
 
 void fbw_datalink_event(void)
 {
 #ifdef MODEM_LINK_LED
-  if (ModemLinkDevice->char_available(ModemLinkDevice->periph)) {
-    LED_ON(MODEM_LINK_LED);
-  }
+	if (ModemLinkDevice->char_available(ModemLinkDevice->periph))
+	{
+		LED_ON(MODEM_LINK_LED);
+	}
 #endif
 #ifdef AUTOPILOT_LINK_LED
-  if (AutopilotLinkDevice->char_available(AutopilotLinkDevice->periph)) {
-    LED_ON(AUTOPILOT_LINK_LED);
-  }
+	if (AutopilotLinkDevice->char_available(AutopilotLinkDevice->periph))
+	{
+		LED_ON(AUTOPILOT_LINK_LED);
+	}
 #endif
 
-  while (ModemLinkDevice->char_available(ModemLinkDevice->periph))
-    modem_parse(ModemLinkDevice->get_byte(ModemLinkDevice->periph));
+	while (ModemLinkDevice->char_available(ModemLinkDevice->periph))
+		modem_parse(ModemLinkDevice->get_byte(ModemLinkDevice->periph));
 
-  while (AutopilotLinkDevice->char_available(AutopilotLinkDevice->periph))
-    autopilot_parse(AutopilotLinkDevice->get_byte(AutopilotLinkDevice->periph));
+	while (AutopilotLinkDevice->char_available(AutopilotLinkDevice->periph))
+		autopilot_parse(AutopilotLinkDevice->get_byte(AutopilotLinkDevice->periph));
 }

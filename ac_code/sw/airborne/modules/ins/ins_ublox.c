@@ -21,19 +21,19 @@ static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_INS_UBLOX(trans, dev, AC_ID,
-			&gps2.p_stable,
-			&ins_ublox.ned_pos.x,
-			&ins_ublox.ned_pos.y,
-			&ins_ublox.ned_pos.z,
-			&ins_ublox.ublox_ned_vel.x,
-			&ins_ublox.ublox_ned_vel.y,
-			&ins_ublox.ublox_ned_vel.z,
-			&ins_ublox.sgdf_ned_vel.x,
-			&ins_ublox.sgdf_ned_vel.y,
-			&ins_ublox.sgdf_ned_vel.z,
-			&ins_ublox.ecef_to_ned_vel.x,
-			&ins_ublox.ecef_to_ned_vel.y,
-			&ins_ublox.ecef_to_ned_vel.z);
+													&gps2.p_stable,
+													&ins_ublox.ned_pos.x,
+													&ins_ublox.ned_pos.y,
+													&ins_ublox.ned_pos.z,
+													&ins_ublox.ublox_ned_vel.x,
+													&ins_ublox.ublox_ned_vel.y,
+													&ins_ublox.ublox_ned_vel.z,
+													&ins_ublox.sgdf_ned_vel.x,
+													&ins_ublox.sgdf_ned_vel.y,
+													&ins_ublox.sgdf_ned_vel.z,
+													&ins_ublox.ecef_to_ned_vel.x,
+													&ins_ublox.ecef_to_ned_vel.y,
+													&ins_ublox.ecef_to_ned_vel.z);
 }
 #endif
 
@@ -80,15 +80,15 @@ void ins_ublox_init(void)
 	//AbiBindMsgIMU_ACCEL_INT32(ABI_BROADCAST, &accel_ev, accel_cb);
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_UBLOX, send_ins_ublox);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_UBLOX, send_ins_ublox);
 #endif
 
-  INIT_SGDF(ins_ublox.vel_x_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
-  INIT_SGDF(ins_ublox.vel_y_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
-  INIT_SGDF(ins_ublox.vel_z_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
+	INIT_SGDF(ins_ublox.vel_x_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
+	INIT_SGDF(ins_ublox.vel_y_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
+	INIT_SGDF(ins_ublox.vel_z_sgdf, NED_VEL_SGDF_WIN_SIZE, GPS2_UBLOX_UPDATE_FERQ);
 
-  ins_ublox.ltpDef_initialized = FALSE;
-  ins_ublox.ublox_stable_first_time = TRUE;
+	ins_ublox.ltpDef_initialized = FALSE;
+	ins_ublox.ublox_stable_first_time = TRUE;
 }
 
 void ins_ublox_event(void)

@@ -54,12 +54,12 @@ struct Infrared_raw ir_adc;
 // Standard infrared implementation
 void infrared_init(void)
 {
-  infrared_adc_init();
+	infrared_adc_init();
 }
 
 void infrared_update(void)
 {
-  infrared_adc_update();
+	infrared_adc_update();
 }
 
 /* No event with adc ir */
@@ -71,17 +71,17 @@ void infrared_event(void) {}
 void infrared_adc_init(void)
 {
 #if ! (defined SITL || defined HITL)
-  adc_buf_channel(ADC_CHANNEL_IR1, &buf_ir1, ADC_CHANNEL_IR_NB_SAMPLES);
-  adc_buf_channel(ADC_CHANNEL_IR2, &buf_ir2, ADC_CHANNEL_IR_NB_SAMPLES);
+	adc_buf_channel(ADC_CHANNEL_IR1, &buf_ir1, ADC_CHANNEL_IR_NB_SAMPLES);
+	adc_buf_channel(ADC_CHANNEL_IR2, &buf_ir2, ADC_CHANNEL_IR_NB_SAMPLES);
 #ifdef ADC_CHANNEL_IR_TOP
-  adc_buf_channel(ADC_CHANNEL_IR_TOP, &buf_ir3, ADC_CHANNEL_IR_NB_SAMPLES);
+	adc_buf_channel(ADC_CHANNEL_IR_TOP, &buf_ir3, ADC_CHANNEL_IR_NB_SAMPLES);
 #endif
 #endif
 
-  infrared_struct_init();
+	infrared_struct_init();
 
 #if ! (defined ADC_CHANNEL_IR_TOP || defined HITL || defined SITL)
-  ir_adc.ir3 = IR_DEFAULT_CONTRAST;
+	ir_adc.ir3 = IR_DEFAULT_CONTRAST;
 #endif
 }
 
@@ -92,12 +92,12 @@ void infrared_adc_init(void)
 void infrared_adc_update(void)
 {
 #if ! (defined SITL || defined HITL)
-  ir_adc.ir1 = (int32_t)(buf_ir1.sum / buf_ir1.av_nb_sample) - IR_ADC_IR1_NEUTRAL;
-  ir_adc.ir2 = (int32_t)(buf_ir2.sum / buf_ir2.av_nb_sample) - IR_ADC_IR2_NEUTRAL;
+	ir_adc.ir1 = (int32_t)(buf_ir1.sum / buf_ir1.av_nb_sample) - IR_ADC_IR1_NEUTRAL;
+	ir_adc.ir2 = (int32_t)(buf_ir2.sum / buf_ir2.av_nb_sample) - IR_ADC_IR2_NEUTRAL;
 #ifdef ADC_CHANNEL_IR_TOP
-  ir_adc.ir3 = (int32_t)(buf_ir3.sum / buf_ir3.av_nb_sample) - IR_ADC_TOP_NEUTRAL;
+	ir_adc.ir3 = (int32_t)(buf_ir3.sum / buf_ir3.av_nb_sample) - IR_ADC_TOP_NEUTRAL;
 #endif // IR_TOP
-  UpdateIRValue(ir_adc);
+	UpdateIRValue(ir_adc);
 #endif /* !SITL && !HITL */
 }
 

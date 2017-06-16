@@ -68,10 +68,10 @@ static void traj_pid_loop_reset(void);
 #include "subsystems/datalink/telemetry.h"
 
 static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
-{ 
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  pprz_msg_send_ROTORCRAFT_TUNE_HOVER(trans, dev, AC_ID,
-                                      &traj.mode,
+{
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	pprz_msg_send_ROTORCRAFT_TUNE_HOVER(trans, dev, AC_ID,
+																			&traj.mode,
 																			&traj.state,
 																			&traj.pos_along_pid.Kp,
 																			&traj.hover_point.x,
@@ -96,43 +96,43 @@ static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
 																			&traj.cmd_t.y,
 																			&traj.cmd_t_comp.x,
 																			&traj.cmd_t_comp.y
-                                      );
+																		 );
 }
 
 #endif
 
 void guidance_h_init(void)
 {
-  guidance_h.mode = GUIDANCE_H_MODE_KILL;
+	guidance_h.mode = GUIDANCE_H_MODE_KILL;
 
-  INT_EULERS_ZERO(guidance_h.src_sp);
+	INT_EULERS_ZERO(guidance_h.src_sp);
 
 	guidance_h.ned_acc_filter_fc = 1;
 	guidance_h.ned_vel_filter_fc = 5;
 
 	init_butterworth_2_low_pass(&guidance_h.ned_acc_x_filter, low_pass_filter_get_tau(guidance_h.ned_acc_filter_fc),
-			1.0f / (float) PERIODIC_FREQUENCY, 0);
+															1.0f / (float) PERIODIC_FREQUENCY, 0);
 	init_butterworth_2_low_pass(&guidance_h.ned_acc_y_filter, low_pass_filter_get_tau(guidance_h.ned_acc_filter_fc),
-			1.0f / (float) PERIODIC_FREQUENCY, 0);
+															1.0f / (float) PERIODIC_FREQUENCY, 0);
 	init_butterworth_2_low_pass(&guidance_h.ned_vel_x_filter, low_pass_filter_get_tau(guidance_h.ned_vel_filter_fc),
-			1.0f / (float) PERIODIC_FREQUENCY, 0);
+															1.0f / (float) PERIODIC_FREQUENCY, 0);
 	init_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter, low_pass_filter_get_tau(guidance_h.ned_vel_filter_fc),
-			1.0f / (float) PERIODIC_FREQUENCY, 0);
+															1.0f / (float) PERIODIC_FREQUENCY, 0);
 
 	guidance_h_rc_pos_sp_need_reset();
 	guidance_h.pid_loop_mode_running = POS_VEL;
 	guidance_h.pid_loop_mode_gcs = POS_VEL;
 
-  guidance_h.vrc_heading_rate_sp = 0;
+	guidance_h.vrc_heading_rate_sp = 0;
 
-  guidance_h_trajectory_tracking_ini();
+	guidance_h_trajectory_tracking_ini();
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
-  guidance_h_module_init();
+	guidance_h_module_init();
 #endif
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_TUNE_HOVER, send_tune_hover);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_TUNE_HOVER, send_tune_hover);
 #endif
 }
 
@@ -141,9 +141,9 @@ void guidance_h_SetNedAccFc(float Fc)
 	guidance_h.ned_acc_filter_fc = Fc;
 
 	init_butterworth_2_low_pass(&guidance_h.ned_acc_x_filter, low_pass_filter_get_tau(Fc),
-			1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_acc_x_filter));
+															1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_acc_x_filter));
 	init_butterworth_2_low_pass(&guidance_h.ned_acc_y_filter, low_pass_filter_get_tau(Fc),
-			1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_acc_y_filter));
+															1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_acc_y_filter));
 }
 
 void guidance_h_SetNedVelFc(float Fc)
@@ -151,9 +151,9 @@ void guidance_h_SetNedVelFc(float Fc)
 	guidance_h.ned_vel_filter_fc = Fc;
 
 	init_butterworth_2_low_pass(&guidance_h.ned_vel_x_filter, low_pass_filter_get_tau(Fc),
-			1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_vel_x_filter));
+															1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_vel_x_filter));
 	init_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter, low_pass_filter_get_tau(Fc),
-			1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter));
+															1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter));
 }
 
 void guidance_h_set_vrc_vel_sp_body(float x, float y)
@@ -250,8 +250,10 @@ static void traj_update_R(float psi)
 	float cos = cosf(psi);
 	float sin = sinf(psi);
 
-	traj.R_b2i.m11 = +cos; traj.R_b2i.m12 = -sin;
-	traj.R_b2i.m21 = +sin; traj.R_b2i.m22 = +cos;
+	traj.R_b2i.m11 = +cos;
+	traj.R_b2i.m12 = -sin;
+	traj.R_b2i.m21 = +sin;
+	traj.R_b2i.m22 = +cos;
 
 	Matrix22_trans(&traj.R_i2b, &traj.R_b2i);
 
@@ -504,6 +506,19 @@ void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake)
 	traj.emergency_brake = brake;
 }
 
+bool_t guidance_h_trajectory_tracking_emergency_braking(void)
+{
+	return (traj.state == TRAJ_STATUS_BRAKE);
+}
+
+bool_t guidance_h_trajectory_tracking_hover_steady(void)
+{
+	return ((fabsf(traj.vel_t.x) < 0.2f)
+					&& (fabsf(traj.vel_t.y) < 0.2f)
+					&& (fabsf(stateGetNedToBodyEulers_f()->phi) < (10.0f))
+					&& (fabsf(stateGetNedToBodyEulers_f()->theta) < (10.0f)));
+}
+
 void guidance_h_trajectory_tracking_set_hover(struct FloatVect2 point)
 {
 	guidance_h_trajectory_tracking_set_segment(point, point);
@@ -624,7 +639,7 @@ static void guidance_h_trajectory_tracking_ini(void)
 	guidance_h_trajectory_tracking_set_min_brake_len(2.0f);
 	guidance_h_trajectory_tracking_set_emergency_brake_acc(3.0f);
 	traj.test_length = 20.0f;
-    traj.max_acc_backup = traj.max_acc;
+	traj.max_acc_backup = traj.max_acc;
 }
 
 static void guidance_h_trajectory_tracking_state_machine(void)
@@ -679,9 +694,9 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 			else
 			{
 				traj.pos_along_pid.Kp = (1.0f - ((left_len / (traj.pos_along_brake_len * traj.brake_margin)) * 0.5f))
-						* traj.pos_along_Kp;
+																* traj.pos_along_Kp;
 				traj.pos_along_pid.Kd = (1.0f - ((left_len / (traj.pos_along_brake_len * traj.brake_margin)) * 0.5f))
-						* traj.pos_along_Kd;
+																* traj.pos_along_Kd;
 			}
 			Bound(traj.pos_along_pid.Kp, (traj.pos_along_Kp*0.5f), traj.pos_along_Kp);
 			Bound(traj.pos_along_pid.Kd, (traj.pos_along_Kd*0.5f), traj.pos_along_Kd);
@@ -697,7 +712,7 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 				traj.guid_speed -= vel_inc;
 			}
 
-			if(fabsf(traj.vel_t.x) < 0.2f)
+			if( guidance_h_trajectory_tracking_hover_steady() )
 			{
 				traj.emergency_brake_x += traj.pos_t.x;
 				if(++traj.emergency_brake_cnt >= (2*PERIODIC_FREQUENCY))
@@ -710,9 +725,10 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 					}
 				}
 			}
-			else if(fabsf(traj.vel_t.x) > 0.2f)
+			else
 			{
 				traj.emergency_brake_cnt = 0;
+				traj.emergency_brake_x = 0;
 			}
 		}
 		else if (traj.state == TRAJ_STATUS_BRAKE_DONE)
@@ -842,7 +858,7 @@ void guidance_h_mode_changed(uint8_t new_mode)
 				guidance_h.mode == GUIDANCE_H_MODE_RATE ||
 				guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
-		stabilization_attitude_enter();
+			stabilization_attitude_enter();
 		break;
 
 	case GUIDANCE_H_MODE_HOVER:
@@ -853,11 +869,11 @@ void guidance_h_mode_changed(uint8_t new_mode)
 				guidance_h.mode == GUIDANCE_H_MODE_RATE ||
 				guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
-		stabilization_attitude_enter();
+			stabilization_attitude_enter();
 		break;
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
-		case GUIDANCE_H_MODE_MODULE:
+	case GUIDANCE_H_MODE_MODULE:
 		guidance_h_module_enter();
 		break;
 #endif
@@ -870,7 +886,7 @@ void guidance_h_mode_changed(uint8_t new_mode)
 				guidance_h.mode == GUIDANCE_H_MODE_RATE ||
 				guidance_h.mode == GUIDANCE_H_MODE_RC_DIRECT)
 #endif
-		stabilization_attitude_enter();
+			stabilization_attitude_enter();
 		break;
 
 	case GUIDANCE_H_MODE_FLIP:
@@ -916,7 +932,7 @@ void guidance_h_read_rc(bool_t in_flight)
 		break;
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
-		case GUIDANCE_H_MODE_MODULE:
+	case GUIDANCE_H_MODE_MODULE:
 		guidance_h_module_read_rc();
 		break;
 #endif
@@ -1025,7 +1041,7 @@ void guidance_h_run(bool_t  in_flight)
 		break;
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE
-		case GUIDANCE_H_MODE_MODULE:
+	case GUIDANCE_H_MODE_MODULE:
 		guidance_h_module_run(in_flight);
 		break;
 #endif
@@ -1042,33 +1058,33 @@ void guidance_h_run(bool_t  in_flight)
 
 static void guidance_h_hover_enter(void)
 {
-  /* set horizontal setpoint to current position */
+	/* set horizontal setpoint to current position */
 	guidance_h_rc_pos_sp_need_reset();
-  guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
-  traj_pid_loop_reset();
+	guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
+	traj_pid_loop_reset();
 
-  guidance_h.src_sp.psi = stateGetNedToBodyEulers_i()->psi;
+	guidance_h.src_sp.psi = stateGetNedToBodyEulers_i()->psi;
 }
 
 static void guidance_h_nav_enter(void)
 {
-  /* horizontal position setpoint from navigation/flightplan */
+	/* horizontal position setpoint from navigation/flightplan */
 	guidance_h_rc_pos_sp_need_reset();
-  traj_pid_loop_reset();
+	traj_pid_loop_reset();
 
-  nav_heading = stateGetNedToBodyEulers_i()->psi;
+	nav_heading = stateGetNedToBodyEulers_i()->psi;
 }
 
 void guidance_h_nav_rc_enter(void)
 {
-  /* set horizontal setpoint to current position */
+	/* set horizontal setpoint to current position */
 	guidance_h_rc_pos_sp_need_reset();
-  guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
-  traj_pid_loop_reset();
+	guidance_h_trajectory_tracking_set_hover(guidance_h.ned_pos);
+	traj_pid_loop_reset();
 
-  guidance_h.vrc_heading_sp = stateGetNedToBodyEulers_f()->psi;
+	guidance_h.vrc_heading_sp = stateGetNedToBodyEulers_f()->psi;
 
-  horizontal_mode = HORIZONTAL_MODE_RC;    //request to set mode
+	horizontal_mode = HORIZONTAL_MODE_RC;    //request to set mode
 }
 
 /// read speed setpoint from RC

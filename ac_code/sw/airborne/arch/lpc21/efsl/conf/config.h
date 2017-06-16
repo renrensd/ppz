@@ -14,16 +14,16 @@
  * device!
 */
 
-	/*#define HW_ENDPOINT_LINUX*/
-	/*#define HW_ENDPOINT_ATMEGA128_SD*/
+/*#define HW_ENDPOINT_LINUX*/
+/*#define HW_ENDPOINT_ATMEGA128_SD*/
 
 
-	#define HW_ENDPOINT_LPC2000_SD
-	/* defines the interface for LPC213x (0=SPI0 1=SPI1) */
-	//#define HW_ENDPOINT_LPC2000_SPINUM  (0)
-	//#define HW_ENDPOINT_LPC2000_SPINUM  (1)
+#define HW_ENDPOINT_LPC2000_SD
+/* defines the interface for LPC213x (0=SPI0 1=SPI1) */
+//#define HW_ENDPOINT_LPC2000_SPINUM  (0)
+//#define HW_ENDPOINT_LPC2000_SPINUM  (1)
 
-	/*#define HW_ENDPOINT_DSP_TI6713_SD*/
+/*#define HW_ENDPOINT_DSP_TI6713_SD*/
 
 
 /* Memory configuration
@@ -36,7 +36,7 @@
  * but it will work for sure.
 */
 
-	/* disabled for ARM (mt): #define BYTE_ALIGNMENT */
+/* disabled for ARM (mt): #define BYTE_ALIGNMENT */
 
 /* Cache configuration
    -------------------
@@ -50,10 +50,10 @@
  * you will have to pass a pointer to the memory as the last argument of
  * ioman_init.
 */
-	/*#define IOMAN_NUMBUFFER 1*/
-	#define IOMAN_NUMBUFFER 6 /* 32kB RAM on the LPC2138 - let's use 3 kB */
-	#define IOMAN_NUMITERATIONS 3
-	#define IOMAN_DO_MEMALLOC
+/*#define IOMAN_NUMBUFFER 1*/
+#define IOMAN_NUMBUFFER 6 /* 32kB RAM on the LPC2138 - let's use 3 kB */
+#define IOMAN_NUMITERATIONS 3
+#define IOMAN_DO_MEMALLOC
 
 /* Cluster pre-allocation
    ----------------------
@@ -70,9 +70,9 @@
  * The first option is for preallocating files, the other is used when enlarging
  * a directory to accomodate more files
 */
-      /*#define CLUSTER_PREALLOC_FILE 0*/
-	  #define CLUSTER_PREALLOC_FILE 2
-      #define CLUSTER_PREALLOC_DIRECTORY 0
+/*#define CLUSTER_PREALLOC_FILE 0*/
+#define CLUSTER_PREALLOC_FILE 2
+#define CLUSTER_PREALLOC_DIRECTORY 0
 
 
 /* Endianess configuration
@@ -83,7 +83,7 @@
  * So if you have a big endian system the library has to convert all figures to
  * big endian in order to work.
  */
-	#define LITTLE_ENDIAN
+#define LITTLE_ENDIAN
 
 
 /* Date and Time support
@@ -94,7 +94,7 @@
  * EFSL manual. If the functions are not present when linking your
  * program with the library you will get unresolved dependencies.
  */
-	/*#define DATE_TIME_SUPPORT*/
+/*#define DATE_TIME_SUPPORT*/
 
 /* Error reporting support
    -----------------------
@@ -115,8 +115,8 @@
  * For File   use ERRSUP_FILE
 */
 
-	#define FULL_ERROR_SUPPORT
-	/*#define BASE_ERROR_SUPPORT*/
+#define FULL_ERROR_SUPPORT
+/*#define BASE_ERROR_SUPPORT*/
 
 /* List options
    ------------
@@ -140,7 +140,7 @@
  * and nothing will happen. For real world use debugging should be turned off.
 */
 
-	#define DEBUG_
+#define DEBUG_
 
 
 #endif

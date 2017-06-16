@@ -31,33 +31,33 @@ static void EXTINT0_ISR(void) __attribute__((naked));
 void max1168_arch_init(void)
 {
 
-  /* connect P0.16 to extint0 (EOC) */
-  MAX1168_EOC_PINSEL |= MAX1168_EOC_PINSEL_VAL << MAX1168_EOC_PINSEL_BIT;
-  /* extint0 is edge trigered */
-  SetBit(EXTMODE, MAX1168_EOC_EINT);
-  /* extint0 is trigered on falling edge */
-  ClearBit(EXTPOLAR, MAX1168_EOC_EINT);
-  /* clear pending extint0 before enabling interrupts */
-  SetBit(EXTINT, MAX1168_EOC_EINT);
+	/* connect P0.16 to extint0 (EOC) */
+	MAX1168_EOC_PINSEL |= MAX1168_EOC_PINSEL_VAL << MAX1168_EOC_PINSEL_BIT;
+	/* extint0 is edge trigered */
+	SetBit(EXTMODE, MAX1168_EOC_EINT);
+	/* extint0 is trigered on falling edge */
+	ClearBit(EXTPOLAR, MAX1168_EOC_EINT);
+	/* clear pending extint0 before enabling interrupts */
+	SetBit(EXTINT, MAX1168_EOC_EINT);
 
-  /* initialize interrupt vector */
-  VICIntSelect &= ~VIC_BIT(MAX1168_EOC_VIC_IT);                       // EXTINT0 selected as IRQ
-  VICIntEnable = VIC_BIT(MAX1168_EOC_VIC_IT);                         // EXTINT0 interrupt enabled
-  _VIC_CNTL(MAX1168_EOC_VIC_SLOT) = VIC_ENABLE | MAX1168_EOC_VIC_IT;
-  _VIC_ADDR(MAX1168_EOC_VIC_SLOT) = (uint32_t)EXTINT0_ISR;   // address of the ISR
+	/* initialize interrupt vector */
+	VICIntSelect &= ~VIC_BIT(MAX1168_EOC_VIC_IT);                       // EXTINT0 selected as IRQ
+	VICIntEnable = VIC_BIT(MAX1168_EOC_VIC_IT);                         // EXTINT0 interrupt enabled
+	_VIC_CNTL(MAX1168_EOC_VIC_SLOT) = VIC_ENABLE | MAX1168_EOC_VIC_IT;
+	_VIC_ADDR(MAX1168_EOC_VIC_SLOT) = (uint32_t)EXTINT0_ISR;   // address of the ISR
 }
 
 
 void EXTINT0_ISR(void)
 {
-  ISR_ENTRY();
-  //ASSERT((max1168_status == MAX1168_SENDING_REQ), DEBUG_MAX_1168, MAX1168_ERR_SPURIOUS_EOC);
+	ISR_ENTRY();
+	//ASSERT((max1168_status == MAX1168_SENDING_REQ), DEBUG_MAX_1168, MAX1168_ERR_SPURIOUS_EOC);
 
-  max1168_status = MAX1168_GOT_EOC;
+	max1168_status = MAX1168_GOT_EOC;
 
-  //SetBit(EXTINT, MAX1168_EOC_EINT);   /* clear extint0 */
-  EXTINT = (1 << MAX1168_EOC_EINT);
-  VICVectAddr = 0x00000000;             /* clear this interrupt from the VIC */
+	//SetBit(EXTINT, MAX1168_EOC_EINT);   /* clear extint0 */
+	EXTINT = (1 << MAX1168_EOC_EINT);
+	VICVectAddr = 0x00000000;             /* clear this interrupt from the VIC */
 
-  ISR_EXIT();
+	ISR_EXIT();
 }

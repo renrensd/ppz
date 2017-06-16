@@ -157,7 +157,8 @@ void mpu9250_spi_event(struct Mpu9250_Spi *mpu)
 		}
 	}
 	else if (mpu->config.init_status != MPU9250_CONF_UNINIT)
-	{ // Configuring but not yet initialized
+	{
+		// Configuring but not yet initialized
 		switch (mpu->spi_trans.status)
 		{
 		case SPITransFailed:

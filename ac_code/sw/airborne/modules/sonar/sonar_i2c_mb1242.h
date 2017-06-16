@@ -41,13 +41,13 @@
 
 /**** Definition of constants ****/
 
-#define MB1242_ADDR   		0xe0  
+#define MB1242_ADDR   		0xe0
 
 #define SONAR_SDA_SET_INPUT()			{gpio_setup_input(I2C_SONAR_GPIO_SDA_PORT, I2C_SONAR_GPIO_SDA);}
 #define SONAR_SDA_SET_OUTPUT()		    {gpio_setup_output(I2C_SONAR_GPIO_SDA_PORT, I2C_SONAR_GPIO_SDA);}
 
 #define SONAR_SCL_SET_INPUT()			{gpio_setup_input(I2C_SONAR_GPIO_SCL_PORT, I2C_SONAR_GPIO_SCL);}
-#define SONAR_SCL_SET_OUTPUT()		    {gpio_setup_output(I2C_SONAR_GPIO_SCL_PORT, I2C_SONAR_GPIO_SCL);}	
+#define SONAR_SCL_SET_OUTPUT()		    {gpio_setup_output(I2C_SONAR_GPIO_SCL_PORT, I2C_SONAR_GPIO_SCL);}
 
 #define SONAR_SDA_SET_VAL()			{gpio_set(I2C_SONAR_GPIO_SDA_PORT, I2C_SONAR_GPIO_SDA);}
 #define SONAR_SDA_CLR_VAL()			{gpio_clear(I2C_SONAR_GPIO_SDA_PORT, I2C_SONAR_GPIO_SDA);}
@@ -65,9 +65,10 @@
 
 #define i2c_delay()	{delay_us(1);}
 
-struct sonar_data {
-  uint16_t distance_cm;          ///< Raw value
-  float distance_m;         ///< Distance measured in meters
+struct sonar_data
+{
+	uint16_t distance_cm;          ///< Raw value
+	float distance_m;         ///< Distance measured in meters
 };
 
 extern struct sonar_data sonar_mb1242;

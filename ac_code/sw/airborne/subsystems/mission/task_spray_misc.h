@@ -4,23 +4,23 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _TASK_SPARY_MISC_H_
 #define _TASK_SPARY_MISC_H_
 
-#include "subsystems/mission/task_manage.h" 
+#include "subsystems/mission/task_manage.h"
 
 #define SPRAY_CONVERT_FAIL 0
 #define SPRAY_CONVERT_CONTINUAL 1
@@ -32,7 +32,7 @@ typedef struct Spray_Convert
 	int32_t radius;
 	int32_t heading_sp;
 	bool_t  useful;
-	
+
 } Spray_Convert_Info;
 
 typedef struct Spray_Continual

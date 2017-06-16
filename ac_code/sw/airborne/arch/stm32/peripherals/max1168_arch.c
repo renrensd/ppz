@@ -32,29 +32,29 @@
 void max1168_arch_init(void)
 {
 
-  /* configure external interrupt exti2 on PD2( data ready ) v1.0*/
-  /*                                       PB2( data ready ) v1.1*/
-  rcc_periph_clock_enable(RCC_GPIOB);
-  rcc_periph_clock_enable(RCC_AFIO);
-  gpio_set_mode(GPIOB, GPIO_MODE_INPUT,
-                GPIO_CNF_INPUT_FLOAT, GPIO2);
+	/* configure external interrupt exti2 on PD2( data ready ) v1.0*/
+	/*                                       PB2( data ready ) v1.1*/
+	rcc_periph_clock_enable(RCC_GPIOB);
+	rcc_periph_clock_enable(RCC_AFIO);
+	gpio_set_mode(GPIOB, GPIO_MODE_INPUT,
+								GPIO_CNF_INPUT_FLOAT, GPIO2);
 
-  exti_select_source(EXTI2, GPIOB);
-  exti_set_trigger(EXTI2, EXTI_TRIGGER_FALLING);
-  exti_enable_request(EXTI2);
+	exti_select_source(EXTI2, GPIOB);
+	exti_set_trigger(EXTI2, EXTI_TRIGGER_FALLING);
+	exti_enable_request(EXTI2);
 
-  nvic_set_priority(NVIC_EXTI2_IRQ, 0xF);
-  nvic_enable_irq(NVIC_EXTI2_IRQ);
+	nvic_set_priority(NVIC_EXTI2_IRQ, 0xF);
+	nvic_enable_irq(NVIC_EXTI2_IRQ);
 
 }
 
 void exti2_isr(void)
 {
 
-  /* clear EXTI */
-  exti_reset_request(EXTI2);
+	/* clear EXTI */
+	exti_reset_request(EXTI2);
 
-  max1168_status = MAX1168_GOT_EOC;
+	max1168_status = MAX1168_GOT_EOC;
 
 }
 

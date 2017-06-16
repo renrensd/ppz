@@ -60,7 +60,8 @@ static BOOL HandleStdDeviceReq(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
 {
 	U8	*pbData = *ppbData;
 
-	switch (pSetup->bRequest) {
+	switch (pSetup->bRequest)
+	{
 
 	case REQ_GET_STATUS:
 		// bit 0: self-powered
@@ -76,7 +77,8 @@ static BOOL HandleStdDeviceReq(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
 
 	case REQ_GET_DESCRIPTOR:
 		DBG("D%x", pSetup->wValue);
-		if (pfnGetDescriptor == NULL) {
+		if (pfnGetDescriptor == NULL)
+		{
 			return FALSE;
 		}
 		return pfnGetDescriptor(pSetup->wValue, pSetup->wIndex, piLen, ppbData);
@@ -94,10 +96,12 @@ static BOOL HandleStdDeviceReq(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
 
 	case REQ_CLEAR_FEATURE:
 	case REQ_SET_FEATURE:
-		if (pSetup->wValue == FEA_REMOTE_WAKEUP) {
+		if (pSetup->wValue == FEA_REMOTE_WAKEUP)
+		{
 			// put DEVICE_REMOTE_WAKEUP code here
 		}
-		if (pSetup->wValue == FEA_TEST_MODE) {
+		if (pSetup->wValue == FEA_TEST_MODE)
+		{
 			// put TEST_MODE code here
 		}
 		return FALSE;
@@ -130,7 +134,8 @@ static BOOL HandleStdInterfaceReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData
 {
 	U8	*pbData = *ppbData;
 
-	switch (pSetup->bRequest) {
+	switch (pSetup->bRequest)
+	{
 
 	case REQ_GET_STATUS:
 		// no bits specified
@@ -145,17 +150,19 @@ static BOOL HandleStdInterfaceReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData
 		return FALSE;
 
 	case REQ_GET_INTERFACE:	// TODO use bNumInterfaces
-        // there is only one interface, return n-1 (= 0)
+		// there is only one interface, return n-1 (= 0)
 		pbData[0] = 0;
 		*piLen = 1;
 		break;
 
 	case REQ_SET_INTERFACE:	// TODO use bNumInterfaces
 		// there is only one interface (= 0)
-		if (pSetup->wValue == 0) {
+		if (pSetup->wValue == 0)
+		{
 			// ACK (zero packet) will be sent automatically
 		}
-		else {
+		else
+		{
 			return FALSE;
 		}
 		break;
@@ -184,7 +191,8 @@ static BOOL HandleStdEndPointReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 {
 	U8	*pbData = *ppbData;
 
-	switch (pSetup->bRequest) {
+	switch (pSetup->bRequest)
+	{
 	case REQ_GET_STATUS:
 		// bit 0 = endpointed halted or not
 		pbData[0] = USBHwGetEPStall(pSetup->wIndex) ? 1 : 0;
@@ -193,7 +201,8 @@ static BOOL HandleStdEndPointReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 		break;
 
 	case REQ_CLEAR_FEATURE:
-		if (pSetup->wValue == FEA_ENDPOINT_HALT) {
+		if (pSetup->wValue == FEA_ENDPOINT_HALT)
+		{
 			// clear HALT by unstalling
 			USBHwEPStall(pSetup->wIndex, FALSE);
 			break;
@@ -202,7 +211,8 @@ static BOOL HandleStdEndPointReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 		return FALSE;
 
 	case REQ_SET_FEATURE:
-		if (pSetup->wValue == FEA_ENDPOINT_HALT) {
+		if (pSetup->wValue == FEA_ENDPOINT_HALT)
+		{
 			// set HALT by stalling
 			USBHwEPStall(pSetup->wIndex, TRUE);
 			break;
@@ -236,11 +246,16 @@ static BOOL HandleStdEndPointReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 **************************************************************************/
 BOOL USBHandleStandardRequest(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 {
-	switch (REQTYPE_GET_RECIP(pSetup->bmRequestType)) {
-	case REQTYPE_RECIP_DEVICE:		return HandleStdDeviceReq(pSetup, piLen, ppbData);
-	case REQTYPE_RECIP_INTERFACE:	return HandleStdInterfaceReq(pSetup, piLen, ppbData);
-	case REQTYPE_RECIP_ENDPOINT: 	return HandleStdEndPointReq(pSetup, piLen, ppbData);
-	default: 						return FALSE;
+	switch (REQTYPE_GET_RECIP(pSetup->bmRequestType))
+	{
+	case REQTYPE_RECIP_DEVICE:
+		return HandleStdDeviceReq(pSetup, piLen, ppbData);
+	case REQTYPE_RECIP_INTERFACE:
+		return HandleStdInterfaceReq(pSetup, piLen, ppbData);
+	case REQTYPE_RECIP_ENDPOINT:
+		return HandleStdEndPointReq(pSetup, piLen, ppbData);
+	default:
+		return FALSE;
 	}
 }
 

@@ -47,7 +47,8 @@
 * FILE* 	imagefile		File emulation of hw interface.
 * long		sectorCount		Number of sectors on the file.
 \*************************************************************/
-struct  hwInterface{
+struct  hwInterface
+{
 	/*FILE 	*imageFile;*/
 	eint32  	sectorCount;
 };

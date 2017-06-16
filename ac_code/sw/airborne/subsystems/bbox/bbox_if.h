@@ -4,26 +4,26 @@
 *   Department : R&D SW    									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _BBOX_IF_H_
-#define _BBOX_IF_H_ 
+#define _BBOX_IF_H_
 
 /**** Definition of constants ****/
 #define MAX_BBOX_SV_VERSION_LEN  30
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 /**** Definition of macros ****/
 struct BBOX_INFO
@@ -36,7 +36,7 @@ struct BBOX_INFO
 	bool_t sv_update;
 	uint8_t sv_len;
 	uint8_t version[MAX_BBOX_SV_VERSION_LEN];
-	
+
 };
 
 /**** Declaration of constants ****/

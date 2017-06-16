@@ -42,21 +42,24 @@ signed short mkfs_makevfat(Partition *part)
 
 	ns=part->disc->partitions[part->activePartition].numSectors;
 
-	if( ns < 66581 ){
+	if( ns < 66581 )
+	{
 		DBG((TXT("This is not possible due to insufficient sectors. Sorry\n")));
 		return(MKFS_ERR_TOOLITTLESECTORS);
 	}
 
 	ret=0;
 
-	for(c=1<<6;c>=1;c>>=1){
+	for(c=1<<6; c>=1; c>>=1)
+	{
 
 		/* First guess */
 		ds = ns - 32;
 		fs = ((ds/c)+127)/128;
 		/* ds was guess too large, so fs is too large now too. */
 
-		for(cc=0;cc<2;cc++){
+		for(cc=0; cc<2; cc++)
+		{
 
 			/* Round 2, error round */
 			ds = ns - 32 - 2*fs;
@@ -78,7 +81,8 @@ signed short mkfs_makevfat(Partition *part)
 
 		/* Check if with current setting we have a valid fat ? */
 
-		if(dc >= 65525 + 16){
+		if(dc >= 65525 + 16)
+		{
 			break;
 		}
 	}
@@ -87,7 +91,9 @@ signed short mkfs_makevfat(Partition *part)
 	memClr(buf,512);
 
 	/* Boot code */
-	*(buf+0)=0xE9;	*(buf+1)=0x00;	*(buf+2)=0x00; /* RESET */
+	*(buf+0)=0xE9;
+	*(buf+1)=0x00;
+	*(buf+2)=0x00; /* RESET */
 
 	/* OEM name */
 	memCpy("DSCOSMSH",buf+3,8);
@@ -135,12 +141,14 @@ signed short mkfs_makevfat(Partition *part)
 	memCpy("FAT32   ",buf+82,8);
 
 	/* Magic */
-	*(buf+510) = 0x55; *(buf+511) = 0xAA;
+	*(buf+510) = 0x55;
+	*(buf+511) = 0xAA;
 
 	part_writeBuf(part,0,buf);
 
 	memClr(buf,512);
-	for(c=32;c<(32+2*fs);c++){
+	for(c=32; c<(32+2*fs); c++)
+	{
 		part_writeBuf(part,c,buf);
 	}
 	*(((unsigned long*)buf)  )=0x0FFFFFF8;

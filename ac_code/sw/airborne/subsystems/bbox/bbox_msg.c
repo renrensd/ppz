@@ -31,10 +31,10 @@
 #include "subsystems/datalink/downlink.h"
 
 /*---Private include files--------------------------------------------*/
-#include "bbox_msg.h"   
-#include "bbox_msg_if.h"   
-#include "bbox.h"   
-#include "bbox_if.h"   
+#include "bbox_msg.h"
+#include "bbox_msg_if.h"
+#include "bbox.h"
+#include "bbox_if.h"
 #include "bbox_msg_def.h"
 
 /*===VARIABLES========================================================*/
@@ -103,7 +103,8 @@ void bbox_msg_log_start(void)
 	arg[1] = 0x00;
 	arg[2] = 0x00;	//start log.
 	if (get_utc_year())
-	{ /*below is UTC time, 8hours delay beijing time*/
+	{
+		/*below is UTC time, 8hours delay beijing time*/
 		arg[3] = get_utc_year();	//year
 		arg[4] = get_utc_month();	//month
 		arg[5] = get_utc_day();	    //day

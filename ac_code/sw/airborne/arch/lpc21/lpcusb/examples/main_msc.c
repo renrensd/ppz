@@ -76,7 +76,8 @@
 
 static U8 abClassReqData[4];
 
-static const U8 abDescriptors[] = {
+static const U8 abDescriptors[] =
+{
 
 // device descriptor
 	0x12,
@@ -159,26 +160,30 @@ static const U8 abDescriptors[] = {
 **************************************************************************/
 static BOOL HandleClassRequest(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
 {
-	if (pSetup->wIndex != 0) {
+	if (pSetup->wIndex != 0)
+	{
 		DBG("Invalid idx %X\n", pSetup->wIndex);
 		return FALSE;
 	}
-	if (pSetup->wValue != 0) {
+	if (pSetup->wValue != 0)
+	{
 		DBG("Invalid val %X\n", pSetup->wValue);
 		return FALSE;
 	}
 
-	switch (pSetup->bRequest) {
+	switch (pSetup->bRequest)
+	{
 
-	// get max LUN
+		// get max LUN
 	case 0xFE:
 		*ppbData[0] = 0;		// No LUNs
 		*piLen = 1;
 		break;
 
-	// MSC reset
+		// MSC reset
 	case 0xFF:
-		if (pSetup->wLength > 0) {
+		if (pSetup->wLength > 0)
+		{
 			return FALSE;
 		}
 		MSCBotReset();
@@ -232,7 +237,8 @@ int main(void)
 	USBHwConnect(TRUE);
 
 	// call USB interrupt handler continuously
-	while (1) {
+	while (1)
+	{
 		USBHwISR();
 	}
 

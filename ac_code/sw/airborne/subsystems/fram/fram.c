@@ -4,18 +4,18 @@
 *   Department : R&D SW      									       *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 /**** System include files ****/
@@ -67,28 +67,28 @@ struct FRAM_ERROR_INFO fram_error;
 
 /*---Global-----------------------------------------------------------*/
 const uint8_t fram_init_flags[4] =
-{0x55,0xAA,0x5A,0xA5};//need init the whole fram 
+{0x55,0xAA,0x5A,0xA5};//need init the whole fram
 
 #ifdef UPGRADE_OPTION
 const uint8_t cl_swdl_mask_array[] =
 {
-   0xAA,0x55,0xA5,0x5A,
-   0xAA,0xAA,0xAA,0xAA,
-   0x55,0x55,0x55,0x55,
-   0xFF,0xFF,0xFF,0xFF,
+	0xAA,0x55,0xA5,0x5A,
+	0xAA,0xAA,0xAA,0xAA,
+	0x55,0x55,0x55,0x55,
+	0xFF,0xFF,0xFF,0xFF,
 };
 
 const uint8_t clear_update_flag_array[] =
 {
-  0xFF,0xFF,0xFF,0xFF,
-  0xFF,0xFF,0xFF,0xFF,
-  0xFF,0xFF,0xFF,0xFF,
-  0xFF,0xFF,0xFF,0xFF,              
+	0xFF,0xFF,0xFF,0xFF,
+	0xFF,0xFF,0xFF,0xFF,
+	0xFF,0xFF,0xFF,0xFF,
+	0xFF,0xFF,0xFF,0xFF,
 };
 #endif	/* UPGRADE_OPTION */
 
 /*---Private----------------------------------------------------------*/
-const FRAM_DATA_INIT_TYPE fram_data_section[FRAM_DATA_INIT_SECTION_MAX] = 
+const FRAM_DATA_INIT_TYPE fram_data_section[FRAM_DATA_INIT_SECTION_MAX] =
 {
 	{FRAM_DATA_INIT_SECTION_ONE, CL_FRAM_RESERVE1, CL_FRAM_RESERVE2},
 };
@@ -99,8 +99,8 @@ const FRAM_DATA_INIT_TYPE fram_data_section[FRAM_DATA_INIT_SECTION_MAX] =
 /*---Global-----------------------------------------------------------*/
 /*****************************************************************************
 *  Name        : fram_init
-*  Description : 
-*  Parameter   : void  
+*  Description :
+*  Parameter   : void
 *  Returns     : None
 *****************************************************************************/
 void fram_init(void)
@@ -110,8 +110,8 @@ void fram_init(void)
 
 /*****************************************************************************
 *  Name        : fram_spi_cb
-*  Description : 
-*  Parameter   : void  
+*  Description :
+*  Parameter   : void
 *  Returns     : None
 *****************************************************************************/
 static void fram_spi_cb(void)
@@ -121,82 +121,82 @@ static void fram_spi_cb(void)
 
 /*****************************************************************************
 *  Name        : fram_id_write
-*  Description : 
-*  Parameter   : void  
-*  Returns     : 0-Success, other-Fail 
+*  Description :
+*  Parameter   : void
+*  Returns     : 0-Success, other-Fail
 *****************************************************************************/
 uint8_t fram_id_write(uint8_t id, uint8_t *write_buffer)
 {
 	uint16_t addr = fram_get_address(id, 0);
 	uint16_t length = object_quantity[id] * object_size[id];
-	
+
 	return ( fm25v_write(&fram.fm25v, addr, write_buffer , length) );
 }
 
 /*****************************************************************************
 *  Name        : fram_write
 *  Description : write whole id data.
-*  Parameter   : void  
-*  Returns     : 0-Success, other-Fail 
+*  Parameter   : void
+*  Returns     : 0-Success, other-Fail
 *****************************************************************************/
 uint8_t fram_write(uint8_t id, uint16_t item, uint8_t *write_buffer)
 {
 	uint16_t addr = fram_get_address(id, item);
 	uint16_t length = object_size[id];
-	
+
 	return ( fm25v_write(&fram.fm25v, addr, write_buffer , length) );
 }
 
 /*****************************************************************************
 *  Name        : fram_read
-*  Description : 
-*  Parameter   : void  
-*  Returns     : 0-Success, other-Fail 
+*  Description :
+*  Parameter   : void
+*  Returns     : 0-Success, other-Fail
 *****************************************************************************/
 uint8_t fram_read(uint8_t id, uint16_t item, uint8_t *read_buffer)
 {
-    uint16_t addr = fram_get_address(id, item);
-    uint16_t length = object_size[id];
-    return ( fm25v_read(&fram.fm25v, addr, read_buffer, length) );
+	uint16_t addr = fram_get_address(id, item);
+	uint16_t length = object_size[id];
+	return ( fm25v_read(&fram.fm25v, addr, read_buffer, length) );
 }
 
 /*****************************************************************************
 *  Name        : fram_id_read
 *  Description : read whole id data.
 *  Parameter   : void
-*  Returns     : 0-Success, other-Fail 
+*  Returns     : 0-Success, other-Fail
 *****************************************************************************/
 uint8_t fram_id_read(uint8_t id, uint8_t *read_buffer)
 {
-    uint16_t addr = fram_get_address(id, 0);
-    uint16_t length = object_quantity[id] * object_size[id];
-    return ( fm25v_read(&fram.fm25v, addr, read_buffer, length) );
+	uint16_t addr = fram_get_address(id, 0);
+	uint16_t length = object_quantity[id] * object_size[id];
+	return ( fm25v_read(&fram.fm25v, addr, read_buffer, length) );
 }
 
 /*****************************************************************************
 *  Name        : fram_ac_param_read
 *  Description : read ac param data.
 *  Parameter   : void
-*  Returns     : 0-Success, other-Fail 
+*  Returns     : 0-Success, other-Fail
 *****************************************************************************/
 uint8_t fram_ac_param_read(uint8_t *read_buffer, uint16_t len)
 {
-    uint16_t addr = FRAM_AC_PARAM_ADDRESS;
+	uint16_t addr = FRAM_AC_PARAM_ADDRESS;
 
-    return ( fm25v_read(&fram.fm25v, addr, read_buffer, len) );
+	return ( fm25v_read(&fram.fm25v, addr, read_buffer, len) );
 }
 
 /*****************************************************************************
 *  Name        : fram_ac_param_write
 *  Description : write ac param data.
 *  Parameter   : void
-*  Returns     : 0-Success, other-Fail 
+*  Returns     : 0-Success, other-Fail
 *****************************************************************************/
 uint8_t fram_ac_param_write(uint8_t *write_buffer, uint16_t len)
 {
-    uint16_t addr = FRAM_AC_PARAM_ADDRESS;
+	uint16_t addr = FRAM_AC_PARAM_ADDRESS;
 
-   return ( fm25v_write(&fram.fm25v, addr, write_buffer, len) );
+	return ( fm25v_write(&fram.fm25v, addr, write_buffer, len) );
 }
 
 /*******************************************************************************
@@ -219,21 +219,21 @@ static uint16_t fram_get_address (uint8_t id, uint16_t item)
 *******************************************************************************/
 void fram_factory_reset_init(uint16_t items)
 {
-    uint8_t index1,index2;
-    const uint8_t* temp_pointer;
+	uint8_t index1,index2;
+	const uint8_t* temp_pointer;
 	for(index1 = 0; index1 < FRAM_DATA_INIT_SECTION_MAX; index1++)
 	{
 		if(!(items & (1<<index1)))
-        {
-            continue;
-        }
+		{
+			continue;
+		}
 		for( index2 = fram_data_section[index1].fram_id_start; index2 <= fram_data_section[index1].fram_id_end; index2++)
-        {
-            temp_pointer = cl_data_array[index2];
-            fram_id_write(index2,(uint8_t *)temp_pointer);
-        }
+		{
+			temp_pointer = cl_data_array[index2];
+			fram_id_write(index2,(uint8_t *)temp_pointer);
+		}
 	}
-    fram_write(CL_FRAM_INIT_FLAG, 0x00, (uint8_t *)cl_fram_init_flag_array);     
+	fram_write(CL_FRAM_INIT_FLAG, 0x00, (uint8_t *)cl_fram_init_flag_array);
 }
 
 /*******************************************************************************
@@ -244,45 +244,45 @@ void fram_factory_reset_init(uint16_t items)
 *******************************************************************************/
 void fram_init_all_data(void)
 {
-    uint8_t temp_index;
-    //uint8_t temp_quantity;
-    //uint8_t temp_length;
-    const uint8_t* temp_pointer;
-    uint8_t temp_software_version_array[0x11];
-    uint8_t temp_fram_init_flags[4];
-	
-    fram_read(CL_SOFTWARE_VERSION, 0x00, temp_software_version_array);
-    temp_software_version_array[0x10] = '\0';
-	
-    if(!memcmp((const uint8_t *)cl_software_version_array, (const uint8_t *)temp_software_version_array,0x10))
-    {
+	uint8_t temp_index;
+	//uint8_t temp_quantity;
+	//uint8_t temp_length;
+	const uint8_t* temp_pointer;
+	uint8_t temp_software_version_array[0x11];
+	uint8_t temp_fram_init_flags[4];
+
+	fram_read(CL_SOFTWARE_VERSION, 0x00, temp_software_version_array);
+	temp_software_version_array[0x10] = '\0';
+
+	if(!memcmp((const uint8_t *)cl_software_version_array, (const uint8_t *)temp_software_version_array,0x10))
+	{
 		//current software version is the same as fram.
 		fram_read(CL_FRAM_INIT_FLAG, 0x00, temp_fram_init_flags);
-        if(memcmp((const uint8_t *)fram_init_flags, (const uint8_t *)temp_fram_init_flags,4) != 0)
-        {
-            /*TODOM: reset fram data*/
-			
-            if(memcmp((const uint8_t *)&fram_init_flags[2], (const uint8_t *)&temp_fram_init_flags[2],2) == 0)
-            {
-                /* need to reset special data section */
-                fram_factory_reset_init(*((uint16_t *)temp_fram_init_flags));
-            }
-         }    
-    }
+		if(memcmp((const uint8_t *)fram_init_flags, (const uint8_t *)temp_fram_init_flags,4) != 0)
+		{
+			/*TODOM: reset fram data*/
+
+			if(memcmp((const uint8_t *)&fram_init_flags[2], (const uint8_t *)&temp_fram_init_flags[2],2) == 0)
+			{
+				/* need to reset special data section */
+				fram_factory_reset_init(*((uint16_t *)temp_fram_init_flags));
+			}
+		}
+	}
 	else
 	{
-	    temp_pointer = cl_data_array[CL_SOFTWARE_VERSION];
-	    fram_id_write(CL_SOFTWARE_VERSION,(uint8_t *)temp_pointer);
+		temp_pointer = cl_data_array[CL_SOFTWARE_VERSION];
+		fram_id_write(CL_SOFTWARE_VERSION,(uint8_t *)temp_pointer);
 
 	}
-	
-	#ifdef GCS_V1_OPTION
-	#ifdef COMM_DIRECT_CONNECT
+
+#ifdef GCS_V1_OPTION
+#ifdef COMM_DIRECT_CONNECT
 	fram_read(CL_GCS_MAC_ADDR, 0x00, xbee_con_info.gcs_addr);
 	fram_read(CL_RC_MAC_ADDR, 0x00, xbee_con_info.rc_addr);
-	#endif	/* COMM_DIRECT_CONNECT */
-	#endif	/* GCS_V1_OPTION */
-	
+#endif	/* COMM_DIRECT_CONNECT */
+#endif	/* GCS_V1_OPTION */
+
 }
 
 
@@ -299,14 +299,14 @@ void fram_mag_cali_get(void)
 	if (err)
 	{
 		fram_error.read_data_fail = TRUE;
-		return;  
+		return;
 	}
 
 	uint32_t temp_crc16 = Crc16_normal(ptemp, 0, MAG_CALI_PERS_DATA_STRUCT_LENGTH - 4);
 	if(temp_crc16 != temp_MagCaliFramData.crc16)
 	{
 		fram_error.data_wrong = TRUE;
-		return; 
+		return;
 	}
 
 	mag_cali.gain[0] = temp_MagCaliFramData.gain[0];
@@ -317,7 +317,7 @@ void fram_mag_cali_get(void)
 
 	mag_cali_load_to_imu();
 }
- 
+
 uint8_t fram_mag_cali_data_read(uint8_t *read_buffer)
 {
 	return fram_id_read(CL_MAG_CALI_FRAM_DATA, read_buffer);
@@ -335,9 +335,9 @@ uint8_t fram_mag_cali_default_data_write(void)
 	//temp_MagCaliFramData.gain[0] = ;
 
 
-	
+
 	temp_MagCaliFramData.cali_ok = FALSE;
-	temp_MagCaliFramData.crc16 = Crc16_normal(ptemp, 0, MAG_CALI_PERS_DATA_STRUCT_LENGTH - 4);	
+	temp_MagCaliFramData.crc16 = Crc16_normal(ptemp, 0, MAG_CALI_PERS_DATA_STRUCT_LENGTH - 4);
 	return fram_id_write(CL_MAG_CALI_FRAM_DATA, ptemp);
 }
 /*
@@ -353,7 +353,7 @@ void fram_acc_cali_get(void)
 	if (err)
 	{
 		fram_error.read_data_fail = TRUE;
-		return; 
+		return;
 	}
 
 	uint32_t temp_crc16 = Crc16_normal(ptemp, 0, ACC_CALI_PERS_DATA_STRUCT_LENGTH - 4);
@@ -398,81 +398,82 @@ uint8_t fram_sn_data_read(uint8_t *write_buffer)
 #ifdef UPGRADE_OPTION
 /***********************************************************************
 *  Name        : fram_write_swdl_mask
-*  Description :          
+*  Description :
 *  Parameter   : none
-*  Returns     : 0-Success, other-Fail 
+*  Returns     : 0-Success, other-Fail
 ***********************************************************************/
 uint8_t fram_write_swdl_mask(void)
 {
-    uint8_t buf[16]=
-    {
-       0xAA,0x55,0xA5,0x5A,
-       0xAA,0xAA,0xAA,0xAA,
-       0x55,0x55,0x55,0x55,
-       0xFF,0xFF,0xFF,0xFF,
-    };
-    
-    return ( fram_write(CL_SOFTWARE_UPDATE_FLAG, 0, buf) );
+	uint8_t buf[16]=
+	{
+		0xAA,0x55,0xA5,0x5A,
+		0xAA,0xAA,0xAA,0xAA,
+		0x55,0x55,0x55,0x55,
+		0xFF,0xFF,0xFF,0xFF,
+	};
+
+	return ( fram_write(CL_SOFTWARE_UPDATE_FLAG, 0, buf) );
 }
 
 /***********************************************************************
 *  Name        : fram_erase_swdl_mask
-*  Description :          
+*  Description :
 *  Parameter   : none
-*  Returns     : 0-Success, other-Fail  
+*  Returns     : 0-Success, other-Fail
 ***********************************************************************/
 uint8_t fram_erase_swdl_mask (void)
-{   
-    return ( fram_write(CL_SOFTWARE_UPDATE_FLAG, 0, clear_update_flag_array) );
+{
+	return ( fram_write(CL_SOFTWARE_UPDATE_FLAG, 0, clear_update_flag_array) );
 }
 
 /***********************************************************************
 *  Name        : fram_read_swdl_mask
-*  Description :          
+*  Description :
 *  Parameter   : none
-*  Returns     : 0-Success, other-Fail 
+*  Returns     : 0-Success, other-Fail
 ***********************************************************************/
 uint8_t fram_read_swdl_mask (uint8_t* pBlockData)
 {
-    return ( fram_read(CL_SOFTWARE_UPDATE_FLAG, 0, pBlockData) );
+	return ( fram_read(CL_SOFTWARE_UPDATE_FLAG, 0, pBlockData) );
 }
 
 /*******************************************************************************
-**  FUNCTION      : fram_update_is_available                                         
-**  DESCRIPTION   :          
+**  FUNCTION      : fram_update_is_available
+**  DESCRIPTION   :
 **  PARAMETERS    : void
-**  RETURN        : void                                                          
+**  RETURN        : void
 *******************************************************************************/
 bool_t fram_update_is_available(void)
 {
-    uint8_t swdl_mask[16];
-    bool_t retval = FALSE;
-    uint8_t i;
-    bool_t swdl_get_fram_error = FALSE;
+	uint8_t swdl_mask[16];
+	bool_t retval = FALSE;
+	uint8_t i;
+	bool_t swdl_get_fram_error = FALSE;
 
-    for(i=0; i<3; i++)
-    {
-        swdl_get_fram_error = FALSE;               
-        if( fram_read_swdl_mask(swdl_mask) == 0)
-        {
-            break;
-        }
-        else
-        {
-            swdl_get_fram_error = TRUE;
-            delay_us(200);                 
-        }
-    }
-    
-    if(swdl_get_fram_error == FALSE)
-    {
-        if(memcmp(swdl_mask,cl_swdl_mask_array,16) == 0)  
-        {//these two variables are the same
-            retval = TRUE;
-        }              
-    }
+	for(i=0; i<3; i++)
+	{
+		swdl_get_fram_error = FALSE;
+		if( fram_read_swdl_mask(swdl_mask) == 0)
+		{
+			break;
+		}
+		else
+		{
+			swdl_get_fram_error = TRUE;
+			delay_us(200);
+		}
+	}
 
-    return (retval);
+	if(swdl_get_fram_error == FALSE)
+	{
+		if(memcmp(swdl_mask,cl_swdl_mask_array,16) == 0)
+		{
+			//these two variables are the same
+			retval = TRUE;
+		}
+	}
+
+	return (retval);
 }
 #endif	/* UPGRADE_OPTION */
 /**************** END OF FILE *****************************************/

@@ -63,24 +63,25 @@ bool_t sdOk = FALSE;
 /*
  * Init ChibiOS HAL and Sys
  */
-bool_t chibios_init(void) {
-  halInit();
-  chSysInit();
+bool_t chibios_init(void)
+{
+	halInit();
+	chSysInit();
 
-  PWR->CSR &= ~PWR_CSR_BRE;
-  DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_IWDG_STOP;
+	PWR->CSR &= ~PWR_CSR_BRE;
+	DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_IWDG_STOP;
 
-  chThdCreateStatic(wa_thd_heartbeat, sizeof(wa_thd_heartbeat),
-      NORMALPRIO, thd_heartbeat, NULL);
+	chThdCreateStatic(wa_thd_heartbeat, sizeof(wa_thd_heartbeat),
+										NORMALPRIO, thd_heartbeat, NULL);
 
-  usbStorageStartPolling ();
-  return RDY_OK;
+	usbStorageStartPolling ();
+	return RDY_OK;
 }
 
 static WORKING_AREA(pprzThd, 4096);
 void launch_pprz_thd (int32_t (*thd) (void *arg))
 {
-  pprzThdPtr = chThdCreateStatic(pprzThd, sizeof(pprzThd), NORMALPRIO+1, thd, NULL);
+	pprzThdPtr = chThdCreateStatic(pprzThd, sizeof(pprzThd), NORMALPRIO+1, thd, NULL);
 }
 
 
@@ -89,30 +90,33 @@ void launch_pprz_thd (int32_t (*thd) (void *arg))
  */
 static __attribute__((noreturn)) msg_t thd_heartbeat(void *arg)
 {
-  (void) arg;
-  chRegSetThreadName("pprz heartbeat");
+	(void) arg;
+	chRegSetThreadName("pprz heartbeat");
 
-  chThdSleepSeconds (SDLOG_START_DELAY);
-  if (usbStorageIsItRunning ())
-    chThdSleepSeconds (20000); // stuck here for hours
-  else
-    sdOk = chibios_logInit();
+	chThdSleepSeconds (SDLOG_START_DELAY);
+	if (usbStorageIsItRunning ())
+		chThdSleepSeconds (20000); // stuck here for hours
+	else
+		sdOk = chibios_logInit();
 
-  while (TRUE) {
-    palTogglePad (GPIOC, GPIOC_LED3);
-    chThdSleepMilliseconds (sdOk == TRUE ? 1000 : 200);
-    static uint32_t timestamp = 0;
+	while (TRUE)
+	{
+		palTogglePad (GPIOC, GPIOC_LED3);
+		chThdSleepMilliseconds (sdOk == TRUE ? 1000 : 200);
+		static uint32_t timestamp = 0;
 
 
-    // we sync gps time to rtc every 5 seconds
-    if (chTimeNow() - timestamp > 5000) {
-      timestamp = chTimeNow();
-      if (getGpsTimeOfWeek() != 0) {
-        setRtcFromGps (getGpsWeek(), getGpsTimeOfWeek());
-      }
-    }
+		// we sync gps time to rtc every 5 seconds
+		if (chTimeNow() - timestamp > 5000)
+		{
+			timestamp = chTimeNow();
+			if (getGpsTimeOfWeek() != 0)
+			{
+				setRtcFromGps (getGpsWeek(), getGpsTimeOfWeek());
+			}
+		}
 
-  }
+	}
 }
 
 

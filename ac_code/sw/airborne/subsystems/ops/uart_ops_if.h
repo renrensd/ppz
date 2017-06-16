@@ -4,34 +4,34 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _UART_OPS_IF_H_
-#define _UART_OPS_IF_H_ 
+#define _UART_OPS_IF_H_
 #include "../../modules/system/types.h"
 /**** Definition of constants ****/
 
 #define UART_OPS_FRAME_SIZE 150
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
-typedef struct 
+typedef struct
 {
-    BOOL bValid; /** if valid data? **/
-    U8 length;
-    U8  buff[UART_OPS_FRAME_SIZE];   
+	BOOL bValid; /** if valid data? **/
+	U8 length;
+	U8  buff[UART_OPS_FRAME_SIZE];
 } UART_OPS_FRAME_TYPE;
 
 /**** Definition of macros ****/

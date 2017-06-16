@@ -107,20 +107,21 @@
 #define IMU_KROOZ_ACCEL_AVG_FILTER      15
 #endif
 
-struct ImuKrooz {
-  volatile bool_t mpu_eoc;
-  volatile bool_t hmc_eoc;
-  struct Mpu60x0_I2c mpu;
-  struct spi_transaction ad7689_trans;
-  volatile uint8_t ad7689_spi_tx_buffer[2];
-  volatile uint8_t ad7689_spi_rx_buffer[2];
-  struct Hmc58xx hmc;
-  struct Int32Rates rates_sum;
-  struct Int32Vect3 accel_sum;
-  volatile uint8_t  meas_nb;
-  struct Uint8Vect3 meas_nb_acc;
-  struct Int32Vect3 accel_filtered;
-  int32_t temperature;
+struct ImuKrooz
+{
+	volatile bool_t mpu_eoc;
+	volatile bool_t hmc_eoc;
+	struct Mpu60x0_I2c mpu;
+	struct spi_transaction ad7689_trans;
+	volatile uint8_t ad7689_spi_tx_buffer[2];
+	volatile uint8_t ad7689_spi_rx_buffer[2];
+	struct Hmc58xx hmc;
+	struct Int32Rates rates_sum;
+	struct Int32Vect3 accel_sum;
+	volatile uint8_t  meas_nb;
+	struct Uint8Vect3 meas_nb_acc;
+	struct Int32Vect3 accel_filtered;
+	int32_t temperature;
 };
 
 extern struct ImuKrooz imu_krooz;

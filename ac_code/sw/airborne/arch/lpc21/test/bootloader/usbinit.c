@@ -28,7 +28,8 @@
 **************************************************************************/
 static void HandleUsbReset(U8 bDevStatus)
 {
-	if (bDevStatus & DEV_STATUS_RESET) {
+	if (bDevStatus & DEV_STATUS_RESET)
+	{
 		USBHwReset();
 		DBG("\n!");
 	}

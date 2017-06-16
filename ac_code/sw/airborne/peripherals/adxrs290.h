@@ -33,27 +33,29 @@
 
 
 
-enum Adxrs290ConfStatus {
-  ADXRS290_CONF_UNINIT = 0,
-  ADXRS290_CONF_DEV_ID,
-  ADXRS290_CONF_DEV_ID_OK,
-  ADXRS290_CONF_DF,
-  ADXRS290_CONF_DADY,
-  ADXRS290_CONF_PWR,
-  ADXRS290_CONF_DONE,
+enum Adxrs290ConfStatus
+{
+	ADXRS290_CONF_UNINIT = 0,
+	ADXRS290_CONF_DEV_ID,
+	ADXRS290_CONF_DEV_ID_OK,
+	ADXRS290_CONF_DF,
+	ADXRS290_CONF_DADY,
+	ADXRS290_CONF_PWR,
+	ADXRS290_CONF_DONE,
 };
 
-struct Adxrs290Config {
-  uint8_t pwr;//1->measurement mode; 0->standby mode
-  uint8_t df; //Digital Filter
-  uint8_t dady;//data ready
+struct Adxrs290Config
+{
+	uint8_t pwr;//1->measurement mode; 0->standby mode
+	uint8_t df; //Digital Filter
+	uint8_t dady;//data ready
 };
 
 static inline void adxrs290_set_default_config(struct Adxrs290Config *c)
 {
-  c->pwr = ADXRS290_TSM_DISABLE | (ADXRS290_PWR_MEAS << 1);
-  c->df = ADXRS290_DLPF_480HZ | (ADXRS290_DHPF_0 << 4);
-  c->dady = ADXRS290_DATA_READY_VAL;
+	c->pwr = ADXRS290_TSM_DISABLE | (ADXRS290_PWR_MEAS << 1);
+	c->df = ADXRS290_DLPF_480HZ | (ADXRS290_DHPF_0 << 4);
+	c->dady = ADXRS290_DATA_READY_VAL;
 }
 
 #endif /* ADXRS290_H */

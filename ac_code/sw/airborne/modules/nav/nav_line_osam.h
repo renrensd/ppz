@@ -31,6 +31,6 @@
 
 extern bool_t nav_line_osam_run(uint8_t From_WP, uint8_t To_WP, float radius, float Space_Before, float Space_After);
 extern bool_t nav_line_osam_block_run(uint8_t First_WP, uint8_t Last_WP, float radius, float Space_Before,
-                                      float Space_After);
+																			float Space_After);
 
 #endif

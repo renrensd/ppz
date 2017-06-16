@@ -17,11 +17,11 @@
 // Watchdog Registers
 typedef struct
 {
-  REG_8 mod;                            // Watchdog Mode Register
-  REG_8 _pad0[3];
-  REG32 tc;                             // Watchdog Time Constant Register
-  REG_8 feed;                           // Watchdog Feed Register
-  REG32 tv;                             // Watchdog Time Value Register
+	REG_8 mod;                            // Watchdog Mode Register
+	REG_8 _pad0[3];
+	REG32 tc;                             // Watchdog Time Constant Register
+	REG_8 feed;                           // Watchdog Feed Register
+	REG32 tv;                             // Watchdog Time Value Register
 } wdRegs_t;
 
 #endif

@@ -47,35 +47,37 @@ static inline void main_event(void);
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic();
-    }
-    main_event();
-  }
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic();
+		}
+		main_event();
+	}
 
-  return 0;
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
 }
 
 static inline void main_periodic(void)
 {
-  static uint8_t i = 0;
+	static uint8_t i = 0;
 
-  /* start "packet with zero */
-  //uart_put_byte(&TEST_UART, 0);
-  uart_put_byte(&TEST_UART, i);
-  /* print status every x cycles */
-  RunOnceEvery(1, printf("%f, transmit: '%d'\n", get_sys_time_float(), i););
+	/* start "packet with zero */
+	//uart_put_byte(&TEST_UART, 0);
+	uart_put_byte(&TEST_UART, i);
+	/* print status every x cycles */
+	RunOnceEvery(1, printf("%f, transmit: '%d'\n", get_sys_time_float(), i););
 
-  i++;
+	i++;
 }
 
 static inline void main_event(void)

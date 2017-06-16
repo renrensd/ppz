@@ -106,42 +106,44 @@
 #define IR_PITCH_NEUTRAL_DEFAULT 0.0
 #endif
 
-struct Infrared_raw {
-  /* the 3 channels of the sensor
-   */
-  int16_t ir1;
-  int16_t ir2;
-  int16_t ir3;
+struct Infrared_raw
+{
+	/* the 3 channels of the sensor
+	 */
+	int16_t ir1;
+	int16_t ir2;
+	int16_t ir3;
 };
 
 /** Infrared structure */
-struct Infrared {
-  /* raw infrared values
-   */
-  struct Infrared_raw value;
-  /* neutrals in radians
-   */
-  float roll_neutral;
-  float pitch_neutral;
-  float pitch_vneutral;
-  /* roll, pitch, top unscaled reading
-   */
-  int16_t roll;
-  int16_t pitch;
-  int16_t top;
-  /* coefficients used to compensate
-     for sensors sensitivity
-  */
-  float lateral_correction;
-  float longitudinal_correction;
-  float vertical_correction;
-  /* coefficients used to compensate
-     for masking
-  */
-  float correction_left;
-  float correction_right;
-  float correction_up;
-  float correction_down;
+struct Infrared
+{
+	/* raw infrared values
+	 */
+	struct Infrared_raw value;
+	/* neutrals in radians
+	 */
+	float roll_neutral;
+	float pitch_neutral;
+	float pitch_vneutral;
+	/* roll, pitch, top unscaled reading
+	 */
+	int16_t roll;
+	int16_t pitch;
+	int16_t top;
+	/* coefficients used to compensate
+	   for sensors sensitivity
+	*/
+	float lateral_correction;
+	float longitudinal_correction;
+	float vertical_correction;
+	/* coefficients used to compensate
+	   for masking
+	*/
+	float correction_left;
+	float correction_right;
+	float correction_up;
+	float correction_down;
 };
 
 extern struct Infrared infrared;

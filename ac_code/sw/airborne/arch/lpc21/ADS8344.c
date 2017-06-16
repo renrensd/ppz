@@ -87,70 +87,71 @@ static uint8_t channel;
 
 void ADS8344_init(void)
 {
-  channel = 0;
-  ADS8344_available = FALSE;
+	channel = 0;
+	ADS8344_available = FALSE;
 
-  /* setup pins for SSP (SCK, MISO, MOSI) */
-  PINSEL1 |= 2 << 2 | 2 << 4 | 2 << 6;
+	/* setup pins for SSP (SCK, MISO, MOSI) */
+	PINSEL1 |= 2 << 2 | 2 << 4 | 2 << 6;
 
-  /* setup SSP */
-  SSPCR0 = SSP_DSS | SSP_FRF | SSP_CPOL | SSP_CPHA | SSP_SCR;
-  SSPCR1 = SSP_LBM | SSP_MS | SSP_SOD;
-  SSPCPSR = CPSDVSR; /* -> 50kHz */
+	/* setup SSP */
+	SSPCR0 = SSP_DSS | SSP_FRF | SSP_CPOL | SSP_CPHA | SSP_SCR;
+	SSPCR1 = SSP_LBM | SSP_MS | SSP_SOD;
+	SSPCPSR = CPSDVSR; /* -> 50kHz */
 
-  /* initialize interrupt vector */
-  VICIntSelect &= ~VIC_BIT(VIC_SPI1);   // SPI1 selected as IRQ
-  VICIntEnable = VIC_BIT(VIC_SPI1);     // SPI1 interrupt enabled
-  _VIC_CNTL(SPI1_VIC_SLOT) = VIC_ENABLE | VIC_SPI1;
-  _VIC_CNTL(SPI1_VIC_SLOT) = (uint32_t)SPI1_ISR;    /* address of the ISR */
+	/* initialize interrupt vector */
+	VICIntSelect &= ~VIC_BIT(VIC_SPI1);   // SPI1 selected as IRQ
+	VICIntEnable = VIC_BIT(VIC_SPI1);     // SPI1 interrupt enabled
+	_VIC_CNTL(SPI1_VIC_SLOT) = VIC_ENABLE | VIC_SPI1;
+	_VIC_CNTL(SPI1_VIC_SLOT) = (uint32_t)SPI1_ISR;    /* address of the ISR */
 
-  /* setup slave select */
-  /* configure SS pin */
-  SetBit(ADS8344_SS_IODIR,  ADS8344_SS_PIN);   /* pin is output  */
-  ADS8344Unselect();                           /* pin low        */
+	/* setup slave select */
+	/* configure SS pin */
+	SetBit(ADS8344_SS_IODIR,  ADS8344_SS_PIN);   /* pin is output  */
+	ADS8344Unselect();                           /* pin low        */
 }
 
 static inline void read_values(void)
 {
-  uint8_t foo __attribute__((unused)) = SSPDR;
-  uint8_t msb = SSPDR;
-  uint8_t lsb = SSPDR;
-  uint8_t llsb = SSPDR;
-  ADS8344_values[channel] = (msb << 8 | lsb) << 1 | llsb >> 7;
+	uint8_t foo __attribute__((unused)) = SSPDR;
+	uint8_t msb = SSPDR;
+	uint8_t lsb = SSPDR;
+	uint8_t llsb = SSPDR;
+	ADS8344_values[channel] = (msb << 8 | lsb) << 1 | llsb >> 7;
 }
 
 static inline void send_request(void)
 {
-  uint8_t control = 1 << 7 | channel << 4 | SGL_DIF << 2 | POWER_MODE;
+	uint8_t control = 1 << 7 | channel << 4 | SGL_DIF << 2 | POWER_MODE;
 
-  SSPDR = control;
-  SSPDR = 0;
-  SSPDR = 0;
-  SSPDR = 0;
+	SSPDR = control;
+	SSPDR = 0;
+	SSPDR = 0;
+	SSPDR = 0;
 }
 
 void ADS8344_start(void)
 {
-  ADS8344Select();
-  SpiClearRti();
-  SpiEnableRti();
-  SpiEnable();
-  send_request();
+	ADS8344Select();
+	SpiClearRti();
+	SpiEnableRti();
+	SpiEnable();
+	send_request();
 }
 
 void SPI1_ISR(void)
 {
-  ISR_ENTRY();
-  LED_TOGGLE(2);
-  read_values();
-  channel++;
-  if (channel > 7) {
-    channel = 0;
-    ADS8344_available = TRUE;
-  }
-  send_request();
-  SpiClearRti();
+	ISR_ENTRY();
+	LED_TOGGLE(2);
+	read_values();
+	channel++;
+	if (channel > 7)
+	{
+		channel = 0;
+		ADS8344_available = TRUE;
+	}
+	send_request();
+	SpiClearRti();
 
-  VICVectAddr = 0x00000000; /* clear this interrupt from the VIC */
-  ISR_EXIT();
+	VICVectAddr = 0x00000000; /* clear this interrupt from the VIC */
+	ISR_EXIT();
 }

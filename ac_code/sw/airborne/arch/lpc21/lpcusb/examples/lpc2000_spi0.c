@@ -95,7 +95,10 @@
 static U8 my_SPISend(U8 outgoing)
 {
 	S0SPDR = outgoing;
-	while( !(S0SPSR & (1<<SPIF)) ) { ; }
+	while( !(S0SPSR & (1<<SPIF)) )
+	{
+		;
+	}
 
 	return S0SPDR;
 }
@@ -105,7 +108,8 @@ static U8 my_SPISend(U8 outgoing)
 void SPISetSpeed(U8 speed)
 {
 	speed &= 0xFE;
-	if (speed < SPI_PRESCALE_MIN) {
+	if (speed < SPI_PRESCALE_MIN)
+	{
 		speed = SPI_PRESCALE_MIN;
 	}
 	SPI_PRESCALE_REG = speed;
@@ -127,7 +131,7 @@ void SPIInit(void)
 	UNSELECT_CARD();
 
 	SPI_PINSEL |= ( (1<<SPI_SCK_FUNCBIT) | (1<<SPI_MISO_FUNCBIT) |
-		(1<<SPI_MOSI_FUNCBIT) );
+									(1<<SPI_MOSI_FUNCBIT) );
 	// enable SPI-Master
 	S0SPCR = (1<<MSTR)|(0<<CPOL);
 
@@ -135,7 +139,8 @@ void SPIInit(void)
 	SPISetSpeed(254);
 
 	/* Send 20 spi commands with card not selected */
-	for (i = 0; i < 21; i++) {
+	for (i = 0; i < 21; i++)
+	{
 		my_SPISend(0xff);
 	}
 
@@ -167,10 +172,11 @@ void SPISendN(U8 * pbBuf, int iLen)
 	U8 temp;
 
 	SELECT_CARD();
-	for (i = 0; i < iLen; i++) {
-        S0SPDR = pbBuf[i];
-    	while( !(S0SPSR & (1<<SPIF)) ) ;
-        temp = S0SPDR;
+	for (i = 0; i < iLen; i++)
+	{
+		S0SPDR = pbBuf[i];
+		while( !(S0SPSR & (1<<SPIF)) ) ;
+		temp = S0SPDR;
 	}
 	UNSELECT_CARD();
 }
@@ -181,9 +187,10 @@ void SPIRecvN(U8 * pbBuf, int iLen)
 	int i;
 
 	SELECT_CARD();
-	for (i = 0; i < iLen; i++) {
-        S0SPDR = 0xFF;
-    	while( !(S0SPSR & (1<<SPIF)) ) ;
+	for (i = 0; i < iLen; i++)
+	{
+		S0SPDR = 0xFF;
+		while( !(S0SPSR & (1<<SPIF)) ) ;
 		pbBuf[i] = S0SPDR;
 	}
 	UNSELECT_CARD();

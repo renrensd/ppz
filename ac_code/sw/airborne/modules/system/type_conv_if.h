@@ -4,27 +4,27 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _TYPE_CONV_IF_H_
-#define _TYPE_CONV_IF_H_ 
+#define _TYPE_CONV_IF_H_
 #include "std.h"
 
 /**** Definition of constants ****/
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 
 /**** Definition of macros ****/
@@ -36,7 +36,7 @@
 /**** Declaration of variables ****/
 
 
-/**** Declaration of functions ****/ 
+/**** Declaration of functions ****/
 uint8_t type_conv_bcd_to_hex(uint8_t bcd);
 uint8_t type_conv_hex_to_bcd(uint8_t hex);
 uint8_t type_conv_hex_to_ascii(uint8_t hex);

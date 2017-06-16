@@ -31,8 +31,10 @@ void Rotate_vect2(struct FloatVect2 *vo, struct _s_matrix22 *R, struct FloatVect
 
 void Matrix22_set_i(struct _s_matrix22 *mo)
 {
-	mo->m11 = 1; mo->m12 = 0;
-	mo->m21 = 0; mo->m22 = 1;
+	mo->m11 = 1;
+	mo->m12 = 0;
+	mo->m21 = 0;
+	mo->m22 = 1;
 }
 
 void Matrix22_copy(struct _s_matrix22 *mo, struct _s_matrix22 *ma)
@@ -59,8 +61,10 @@ void Matrix22_trans(struct _s_matrix22 *mo, struct _s_matrix22 *ma)
 {
 	struct _s_matrix22 mt;
 
-	mt.m11 = ma->m11; mt.m12 = ma->m21;
-	mt.m21 = ma->m12; mt.m22 = ma->m22;
+	mt.m11 = ma->m11;
+	mt.m12 = ma->m21;
+	mt.m21 = ma->m12;
+	mt.m22 = ma->m22;
 
 	Matrix22_copy(mo, &mt);
 }

@@ -23,8 +23,8 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/gps.h"
 
-#include "subsystems/monitoring/monitoring.h"   
-#include "subsystems/monitoring/monitoring_imu.h"  
+#include "subsystems/monitoring/monitoring.h"
+#include "subsystems/monitoring/monitoring_imu.h"
 #include "subsystems/monitoring/monitoring_height.h"
 #include "subsystems/monitoring/monitoring_misc.h"
 #include "subsystems/datalink/downlink.h"
@@ -150,7 +150,7 @@ bool_t ground_check_pass;                 //global var use to sign ground monito
 uint16_t monitoring_fail_code;            //poweron selftest error code
 uint32_t em_code; /*one bit express one emergency in EPT_MS_NB sequence*/
 
-struct except_mission em[EPT_MS_NB];      //emergency var, store raw info 
+struct except_mission em[EPT_MS_NB];      //emergency var, store raw info
 
 bool_t rc_cmd_interrupt;
 bool_t gcs_cmd_interrupt;
@@ -289,25 +289,25 @@ static inline void monitoring_msg_handle(void)
 		DOWNLINK_SEND_MONITORING(DefaultChannel, DefaultDevice, &ground_check_step, &monitoring_fail_code);
 #if TEST_MSG
 		DOWNLINK_SEND_MONI_MSG(DefaultChannel, DefaultDevice,
-				&fs_imu,
-				&fre_imu,
-				&fix_imu,
-				&g_range_imu,
-				&g_noise_imu,
-				&mag_emi_counter,
-				&mag_emi,
-				&sonar_error_data,
-				&height_fix,
-				&height_noise,
-				&height_fre,
-				&baro_flight_range,
-				&sonar_bound,
-				&baro_status,
-				&bat_flight,
-				&gps_flight,
-				&monitor_cmd,
-				&em_alert_grade,
-				&em_code);
+													 &fs_imu,
+													 &fre_imu,
+													 &fix_imu,
+													 &g_range_imu,
+													 &g_noise_imu,
+													 &mag_emi_counter,
+													 &mag_emi,
+													 &sonar_error_data,
+													 &height_fix,
+													 &height_noise,
+													 &height_fre,
+													 &baro_flight_range,
+													 &sonar_bound,
+													 &baro_status,
+													 &bat_flight,
+													 &gps_flight,
+													 &monitor_cmd,
+													 &em_alert_grade,
+													 &em_code);
 #endif
 #endif
 	}
@@ -326,7 +326,8 @@ void monitoring_periodic(void)
 	if (run_monitoring_flag)
 	{
 		if (monitoring_state == GROUND_MONITORING)
-		{  //want to return ground_monitoring(),need reset sensor ground check flag
+		{
+			//want to return ground_monitoring(),need reset sensor ground check flag
 			ground_monitoring();
 		}
 		else
@@ -456,9 +457,9 @@ void ground_monitoring(void)
 		}
 		break;
 	case UBLOX_CHECK:
-		#ifdef USE_GPS2_UBLOX
+#ifdef USE_GPS2_UBLOX
 		if (ins_int_is_ublox_pos_valid())
-		#else
+#else
 		if (1)
 #endif
 		{
@@ -537,7 +538,7 @@ void ground_monitoring(void)
 		}
 		break;
 #ifdef BBOX_OPTION
-		case BBOX_CHECK:
+	case BBOX_CHECK:
 		if(bbox_info.con_flag)
 		{
 			monitoring_fail_code = BBOX_PASS;
@@ -627,7 +628,8 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 static void except_mission_manage(void)
 {
 	if (flight_mode == nav_rc_mode && rc_cmd_interrupt)
-	{   // set all active ms finished
+	{
+		// set all active ms finished
 		for (uint8_t i = 0; i < EPT_MS_NB; i++)
 		{
 			if (em[i].active)
@@ -635,12 +637,13 @@ static void except_mission_manage(void)
 		}
 		//current motion set none
 		monitor_cmd = CM_NONE;
-		rc_cmd_interrupt = FALSE;  //reset 
+		rc_cmd_interrupt = FALSE;  //reset
 		gcs_cmd_interrupt = FALSE;
 		return;
 	}
 	else if (flight_mode == nav_gcs_mode && gcs_cmd_interrupt)
-	{   // set all active ms finished
+	{
+		// set all active ms finished
 		for (uint8_t i = 0; i < EPT_MS_NB; i++)
 		{
 			if (em[i].active)
@@ -648,7 +651,7 @@ static void except_mission_manage(void)
 		}
 		//current motion set none
 		monitor_cmd = CM_NONE;
-		rc_cmd_interrupt = FALSE;  //reset 
+		rc_cmd_interrupt = FALSE;  //reset
 		gcs_cmd_interrupt = FALSE;
 		return;
 	}
@@ -799,13 +802,13 @@ uint8_t data_fix_check(int32_t data, int32_t last_data, uint8_t *counter, uint8_
  * RETURN      : none
  ***********************************************************************/
 void set_except_mission(uint8_t em_nb,
-		bool_t em_active,
-		bool_t em_finished,
-		bool_t em_hover,
-		uint8_t em_keep_time,
-		bool_t em_home,
-		bool_t em_land,
-		uint8_t alert_grade)
+												bool_t em_active,
+												bool_t em_finished,
+												bool_t em_hover,
+												uint8_t em_keep_time,
+												bool_t em_home,
+												bool_t em_land,
+												uint8_t alert_grade)
 {
 	if (em[em_nb].active || em[em_nb].finished)
 		return;

@@ -31,20 +31,20 @@
 
 void ppm_arch_init(void)
 {
-  /* select pin for capture */
-  PPM_PINSEL |= PPM_PINSEL_VAL << PPM_PINSEL_BIT;
-  /* enable capture 0.2 on falling or rising edge + trigger interrupt */
+	/* select pin for capture */
+	PPM_PINSEL |= PPM_PINSEL_VAL << PPM_PINSEL_BIT;
+	/* enable capture 0.2 on falling or rising edge + trigger interrupt */
 #if defined PPM_PULSE_TYPE && PPM_PULSE_TYPE == PPM_PULSE_TYPE_POSITIVE
-  T0CCR |= PPM_CCR_CRR | PPM_CCR_CRI;
+	T0CCR |= PPM_CCR_CRR | PPM_CCR_CRI;
 #elif defined PPM_PULSE_TYPE && PPM_PULSE_TYPE == PPM_PULSE_TYPE_NEGATIVE
-  T0CCR |= PPM_CCR_CRF | PPM_CCR_CRI;
+	T0CCR |= PPM_CCR_CRF | PPM_CCR_CRI;
 #else
 #error "Unknown PPM_PULSE_TYPE"
 #endif
 
 #ifdef USE_PPM_RSSI_GPIO
-  /* select pin as GPIO (input) : should be default ?*/
-  //PPM_RSSI_PINSEL |= PPM_RSSI_VAL << PPM_RSSI_PINSEL_BIT;
-  //ClearBit(PPM_RSSI_IODIR, PPM_RSSI_BIT);
+	/* select pin as GPIO (input) : should be default ?*/
+	//PPM_RSSI_PINSEL |= PPM_RSSI_VAL << PPM_RSSI_PINSEL_BIT;
+	//ClearBit(PPM_RSSI_IODIR, PPM_RSSI_BIT);
 #endif
 }

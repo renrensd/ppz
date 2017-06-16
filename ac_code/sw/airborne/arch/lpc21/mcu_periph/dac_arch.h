@@ -35,7 +35,7 @@
 
 static inline void DACSet(uint16_t x)
 {
-  DACR = x << 6;
+	DACR = x << 6;
 }
 
 

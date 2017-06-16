@@ -43,7 +43,7 @@ euint16 strMatch(eint8* bufa, eint8*bufb,euint32 n)
 {
 	euint32 c;
 	euint16 res=0;
-	for(c=0;c<n;c++)if(bufa[c]!=bufb[c])res++;
+	for(c=0; c<n; c++)if(bufa[c]!=bufb[c])res++;
 	return(res);
 }
 /*****************************************************************************/
@@ -56,7 +56,8 @@ euint16 strMatch(eint8* bufa, eint8*bufb,euint32 n)
 */
 void memCpy(void* psrc, void* pdest, euint32 size)
 {
-	while(size>0){
+	while(size>0)
+	{
 		*((eint8*)pdest+size-1)=*((eint8*)psrc+size-1);
 		size--;
 	}
@@ -65,7 +66,8 @@ void memCpy(void* psrc, void* pdest, euint32 size)
 
 void memClr(void *pdest,euint32 size)
 {
-	while(size>0){
+	while(size>0)
+	{
 		*(((eint8*)pdest)+size-1)=0x00;
 		size--;
 	}
@@ -73,7 +75,8 @@ void memClr(void *pdest,euint32 size)
 
 void memSet(void *pdest,euint32 size,euint8 data)
 {
-	while(size>0){
+	while(size>0)
+	{
 		*(((eint8*)pdest)+size-1)=data;
 		size--;
 	}

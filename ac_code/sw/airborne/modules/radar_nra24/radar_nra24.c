@@ -54,7 +54,7 @@
 #define RADINTDIS 20
 #define RADDISSPEED 10
 
-uint16_t radar_intdistance = RADINTDIS; 
+uint16_t radar_intdistance = RADINTDIS;
 uint16_t radar_distance_speed = RADDISSPEED;
 static uint16_t radar_disbuf = RADINTDIS;
 
@@ -76,72 +76,72 @@ float CUT_OFF;
 
 static inline void parse_rada_nra24r(struct RADAR_NRA24 *t, uint8_t c)
 {
-	  switch (t->status) 
-	  {
-	    	case RADAR_NRA24_STAE0:
-	     	 	if (c == RADAR_NRA24_STX) 
-			 {
-				t->status++;
-	     		 }
-	     	 break;
-	    	case RADAR_NRA24_STAE1:
-			 if (c == RADAR_NRA24_STX) 
-		 	{
-	        			t->status++;
-	      		 }
-		 	 else
-		  	{
-				t->status = RADAR_NRA24_STAE0;
-		  	}
-	      	break;
-		case RADAR_NRA24_STAE2:
-		 	 if (c == RADAR_NRA24_SAT1) 
-		  	{
-	       			 t->status++;
-	     		 }
-		  	else
-		  	{
-				t->status = RADAR_NRA24_STAE0;
-		 	 }
-	     	 break;
-	    	case RADAR_NRA24_STAE3:
-		  	if (c == RADAR_NRA24_SAT2) 
-		  	{
-	        		t->status++;
-				t->payload_idx = 0;
-	     	 	}
-		 	 else
-		  	{
-				t->status = RADAR_NRA24_STAE0;
-		  	}
-	      	break;
-		case RADAR_NRA24_STAE4:	
-	      		t->payload[t->payload_idx] = c;
-	      		t->payload_idx++;
-	     		 if (t->payload_idx == RADAR_NRA24_PAYLOAD_LEN) 
-		  	{
-	       			 t->status++;
-	      		}
-	      	break;
-	   	case RADAR_NRA24_STAE5:
-			if (c == RADAR_NRA24_END) 
-		  	{
-	        			t->status++;
-	     	 	}
-		 	 else
-		  	{
-				t->status = RADAR_NRA24_STAE0;
-		  	}
-			break;
-	    case RADAR_NRA24_STAE6:
-			if (c == RADAR_NRA24_END) 
-		  	{
-	        			 t->msg_received = TRUE; 
-	     	 	}
-		 	t->status = RADAR_NRA24_STAE0;
-	    	default:
-	      		t->status = RADAR_NRA24_STAE0;
-	  }
+	switch (t->status)
+	{
+	case RADAR_NRA24_STAE0:
+		if (c == RADAR_NRA24_STX)
+		{
+			t->status++;
+		}
+		break;
+	case RADAR_NRA24_STAE1:
+		if (c == RADAR_NRA24_STX)
+		{
+			t->status++;
+		}
+		else
+		{
+			t->status = RADAR_NRA24_STAE0;
+		}
+		break;
+	case RADAR_NRA24_STAE2:
+		if (c == RADAR_NRA24_SAT1)
+		{
+			t->status++;
+		}
+		else
+		{
+			t->status = RADAR_NRA24_STAE0;
+		}
+		break;
+	case RADAR_NRA24_STAE3:
+		if (c == RADAR_NRA24_SAT2)
+		{
+			t->status++;
+			t->payload_idx = 0;
+		}
+		else
+		{
+			t->status = RADAR_NRA24_STAE0;
+		}
+		break;
+	case RADAR_NRA24_STAE4:
+		t->payload[t->payload_idx] = c;
+		t->payload_idx++;
+		if (t->payload_idx == RADAR_NRA24_PAYLOAD_LEN)
+		{
+			t->status++;
+		}
+		break;
+	case RADAR_NRA24_STAE5:
+		if (c == RADAR_NRA24_END)
+		{
+			t->status++;
+		}
+		else
+		{
+			t->status = RADAR_NRA24_STAE0;
+		}
+		break;
+	case RADAR_NRA24_STAE6:
+		if (c == RADAR_NRA24_END)
+		{
+			t->msg_received = TRUE;
+		}
+		t->status = RADAR_NRA24_STAE0;
+	default:
+		t->status = RADAR_NRA24_STAE0;
+	}
 }
 //extern struct LASER_R2100_DATA laser_data;
 
@@ -172,7 +172,7 @@ uint16_t Radar_Smooth_MA(uint16_t radar_in)  //
 	uint8_t i;
 	radar_BUF[filter_cnt] = radar_in;
 	uint16_t radar_out;
-	for(i=0;i<FILTER_NUM;i++)
+	for(i=0; i<FILTER_NUM; i++)
 	{
 		temp1 += radar_BUF[i];
 	}
@@ -195,20 +195,20 @@ static float a_alt[3];
 
 void LPF2pSetCutoffFreq(float sample_freq, float cutoff_freq) //
 {
-    float fr =0;  
-    float ohm =0;
-    float c =0;
-	
-    fr= sample_freq/cutoff_freq;
-    ohm=tanf(M_PI_F/fr);
-    c=1.0f+2.0f*cosf(M_PI_F/4.0f)*ohm + ohm*ohm;
+	float fr =0;
+	float ohm =0;
+	float c =0;
 
-    b_alt[0] = ohm*ohm/c;
-    b_alt[1] = 2.0f*b_alt[0];
-    b_alt[2] = b_alt[0];
+	fr= sample_freq/cutoff_freq;
+	ohm=tanf(M_PI_F/fr);
+	c=1.0f+2.0f*cosf(M_PI_F/4.0f)*ohm + ohm*ohm;
+
+	b_alt[0] = ohm*ohm/c;
+	b_alt[1] = 2.0f*b_alt[0];
+	b_alt[2] = b_alt[0];
 	a_alt[0] =0.0;
-    a_alt[1] = 2.0f*(ohm*ohm-1.0f)/c;
-    a_alt[2] = (1.0f-2.0f*cosf(M_PI_F/4.0f)*ohm+ohm*ohm)/c;
+	a_alt[1] = 2.0f*(ohm*ohm-1.0f)/c;
+	a_alt[2] = (1.0f-2.0f*cosf(M_PI_F/4.0f)*ohm+ohm*ohm)/c;
 
 }
 
@@ -217,41 +217,41 @@ static float     _delay_element_21;        // buffered sample -2
 
 float LPF2pApply(float sample)  //
 {
-     float delay_element_0 = 0, output=0;
+	float delay_element_0 = 0, output=0;
 
-     delay_element_0 = sample - _delay_element_11 * a_alt[1] - _delay_element_21 * a_alt[2];
-				
-     //if (isnan(delay_element_0) || isinf(delay_element_0)) {
-						
+	delay_element_0 = sample - _delay_element_11 * a_alt[1] - _delay_element_21 * a_alt[2];
+
+	//if (isnan(delay_element_0) || isinf(delay_element_0)) {
+
 	//delay_element_0 = sample;
 	//}
-     output = delay_element_0 * b_alt[0] + _delay_element_11 * b_alt[1] + _delay_element_21 * b_alt[2];
-				
-     _delay_element_21 = _delay_element_11;
-     _delay_element_11 = delay_element_0;
-     return output;
+	output = delay_element_0 * b_alt[0] + _delay_element_11 * b_alt[1] + _delay_element_21 * b_alt[2];
+
+	_delay_element_21 = _delay_element_11;
+	_delay_element_11 = delay_element_0;
+	return output;
 }
 
 
 
 
 void radar_nra24_get_data(void)
-{  
+{
 	static uint16_t i=1;
 	float data_rate,data_meas;
 	if ( radar_nra24_ChAvailable() )
 	{
-		while ( !radar_nra24.msg_received && radar_nra24_ChAvailable()  ) 
+		while ( !radar_nra24.msg_received && radar_nra24_ChAvailable()  )
 		{
-	      	parse_rada_nra24r( &radar_nra24, radar_nra24_Getch() );
-	    }
-		
-	    if (radar_nra24.msg_received)
+			parse_rada_nra24r( &radar_nra24, radar_nra24_Getch() );
+		}
+
+		if (radar_nra24.msg_received)
 		{
 			radar_nra24.msg_received = FALSE;
 			radar_nra24_data.dis = (radar_nra24.payload[2]<<8) | radar_nra24.payload[3]; //unit:cm
-            data_meas = radar_nra24_data.dis*0.01 + Radar24_G; //unit:m
-			
+			data_meas = radar_nra24_data.dis*0.01 + Radar24_G; //unit:m
+
 			if (radar_nra24_data.dis<=10||radar_nra24_data.dis>=2000)
 			{
 				radar_nra24_data.dis = radar_disbuf;
@@ -262,44 +262,46 @@ void radar_nra24_get_data(void)
 				radar_nra24_data.dis=radar_disbuf;
 				i++;
 			}
-			else 
+			else
 			{
 				radar_disbuf=radar_nra24_data.dis;
 				i=1;
 			}
-			
+
 			if(model_change==RADAR_DIFF)
 			{
 				Differential_equa((float)radar_nra24_data.dis*0.01,&RADAR24_x1,&RADAR24_x2);//m
 				radar_nra24_data.dis_m=RADAR24_x1+Radar24_G;//m
 			}
-            else if(model_change==RADAR_SMOOTH_MA)
+			else if(model_change==RADAR_SMOOTH_MA)
 			{
 				radar_nra24_data.dis_m=(float)Radar_Smooth_MA(radar_nra24_data.dis)*0.01+Radar24_G;
-            }
-			
+			}
+
 			else if(model_change==RADAR_BUTTERWORTH)
 			{
 				//LPF2pSetCutoffFreq(50.0f,CUT_OFF);   //move to initial for CPU efficience
 				radar_nra24_data.dis_m = LPF2pApply((float)radar_nra24_data.dis)*0.01 + Radar24_G;
-	    	}
+			}
 			else
 			{
-				 radar_nra24_data.dis_m=((float)radar_nra24_data.dis)*0.01+Radar24_G;
+				radar_nra24_data.dis_m=((float)radar_nra24_data.dis)*0.01+Radar24_G;
 			}
 			//radar_nra24_data.dis_m=((float)radar_nra24_data.dis)*0.01+Radar24_G;
 			AbiSendMsgRADAR_24(AGL_NRA_24_ID,radar_nra24_data.dis_m);
 			//data_meas=radar_nra24_data.dis*0.01+Radar24_G;//m
-			#if PERIODIC_TELEMETRY
-		    RunOnceEvery(10,   {
-		    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-		    DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &radar_nra24_data.dis, &radar_nra24_data.dis_m);}    );
-			#endif
-	   	 }
+#if PERIODIC_TELEMETRY
+			RunOnceEvery(10,
+			{
+				xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+				DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &radar_nra24_data.dis, &radar_nra24_data.dis_m);
+			}    );
+#endif
+		}
 	}
 }
 void Init_radar24(void)
-{	
+{
 	RADAR24_DILUT_SPEED_R=RADAR24_SPEED_R;	 //dilution of speed
 	RADAR24_DILUT_fILTER_H=RADAR24_fILTER_H;	  //dilution of filter
 	RADAR24_STER_LENGTH=RADAR24_LENGTH; 	//tracing step length

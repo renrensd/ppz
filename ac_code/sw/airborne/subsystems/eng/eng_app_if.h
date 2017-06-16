@@ -4,26 +4,26 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _ENG_APP_IF_H_
-#define _ENG_APP_IF_H_ 
+#define _ENG_APP_IF_H_
 
 /**** Definition of constants ****/
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 
 /**** Definition of macros ****/
@@ -47,19 +47,19 @@ enum
 };
 /**** Declaration of constants ****/
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 typedef struct
 {
 	uint8_t eep_data;
 	uint8_t string[SIZE_OF_HW_VERSION];
-}HW_VERSION;
+} HW_VERSION;
 
 typedef struct
 {
 	uint8_t cl_product_sn[SIZE_OF_PRODUCT_SERIES_NUMBER];
 	uint8_t cl_12nc_series_number[SIZE_OF_12NC_SERIES_NUMBER];
 	uint8_t cl_manufacture_date[SIZE_OF_MANUFACTURE_DATE];
-}MANUFACTURE_INFO;
+} MANUFACTURE_INFO;
 
 struct Software_Version
 {
@@ -72,9 +72,9 @@ typedef struct Component_Version_Info
 {
 	struct Software_Version ac_sv;
 	struct Software_Version ops_sv;
-   #ifdef BBOX_OPTION
+#ifdef BBOX_OPTION
 	struct Software_Version bbox_sv;
-   #endif
+#endif
 } COMPONENT_VERSION_INFO;
 
 /**** Declaration of variables ****/

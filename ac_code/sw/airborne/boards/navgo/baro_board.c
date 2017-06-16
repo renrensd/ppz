@@ -56,38 +56,42 @@ uint16_t startup_cnt;
 
 void baro_init(void)
 {
-  mcp355x_init();
+	mcp355x_init();
 #ifdef BARO_LED
-  LED_OFF(BARO_LED);
+	LED_OFF(BARO_LED);
 #endif
-  startup_cnt = BARO_STARTUP_COUNTER;
+	startup_cnt = BARO_STARTUP_COUNTER;
 }
 
 void baro_periodic(void)
 {
-  // Run some loops to get correct readings from the adc
-  if (startup_cnt > 0) {
-    --startup_cnt;
+	// Run some loops to get correct readings from the adc
+	if (startup_cnt > 0)
+	{
+		--startup_cnt;
 #ifdef BARO_LED
-    LED_TOGGLE(BARO_LED);
-    if (startup_cnt == 0) {
-      LED_ON(BARO_LED);
-    }
+		LED_TOGGLE(BARO_LED);
+		if (startup_cnt == 0)
+		{
+			LED_ON(BARO_LED);
+		}
 #endif
-  }
-  // Read the ADC (at 50/4 Hz, conversion time is 68 ms)
-  RunOnceEvery(4, mcp355x_read());
+	}
+	// Read the ADC (at 50/4 Hz, conversion time is 68 ms)
+	RunOnceEvery(4, mcp355x_read());
 }
 
 void navgo_baro_event(void)
 {
-  mcp355x_event();
-  if (mcp355x_data_available) {
-    if (startup_cnt == 0) {
-      // Send data when init phase is done
-      float pressure = NAVGO_BARO_SENS * (mcp355x_data + NAVGO_BARO_OFFSET);
-      AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
-    }
-    mcp355x_data_available = FALSE;
-  }
+	mcp355x_event();
+	if (mcp355x_data_available)
+	{
+		if (startup_cnt == 0)
+		{
+			// Send data when init phase is done
+			float pressure = NAVGO_BARO_SENS * (mcp355x_data + NAVGO_BARO_OFFSET);
+			AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
+		}
+		mcp355x_data_available = FALSE;
+	}
 }

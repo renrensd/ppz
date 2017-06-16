@@ -34,17 +34,19 @@
 #include "mcu_periph/adc.h"
 #include "mcu_periph/dac.h"
 
-enum BaroBoardStatus {
-  BB_UNINITIALIZED,
-  BB_RUNNING
+enum BaroBoardStatus
+{
+	BB_UNINITIALIZED,
+	BB_RUNNING
 };
 
-struct BaroBoard {
-  enum BaroBoardStatus status;
-  int32_t  absolute;
-  uint16_t offset;
-  uint16_t value_filtered;
-  struct adc_buf buf;
+struct BaroBoard
+{
+	enum BaroBoardStatus status;
+	int32_t  absolute;
+	uint16_t offset;
+	uint16_t value_filtered;
+	struct adc_buf buf;
 };
 
 extern struct BaroBoard baro_board;
@@ -54,8 +56,8 @@ extern void baro_board_calibrate(void);
 
 static inline void baro_board_SetOffset(uint16_t _o)
 {
-  baro_board.offset = _o;
-  DACSet(_o);
+	baro_board.offset = _o;
+	DACSet(_o);
 }
 
 

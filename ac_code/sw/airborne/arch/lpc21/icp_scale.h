@@ -12,10 +12,10 @@ volatile uint32_t pulse_len;
 
 static inline void icp_scale_init(void)
 {
-  /* select pin for capture */
-  ICP_PINSEL |= ICP_PINSEL_VAL << ICP_PINSEL_BIT;
-  /* enable capture 0.2 on falling edge + trigger interrupt */
-  T0CCR |= TCCR_CR2_F | TCCR_CR2_I;
+	/* select pin for capture */
+	ICP_PINSEL |= ICP_PINSEL_VAL << ICP_PINSEL_BIT;
+	/* enable capture 0.2 on falling edge + trigger interrupt */
+	T0CCR |= TCCR_CR2_F | TCCR_CR2_I;
 }
 
 

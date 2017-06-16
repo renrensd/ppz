@@ -106,7 +106,7 @@
 #define LOG_ENDPOINT				(1<<2)
 
 /* protocol engine command codes */
-	/* device commands */
+/* device commands */
 #define CMD_DEV_SET_ADDRESS			0xD0
 #define CMD_DEV_CONFIG				0xD8
 #define CMD_DEV_SET_MODE			0xF3
@@ -115,7 +115,7 @@
 #define CMD_DEV_STATUS				0xFE		/* read/write */
 #define CMD_DEV_GET_ERROR_CODE		0xFF
 #define CMD_DEV_READ_ERROR_STATUS	0xFB
-	/* endpoint commands */
+/* endpoint commands */
 #define CMD_EP_SELECT				0x00
 #define CMD_EP_SELECT_CLEAR			0x40
 #define CMD_EP_SET_STATUS			0x40

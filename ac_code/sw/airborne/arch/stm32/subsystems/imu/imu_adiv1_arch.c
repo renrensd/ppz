@@ -31,29 +31,29 @@
 
 void imu_adiv1_arch_init(void)
 {
-  rcc_periph_clock_enable(RCC_SYSCFG);
-  //gpio_setup_input_pulldown(ADXRS_XY_EOC_PIN_PORT,ADXRS_XY_EOC_PIN);
+	rcc_periph_clock_enable(RCC_SYSCFG);
+	//gpio_setup_input_pulldown(ADXRS_XY_EOC_PIN_PORT,ADXRS_XY_EOC_PIN);
 
-  #if 0
-  exti_select_source(EXTI0, ADXRS_XY_EOC_PIN_PORT);
-  exti_set_trigger(EXTI0, EXTI_TRIGGER_RISING);
-  exti_enable_request(EXTI0);
+#if 0
+	exti_select_source(EXTI0, ADXRS_XY_EOC_PIN_PORT);
+	exti_set_trigger(EXTI0, EXTI_TRIGGER_RISING);
+	exti_enable_request(EXTI0);
 
-  exti_select_source(EXTI7, ADXRS_Z_EOC_PIN_PORT);
-  exti_set_trigger(EXTI7, EXTI_TRIGGER_RISING);
-  exti_enable_request(EXTI7);
+	exti_select_source(EXTI7, ADXRS_Z_EOC_PIN_PORT);
+	exti_set_trigger(EXTI7, EXTI_TRIGGER_RISING);
+	exti_enable_request(EXTI7);
 
-  nvic_set_priority(NVIC_EXTI0_IRQ, 0x0e);
-  nvic_enable_irq(NVIC_EXTI0_IRQ);
+	nvic_set_priority(NVIC_EXTI0_IRQ, 0x0e);
+	nvic_enable_irq(NVIC_EXTI0_IRQ);
 
-  nvic_set_priority(NVIC_EXTI9_5_IRQ, 0x0F);
-  nvic_enable_irq(NVIC_EXTI9_5_IRQ);
-  #endif
+	nvic_set_priority(NVIC_EXTI9_5_IRQ, 0x0F);
+	nvic_enable_irq(NVIC_EXTI9_5_IRQ);
+#endif
 }
 
 void exti0_isr(void)
 {
-  exti_reset_request(EXTI0);
+	exti_reset_request(EXTI0);
 }
 
 

@@ -4,18 +4,18 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 /**** System include files ****/
@@ -26,10 +26,10 @@
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
 /*---Private include files--------------------------------------------*/
-#include "ops_msg.h"   
-#include "ops_msg_if.h"   
-#include "ops_app.h"   
-#include "ops_app_if.h"   
+#include "ops_msg.h"
+#include "ops_msg_if.h"
+#include "ops_app.h"
+#include "ops_app_if.h"
 #include "uart_ops_if.h"
 #include "ops_msg_uart_def.h"
 #include "ops_comm_if.h"
@@ -41,15 +41,15 @@
 /*---Global-----------------------------------------------------------*/
 
 /*******************************************************************************
-**  FUNCTION      : ops_msg_heart_beat                                         
-**  DESCRIPTION   : void 
+**  FUNCTION      : ops_msg_heart_beat
+**  DESCRIPTION   : void
 **  PARAMETERS    : void
-**  RETURN        : void                                                          
+**  RETURN        : void
 *******************************************************************************/
 void ops_msg_heart_beat(void)
 {
 	uint8_t arg[8];
-   	arg[0] = OPS_PRIO_GENERAL;
+	arg[0] = OPS_PRIO_GENERAL;
 	arg[1] = OPS_POSITIVE_RESULT;
 	arg[2] = (ops_info.vel >> 8) & 0xff;
 	arg[3] = ops_info.vel & 0xff;
@@ -57,37 +57,37 @@ void ops_msg_heart_beat(void)
 	arg[5] = 0;
 	arg[6] = (ops_info.treated_area>>8) & 0xff;
 	arg[7] = ops_info.treated_area & 0xff;
-	
-   	ops_comm_send_frame(OPS_RES_ACK_NOT_NEEDED,OPS_HEART_BEAT,8, &arg[0]);
+
+	ops_comm_send_frame(OPS_RES_ACK_NOT_NEEDED,OPS_HEART_BEAT,8, &arg[0]);
 }
 
 /*******************************************************************************
-**  FUNCTION      : ops_msg_self_clean                                         
-**  DESCRIPTION   : 
-**  PARAMETERS    : 
-**  RETURN        : void                                                          
+**  FUNCTION      : ops_msg_self_clean
+**  DESCRIPTION   :
+**  PARAMETERS    :
+**  RETURN        : void
 *******************************************************************************/
 void ops_msg_self_clean(void)
 {
 	uint8_t arg[2];
-   	arg[0] = OPS_PRIO_GENERAL;
+	arg[0] = OPS_PRIO_GENERAL;
 	arg[1] = OPS_SELF_CLEAN;
 
-   	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 }
 
 /*******************************************************************************
-**  FUNCTION      : ops_msg_start_spraying                                         
-**  DESCRIPTION   : void 
-**  PARAMETERS    : flow - spraying flow(mL/min). 
+**  FUNCTION      : ops_msg_start_spraying
+**  DESCRIPTION   : void
+**  PARAMETERS    : flow - spraying flow(mL/min).
 				    atom_val - Set liquid particles atomization value (um)
-**  RETURN        : void                                                          
+**  RETURN        : void
 *******************************************************************************/
 void ops_msg_start_spraying(void)
 {
 	uint8_t arg[2];
-   	arg[0] = OPS_PRIO_GENERAL;
+	arg[0] = OPS_PRIO_GENERAL;
 	if(flight_direct==NAV_FORWARD)
 	{
 		arg[1] = OPS_FORWARD_SPRAYING_START;
@@ -97,50 +97,50 @@ void ops_msg_start_spraying(void)
 		arg[1] = OPS_BACKWARD_SPRAYING_START;
 	}
 
-   	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 }
 
 /*******************************************************************************
-**  FUNCTION      : ops_msg_stop_spraying                                         
-**  DESCRIPTION   : void 
+**  FUNCTION      : ops_msg_stop_spraying
+**  DESCRIPTION   : void
 **  PARAMETERS    : void
-**  RETURN        : void                                                          
+**  RETURN        : void
 *******************************************************************************/
 void ops_msg_stop_spraying(void)
 {
 	uint8_t arg[2];
-   	arg[0] = OPS_PRIO_GENERAL;
+	arg[0] = OPS_PRIO_GENERAL;
 	arg[1] = OPS_SPRAYING_STOP;
 
-   	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
-   	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
+	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 }
 
 /*******************************************************************************
-**  FUNCTION      : ops_msg_request_sv(void)                                         
-**  DESCRIPTION   : void 
+**  FUNCTION      : ops_msg_request_sv(void)
+**  DESCRIPTION   : void
 **  PARAMETERS    : void
-**  RETURN        : void                                                          
+**  RETURN        : void
 *******************************************************************************/
 void ops_request_software_version(void)
 {
 	uint8_t arg[6];
-   	arg[0] = OPS_PRIO_DIAGNOSE;
+	arg[0] = OPS_PRIO_DIAGNOSE;
 
-   	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_REQUEST_SOFTWARE_VERSION,6, &arg[0]);
+	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_REQUEST_SOFTWARE_VERSION,6, &arg[0]);
 }
 
 /*******************************************************************************
-**  FUNCTION      : ops_msg_config_param                                         
-**  DESCRIPTION   : void 
+**  FUNCTION      : ops_msg_config_param
+**  DESCRIPTION   : void
 **  PARAMETERS    : void
-**  RETURN        : void                                                          
+**  RETURN        : void
 *******************************************************************************/
 void ops_msg_config_param(void)
 {
 	uint8_t arg[10];
-   	arg[0] = OPS_PRIO_GENERAL;
+	arg[0] = OPS_PRIO_GENERAL;
 	arg[1] = (ops_param.flow_min >> 8) & 0xff;
 	arg[2] = ops_param.flow_min & 0xff;
 	arg[3] = (ops_param.flow_m2 >> 8) & 0xff;
@@ -153,8 +153,8 @@ void ops_msg_config_param(void)
 	arg[10] = (ops_param.spray_wide>>8) & 0xff;
 	arg[11] = ops_param.spray_wide & 0xff;
 
-   	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0a, &arg[0]);
-   	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0c, &arg[0]);
+	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0a, &arg[0]);
+	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_MSGID_CONFIG_PARAM,0x0c, &arg[0]);
 }
 
 void ops_update_frame_trans(uint8_t *pt_value,uint8_t length)
@@ -162,7 +162,7 @@ void ops_update_frame_trans(uint8_t *pt_value,uint8_t length)
 	uint8_t param[150],i=0;
 	param[0]=OPS_PRIO_GENERAL;
 	param[1]=OPS_UPDATE_DATA;
-	for(i=0;i<length;i++)
+	for(i=0; i<length; i++)
 	{
 		param[2+i]=	*((uint8_t *)pt_value+i);
 	}
@@ -172,24 +172,24 @@ void ops_update_frame_trans(uint8_t *pt_value,uint8_t length)
 /*---Private----------------------------------------------------------*/
 /***********************************************************************
 *  Name         : ops_msg_create
-*  Description : creat mp5 msg navi  
+*  Description : creat mp5 msg navi
 *  Parameter  : None
 *  Returns      : None
 ***********************************************************************/
 void ops_msg_create(void)
 {
-    ops_msg_init_var();
+	ops_msg_init_var();
 }
 
 /***********************************************************************
 *  Name         : ops_uart_msg_send
-*  Description : send nav frame to output fifo      
-*  Parameter  : 
-*  Returns      : 
+*  Description : send nav frame to output fifo
+*  Parameter  :
+*  Returns      :
 ***********************************************************************/
 BOOL ops_uart_msg_send(U8 cmd_type, U16 service, U8 nArgs,U8 const *pArg)
 {
-	U8 ret_val = FALSE; 
+	U8 ret_val = FALSE;
 	U8 frame[UART_OPS_FRAME_SIZE];
 	ops_uart_msg_frame_mk(frame,cmd_type, service, nArgs, pArg);
 	ret_val = uart_ops_send_frame(frame,OPS_UART_BASE_LEN+nArgs);
@@ -198,31 +198,31 @@ BOOL ops_uart_msg_send(U8 cmd_type, U16 service, U8 nArgs,U8 const *pArg)
 
 /***********************************************************************
 *  Name        : ops_uart_msg_handle
-*  Description : it is a callback function, only called by "uart_ops_handle_frame" .     
-*  Parameter   :  
-*  Returns     : 
+*  Description : it is a callback function, only called by "uart_ops_handle_frame" .
+*  Parameter   :
+*  Returns     :
 *  Note		   :ops_uart_frame->param[0] indicate priority,so actual data is ops_uart_frame->param[1].
 ***********************************************************************/
 void ops_uart_msg_handle(U8 const *frame)
 {
 	OPS_UART_FRAME  ops_uart_frame;
-	
+
 	ops_uart_msg_frame_decode((const U8*)frame,&ops_uart_frame);
 	switch (ops_uart_frame.msg_id.msgid.compid)
 	{
-		case OPS_UART_DEV_MANAGE_SERVEICE:
-			ops_msg_device_manage_handler(&ops_uart_frame);
-			break;
-		case OPS_AIRCRAFT_SERVICE:
-            ops_msg_device_manage_handler(&ops_uart_frame);
-			break;
-		case OPS_UPGRADE_SERVICE:  
-            ops_msg_device_manage_handler(&ops_uart_frame);
-			break;
-		default:
-			break;
+	case OPS_UART_DEV_MANAGE_SERVEICE:
+		ops_msg_device_manage_handler(&ops_uart_frame);
+		break;
+	case OPS_AIRCRAFT_SERVICE:
+		ops_msg_device_manage_handler(&ops_uart_frame);
+		break;
+	case OPS_UPGRADE_SERVICE:
+		ops_msg_device_manage_handler(&ops_uart_frame);
+		break;
+	default:
+		break;
 	}
-	
+
 }
 
 
@@ -240,7 +240,7 @@ void ops_uart_msg_frame_mk(U8 *frame,U8 cmd_type, U16 service, U8 nArgs,U8 const
 	frame[OPS_CMD_ID_H] = (U8)(service>>8);
 	frame[OPS_CMD_ID_L] = (U8)service;
 	frame[OPS_CMD_SIZE] = nArgs;
-	for(idx=0;idx<nArgs;idx++)
+	for(idx=0; idx<nArgs; idx++)
 	{
 		frame[OPS_CMD_PARAM_START+idx] = pArg[idx];
 	}
@@ -263,76 +263,76 @@ void ops_uart_msg_frame_decode(U8 const *frame, OPS_UART_FRAME  *ops_uart_frame)
 
 /***********************************************************************
 *  Name         : ops_msg_init_var
-*  Description :   
-*  Parameter  : 
-*  Returns      : 
+*  Description :
+*  Parameter  :
+*  Returns      :
 ***********************************************************************/
 static void ops_msg_init_var (void)
 {
-    
+
 }
 
 /*******************************************************************************
-**  FUNCTION      : ops_msg_device_manage_handler                                         
-**  DESCRIPTION   :  
+**  FUNCTION      : ops_msg_device_manage_handler
+**  DESCRIPTION   :
 **  PARAMETERS    : NAVI_FRAME *navi_msg
-**  RETURN        : void                                                          
+**  RETURN        : void
 *******************************************************************************/
 void ops_msg_device_manage_handler(OPS_UART_FRAME *ops_msg)
 {
 	uint8_t param[50];
-	
-    if(NULL != ops_msg->param + 1)
-    {
-        param[1] = *(ops_msg->param + 1);
-    }
+
+	if(NULL != ops_msg->param + 1)
+	{
+		param[1] = *(ops_msg->param + 1);
+	}
 	if(NULL != ops_msg->param + 2)
-    {
-        param[2] = *(ops_msg->param + 2);
-    }
+	{
+		param[2] = *(ops_msg->param + 2);
+	}
 	if(NULL != ops_msg->param + 3)
-    {
-        param[3] = *(ops_msg->param + 3);
-    }
+	{
+		param[3] = *(ops_msg->param + 3);
+	}
 
 	switch(ops_msg->msg_id.msg_id)
 	{
-		case OPS_HEART_BEAT:
-			ops_heart_beat_handler(ops_msg->param + 1);	
-			break;
-		case OPS_SPRAYING_CONTROL:
-			if(param[1] == OPS_POSITIVE_RESULT)
-			{
-				tm_kill_timer(TIMER_OPS_MSG_START_SPRAY);
-				tm_kill_timer(TIMER_OPS_MSG_STOP_SPRAY);
-			}	
-			break;
-		case OPS_MSGID_CONFIG_PARAM:
-			if(param[1] == OPS_POSITIVE_RESULT)
-			{
-				tm_kill_timer(TIMER_OPS_MSG_CONF_PARAM);
-			}
-			else
-			{
-				//TODOM:error logo.
-			}
-			break;
-		case OPS_REQUEST_SOFTWARE_VERSION:
-			if(param[1] == OPS_POSITIVE_RESULT)
-			{
-				ops_software_version_handler(ops_msg->param + 2, ops_msg->size - 2);
-			}
-			break;
-			#ifdef UPGRADE_OPTION
-		case OPS_UPGRADE_ID:   
-			{
-				ops_request_update_response(ops_msg->param + 1);	
-			}
-			break;
-			#endif
-		default:
-			break;
-		
+	case OPS_HEART_BEAT:
+		ops_heart_beat_handler(ops_msg->param + 1);
+		break;
+	case OPS_SPRAYING_CONTROL:
+		if(param[1] == OPS_POSITIVE_RESULT)
+		{
+			tm_kill_timer(TIMER_OPS_MSG_START_SPRAY);
+			tm_kill_timer(TIMER_OPS_MSG_STOP_SPRAY);
+		}
+		break;
+	case OPS_MSGID_CONFIG_PARAM:
+		if(param[1] == OPS_POSITIVE_RESULT)
+		{
+			tm_kill_timer(TIMER_OPS_MSG_CONF_PARAM);
+		}
+		else
+		{
+			//TODOM:error logo.
+		}
+		break;
+	case OPS_REQUEST_SOFTWARE_VERSION:
+		if(param[1] == OPS_POSITIVE_RESULT)
+		{
+			ops_software_version_handler(ops_msg->param + 2, ops_msg->size - 2);
+		}
+		break;
+#ifdef UPGRADE_OPTION
+	case OPS_UPGRADE_ID:
+	{
+		ops_request_update_response(ops_msg->param + 1);
+	}
+	break;
+#endif
+	default:
+		break;
+
 	}
 }
 

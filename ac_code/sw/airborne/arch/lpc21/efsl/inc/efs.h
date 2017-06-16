@@ -47,7 +47,8 @@
 
 typedef File EmbeddedFile;
 
-struct EmbeddedFileSystem{
+struct EmbeddedFileSystem
+{
 	hwInterface myCard;
 	IOManager myIOman;
 	Disc myDisc;

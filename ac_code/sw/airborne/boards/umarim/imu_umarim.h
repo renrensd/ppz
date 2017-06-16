@@ -105,9 +105,10 @@
 extern volatile bool_t gyr_valid;
 extern volatile bool_t acc_valid;
 
-struct ImuUmarim {
-  struct Itg3200 itg;
-  struct Adxl345_I2c adxl;
+struct ImuUmarim
+{
+	struct Itg3200 itg;
+	struct Adxl345_I2c adxl;
 };
 
 extern struct ImuUmarim imu_umarim;

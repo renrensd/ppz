@@ -34,14 +34,15 @@
 #define SONAR_PAYLOAD_LEN 64
 #endif
 
-struct sonar_data {
-  uint16_t distance_cm;          ///< Raw value
-  float distance_m;         ///< Distance measured in meters
-  volatile bool_t msg_received;           ///< message received flag
-  uint8_t payload[SONAR_PAYLOAD_LEN]; ///< payload buffer
-  uint8_t status;
-  uint8_t ovrn, error;
-  uint8_t payload_idx;
+struct sonar_data
+{
+	uint16_t distance_cm;          ///< Raw value
+	float distance_m;         ///< Distance measured in meters
+	volatile bool_t msg_received;           ///< message received flag
+	uint8_t payload[SONAR_PAYLOAD_LEN]; ///< payload buffer
+	uint8_t status;
+	uint8_t ovrn, error;
+	uint8_t payload_idx;
 };
 
 extern struct sonar_data Sonar_MB12;

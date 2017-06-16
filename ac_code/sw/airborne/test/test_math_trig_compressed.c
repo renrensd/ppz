@@ -107,188 +107,216 @@ int32_t pprz_itrig_sin_16(int32_t angle);
 
 int test_tables(void)
 {
-  int16_t i;
+	int16_t i;
 
-  /* test all functions */
-  for (i = 0; i < TRIG_INT_SIZE; i++) {
-    if (pprz_trig_int[i] != pprz_trig_int_4(i)) return -1;
-    if (pprz_trig_int[i] != pprz_trig_int_8(i)) return -1;
-    if (pprz_trig_int[i] != pprz_trig_int_12(i)) return -1;
-    if (pprz_trig_int[i] != pprz_trig_int_16(i)) return -1;
-  }
-  return 0;
+	/* test all functions */
+	for (i = 0; i < TRIG_INT_SIZE; i++)
+	{
+		if (pprz_trig_int[i] != pprz_trig_int_4(i)) return -1;
+		if (pprz_trig_int[i] != pprz_trig_int_8(i)) return -1;
+		if (pprz_trig_int[i] != pprz_trig_int_12(i)) return -1;
+		if (pprz_trig_int[i] != pprz_trig_int_16(i)) return -1;
+	}
+	return 0;
 }
 
 #ifdef TRIG_INT_COMPR_4
 int32_t pprz_itrig_sin_4(int32_t angle)
 {
-  INT32_ANGLE_NORMALIZE(angle);
-  if (angle > INT32_ANGLE_PI_2) {
-    angle = INT32_ANGLE_PI - angle;
-  } else if (angle < -INT32_ANGLE_PI_2) {
-    angle = -INT32_ANGLE_PI - angle;
-  }
-  if (angle >= 0) {
-    return pprz_trig_int_4(angle);
-  } else {
-    return -pprz_trig_int_4(-angle);
-  }
+	INT32_ANGLE_NORMALIZE(angle);
+	if (angle > INT32_ANGLE_PI_2)
+	{
+		angle = INT32_ANGLE_PI - angle;
+	}
+	else if (angle < -INT32_ANGLE_PI_2)
+	{
+		angle = -INT32_ANGLE_PI - angle;
+	}
+	if (angle >= 0)
+	{
+		return pprz_trig_int_4(angle);
+	}
+	else
+	{
+		return -pprz_trig_int_4(-angle);
+	}
 }
 #endif
 
 #ifdef TRIG_INT_COMPR_8
 int32_t pprz_itrig_sin_8(int32_t angle)
 {
-  INT32_ANGLE_NORMALIZE(angle);
-  if (angle > INT32_ANGLE_PI_2) {
-    angle = INT32_ANGLE_PI - angle;
-  } else if (angle < -INT32_ANGLE_PI_2) {
-    angle = -INT32_ANGLE_PI - angle;
-  }
-  if (angle >= 0) {
-    return pprz_trig_int_8(angle);
-  } else {
-    return -pprz_trig_int_8(-angle);
-  }
+	INT32_ANGLE_NORMALIZE(angle);
+	if (angle > INT32_ANGLE_PI_2)
+	{
+		angle = INT32_ANGLE_PI - angle;
+	}
+	else if (angle < -INT32_ANGLE_PI_2)
+	{
+		angle = -INT32_ANGLE_PI - angle;
+	}
+	if (angle >= 0)
+	{
+		return pprz_trig_int_8(angle);
+	}
+	else
+	{
+		return -pprz_trig_int_8(-angle);
+	}
 }
 #endif
 
 #ifdef TRIG_INT_COMPR_12
 int32_t pprz_itrig_sin_12(int32_t angle)
 {
-  INT32_ANGLE_NORMALIZE(angle);
-  if (angle > INT32_ANGLE_PI_2) {
-    angle = INT32_ANGLE_PI - angle;
-  } else if (angle < -INT32_ANGLE_PI_2) {
-    angle = -INT32_ANGLE_PI - angle;
-  }
-  if (angle >= 0) {
-    return pprz_trig_int_12(angle);
-  } else {
-    return -pprz_trig_int_12(-angle);
-  }
+	INT32_ANGLE_NORMALIZE(angle);
+	if (angle > INT32_ANGLE_PI_2)
+	{
+		angle = INT32_ANGLE_PI - angle;
+	}
+	else if (angle < -INT32_ANGLE_PI_2)
+	{
+		angle = -INT32_ANGLE_PI - angle;
+	}
+	if (angle >= 0)
+	{
+		return pprz_trig_int_12(angle);
+	}
+	else
+	{
+		return -pprz_trig_int_12(-angle);
+	}
 }
 #endif
 
 int32_t pprz_itrig_sin_16(int32_t angle)
 {
-  INT32_ANGLE_NORMALIZE(angle);
-  if (angle > INT32_ANGLE_PI_2) {
-    angle = INT32_ANGLE_PI - angle;
-  } else if (angle < -INT32_ANGLE_PI_2) {
-    angle = -INT32_ANGLE_PI - angle;
-  }
-  if (angle >= 0) {
-    return pprz_trig_int_16(angle);
-  } else {
-    return -pprz_trig_int_16(-angle);
-  }
+	INT32_ANGLE_NORMALIZE(angle);
+	if (angle > INT32_ANGLE_PI_2)
+	{
+		angle = INT32_ANGLE_PI - angle;
+	}
+	else if (angle < -INT32_ANGLE_PI_2)
+	{
+		angle = -INT32_ANGLE_PI - angle;
+	}
+	if (angle >= 0)
+	{
+		return pprz_trig_int_16(angle);
+	}
+	else
+	{
+		return -pprz_trig_int_16(-angle);
+	}
 }
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  dwt_enable_cycle_counter();
+	dwt_enable_cycle_counter();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic();
-    }
-    main_event();
-  }
-  return 0;
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic();
+		}
+		main_event();
+	}
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
-  mcu_int_enable();
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_int_enable();
 
-  downlink_init();
+	downlink_init();
 }
 
 static inline void main_periodic(void)
 {
-  volatile uint32_t result;
-  volatile uint32_t pre_time, post_time;
-  uint32_t result1=0, result2=0, result3=0, result4=0;
-  static int16_t i = 2342;
+	volatile uint32_t result;
+	volatile uint32_t pre_time, post_time;
+	uint32_t result1=0, result2=0, result3=0, result4=0;
+	static int16_t i = 2342;
 
-  i += TRIG_INT_SIZE / 4;
-  i = i % TRIG_INT_SIZE;
+	i += TRIG_INT_SIZE / 4;
+	i = i % TRIG_INT_SIZE;
 
-  RunOnceEvery(10, {DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);});
-  LED_PERIODIC();
+	RunOnceEvery(10, {DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);});
+	LED_PERIODIC();
 
-  pprz_trig_int_init();
-  if (test_tables() == 0) {
+	pprz_trig_int_init();
+	if (test_tables() == 0)
+	{
 
-    /* run 10x without a loop */
-    pre_time = dwt_read_cycle_counter();
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    result = pprz_trig_int_4(i);
-    post_time = dwt_read_cycle_counter();
-    result1 = (post_time - pre_time);
+		/* run 10x without a loop */
+		pre_time = dwt_read_cycle_counter();
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		result = pprz_trig_int_4(i);
+		post_time = dwt_read_cycle_counter();
+		result1 = (post_time - pre_time);
 
-    pre_time = dwt_read_cycle_counter();
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    result = pprz_trig_int_8(i);
-    post_time = dwt_read_cycle_counter();
-    result2 = (post_time - pre_time);
+		pre_time = dwt_read_cycle_counter();
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		result = pprz_trig_int_8(i);
+		post_time = dwt_read_cycle_counter();
+		result2 = (post_time - pre_time);
 
-    pre_time = dwt_read_cycle_counter();
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    result = pprz_trig_int_12(i);
-    post_time = dwt_read_cycle_counter();
-    result3 = (post_time - pre_time);
+		pre_time = dwt_read_cycle_counter();
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		result = pprz_trig_int_12(i);
+		post_time = dwt_read_cycle_counter();
+		result3 = (post_time - pre_time);
 
-    pre_time = dwt_read_cycle_counter();
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    result = pprz_trig_int_16(i);
-    post_time = dwt_read_cycle_counter();
-    result4 = (post_time - pre_time);
+		pre_time = dwt_read_cycle_counter();
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		result = pprz_trig_int_16(i);
+		post_time = dwt_read_cycle_counter();
+		result4 = (post_time - pre_time);
 
-    result = result;
+		result = result;
 
-    DOWNLINK_SEND_CSC_CAN_MSG(DefaultChannel, DefaultDevice, &result1, &result2, &result3, &result4);
-  }
+		DOWNLINK_SEND_CSC_CAN_MSG(DefaultChannel, DefaultDevice, &result1, &result2, &result3, &result4);
+	}
 }
 
 static inline void main_event(void)
 {
-  mcu_event();
+	mcu_event();
 }

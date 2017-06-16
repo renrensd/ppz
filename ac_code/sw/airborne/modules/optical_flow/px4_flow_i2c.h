@@ -11,7 +11,8 @@ enum Px4flow_Status {
   FLOW_STATUS_RECEIVED
 };*/
 struct Px4_flow_Data
-{   //uint8_t flow_buf[22];
+{
+	//uint8_t flow_buf[22];
 	uint16_t frame_count;// counts created I2C frames [#frames]
 	int16_t pixel_flow_x_sum;// latest x flow measurement in pixels*10 [pixels]
 	int16_t pixel_flow_y_sum;// latest y flow measurement in pixels*10 [pixels]
@@ -21,7 +22,7 @@ struct Px4_flow_Data
 	//int16_t gyro_x_rate; // latest gyro x rate [rad/sec]
 	//int16_t gyro_y_rate; // latest gyro y rate [rad/sec]
 	//int16_t gyro_z_rate; // latest gyro z rate [rad/sec]
-	//uint8_t gyro_range; // gyro range [0 .. 7] equals [50 deg/sec .. 2000 deg/sec] 
+	//uint8_t gyro_range; // gyro range [0 .. 7] equals [50 deg/sec .. 2000 deg/sec]
 	uint8_t sonar_timestamp;// time since last sonar update [milliseconds]
 	float   ground_distance;// Ground distance in meters*1000 [meters].
 	//int16_t pixel_flow_x_integral;
@@ -34,14 +35,15 @@ struct Px4_flow_Data
 	//float sum_gyro_y;
 };
 
-struct Px4_flow_I2c {
-  struct i2c_periph *i2c_p;
-  struct i2c_transaction i2c_trans;
-  //enum Px4flow_Status status;
-  //bool_t initialized;                 ///< config done flag
-  //volatile bool_t data_available;     ///< data ready flag
-  struct Px4_flow_Data data;
-  //int32_t prom_cnt;                   ///< number of bytes read from PROM using?
+struct Px4_flow_I2c
+{
+	struct i2c_periph *i2c_p;
+	struct i2c_transaction i2c_trans;
+	//enum Px4flow_Status status;
+	//bool_t initialized;                 ///< config done flag
+	//volatile bool_t data_available;     ///< data ready flag
+	struct Px4_flow_Data data;
+	//int32_t prom_cnt;                   ///< number of bytes read from PROM using?
 };
 
 extern struct Px4_flow_I2c px4_flow;

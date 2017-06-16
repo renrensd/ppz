@@ -26,23 +26,25 @@
 #include "subsystems/abi.h"
 #include "led.h"
 
-enum LisaBaroStatus {
-  LBS_UNINITIALIZED,
-  LBS_RESETED,
-  LBS_INITIALIZING_ABS,
-  LBS_INITIALIZING_ABS_1,
-  LBS_INITIALIZING_DIFF,
-  LBS_INITIALIZING_DIFF_1,
-  LBS_IDLE,
-  LBS_READING_ABS,
-  LBS_READ_ABS,
-  LBS_READING_DIFF,
-  LBS_READ_DIFF
+enum LisaBaroStatus
+{
+	LBS_UNINITIALIZED,
+	LBS_RESETED,
+	LBS_INITIALIZING_ABS,
+	LBS_INITIALIZING_ABS_1,
+	LBS_INITIALIZING_DIFF,
+	LBS_INITIALIZING_DIFF_1,
+	LBS_IDLE,
+	LBS_READING_ABS,
+	LBS_READ_ABS,
+	LBS_READING_DIFF,
+	LBS_READ_DIFF
 };
 
-struct BaroBoard {
-  enum LisaBaroStatus status;
-  bool_t running;
+struct BaroBoard
+{
+	enum LisaBaroStatus status;
+	bool_t running;
 };
 
 
@@ -74,149 +76,161 @@ static inline void baro_board_read_from_current_register(uint8_t baro_addr);
 void baro_init(void)
 {
 #ifdef BARO_LED
-  LED_OFF(BARO_LED);
+	LED_OFF(BARO_LED);
 #endif
-  baro_board.status = LBS_UNINITIALIZED;
-  baro_board.running = FALSE;
+	baro_board.status = LBS_UNINITIALIZED;
+	baro_board.running = FALSE;
 }
 
 
 void baro_periodic(void)
 {
-  // check i2c_done
-  if (!i2c_idle(&i2c2)) { return; }
+	// check i2c_done
+	if (!i2c_idle(&i2c2))
+	{
+		return;
+	}
 
-  switch (baro_board.status) {
-    case LBS_UNINITIALIZED:
-      baro_board_send_reset();
-      baro_board.status = LBS_RESETED;
-      break;
-    case LBS_RESETED:
-      baro_board_send_config_abs();
-      baro_board.status = LBS_INITIALIZING_ABS;
-      break;
-    case LBS_INITIALIZING_ABS:
-      baro_board_set_current_register(BARO_ABS_ADDR, 0x00);
-      baro_board.status = LBS_INITIALIZING_ABS_1;
-      break;
-    case LBS_INITIALIZING_ABS_1:
-      baro_board_send_config_diff();
-      baro_board.status = LBS_INITIALIZING_DIFF;
-      break;
-    case LBS_INITIALIZING_DIFF:
-      baro_board_set_current_register(BARO_DIFF_ADDR, 0x00);
-      baro_board.status = LBS_INITIALIZING_DIFF_1;
-      //    baro_board.status = LBS_UNINITIALIZED;
-      break;
-    case LBS_INITIALIZING_DIFF_1:
-      baro_board.running = TRUE;
-    case LBS_READ_DIFF:
-      baro_board_read_from_current_register(BARO_ABS_ADDR);
-      baro_board.status = LBS_READING_ABS;
-      break;
-    case LBS_READ_ABS:
-      baro_board_read_from_current_register(BARO_DIFF_ADDR);
-      baro_board.status = LBS_READING_DIFF;
-      break;
-    default:
-      break;
-  }
+	switch (baro_board.status)
+	{
+	case LBS_UNINITIALIZED:
+		baro_board_send_reset();
+		baro_board.status = LBS_RESETED;
+		break;
+	case LBS_RESETED:
+		baro_board_send_config_abs();
+		baro_board.status = LBS_INITIALIZING_ABS;
+		break;
+	case LBS_INITIALIZING_ABS:
+		baro_board_set_current_register(BARO_ABS_ADDR, 0x00);
+		baro_board.status = LBS_INITIALIZING_ABS_1;
+		break;
+	case LBS_INITIALIZING_ABS_1:
+		baro_board_send_config_diff();
+		baro_board.status = LBS_INITIALIZING_DIFF;
+		break;
+	case LBS_INITIALIZING_DIFF:
+		baro_board_set_current_register(BARO_DIFF_ADDR, 0x00);
+		baro_board.status = LBS_INITIALIZING_DIFF_1;
+		//    baro_board.status = LBS_UNINITIALIZED;
+		break;
+	case LBS_INITIALIZING_DIFF_1:
+		baro_board.running = TRUE;
+	case LBS_READ_DIFF:
+		baro_board_read_from_current_register(BARO_ABS_ADDR);
+		baro_board.status = LBS_READING_ABS;
+		break;
+	case LBS_READ_ABS:
+		baro_board_read_from_current_register(BARO_DIFF_ADDR);
+		baro_board.status = LBS_READING_DIFF;
+		break;
+	default:
+		break;
+	}
 
 #ifdef BARO_LED
-  if (baro_board.running == TRUE) {
-    LED_ON(BARO_LED);
-  } else {
-    LED_TOGGLE(BARO_LED);
-  }
+	if (baro_board.running == TRUE)
+	{
+		LED_ON(BARO_LED);
+	}
+	else
+	{
+		LED_TOGGLE(BARO_LED);
+	}
 #endif
 }
 
 void lisa_l_baro_event(void)
 {
-  if (baro_board.status == LBS_READING_ABS &&
-      baro_trans.status != I2CTransPending) {
-    baro_board.status = LBS_READ_ABS;
-    if (baro_trans.status == I2CTransSuccess) {
-      int16_t tmp = baro_trans.buf[0] << 8 | baro_trans.buf[1];
-      float pressure = LISA_L_BARO_SENS * (float)tmp;
-      AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
-    }
-  } else if (baro_board.status == LBS_READING_DIFF &&
-             baro_trans.status != I2CTransPending) {
-    baro_board.status = LBS_READ_DIFF;
-    if (baro_trans.status == I2CTransSuccess) {
-      int16_t tmp = baro_trans.buf[0] << 8 | baro_trans.buf[1];
-      float diff = LISA_L_DIFF_SENS * (float)tmp;
-      AbiSendMsgBARO_DIFF(BARO_BOARD_SENDER_ID, diff);
-    }
-  }
+	if (baro_board.status == LBS_READING_ABS &&
+			baro_trans.status != I2CTransPending)
+	{
+		baro_board.status = LBS_READ_ABS;
+		if (baro_trans.status == I2CTransSuccess)
+		{
+			int16_t tmp = baro_trans.buf[0] << 8 | baro_trans.buf[1];
+			float pressure = LISA_L_BARO_SENS * (float)tmp;
+			AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
+		}
+	}
+	else if (baro_board.status == LBS_READING_DIFF &&
+					 baro_trans.status != I2CTransPending)
+	{
+		baro_board.status = LBS_READ_DIFF;
+		if (baro_trans.status == I2CTransSuccess)
+		{
+			int16_t tmp = baro_trans.buf[0] << 8 | baro_trans.buf[1];
+			float diff = LISA_L_DIFF_SENS * (float)tmp;
+			AbiSendMsgBARO_DIFF(BARO_BOARD_SENDER_ID, diff);
+		}
+	}
 }
 
 static inline void baro_board_send_config_abs(void)
 {
 #ifndef BARO_LOW_GAIN
-  INFO("Using High LisaL Baro Gain: Do not use below 1000hPa")
-  baro_board_write_to_register(BARO_ABS_ADDR, 0x01, 0x86, 0x83);
+	INFO("Using High LisaL Baro Gain: Do not use below 1000hPa")
+	baro_board_write_to_register(BARO_ABS_ADDR, 0x01, 0x86, 0x83);
 #else
-  INFO("Using Low LisaL Baro Gain, capable of measuring below 1000hPa or more")
-  //config register should be 0x84 in low countries, or 0x86 in normal countries
-  baro_board_write_to_register(BARO_ABS_ADDR, 0x01, 0x84, 0x83);
+	INFO("Using Low LisaL Baro Gain, capable of measuring below 1000hPa or more")
+	//config register should be 0x84 in low countries, or 0x86 in normal countries
+	baro_board_write_to_register(BARO_ABS_ADDR, 0x01, 0x84, 0x83);
 #endif
 }
 
 static inline void baro_board_send_config_diff(void)
 {
-  baro_board_write_to_register(BARO_DIFF_ADDR, 0x01, 0x84, 0x83);
+	baro_board_write_to_register(BARO_DIFF_ADDR, 0x01, 0x84, 0x83);
 }
 
 static inline void baro_board_send_reset(void)
 {
-  baro_trans.type = I2CTransTx;
-  baro_trans.slave_addr = 0x00;
-  baro_trans.len_w = 1;
-  baro_trans.buf[0] = 0x06;
-  i2c_submit(&i2c2, &baro_trans);
+	baro_trans.type = I2CTransTx;
+	baro_trans.slave_addr = 0x00;
+	baro_trans.len_w = 1;
+	baro_trans.buf[0] = 0x06;
+	i2c_submit(&i2c2, &baro_trans);
 }
 
 static inline void baro_board_write_to_register(uint8_t baro_addr, uint8_t reg_addr, uint8_t val_msb, uint8_t val_lsb)
 {
-  baro_trans.type = I2CTransTx;
-  baro_trans.slave_addr = baro_addr;
-  baro_trans.len_w = 3;
-  baro_trans.buf[0] = reg_addr;
-  baro_trans.buf[1] = val_msb;
-  baro_trans.buf[2] = val_lsb;
-  i2c_submit(&i2c2, &baro_trans);
+	baro_trans.type = I2CTransTx;
+	baro_trans.slave_addr = baro_addr;
+	baro_trans.len_w = 3;
+	baro_trans.buf[0] = reg_addr;
+	baro_trans.buf[1] = val_msb;
+	baro_trans.buf[2] = val_lsb;
+	i2c_submit(&i2c2, &baro_trans);
 }
 
 static inline void baro_board_read_from_register(uint8_t baro_addr, uint8_t reg_addr)
 {
-  baro_trans.type = I2CTransTxRx;
-  baro_trans.slave_addr = baro_addr;
-  baro_trans.len_w = 1;
-  baro_trans.len_r = 2;
-  baro_trans.buf[0] = reg_addr;
-  i2c_submit(&i2c2, &baro_trans);
-  //  i2c2.buf[0] = reg_addr;
-  //  i2c2_transceive(baro_addr, 1, 2, &baro_board.i2c_done);
+	baro_trans.type = I2CTransTxRx;
+	baro_trans.slave_addr = baro_addr;
+	baro_trans.len_w = 1;
+	baro_trans.len_r = 2;
+	baro_trans.buf[0] = reg_addr;
+	i2c_submit(&i2c2, &baro_trans);
+	//  i2c2.buf[0] = reg_addr;
+	//  i2c2_transceive(baro_addr, 1, 2, &baro_board.i2c_done);
 }
 
 static inline void baro_board_set_current_register(uint8_t baro_addr, uint8_t reg_addr)
 {
-  baro_trans.type = I2CTransTx;
-  baro_trans.slave_addr = baro_addr;
-  baro_trans.len_w = 1;
-  baro_trans.buf[0] = reg_addr;
-  i2c_submit(&i2c2, &baro_trans);
-  //  i2c2.buf[0] = reg_addr;
-  //  i2c2_transmit(baro_addr, 1, &baro_board.i2c_done);
+	baro_trans.type = I2CTransTx;
+	baro_trans.slave_addr = baro_addr;
+	baro_trans.len_w = 1;
+	baro_trans.buf[0] = reg_addr;
+	i2c_submit(&i2c2, &baro_trans);
+	//  i2c2.buf[0] = reg_addr;
+	//  i2c2_transmit(baro_addr, 1, &baro_board.i2c_done);
 }
 
 static inline void baro_board_read_from_current_register(uint8_t baro_addr)
 {
-  baro_trans.type = I2CTransRx;
-  baro_trans.slave_addr = baro_addr;
-  baro_trans.len_r = 2;
-  i2c_submit(&i2c2, &baro_trans);
-  //  i2c2_receive(baro_addr, 2, &baro_board.i2c_done);
+	baro_trans.type = I2CTransRx;
+	baro_trans.slave_addr = baro_addr;
+	baro_trans.len_r = 2;
+	i2c_submit(&i2c2, &baro_trans);
+	//  i2c2_receive(baro_addr, 2, &baro_board.i2c_done);
 }

@@ -91,7 +91,8 @@ static BOOL _HandleRequest(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
 
 	iType = REQTYPE_GET_TYPE(pSetup->bmRequestType);
 	pfnHandler = apfnReqHandlers[iType];
-	if (pfnHandler == NULL) {
+	if (pfnHandler == NULL)
+	{
 		DBG("No handler for reqtype %d\n", iType);
 		return FALSE;
 	}
@@ -115,7 +116,8 @@ static void StallControlPipe(U8 bEPStat __attribute__ ((unused)))
 // dump setup packet
 	DBG("STALL on [");
 	pb = (U8 *)&Setup;
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++)
+	{
 		DBG(" %02x", *pb++);
 	}
 	DBG("] stat=%x\n", bEPStat);
@@ -146,9 +148,11 @@ void USBHandleControlTransfer(U8 bEP, U8 bEPStat)
 {
 	int iChunk, iType;
 
-	if (bEP == 0x00) {
+	if (bEP == 0x00)
+	{
 		// OUT transfer
-		if (bEPStat & EP_STATUS_SETUP) {
+		if (bEPStat & EP_STATUS_SETUP)
+		{
 			// setup packet, reset request message state machine
 			USBHwEPRead(0x00, (U8 *)&Setup, sizeof(Setup));
 			DBG("S%x", Setup.bRequest);
@@ -160,9 +164,11 @@ void USBHandleControlTransfer(U8 bEP, U8 bEPStat)
 			iLen = Setup.wLength;
 
 			if ((Setup.wLength == 0) ||
-				(REQTYPE_GET_DIR(Setup.bmRequestType) == REQTYPE_DIR_TO_HOST)) {
+					(REQTYPE_GET_DIR(Setup.bmRequestType) == REQTYPE_DIR_TO_HOST))
+			{
 				// ask installed handler to process request
-				if (!_HandleRequest(&Setup, &iLen, &pbData)) {
+				if (!_HandleRequest(&Setup, &iLen, &pbData))
+				{
 					DBG("_HandleRequest1 failed\n");
 					StallControlPipe(bEPStat);
 					return;
@@ -173,21 +179,26 @@ void USBHandleControlTransfer(U8 bEP, U8 bEPStat)
 				DataIn();
 			}
 		}
-		else {
-			if (iResidue > 0) {
+		else
+		{
+			if (iResidue > 0)
+			{
 				// store data
 				iChunk = USBHwEPRead(0x00, pbData, iResidue);
-				if (iChunk < 0) {
+				if (iChunk < 0)
+				{
 					StallControlPipe(bEPStat);
 					return;
 				}
 				pbData += iChunk;
 				iResidue -= iChunk;
-				if (iResidue == 0) {
+				if (iResidue == 0)
+				{
 					// received all, send data to handler
 					iType = REQTYPE_GET_TYPE(Setup.bmRequestType);
 					pbData = apbDataStore[iType];
-					if (!_HandleRequest(&Setup, &iLen, &pbData)) {
+					if (!_HandleRequest(&Setup, &iLen, &pbData))
+					{
 						DBG("_HandleRequest2 failed\n");
 						StallControlPipe(bEPStat);
 						return;
@@ -196,19 +207,22 @@ void USBHandleControlTransfer(U8 bEP, U8 bEPStat)
 					DataIn();
 				}
 			}
-			else {
+			else
+			{
 				// absorb zero-length status message
 				iChunk = USBHwEPRead(0x00, NULL, 0);
 				DBG(iChunk > 0 ? "?" : "");
 			}
 		}
 	}
-	else if (bEP == 0x80) {
+	else if (bEP == 0x80)
+	{
 		// IN transfer
 		// send more data if available (possibly a 0-length packet)
 		DataIn();
 	}
-	else {
+	else
+	{
 		ASSERT(FALSE);
 	}
 }

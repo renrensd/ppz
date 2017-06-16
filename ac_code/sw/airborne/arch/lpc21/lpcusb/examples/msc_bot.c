@@ -44,7 +44,8 @@
 
 
 /** Command block wrapper structure */
-typedef struct {
+typedef struct
+{
 	U32		dwCBWSignature;
 	U32		dwCBWTag;
 	U32		dwCBWDataTransferLength;
@@ -55,7 +56,8 @@ typedef struct {
 } TCBW;
 
 /** Command status wrapper structure */
-typedef struct {
+typedef struct
+{
 	U32		dwCSWSignature;
 	U32		dwCSWTag;
 	U32		dwCSWDataResidue;
@@ -63,7 +65,8 @@ typedef struct {
 } TCSW;
 
 /** States of BOT state machine */
-typedef enum {
+typedef enum
+{
 	eCBW,
 	eDataOut,
 	eDataIn,
@@ -139,21 +142,25 @@ static void SendCSW(U8 bStatus)
 static BOOL CheckCBW(TCBW *pCBW, int iLen)
 {
 	// CBW valid?
-	if (iLen != 31) {
+	if (iLen != 31)
+	{
 		DBG("Invalid length (%d)\n", iLen);
 		return FALSE;
 	}
-	if (pCBW->dwCBWSignature != CBW_SIGNATURE) {
+	if (pCBW->dwCBWSignature != CBW_SIGNATURE)
+	{
 		DBG("Invalid signature %x\n", pCBW->dwCBWSignature);
 		return FALSE;
 	}
 
 	// CBW meaningful?
-	if (pCBW->bCBWLun != 0) {
+	if (pCBW->bCBWLun != 0)
+	{
 		DBG("Invalid LUN %d\n", pCBW->bCBWLun);
 		return FALSE;
 	}
-	if ((pCBW->bCBWCBLength < 1) || (pCBW->bCBWCBLength > 16)) {
+	if ((pCBW->bCBWCBLength < 1) || (pCBW->bCBWCBLength > 16))
+	{
 		DBG("Invalid CB len %d\n", pCBW->bCBWCBLength);
 		return FALSE;
 	}
@@ -172,11 +179,13 @@ static BOOL CheckCBW(TCBW *pCBW, int iLen)
 **************************************************************************/
 static void BOTStall(void)
 {
-	if ((CBW.bmCBWFlags & 0x80) || (CBW.dwCBWDataTransferLength == 0)) {
+	if ((CBW.bmCBWFlags & 0x80) || (CBW.dwCBWDataTransferLength == 0))
+	{
 		// stall data-in or CSW
 		USBHwEPStall(MSC_BULK_IN_EP, TRUE);
 	}
-	else {
+	else
+	{
 		// stall data-out
 		USBHwEPStall(MSC_BULK_OUT_EP, TRUE);
 	}
@@ -195,22 +204,26 @@ static void HandleDataIn(void)
 
 	// process data for host in SCSI layer
 	pbData = SCSIHandleData(CBW.CBWCB, CBW.bCBWCBLength, pbData, dwOffset);
-	if (pbData == NULL) {
+	if (pbData == NULL)
+	{
 		BOTStall();
 		SendCSW(STATUS_FAILED);
 		return;
 	}
 
 	// send data to host?
-	if (dwOffset < dwTransferSize) {
+	if (dwOffset < dwTransferSize)
+	{
 		iChunk = MIN(64, dwTransferSize - dwOffset);
 		USBHwEPWrite(MSC_BULK_IN_EP, pbData, iChunk);
 		dwOffset += iChunk;
 	}
 
 	// are we done now?
-	if (dwOffset == dwTransferSize) {
-		if (dwOffset != CBW.dwCBWDataTransferLength) {
+	if (dwOffset == dwTransferSize)
+	{
+		if (dwOffset != CBW.dwCBWDataTransferLength)
+		{
 			// stall pipe
 			DBG("stalling DIN");
 			BOTStall();
@@ -231,12 +244,14 @@ static void HandleDataOut(void)
 {
 	int iChunk;
 
-	if (dwOffset < dwTransferSize) {
+	if (dwOffset < dwTransferSize)
+	{
 		// get data from host
 		iChunk = USBHwEPRead(MSC_BULK_OUT_EP, pbData, dwTransferSize - dwOffset);
 		// process data in SCSI layer
 		pbData = SCSIHandleData(CBW.CBWCB, CBW.bCBWCBLength, pbData, dwOffset);
-		if (pbData == NULL) {
+		if (pbData == NULL)
+		{
 			BOTStall();
 			SendCSW(STATUS_FAILED);
 			return;
@@ -245,8 +260,10 @@ static void HandleDataOut(void)
 	}
 
 	// are we done now?
-	if (dwOffset == dwTransferSize) {
-		if (dwOffset != CBW.dwCBWDataTransferLength) {
+	if (dwOffset == dwTransferSize)
+	{
+		if (dwOffset != CBW.dwCBWDataTransferLength)
+		{
 			// stall pipe
 			DBG("stalling DOUT");
 			BOTStall();
@@ -269,17 +286,20 @@ void MSCBotBulkOut(U8 bEP, U8 bEPStatus)
 	BOOL	fHostIn, fDevIn;
 
 	// ignore events on stalled EP
-	if (bEPStatus & EP_STATUS_STALLED) {
+	if (bEPStatus & EP_STATUS_STALLED)
+	{
 		return;
 	}
 
-	switch (eState) {
+	switch (eState)
+	{
 
 	case eCBW:
 		iLen = USBHwEPRead(bEP, (U8 *)&CBW, sizeof(CBW));
 
 		// check if we got a good CBW
-		if (!CheckCBW(&CBW, iLen)) {
+		if (!CheckCBW(&CBW, iLen))
+		{
 			// see 6.6.1
 			USBHwEPStall(MSC_BULK_IN_EP, TRUE);
 			USBHwEPStall(MSC_BULK_OUT_EP, TRUE);
@@ -288,7 +308,7 @@ void MSCBotBulkOut(U8 bEP, U8 bEPStatus)
 		}
 
 		DBG("CBW: len=%d, flags=%x, cmd=%x, cmdlen=%d\n",
-			CBW.dwCBWDataTransferLength, CBW.bmCBWFlags, CBW.CBWCB[0], CBW.bCBWCBLength);
+				CBW.dwCBWDataTransferLength, CBW.bmCBWFlags, CBW.CBWCB[0], CBW.bCBWCBLength);
 
 		dwOffset = 0;
 		dwTransferSize = 0;
@@ -296,7 +316,8 @@ void MSCBotBulkOut(U8 bEP, U8 bEPStatus)
 
 		// verify request
 		pbData = SCSIHandleCmd(CBW.CBWCB, CBW.bCBWCBLength, &iLen, &fDevIn);
-		if (pbData == NULL) {
+		if (pbData == NULL)
+		{
 			// unknown command
 			BOTStall();
 			SendCSW(STATUS_FAILED);
@@ -305,8 +326,9 @@ void MSCBotBulkOut(U8 bEP, U8 bEPStatus)
 
 		// rule: if device and host disagree on direction, send CSW with status 2
 		if ((iLen > 0) &&
-			((fHostIn && !fDevIn) ||
-			(!fHostIn && fDevIn))) {
+				((fHostIn && !fDevIn) ||
+				 (!fHostIn && fDevIn)))
+		{
 			DBG("Host and device disagree on direction\n");
 			BOTStall();
 			SendCSW(STATUS_PHASE_ERR);
@@ -314,7 +336,8 @@ void MSCBotBulkOut(U8 bEP, U8 bEPStatus)
 		}
 
 		// rule: if D > H, send CSW with status 2
-		if (iLen > CBW.dwCBWDataTransferLength) {
+		if (iLen > CBW.dwCBWDataTransferLength)
+		{
 			DBG("Negative residue\n");
 			BOTStall();
 			SendCSW(STATUS_PHASE_ERR);
@@ -322,12 +345,14 @@ void MSCBotBulkOut(U8 bEP, U8 bEPStatus)
 		}
 
 		dwTransferSize = iLen;
-		if ((dwTransferSize == 0) || fDevIn) {
+		if ((dwTransferSize == 0) || fDevIn)
+		{
 			// data from device-to-host
 			eState = eDataIn;
 			HandleDataIn();
 		}
-		else {
+		else
+		{
 			// data from host-to-device
 			eState = eDataOut;
 		}
@@ -367,11 +392,13 @@ void MSCBotBulkOut(U8 bEP, U8 bEPStatus)
 void MSCBotBulkIn(U8 bEP, U8 bEPStatus)
 {
 	// ignore events on stalled EP
-	if (bEPStatus & EP_STATUS_STALLED) {
+	if (bEPStatus & EP_STATUS_STALLED)
+	{
 		return;
 	}
 
-	switch (eState) {
+	switch (eState)
+	{
 
 	case eCBW:
 	case eDataOut:

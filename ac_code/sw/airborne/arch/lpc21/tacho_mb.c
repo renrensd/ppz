@@ -11,8 +11,8 @@ uint32_t t_duration;
 
 void tacho_mb_init(void)
 {
-  /* select pin for capture */
-  TACHO_MB_PINSEL |= TACHO_MB_PINSEL_VAL << TACHO_MB_PINSEL_BIT;
-  /* enable capture 0.2 on falling edge + trigger interrupt */
-  T0CCR |= TCCR_CR0_F | TCCR_CR0_I;
+	/* select pin for capture */
+	TACHO_MB_PINSEL |= TACHO_MB_PINSEL_VAL << TACHO_MB_PINSEL_BIT;
+	/* enable capture 0.2 on falling edge + trigger interrupt */
+	T0CCR |= TCCR_CR0_F | TCCR_CR0_I;
 }

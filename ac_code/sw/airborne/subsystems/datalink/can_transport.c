@@ -4,18 +4,18 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 #include "mcu_periph/sys_time.h"
@@ -35,18 +35,18 @@ struct can_transport can_tp;
 static void can_increment_buf(uint16_t *buf_idx, uint16_t len);
 static void put_1byte(struct can_transport *trans, struct link_device *dev, const uint8_t byte);
 static void put_bytes(struct can_transport *trans, struct link_device *dev,
-                      enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
-                      uint8_t len, const void *bytes);
+											enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
+											uint8_t len, const void *bytes);
 static void put_named_byte(struct can_transport *trans, struct link_device *dev,
-                           enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
-                           uint8_t byte, const char *name __attribute__((unused)));
+													 enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
+													 uint8_t byte, const char *name __attribute__((unused)));
 static uint8_t size_of(struct can_transport *trans, uint8_t len);
 static void start_message(struct can_transport *trans, struct link_device *dev, uint8_t payload_len);
 static void end_message(struct can_transport *trans, struct link_device *dev);
 static void overrun(struct can_transport *trans __attribute__((unused)),
-                    struct link_device *dev __attribute__((unused)));
+										struct link_device *dev __attribute__((unused)));
 static void count_bytes(struct can_transport *trans __attribute__((unused)),
-                        struct link_device *dev __attribute__((unused)), uint8_t bytes);
+												struct link_device *dev __attribute__((unused)), uint8_t bytes);
 static int check_available_space(struct can_transport *trans __attribute__((unused)), struct link_device *dev, uint8_t bytes);
 static bool_t can_check_free_space(struct can_transport *p, uint8_t len);
 static uint8_t can_getch(struct can_transport *p);
@@ -67,37 +67,37 @@ static void can_transport_send_msg(struct can_transport *p, uint8_t len);
 static void put_1byte(struct can_transport *trans, struct link_device *dev, const uint8_t byte)
 {
 	if(bbox_info.start_log == TRUE)
-  	{
-	  	dev->put_byte(dev->periph, byte);
-  	}
+	{
+		dev->put_byte(dev->periph, byte);
+	}
 }
 
 static void put_bytes(struct can_transport *trans, struct link_device *dev,
-                      enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
-                      uint8_t len, const void *bytes)
+											enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
+											uint8_t len, const void *bytes)
 {
-  	const uint8_t *b = (const uint8_t *) bytes;
-  	int i;
-  	for (i = 0; i < len; i++) 
-  	{
-    	put_1byte(trans, dev, b[i]);
-  	}
+	const uint8_t *b = (const uint8_t *) bytes;
+	int i;
+	for (i = 0; i < len; i++)
+	{
+		put_1byte(trans, dev, b[i]);
+	}
 }
 
 static void put_named_byte(struct can_transport *trans, struct link_device *dev,
-                           enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
-                           uint8_t byte, const char *name __attribute__((unused)))
+													 enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
+													 uint8_t byte, const char *name __attribute__((unused)))
 {
-  	put_1byte(trans, dev, byte);
+	put_1byte(trans, dev, byte);
 }
 
 static uint8_t size_of(struct can_transport *trans, uint8_t len)
-{ 
-  	if(bbox_info.start_log == TRUE)
-  	{
+{
+	if(bbox_info.start_log == TRUE)
+	{
 		trans->tx_frame_len = len + 12;
 		return (len + 12);
-  	}
+	}
 	else
 	{
 		return 0;
@@ -106,7 +106,7 @@ static uint8_t size_of(struct can_transport *trans, uint8_t len)
 
 static void start_message(struct can_transport *trans, struct link_device *dev, uint8_t payload_len)
 {
-   	if(bbox_info.start_log == TRUE)
+	if(bbox_info.start_log == TRUE)
 	{
 		//can_t1 = get_sys_time_usec();
 		dev->nb_msgs++;
@@ -121,32 +121,32 @@ static void start_message(struct can_transport *trans, struct link_device *dev, 
 		dev->put_byte( dev->periph, (uint8_t)(trans->tx_canid >> 8) );
 		dev->put_byte( dev->periph, (uint8_t)(trans->tx_canid & 0xFF) );
 		uint32_t ts = get_sys_time_usec() / 100;
-  		put_bytes(trans, dev, DL_TYPE_TIMESTAMP, DL_FORMAT_SCALAR, 4, (uint8_t *)(&ts));
+		put_bytes(trans, dev, DL_TYPE_TIMESTAMP, DL_FORMAT_SCALAR, 4, (uint8_t *)(&ts));
 	}
 }
 
 static void end_message(struct can_transport *trans, struct link_device *dev)
 {
-  	if(bbox_info.start_log == TRUE)
-  	{
+	if(bbox_info.start_log == TRUE)
+	{
 		//if( can_check_free_space(p, 1) )
 		{
 			dev->put_byte(dev->periph, trans->cs_tx);
 			trans->tx_frame_counter++;
 		}
-  	}
+	}
 }
 
 static void overrun(struct can_transport *trans __attribute__((unused)),
-                    struct link_device *dev __attribute__((unused)))
+										struct link_device *dev __attribute__((unused)))
 {
 	dev->nb_ovrn++;
 }
 
 static void count_bytes(struct can_transport *trans __attribute__((unused)),
-                        struct link_device *dev __attribute__((unused)), uint8_t bytes)
+												struct link_device *dev __attribute__((unused)), uint8_t bytes)
 {
-  	dev->nb_bytes += bytes;
+	dev->nb_bytes += bytes;
 }
 
 uint8_t bbox_upgrade_status=FALSE;
@@ -160,32 +160,32 @@ static int check_available_space(struct can_transport *trans __attribute__((unus
 	{
 		return FALSE;
 	}
-	
+
 }
 
 static bool_t can_check_free_space(struct can_transport *p, uint8_t len)
 {
-  	int16_t space = p->tx_extract_idx - p->tx_insert_idx;
-  	if (space <= 0) 
-  	{
-    	space += CAN_TX_BUFFER_SIZE;
-  	}
-  	return (uint16_t)(space - 2) >= len;
+	int16_t space = p->tx_extract_idx - p->tx_insert_idx;
+	if (space <= 0)
+	{
+		space += CAN_TX_BUFFER_SIZE;
+	}
+	return (uint16_t)(space - 2) >= len;
 }
 
 static uint8_t can_getch(struct can_transport *p)
 {
-  	uint8_t ret = p->rx_buf[p->rx_extract_idx];
-  	p->rx_extract_idx = (p->rx_extract_idx + 1) % CAN_RX_BUFFER_SIZE;
-  	return ret;
+	uint8_t ret = p->rx_buf[p->rx_extract_idx];
+	p->rx_extract_idx = (p->rx_extract_idx + 1) % CAN_RX_BUFFER_SIZE;
+	return ret;
 }
 
 static uint16_t can_char_available(struct can_transport *p)
 {
 	int16_t available = p->rx_insert_idx - p->rx_extract_idx;
-	if (available < 0) 
+	if (available < 0)
 	{
-	  available += CAN_RX_BUFFER_SIZE;
+		available += CAN_RX_BUFFER_SIZE;
 	}
 	return (uint16_t)available;
 }
@@ -198,7 +198,7 @@ static uint16_t can_char_available(struct can_transport *p)
 ***********************************************************************/
 static void can_increment_buf(uint16_t *buf_idx, uint16_t len)
 {
-  	*buf_idx = (*buf_idx + len) % CAN_TX_BUFFER_SIZE;
+	*buf_idx = (*buf_idx + len) % CAN_TX_BUFFER_SIZE;
 }
 
 /***********************************************************************
@@ -213,7 +213,7 @@ void can_put_byte(struct can_transport *p, uint8_t byte)
 	{
 		p->tx_buf[p->tx_insert_idx] = byte;
 		p->cs_tx ^= byte;
-	  	can_increment_buf(&p->tx_insert_idx, 1);
+		can_increment_buf(&p->tx_insert_idx, 1);
 	}
 	else
 	{
@@ -223,7 +223,7 @@ void can_put_byte(struct can_transport *p, uint8_t byte)
 
 /***********************************************************************
 * FUNCTION    : can_transport_send_msg
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -238,7 +238,7 @@ static void can_transport_send_msg(struct can_transport *p, uint8_t len)
 		data[i] = p->tx_buf[p->tx_extract_idx];
 		can_increment_buf(&p->tx_extract_idx, 1);
 	}
-	
+
 	can_drv_transmit(p->tx_canid, data, len);
 }
 
@@ -260,19 +260,19 @@ static void can_transport_tx_proc(struct can_transport *p)
 {
 	if(p->tx_rem_len > 0)
 	{
-		 if(p->tx_rem_len <= 8)
-		 {
+		if(p->tx_rem_len <= 8)
+		{
 			can_transport_send_msg(p, p->tx_rem_len);
 			p->tx_rem_len = 0;
 
 			//can_t2 = get_sys_time_usec();
 			//can_tta[can_tt_index++] = can_t2 - can_t1;
-		 }
-		 else
-		 {
+		}
+		else
+		{
 			can_transport_send_msg(p, 8);
 			p->tx_rem_len -= 8;
-		 }
+		}
 	}
 	else
 	{
@@ -286,7 +286,7 @@ static void can_transport_rx_proc(struct can_transport *p,  uint32_t id, uint8_t
 {
 	uint8_t i;
 	uint16_t temp;
-	
+
 	p->rx_canid = (uint16_t)id;
 	for(i=0; i<len; i++)
 	{
@@ -307,66 +307,66 @@ void can_drv_rx_callback(uint32_t id, uint8_t *buf, int len)
 
 /***********************************************************************
 *  Name         : can_has_frame_send
-*  Description : to confirm if has frame to be send. 
+*  Description : to confirm if has frame to be send.
 *  Parameter  : None
 *  Returns      : BOOL
 ***********************************************************************/
 static bool_t can_has_frame_send(struct can_transport *p)
 {
-    return (p->tx_frame_counter != p->tx_frame_handled_counter);
+	return (p->tx_frame_counter != p->tx_frame_handled_counter);
 }
 
 /***********************************************************************
 *  Name         : can_has_frame_received
-*  Description : to confirm if has frame to be received. 
+*  Description : to confirm if has frame to be received.
 *  Parameter  : None
 *  Returns      : BOOL
 ***********************************************************************/
 static bool_t can_has_frame_received(struct can_transport *p)
 {
-    return (p->rx_frame_counter != p->rx_frame_handled_counter);
+	return (p->rx_frame_counter != p->rx_frame_handled_counter);
 }
 
 /***********************************************************************
 *  Name        : can_transport_parse
-*  Description : Parsing a transparent uart private protocol frame. 
+*  Description : Parsing a transparent uart private protocol frame.
 *  Parameter   : None
-*  Returns     : 
+*  Returns     :
 ***********************************************************************/
 static void can_transport_parse(struct can_transport *t, uint8_t c)
 {
-  	switch (t->rx_status) 
-  	{
-    	case CAN_RX_IDLE:
-	    if (c == CAN_VAL_STX) 
+	switch (t->rx_status)
+	{
+	case CAN_RX_IDLE:
+		if (c == CAN_VAL_STX)
 		{
-	       	t->rx_status = CAN_RX_FIX1;
-	    }
-	    break;
+			t->rx_status = CAN_RX_FIX1;
+		}
+		break;
 	case CAN_RX_START:
-	    t->rx_status = CAN_RX_IDLE;
-	    break;
+		t->rx_status = CAN_RX_IDLE;
+		break;
 	case CAN_RX_FIX1:
-	    if (c == CAN_VAL_FIX1) 
+		if (c == CAN_VAL_FIX1)
 		{
-	       	t->rx_status = CAN_RX_LEN_H;
-	    }
-		else if (c == CAN_VAL_STX) 
+			t->rx_status = CAN_RX_LEN_H;
+		}
+		else if (c == CAN_VAL_STX)
 		{
-	       	t->rx_status = CAN_RX_FIX1;
-	    }
+			t->rx_status = CAN_RX_FIX1;
+		}
 		else
 		{
-	       	t->rx_status = CAN_RX_IDLE;
-	    }
-	    break;
+			t->rx_status = CAN_RX_IDLE;
+		}
+		break;
 	case CAN_RX_LEN_H:
 		t->len = c << 8;
 		t->cs_rx = c;	//init the cs value.
 		t->rx_last_frame_insert_idx = t->rx_insert_idx;
 		t->rx_status = CAN_RX_LEN_L;
-	    break;
-	case CAN_RX_LEN_L:	
+		break;
+	case CAN_RX_LEN_L:
 		t->len = c & 0xFF;	//TODOM: data length limit to 255.
 		t->cs_rx ^= c;	//init the cs value.
 		t->len -= CAN_FRAME_EXTRA_LEN;
@@ -374,48 +374,48 @@ static void can_transport_parse(struct can_transport *t, uint8_t c)
 
 		t->rx_buf[t->rx_insert_idx] = t->len + 2;//canid_l and canid_h.
 		can_increment_buf(&t->rx_insert_idx, 1);
-	    break;
+		break;
 	case CAN_RX_FS:
 		t->rx_seq = c;
 		t->cs_rx ^= c;
 		t->rx_status = CAN_RX_ID_H;
-	    break;
+		break;
 	case CAN_RX_ID_H:
 		t->rx_canid = c << 8;
 		t->cs_rx ^= c;
 		t->rx_status = CAN_RX_ID_L;
 		t->rx_buf[t->rx_insert_idx] = c;
 		can_increment_buf(&t->rx_insert_idx, 1);
-	    break;
+		break;
 	case CAN_RX_ID_L:
 		t->rx_canid |= c;
 		t->cs_rx ^= c;
 		t->rx_status = CAN_RX_TIME_LSB;
 		t->rx_buf[t->rx_insert_idx] = c;
 		can_increment_buf(&t->rx_insert_idx, 1);
-	    break;
+		break;
 
 	case CAN_RX_TIME_LSB:
 		t->rx_ts = c;
 		t->cs_rx ^= c;
 		t->rx_status = CAN_RX_TIME2;
-	    break;
+		break;
 	case CAN_RX_TIME2:
 		t->rx_ts |= c<<8;
 		t->cs_rx ^= c;
 		t->rx_status = CAN_RX_TIME3;
-	    break;
+		break;
 	case CAN_RX_TIME3:
 		t->rx_ts |= c<<16;
 		t->cs_rx ^= c;
 		t->rx_status = CAN_RX_TIME_MSB;
-	    break;
+		break;
 	case CAN_RX_TIME_MSB:
 		t->rx_ts |= c<<24;
 		t->cs_rx ^= c;
 		t->rx_status = CAN_RX_DATA;
-      	break;
-    case CAN_RX_DATA:
+		break;
+	case CAN_RX_DATA:
 		t->rx_buf[t->rx_insert_idx] = c;
 		can_increment_buf(&t->rx_insert_idx, 1);
 		t->cs_rx ^= c;
@@ -432,8 +432,8 @@ static void can_transport_parse(struct can_transport *t, uint8_t c)
 		}
 		break;
 	case CAN_RX_CS:
-	  	if(c == t->cs_rx)
-	  	{
+		if(c == t->cs_rx)
+		{
 			if(t->last_rx_seq == t->rx_seq) /* is the last frame */
 			{
 				//TODOM:
@@ -452,13 +452,13 @@ static void can_transport_parse(struct can_transport *t, uint8_t c)
 			t->rx_insert_idx = t->rx_last_frame_insert_idx;
 			t->ore++;
 		}
-	  	t->rx_status = CAN_RX_IDLE;
-	  	break;
+		t->rx_status = CAN_RX_IDLE;
+		break;
 	default:
 		t->rx_status = CAN_RX_IDLE;
 		t->ore++;
-	  	break;
-  	}
+		break;
+	}
 }
 
 void can_transport_init(struct can_transport *p)
@@ -525,7 +525,7 @@ static bool_t can_is_rx_frame_idle(struct can_transport *p)
 
 /***********************************************************************
 *  Name         : can_send_polling
-*  Description : send a frame to bbox periodically if has frame to be send.       
+*  Description : send a frame to bbox periodically if has frame to be send.
 *  Parameter  : None
 *  Returns      : None
 ***********************************************************************/
@@ -543,7 +543,7 @@ void can_send_polling(struct can_transport *p)
 
 /***********************************************************************
 *  Name         : can_read_polling
-*  Description : read a frame from bbox periodically if has frame to be received.       
+*  Description : read a frame from bbox periodically if has frame to be received.
 *  Parameter  : None
 *  Returns      : None
 ***********************************************************************/
@@ -558,11 +558,11 @@ void can_read_polling(struct can_transport *p)
 		p->rx_cur_frame_len %= CAN_FRAME_SIZE;
 		can_increment_buf(&p->rx_extract_idx, 1);
 
-		for (i = 0; i < p->rx_cur_frame_len; i++) 
+		for (i = 0; i < p->rx_cur_frame_len; i++)
 		{
-	    	p->rx_data[i] = p->rx_buf[p->rx_extract_idx];
+			p->rx_data[i] = p->rx_buf[p->rx_extract_idx];
 			can_increment_buf(&p->rx_extract_idx, 1);
-	  	}
+		}
 
 		can_msg_handle(p, (uint8_t)p->rx_cur_frame_len);
 		p->rx_frame_handled_counter++;
@@ -573,7 +573,7 @@ void can_read_polling(struct can_transport *p)
 #ifdef BBOX_OPTION
 /***********************************************************************
 *  Name         : bbox_send_polling
-*  Description :        
+*  Description :
 *  Parameter  : None
 *  Returns      : None
 ***********************************************************************/
@@ -584,7 +584,7 @@ void bbox_send_polling(void)
 
 /***********************************************************************
 *  Name         : bbox_read_polling
-*  Description :        
+*  Description :
 *  Parameter  : None
 *  Returns      : None
 ***********************************************************************/
@@ -595,7 +595,7 @@ void bbox_read_polling(void)
 
 /***********************************************************************
 *  Name         : bbox_can_init
-*  Description :        
+*  Description :
 *  Parameter  : None
 *  Returns      : None
 ***********************************************************************/
@@ -606,7 +606,7 @@ void bbox_can_init(void)
 
 /***********************************************************************
 *  Name         : bbox_can_init
-*  Description :        
+*  Description :
 *  Parameter  : None
 *  Returns      : None
 ***********************************************************************/

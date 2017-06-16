@@ -46,13 +46,14 @@
 */
 eint16 fs_initFs(FileSystem *fs,Partition *part)
 {
-	if(!fs_isValidFat(part)){
+	if(!fs_isValidFat(part))
+	{
 		return(-1);
 	}
 	fs->part=part;
 	fs_loadVolumeId(fs,part);
 	if(!fs_verifySanity(fs))return(-2);
-  	fs_countDataSectors(fs);
+	fs_countDataSectors(fs);
 	fs_determineFatType(fs);
 	fs_findFirstSectorRootDir(fs);
 	fs_initCurrentDir(fs);
@@ -71,7 +72,8 @@ eint16 fs_isValidFat(Partition *part)
 	euint8 *buf;
 
 	buf=part_getSect(part,0,IOM_MODE_READONLY|IOM_MODE_EXP_REQ); /* Load Volume label */
-	if( ex_getb16(buf,0x1FE) != 0xAA55 ){
+	if( ex_getb16(buf,0x1FE) != 0xAA55 )
+	{
 		return (0);
 	}
 	part_relSect(part,buf);
@@ -117,18 +119,21 @@ esint16 fs_verifySanity(FileSystem *fs)
 	if(fs->volumeId.BytesPerSector!=512)sane=0;
 	/* Check is SPC is valid (multiple of 2, and clustersize >=32KB */
 	if(!((fs->volumeId.SectorsPerCluster == 1 ) |
-	     (fs->volumeId.SectorsPerCluster == 2 ) |
-	     (fs->volumeId.SectorsPerCluster == 4 ) |
-	     (fs->volumeId.SectorsPerCluster == 8 ) |
-	     (fs->volumeId.SectorsPerCluster == 16) |
-	     (fs->volumeId.SectorsPerCluster == 32) |
-	     (fs->volumeId.SectorsPerCluster == 64) ))sane=0;
+			 (fs->volumeId.SectorsPerCluster == 2 ) |
+			 (fs->volumeId.SectorsPerCluster == 4 ) |
+			 (fs->volumeId.SectorsPerCluster == 8 ) |
+			 (fs->volumeId.SectorsPerCluster == 16) |
+			 (fs->volumeId.SectorsPerCluster == 32) |
+			 (fs->volumeId.SectorsPerCluster == 64) ))sane=0;
 	/* Any number of FAT's should be supported... (untested) */
 	/* There should be at least 1 reserved sector */
 	if(fs->volumeId.ReservedSectorCount==0)sane=0;
-	if(fs->volumeId.FatSectorCount16 != 0){
+	if(fs->volumeId.FatSectorCount16 != 0)
+	{
 		if(fs->volumeId.FatSectorCount16 > fs->part->disc->partitions[fs->part->activePartition].numSectors)sane=0;
-	}else{
+	}
+	else
+	{
 		if(fs->volumeId.FatSectorCount32 > fs->part->disc->partitions[fs->part->activePartition].numSectors)sane=0;
 	}
 	return(sane);
@@ -142,40 +147,40 @@ esint16 fs_verifySanity(FileSystem *fs)
 */
 void fs_countDataSectors(FileSystem *fs)
 {
-  euint32 rootDirSectors,dataSectorCount;
+	euint32 rootDirSectors,dataSectorCount;
 
-  rootDirSectors=((fs->volumeId.RootEntryCount*32) +
-                 (fs->volumeId.BytesPerSector - 1)) /
-                 fs->volumeId.BytesPerSector;
+	rootDirSectors=((fs->volumeId.RootEntryCount*32) +
+									(fs->volumeId.BytesPerSector - 1)) /
+								 fs->volumeId.BytesPerSector;
 
-  if(fs->volumeId.FatSectorCount16 != 0)
-  {
-    fs->FatSectorCount=fs->volumeId.FatSectorCount16;
-    fs->volumeId.FatSectorCount32=0;
-  }
-  else
-  {
-    fs->FatSectorCount=fs->volumeId.FatSectorCount32;
-    fs->volumeId.FatSectorCount16=0;
-  }
+	if(fs->volumeId.FatSectorCount16 != 0)
+	{
+		fs->FatSectorCount=fs->volumeId.FatSectorCount16;
+		fs->volumeId.FatSectorCount32=0;
+	}
+	else
+	{
+		fs->FatSectorCount=fs->volumeId.FatSectorCount32;
+		fs->volumeId.FatSectorCount16=0;
+	}
 
-  if(fs->volumeId.SectorCount16!=0)
-  {
-    fs->SectorCount=fs->volumeId.SectorCount16;
-    fs->volumeId.SectorCount32=0;
-  }
-  else
-  {
-    fs->SectorCount=fs->volumeId.SectorCount32;
-    fs->volumeId.SectorCount16=0;
-  }
+	if(fs->volumeId.SectorCount16!=0)
+	{
+		fs->SectorCount=fs->volumeId.SectorCount16;
+		fs->volumeId.SectorCount32=0;
+	}
+	else
+	{
+		fs->SectorCount=fs->volumeId.SectorCount32;
+		fs->volumeId.SectorCount16=0;
+	}
 
-  dataSectorCount=fs->SectorCount - (
-                  fs->volumeId.ReservedSectorCount +
-                  (fs->volumeId.NumberOfFats * fs->FatSectorCount) +
-                  rootDirSectors);
+	dataSectorCount=fs->SectorCount - (
+										fs->volumeId.ReservedSectorCount +
+										(fs->volumeId.NumberOfFats * fs->FatSectorCount) +
+										rootDirSectors);
 
-  fs->DataClusterCount=dataSectorCount/fs->volumeId.SectorsPerCluster;
+	fs->DataClusterCount=dataSectorCount/fs->volumeId.SectorsPerCluster;
 }
 /*****************************************************************************/
 
@@ -212,11 +217,11 @@ void fs_findFirstSectorRootDir(FileSystem *fs)
 {
 	if(fs->type==FAT32)
 		fs->FirstSectorRootDir = fs->volumeId.ReservedSectorCount +
-		                         (fs->volumeId.NumberOfFats*fs->volumeId.FatSectorCount32) +
-								 (fs->volumeId.RootCluster-2)*fs->volumeId.SectorsPerCluster;
+														 (fs->volumeId.NumberOfFats*fs->volumeId.FatSectorCount32) +
+														 (fs->volumeId.RootCluster-2)*fs->volumeId.SectorsPerCluster;
 	else
 		fs->FirstSectorRootDir = fs->volumeId.ReservedSectorCount +
-		                         (fs->volumeId.NumberOfFats*fs->volumeId.FatSectorCount16);
+														 (fs->volumeId.NumberOfFats*fs->volumeId.FatSectorCount16);
 }
 /*****************************************************************************/
 
@@ -287,9 +292,11 @@ euint32 fs_getNextFreeCluster(FileSystem *fs,euint32 startingcluster)
 {
 	euint32 r;
 
-	while(startingcluster<fs->DataClusterCount){
+	while(startingcluster<fs->DataClusterCount)
+	{
 		r=fat_getNextClusterAddress(fs,startingcluster,0);
-		if(r==0){
+		if(r==0)
+		{
 			return(startingcluster);
 		}
 		startingcluster++;
@@ -335,42 +342,55 @@ esint8 fs_findFile(FileSystem *fs,eint8* filename,FileLocation *loc,euint32 *las
 	euint32 fccd,tmpclus;
 	eint8 ffname[11],*next,it=0,filefound=0;
 
-	if(*filename=='/'){
+	if(*filename=='/')
+	{
 		fccd = fs_getFirstClusterRootDir(fs);
 		filename++;
 		if(lastDir)*lastDir=fccd;
-		if(!*filename){
+		if(!*filename)
+		{
 			return(2);
 		}
-	}else{
+	}
+	else
+	{
 		fccd = fs->FirstClusterCurrentDir;
 		if(lastDir)*lastDir=fccd;
 	}
 
 
-	while((next=file_normalToFatName(filename,ffname))!=0){
-		if((tmpclus=dir_findinDir(fs,ffname,fccd,loc,DIRFIND_FILE))==0){
+	while((next=file_normalToFatName(filename,ffname))!=0)
+	{
+		if((tmpclus=dir_findinDir(fs,ffname,fccd,loc,DIRFIND_FILE))==0)
+		{
 			/* We didn't find what we wanted */
 			/* We should check, to see if there is more after it, so that
 			 * we can invalidate lastDir
 			 */
-			if((file_normalToFatName(next,ffname))!=0){
+			if((file_normalToFatName(next,ffname))!=0)
+			{
 				if(lastDir)*lastDir=0;
 			}
 			return(0);
 		}
 		it++;
-		if(loc->attrib&ATTR_DIRECTORY){
+		if(loc->attrib&ATTR_DIRECTORY)
+		{
 			fccd = tmpclus;
 			filename = next;
 			if(lastDir)*lastDir=fccd;
 			if(filefound)*lastDir=0;
-		}else{
+		}
+		else
+		{
 			filefound=1;
-			if((file_normalToFatName(next,ffname))!=0){
+			if((file_normalToFatName(next,ffname))!=0)
+			{
 				if(lastDir)*lastDir=0;
 				return(0);
-			}else{
+			}
+			else
+			{
 				filename=next;
 			}
 		}
@@ -389,13 +409,20 @@ esint16 fs_findFreeFile(FileSystem *fs,eint8* filename,FileLocation *loc,euint8 
 
 	if(fs_findFile(fs,filename,loc,&targetdir))return(0);
 	if(!dir_getFatFileName(filename,ffname))return(0);
-	if(dir_findinDir(fs,ffname,targetdir,loc,DIRFIND_FREE)){
+	if(dir_findinDir(fs,ffname,targetdir,loc,DIRFIND_FREE))
+	{
 		return(1);
-	}else{
-		if(dir_addCluster(fs,targetdir)){
+	}
+	else
+	{
+		if(dir_addCluster(fs,targetdir))
+		{
 			return(0);
-		}else{
-			if(dir_findinDir(fs,ffname,targetdir,loc,DIRFIND_FREE)){
+		}
+		else
+		{
+			if(dir_findinDir(fs,ffname,targetdir,loc,DIRFIND_FREE))
+			{
 				return(1);
 			}
 		}
@@ -412,7 +439,8 @@ esint16 fs_findFreeFile(FileSystem *fs,eint8* filename,FileLocation *loc,euint8 
 */
 euint32 fs_getLastCluster(FileSystem *fs,ClusterChain *Cache)
 {
-	if(Cache->DiscCluster==0){
+	if(Cache->DiscCluster==0)
+	{
 		Cache->DiscCluster=Cache->FirstCluster;
 		Cache->LogicCluster=0;
 	}
@@ -432,13 +460,14 @@ euint32 fs_getLastCluster(FileSystem *fs,ClusterChain *Cache)
 
 euint32 fs_getFirstClusterRootDir(FileSystem *fs)
 {
-	switch(fs->type){
-		case FAT32:
-			return(fs->volumeId.RootCluster);
-			break;
-		default:
-				return(1);
-				break;
+	switch(fs->type)
+	{
+	case FAT32:
+		return(fs->volumeId.RootCluster);
+		break;
+	default:
+		return(1);
+		break;
 	}
 }
 /*****************************************************************************/
@@ -478,7 +507,8 @@ esint8 fs_clearCluster(FileSystem *fs,euint32 cluster)
 	euint16 c;
 	euint8* buf;
 
-	for(c=0;c<(fs->volumeId.SectorsPerCluster);c++){
+	for(c=0; c<(fs->volumeId.SectorsPerCluster); c++)
+	{
 		buf = part_getSect(fs->part,fs_clusterToSector(fs,cluster)+c,IOM_MODE_READWRITE);
 		memClr(buf,512);
 		part_relSect(fs->part,buf);
@@ -490,16 +520,18 @@ esint8 fs_getFsInfo(FileSystem *fs,euint8 force_update)
 {
 	euint8 *buf;
 
- 	if(!fs->type==FAT32)return(0);
+	if(!fs->type==FAT32)return(0);
 	buf = part_getSect(fs->part,FS_INFO_SECTOR,IOM_MODE_READONLY);
-	if(ex_getb32(buf,0)!=FSINFO_MAGIC_BEGIN || ex_getb32(buf,508)!=FSINFO_MAGIC_END){
+	if(ex_getb32(buf,0)!=FSINFO_MAGIC_BEGIN || ex_getb32(buf,508)!=FSINFO_MAGIC_END)
+	{
 		part_relSect(fs->part,buf);
 		return(-1);
 	}
 	fs->FreeClusterCount = ex_getb32(buf,488);
 	fs->NextFreeCluster  = ex_getb32(buf,492);
 	part_relSect(fs->part,buf);
-	if(force_update){
+	if(force_update)
+	{
 		fs->FreeClusterCount=fat_countFreeClusters(fs);
 	}
 	return(0);
@@ -511,7 +543,8 @@ esint8 fs_setFsInfo(FileSystem *fs)
 
 	if(!fs->type==FAT32)return(0);
 	buf = part_getSect(fs->part,FS_INFO_SECTOR,IOM_MODE_READWRITE);
-	if(ex_getb32(buf,0)!=FSINFO_MAGIC_BEGIN || ex_getb32(buf,508)!=FSINFO_MAGIC_END){
+	if(ex_getb32(buf,0)!=FSINFO_MAGIC_BEGIN || ex_getb32(buf,508)!=FSINFO_MAGIC_END)
+	{
 		part_relSect(fs->part,buf);
 		return(-1);
 	}

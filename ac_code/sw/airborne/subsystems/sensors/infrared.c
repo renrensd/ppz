@@ -33,17 +33,17 @@ struct Infrared infrared;
  */
 void infrared_struct_init(void)
 {
-  infrared.roll_neutral = IR_ROLL_NEUTRAL_DEFAULT;
-  infrared.pitch_neutral = IR_PITCH_NEUTRAL_DEFAULT;
+	infrared.roll_neutral = IR_ROLL_NEUTRAL_DEFAULT;
+	infrared.pitch_neutral = IR_PITCH_NEUTRAL_DEFAULT;
 
-  infrared.correction_left = IR_CORRECTION_LEFT;
-  infrared.correction_right = IR_CORRECTION_RIGHT;
-  infrared.correction_up = IR_CORRECTION_UP;
-  infrared.correction_down = IR_CORRECTION_DOWN;
+	infrared.correction_left = IR_CORRECTION_LEFT;
+	infrared.correction_right = IR_CORRECTION_RIGHT;
+	infrared.correction_up = IR_CORRECTION_UP;
+	infrared.correction_down = IR_CORRECTION_DOWN;
 
-  infrared.lateral_correction = IR_LATERAL_CORRECTION;
-  infrared.longitudinal_correction = IR_LONGITUDINAL_CORRECTION;
-  infrared.vertical_correction = IR_VERTICAL_CORRECTION;
+	infrared.lateral_correction = IR_LATERAL_CORRECTION;
+	infrared.longitudinal_correction = IR_LONGITUDINAL_CORRECTION;
+	infrared.vertical_correction = IR_VERTICAL_CORRECTION;
 
 }
 

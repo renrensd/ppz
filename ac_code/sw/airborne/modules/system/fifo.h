@@ -4,27 +4,27 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   : 										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _FIFO_H_
-#define _FIFO_H_ 
-#include "types.h" 
+#define _FIFO_H_
+#include "types.h"
 
 /**** Definition of constants ****/
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 /**** Definition of macros ****/
 

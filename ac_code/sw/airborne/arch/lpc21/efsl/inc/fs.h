@@ -64,7 +64,8 @@
 * ulong RootCluster			Clusternumber of the first cluster of the RootDir on FAT 32
 This is NOT a complete volumeId copy, no direct I/O is possible.
 \*****************************************************************************************/
-struct VolumeId{
+struct VolumeId
+{
 	euint16 BytesPerSector;
 	euint8 SectorsPerCluster;
 	euint16 ReservedSectorCount;
@@ -90,7 +91,8 @@ typedef struct VolumeId VolumeId;
 * uchar			type				Determines FATType (FAT12 FAT16 or FAT32 are defined)
 
 \**************************************************************************************************/
-struct FileSystem{
+struct FileSystem
+{
 	Partition *part;
 	VolumeId volumeId;
 	euint32 DataClusterCount;
@@ -110,7 +112,8 @@ typedef struct FileSystem FileSystem;
 * euint8		Offset				Offset (in 32byte segments) where in the sector the entry is.
 
 \**************************************************************************************************/
-struct FileLocation{
+struct FileLocation
+{
 	euint32 Sector;
 	euint8 Offset;
 	euint8 attrib;
@@ -132,7 +135,8 @@ typedef struct FileLocation FileLocation;
 * euint32		FirstCluster		First cluster of the chain. Zero or one are invalid.
 * euint32		LastCluster		Last cluster of the chain (is not always filled in)
 \*****************************************************************************/
-struct ClusterChain{
+struct ClusterChain
+{
 	euint8 Linear;
 	esint32 LogicCluster;
 	euint32 DiscCluster;
@@ -148,7 +152,8 @@ typedef struct ClusterChain ClusterChain;
 * This struct represents a 32 byte file entry as it occurs in the data area   *
 * of the filesystem. Direct I/O is possible.                                  *
 \*****************************************************************************/
-struct FileRecord{
+struct FileRecord
+{
 	euint8 FileName[11];
 	euint8 Attribute;
 	euint8 NTReserved;

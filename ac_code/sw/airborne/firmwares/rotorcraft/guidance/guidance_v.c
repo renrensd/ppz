@@ -69,8 +69,8 @@ static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)
 
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_VERT_LOOP(trans, dev, AC_ID, &gv_mode, &vert_mode, &guid_v.UP_z_acc, &guid_v.UP_z_speed,
-			&guid_v.UP_z_pos, &guid_v.ref_acc_z, &guid_v.ref_speed_z, &guid_v.ref_pos_z, &guid_v.acc_z_pid.out,
-			&guid_v.speed_z_pid.out, &guid_v.pos_z_pid.out, &err1, &err2);
+													&guid_v.UP_z_pos, &guid_v.ref_acc_z, &guid_v.ref_speed_z, &guid_v.ref_pos_z, &guid_v.acc_z_pid.out,
+													&guid_v.speed_z_pid.out, &guid_v.pos_z_pid.out, &err1, &err2);
 }
 
 #include "subsystems/ins/ins_int.h"
@@ -90,7 +90,7 @@ static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
 
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_TUNE_VERT(trans, dev, AC_ID, &accel_scaled_z, &accel_z, &zdotdot, &bias, &zdot, &z, &gps_body_z,
-			&guid_v.ref_acc_z, &guid_v.ref_speed_z, &guid_v.ref_pos_z, &guid_v.acc_z_pid.out, &hover_throttle);
+													&guid_v.ref_acc_z, &guid_v.ref_speed_z, &guid_v.ref_pos_z, &guid_v.acc_z_pid.out, &hover_throttle);
 }
 #endif
 
@@ -131,7 +131,7 @@ static void guidance_v_controller_ini(void)
 
 	guid_v.acc_filter_fc = 1;
 	init_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc),
-			1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
+															1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
 	init_butterworth_2_low_pass(&guid_v.hover_throttle_filter, 1, 1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
 }
 
@@ -139,7 +139,7 @@ void guidance_v_SetAccCutoff(float fc)
 {
 	guid_v.acc_filter_fc = fc;
 	init_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, low_pass_filter_get_tau(fc), 1.0f / (float) GUIDANCE_V_LOOP_FREQ,
-			guid_v.UP_z_acc_filter.o[0]);
+															guid_v.UP_z_acc_filter.o[0]);
 }
 
 void guidance_v_read_rc(void)
@@ -368,7 +368,7 @@ static void run_hover_loop(bool_t in_flight)
 				}
 				//pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.NED_z_speed, 0, guid_v.NED_z_acc);
 				pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.UP_z_speed, 0,
-						get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
+												get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
 				guid_v.ref_acc_z = guid_v.speed_z_pid.out;
 			}
 			else // RC ACC loop
@@ -391,7 +391,7 @@ static void run_hover_loop(bool_t in_flight)
 			}
 
 			pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.UP_z_speed, 0,
-					get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
+											get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
 
 			guid_v.ref_acc_z = guid_v.speed_z_pid.out;
 			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.UP_z_acc, 0, 0);
@@ -440,7 +440,7 @@ static void run_hover_loop(bool_t in_flight)
 				guid_v.ref_speed_z = 0;
 			}
 			pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.UP_z_speed, 0,
-					get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
+											get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
 			guid_v.ref_acc_z = guid_v.speed_z_pid.out;
 			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.UP_z_acc, 0, 0);
 
@@ -458,7 +458,7 @@ static void run_hover_loop(bool_t in_flight)
 	}
 
 	guid_v.loop_throttle_cmd = (normalized_cmd / guid_v.thrust_coef)
-			* (GUIDANCE_V_MAX_NORMALIZED_THROTTLE * (float) MAX_PPRZ);
+														 * (GUIDANCE_V_MAX_NORMALIZED_THROTTLE * (float) MAX_PPRZ);
 	Bound(guid_v.loop_throttle_cmd, 0, (GUIDANCE_V_MAX_NORMALIZED_THROTTLE * (float) MAX_PPRZ));
 }
 

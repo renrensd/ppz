@@ -45,31 +45,41 @@ euint32 fat_getSectorAddressFatEntry(FileSystem *fs,euint32 cluster_addr)
 {
 	euint32 base = fs->volumeId.ReservedSectorCount,res;
 
-	switch(fs->type){
-		case FAT12:
-			res=(cluster_addr*3/1024);
-			if(res>=fs->FatSectorCount){
-				return(0);
-			}else{
-				return(base+res);
-			}
-			break;
-		case FAT16:
-			res=cluster_addr/256;
-			if(res>=fs->FatSectorCount){
-				return(0);
-			}else{
-				return(base+res);
-			}
-			break;
-		case FAT32:
-			res=cluster_addr/128;
-			if(res>=fs->FatSectorCount){
-				return(0);
-			}else{
-				return(base+res);
-			}
-			break;
+	switch(fs->type)
+	{
+	case FAT12:
+		res=(cluster_addr*3/1024);
+		if(res>=fs->FatSectorCount)
+		{
+			return(0);
+		}
+		else
+		{
+			return(base+res);
+		}
+		break;
+	case FAT16:
+		res=cluster_addr/256;
+		if(res>=fs->FatSectorCount)
+		{
+			return(0);
+		}
+		else
+		{
+			return(base+res);
+		}
+		break;
+	case FAT32:
+		res=cluster_addr/128;
+		if(res>=fs->FatSectorCount)
+		{
+			return(0);
+		}
+		else
+		{
+			return(base+res);
+		}
+		break;
 	}
 	return(0);
 }
@@ -101,30 +111,36 @@ euint32 fat_getNextClusterAddress(FileSystem *fs,euint32 cluster_addr,euint16 *l
 
 	switch(fs->type)
 	{
-		case FAT12:
-			offset = ((cluster_addr%1024)*3/2)%512;
-			hb = buf[offset];
-			if(offset == 511){
-				part_relSect(fs->part,buf);
-				buf=part_getSect(fs->part,sector+1,IOM_MODE_READONLY);
-				lb = buf[0];
-			}else{
-				lb = buf[offset + 1];
-			}
-			if(cluster_addr%2==0){
-				nextcluster = ( ((lb&0x0F)<<8) + (hb) );
-			}else{
-				nextcluster = ( (lb<<4) + (hb>>4) );
-			}
-			break;
-		case FAT16:
-			offset=cluster_addr%256;
-			nextcluster = *((euint16 *)buf + offset);
-			break;
-		case FAT32:
-			offset=cluster_addr%128;
-			nextcluster = *((euint32 *)buf + offset);
-			break;
+	case FAT12:
+		offset = ((cluster_addr%1024)*3/2)%512;
+		hb = buf[offset];
+		if(offset == 511)
+		{
+			part_relSect(fs->part,buf);
+			buf=part_getSect(fs->part,sector+1,IOM_MODE_READONLY);
+			lb = buf[0];
+		}
+		else
+		{
+			lb = buf[offset + 1];
+		}
+		if(cluster_addr%2==0)
+		{
+			nextcluster = ( ((lb&0x0F)<<8) + (hb) );
+		}
+		else
+		{
+			nextcluster = ( (lb<<4) + (hb>>4) );
+		}
+		break;
+	case FAT16:
+		offset=cluster_addr%256;
+		nextcluster = *((euint16 *)buf + offset);
+		break;
+	case FAT32:
+		offset=cluster_addr%128;
+		nextcluster = *((euint32 *)buf + offset);
+		break;
 	}
 
 	part_relSect(fs->part,buf);
@@ -147,50 +163,64 @@ void fat_setNextClusterAddress(FileSystem *fs,euint32 cluster_addr,euint32 next_
 
 	sector=fat_getSectorAddressFatEntry(fs,cluster_addr);
 
-	if(( fs->FatSectorCount <= (sector - fs->volumeId.ReservedSectorCount )||(sector==0))){
-	    DBG((TXT("HARDERROR:::fat_getNextClusterAddress READ PAST FAT BOUNDARY\n")));
-	    return;
+	if(( fs->FatSectorCount <= (sector - fs->volumeId.ReservedSectorCount )||(sector==0)))
+	{
+		DBG((TXT("HARDERROR:::fat_getNextClusterAddress READ PAST FAT BOUNDARY\n")));
+		return;
 	}
 
 	buf=part_getSect(fs->part,sector,IOM_MODE_READWRITE);
 
-	switch(fs->type){
-		case FAT12:
-			offset = ((cluster_addr%1024)*3/2)%512;
-			if(offset == 511){
-				if(cluster_addr%2==0){
-					buf[offset]=next_cluster_addr&0xFF;
-				}else{
-					buf[offset]=(buf[offset]&0xF)+((next_cluster_addr<<4)&0xF0);
-				}
-				buf2=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,cluster_addr)+1,IOM_MODE_READWRITE);
-				if(cluster_addr%2==0){
-					buf2[0]=(buf2[0]&0xF0)+((next_cluster_addr>>8)&0xF);
-				}else{
-					buf2[0]=(next_cluster_addr>>4)&0xFF;
-				}
-				part_relSect(fs->part,buf2);
-			}else{
-				if(cluster_addr%2==0){
-					buf[offset]=next_cluster_addr&0xFF;
-					buf[offset+1]=(buf[offset+1]&0xF0)+((next_cluster_addr>>8)&0xF);
-				}else{
-					buf[offset]=(buf[offset]&0xF)+((next_cluster_addr<<4)&0xF0);
-					buf[offset+1]=(next_cluster_addr>>4)&0xFF;
-				}
+	switch(fs->type)
+	{
+	case FAT12:
+		offset = ((cluster_addr%1024)*3/2)%512;
+		if(offset == 511)
+		{
+			if(cluster_addr%2==0)
+			{
+				buf[offset]=next_cluster_addr&0xFF;
 			}
-			part_relSect(fs->part,buf);
-			break;
-		case FAT16:
-			offset=cluster_addr%256;
-			*((euint16*)buf+offset)=next_cluster_addr;
-			part_relSect(fs->part,buf);
-			break;
-		case FAT32:
-			offset=cluster_addr%128;
-			*((euint32*)buf+offset)=next_cluster_addr;
-			part_relSect(fs->part,buf);
-			break;
+			else
+			{
+				buf[offset]=(buf[offset]&0xF)+((next_cluster_addr<<4)&0xF0);
+			}
+			buf2=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,cluster_addr)+1,IOM_MODE_READWRITE);
+			if(cluster_addr%2==0)
+			{
+				buf2[0]=(buf2[0]&0xF0)+((next_cluster_addr>>8)&0xF);
+			}
+			else
+			{
+				buf2[0]=(next_cluster_addr>>4)&0xFF;
+			}
+			part_relSect(fs->part,buf2);
+		}
+		else
+		{
+			if(cluster_addr%2==0)
+			{
+				buf[offset]=next_cluster_addr&0xFF;
+				buf[offset+1]=(buf[offset+1]&0xF0)+((next_cluster_addr>>8)&0xF);
+			}
+			else
+			{
+				buf[offset]=(buf[offset]&0xF)+((next_cluster_addr<<4)&0xF0);
+				buf[offset+1]=(next_cluster_addr>>4)&0xFF;
+			}
+		}
+		part_relSect(fs->part,buf);
+		break;
+	case FAT16:
+		offset=cluster_addr%256;
+		*((euint16*)buf+offset)=next_cluster_addr;
+		part_relSect(fs->part,buf);
+		break;
+	case FAT32:
+		offset=cluster_addr%128;
+		*((euint32*)buf+offset)=next_cluster_addr;
+		part_relSect(fs->part,buf);
+		break;
 	}
 
 }
@@ -205,22 +235,26 @@ void fat_setNextClusterAddress(FileSystem *fs,euint32 cluster_addr,euint32 next_
 */
 eint16 fat_isEocMarker(FileSystem *fs,euint32 fat_entry)
 {
-	switch(fs->type){
-		case FAT12:
-			if(fat_entry<0xFF8){
-				return(0);
-			}
-			break;
-		case FAT16:
-			if(fat_entry<0xFFF8){
-				return(0);
-			}
-			break;
-		case FAT32:
-			if((fat_entry&0x0FFFFFFF)<0xFFFFFF8){
-				return(0);
-			}
-			break;
+	switch(fs->type)
+	{
+	case FAT12:
+		if(fat_entry<0xFF8)
+		{
+			return(0);
+		}
+		break;
+	case FAT16:
+		if(fat_entry<0xFFF8)
+		{
+			return(0);
+		}
+		break;
+	case FAT32:
+		if((fat_entry&0x0FFFFFFF)<0xFFFFFF8)
+		{
+			return(0);
+		}
+		break;
 	}
 	return(1);
 }
@@ -239,15 +273,15 @@ euint32 fat_giveEocMarker(FileSystem *fs)
 {
 	switch(fs->type)
 	{
-		case FAT12:
-			return(0xFFF);
-			break;
-		case FAT16:
-			return(0xFFFF);
-			break;
-		case FAT32:
-			return(0x0FFFFFFF);
-			break;
+	case FAT12:
+		return(0xFFF);
+		break;
+	case FAT16:
+		return(0xFFFF);
+		break;
+	case FAT32:
+		return(0x0FFFFFFF);
+		break;
 	}
 	return(0);
 }
@@ -269,30 +303,36 @@ euint32 fat_getNextClusterAddressWBuf(FileSystem *fs,euint32 cluster_addr, euint
 
 	switch(fs->type)
 	{
-		case FAT12:
-			offset = ((cluster_addr%1024)*3/2)%512;
-			hb = buf[offset];
-			if(offset == 511){
-				buf2=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,cluster_addr)+1,IOM_MODE_READONLY);
-				lb = buf2[0];
-				part_relSect(fs->part,buf2);
-			}else{
-				lb = buf[offset + 1];
-			}
-			if(cluster_addr%2==0){
-				nextcluster = ( ((lb&0x0F)<<8) + (hb) );
-			}else{
-				nextcluster = ( (lb<<4) + (hb>>4) );
-			}
-			break;
-		case FAT16:
-			offset=cluster_addr%256;
-			nextcluster = *((euint16*)buf + offset);
-			break;
-		case FAT32:
-			offset=cluster_addr%128;
-			nextcluster = *((euint32*)buf + offset);
-			break;
+	case FAT12:
+		offset = ((cluster_addr%1024)*3/2)%512;
+		hb = buf[offset];
+		if(offset == 511)
+		{
+			buf2=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,cluster_addr)+1,IOM_MODE_READONLY);
+			lb = buf2[0];
+			part_relSect(fs->part,buf2);
+		}
+		else
+		{
+			lb = buf[offset + 1];
+		}
+		if(cluster_addr%2==0)
+		{
+			nextcluster = ( ((lb&0x0F)<<8) + (hb) );
+		}
+		else
+		{
+			nextcluster = ( (lb<<4) + (hb>>4) );
+		}
+		break;
+	case FAT16:
+		offset=cluster_addr%256;
+		nextcluster = *((euint16*)buf + offset);
+		break;
+	case FAT32:
+		offset=cluster_addr%128;
+		nextcluster = *((euint32*)buf + offset);
+		break;
 	}
 	return(nextcluster);
 }
@@ -313,39 +353,51 @@ void fat_setNextClusterAddressWBuf(FileSystem *fs,euint32 cluster_addr,euint32 n
 
 	switch(fs->type)
 	{
-		case FAT12:
-			offset = ((cluster_addr%1024)*3/2)%512;
-			if(offset == 511){
-				if(cluster_addr%2==0){
-					buf[offset]=next_cluster_addr&0xFF;
-				}else{
-					buf[offset]=(buf[offset]&0xF)+((next_cluster_addr<<4)&0xF0);
-				}
-				buf2=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,cluster_addr)+1,IOM_MODE_READWRITE);
-				if(cluster_addr%2==0){
-					buf2[0]=(buf2[0]&0xF0)+((next_cluster_addr>>8)&0xF);
-				}else{
-					buf2[0]=(next_cluster_addr>>4)&0xFF;
-				}
-				part_relSect(fs->part,buf2);
-			}else{
-				if(cluster_addr%2==0){
-					buf[offset]=next_cluster_addr&0xFF;
-					buf[offset+1]=(buf[offset+1]&0xF0)+((next_cluster_addr>>8)&0xF);
-				}else{
-					buf[offset]=(buf[offset]&0xF)+((next_cluster_addr<<4)&0xF0);
-					buf[offset+1]=(next_cluster_addr>>4)&0xFF;
-				}
+	case FAT12:
+		offset = ((cluster_addr%1024)*3/2)%512;
+		if(offset == 511)
+		{
+			if(cluster_addr%2==0)
+			{
+				buf[offset]=next_cluster_addr&0xFF;
 			}
-			break;
-		case FAT16:
-			offset=cluster_addr%256;
-			*((euint16*)buf+offset)=next_cluster_addr;
-			break;
-		case FAT32:
-			offset=cluster_addr%128;
-			*((euint32*)buf+offset)=next_cluster_addr;
-			break;
+			else
+			{
+				buf[offset]=(buf[offset]&0xF)+((next_cluster_addr<<4)&0xF0);
+			}
+			buf2=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,cluster_addr)+1,IOM_MODE_READWRITE);
+			if(cluster_addr%2==0)
+			{
+				buf2[0]=(buf2[0]&0xF0)+((next_cluster_addr>>8)&0xF);
+			}
+			else
+			{
+				buf2[0]=(next_cluster_addr>>4)&0xFF;
+			}
+			part_relSect(fs->part,buf2);
+		}
+		else
+		{
+			if(cluster_addr%2==0)
+			{
+				buf[offset]=next_cluster_addr&0xFF;
+				buf[offset+1]=(buf[offset+1]&0xF0)+((next_cluster_addr>>8)&0xF);
+			}
+			else
+			{
+				buf[offset]=(buf[offset]&0xF)+((next_cluster_addr<<4)&0xF0);
+				buf[offset+1]=(next_cluster_addr>>4)&0xFF;
+			}
+		}
+		break;
+	case FAT16:
+		offset=cluster_addr%256;
+		*((euint16*)buf+offset)=next_cluster_addr;
+		break;
+	case FAT32:
+		offset=cluster_addr%128;
+		*((euint32*)buf+offset)=next_cluster_addr;
+		break;
 	}
 }
 /*****************************************************************************/
@@ -417,13 +469,15 @@ esint16 fat_getNextClusterChain(FileSystem *fs, ClusterChain *Cache)
 */
 esint16 fat_LogicToDiscCluster(FileSystem *fs, ClusterChain *Cache,euint32 logiccluster)
 {
-	if(logiccluster<Cache->LogicCluster || Cache->DiscCluster==0){
+	if(logiccluster<Cache->LogicCluster || Cache->DiscCluster==0)
+	{
 		Cache->LogicCluster=0;
 		Cache->DiscCluster=Cache->FirstCluster;
 		Cache->Linear=0;
 	}
 
-	if(Cache->LogicCluster==logiccluster){
+	if(Cache->LogicCluster==logiccluster)
+	{
 		return(0);
 	}
 
@@ -437,7 +491,8 @@ esint16 fat_LogicToDiscCluster(FileSystem *fs, ClusterChain *Cache,euint32 logic
 		}
 		else
 		{
-			if((fat_getNextClusterChain(fs,Cache))!=0){
+			if((fat_getNextClusterChain(fs,Cache))!=0)
+			{
 				return(-1);
 			}
 		}
@@ -464,10 +519,13 @@ eint16 fat_allocClusterChain(FileSystem *fs,ClusterChain *Cache,euint32 num_clus
 	lc=fs_getLastCluster(fs,Cache);
 	cc=lc;
 
-	while(ncl > 0){
+	while(ncl > 0)
+	{
 		cc++;
-		if(cc>=fs->DataClusterCount+1){
-			if(overflow){
+		if(cc>=fs->DataClusterCount+1)
+		{
+			if(overflow)
+			{
 				bufa=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,lc),IOM_MODE_READWRITE);
 				fat_setNextClusterAddressWBuf(fs,lc,fat_giveEocMarker(fs),bufa);
 				Cache->LastCluster=lc;
@@ -479,7 +537,8 @@ eint16 fat_allocClusterChain(FileSystem *fs,ClusterChain *Cache,euint32 num_clus
 			overflow++;
 		}
 		bufa=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,cc),IOM_MODE_READONLY);
-		if(fat_getNextClusterAddressWBuf(fs,cc,bufa)==0){
+		if(fat_getNextClusterAddressWBuf(fs,cc,bufa)==0)
+		{
 			bufb=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,lc),IOM_MODE_READWRITE);
 			fat_setNextClusterAddressWBuf(fs,lc,cc,bufb);
 			part_relSect(fs->part,bufb);
@@ -487,7 +546,8 @@ eint16 fat_allocClusterChain(FileSystem *fs,ClusterChain *Cache,euint32 num_clus
 			lc=cc;
 		}
 		part_relSect(fs->part,bufa);
-		if(ncl==0){
+		if(ncl==0)
+		{
 			bufa=part_getSect(fs->part,fat_getSectorAddressFatEntry(fs,lc),IOM_MODE_READWRITE);
 			fat_setNextClusterAddressWBuf(fs,lc,fat_giveEocMarker(fs),bufa);
 			Cache->LastCluster=lc;
@@ -513,15 +573,17 @@ eint16 fat_unlinkClusterChain(FileSystem *fs,ClusterChain *Cache)
 
 	c=0;
 
-	while(!fat_LogicToDiscCluster(fs,Cache,c++)){
-		if(tbd!=0){
+	while(!fat_LogicToDiscCluster(fs,Cache,c++))
+	{
+		if(tbd!=0)
+		{
 			fat_setNextClusterAddress(fs,tbd,0);
 		}
 		tbd=Cache->DiscCluster;
 	}
 	fat_setNextClusterAddress(fs,Cache->DiscCluster,0);
 	fs->FreeClusterCount+=c;
- 	return(0);
+	return(0);
 }
 
 euint32 fat_countClustersInChain(FileSystem *fs,euint32 firstcluster)
@@ -547,8 +609,10 @@ euint32 fat_DiscToLogicCluster(FileSystem *fs,euint32 firstcluster,euint32 discc
 	cache.DiscCluster = cache.LogicCluster = cache.LastCluster = cache.Linear = 0;
 	cache.FirstCluster = firstcluster;
 
-	while(!(fat_LogicToDiscCluster(fs,&cache,c++)) && !r){
-		if(cache.DiscCluster == disccluster){
+	while(!(fat_LogicToDiscCluster(fs,&cache,c++)) && !r)
+	{
+		if(cache.DiscCluster == disccluster)
+		{
 			r = cache.LogicCluster;
 		}
 	}
@@ -559,7 +623,8 @@ euint32 fat_countFreeClusters(FileSystem *fs)
 {
 	euint32 c=2,fc=0;
 
-	while(c<=fs->DataClusterCount+1){
+	while(c<=fs->DataClusterCount+1)
+	{
 		if(fat_getNextClusterAddress(fs,c,0)==0)fc++;
 		c++;
 	}

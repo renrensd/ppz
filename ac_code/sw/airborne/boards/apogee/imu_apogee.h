@@ -94,8 +94,9 @@
 #define IMU_ACCEL_Z_NEUTRAL 0
 #endif
 
-struct ImuApogee {
-  struct Mpu60x0_I2c mpu;
+struct ImuApogee
+{
+	struct Mpu60x0_I2c mpu;
 };
 
 extern struct ImuApogee imu_apogee;

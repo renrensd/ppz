@@ -550,23 +550,23 @@ bool_t is_line_in_polygon(struct FloatVect2 *v0, struct FloatVect2 *v1, struct _
 	if (intersection_num >= 3)
 	{
 		for (i = 0; i < intersection_num - 1; ++i)
+		{
+			j = (i + 1) % intersection_num;
+
+			VECT2_COPY(P, intersection_points[j]);
+			VECT2_DIFF(P, P, intersection_points[i]);
+			VECT2_SDIV(P, P, 2);
+			VECT2_SUM(P, P, intersection_points[i]);
+
+			if (!is_point_in_polygon(&P, polygon))
 			{
-				j = (i + 1) % intersection_num;
-
-				VECT2_COPY(P, intersection_points[j]);
-				VECT2_DIFF(P, P, intersection_points[i]);
-				VECT2_SDIV(P, P, 2);
-				VECT2_SUM(P, P, intersection_points[i]);
-
-				if (!is_point_in_polygon(&P, polygon))
+				if( planed_oa.error_record_flag )
 				{
-					if( planed_oa.error_record_flag )
-					{
-						planed_oa.error_info[9] = 1;
-					}
-					return FALSE;
+					planed_oa.error_info[9] = 1;
 				}
+				return FALSE;
 			}
+		}
 	}
 	else
 	{

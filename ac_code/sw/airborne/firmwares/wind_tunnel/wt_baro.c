@@ -50,54 +50,58 @@ uint8_t buf_output[3];
 
 static void send1_on_spi(uint8_t d)
 {
-  buf_output[0] = d;
-  spi_buffer_length = 1;
+	buf_output[0] = d;
+	spi_buffer_length = 1;
 
-  spi_buffer_input = (uint8_t *)&buf_input;
-  spi_buffer_output = (uint8_t *)&buf_output;
-  SpiStart();
+	spi_buffer_input = (uint8_t *)&buf_input;
+	spi_buffer_output = (uint8_t *)&buf_output;
+	SpiStart();
 }
 
 
 void wt_baro_init(void)
 {
 
-  wt_baro_pressure = 0;
+	wt_baro_pressure = 0;
 
-  send1_on_spi(CMD_INIT_1);
-  send1_on_spi(CMD_INIT_2);
-  send1_on_spi(CMD_INIT_3);
-  send1_on_spi(CMD_INIT_4);
-  send1_on_spi(CMD_INIT_5);
-  send1_on_spi(CMD_INIT_6);
+	send1_on_spi(CMD_INIT_1);
+	send1_on_spi(CMD_INIT_2);
+	send1_on_spi(CMD_INIT_3);
+	send1_on_spi(CMD_INIT_4);
+	send1_on_spi(CMD_INIT_5);
+	send1_on_spi(CMD_INIT_6);
 
-  status_read_data = FALSE;
-  wt_baro_available = FALSE;
+	status_read_data = FALSE;
+	wt_baro_available = FALSE;
 
 }
 
 void wt_baro_periodic(void)
 {
-  if (!SpiCheckAvailable()) {
-    SpiOverRun();
-    return;
-  }
+	if (!SpiCheckAvailable())
+	{
+		SpiOverRun();
+		return;
+	}
 
-  if (status_read_data) {
-    buf_output[0] = buf_output[1] = buf_output[2] = 0;
-    spi_buffer_length = 3;
-  } else {
-    buf_output[0] = CMD_MEASUREMENT;
-    spi_buffer_length = 1;
-  }
+	if (status_read_data)
+	{
+		buf_output[0] = buf_output[1] = buf_output[2] = 0;
+		spi_buffer_length = 3;
+	}
+	else
+	{
+		buf_output[0] = CMD_MEASUREMENT;
+		spi_buffer_length = 1;
+	}
 
-  spi_buffer_input = (uint8_t *)&buf_input;
-  spi_buffer_output = (uint8_t *)&buf_output;
-  //if (status_read_data)
-  //  SpiSetCPHA();
-  //else
-  //  SpiClrCPHA();
-  SpiStart();
+	spi_buffer_input = (uint8_t *)&buf_input;
+	spi_buffer_output = (uint8_t *)&buf_output;
+	//if (status_read_data)
+	//  SpiSetCPHA();
+	//else
+	//  SpiClrCPHA();
+	SpiStart();
 }
 
 static uint32_t data;
@@ -106,18 +110,19 @@ static uint32_t data;
 void wt_baro_event(void)
 {
 
-  if (status_read_data) {
-    data = Uint24(buf_input);
-    /* Compute pressure */
-    wt_baro_pressure = data;
-    wt_baro_available = TRUE;
-  } /* else nothing to read */
+	if (status_read_data)
+	{
+		data = Uint24(buf_input);
+		/* Compute pressure */
+		wt_baro_pressure = data;
+		wt_baro_available = TRUE;
+	} /* else nothing to read */
 
-  status_read_data = !status_read_data;
+	status_read_data = !status_read_data;
 
-  //if (!status_read_data) {
-  // /* Ask next conversion now */
-  //  baro_MS5534A_send();
-  //}
+	//if (!status_read_data) {
+	// /* Ask next conversion now */
+	//  baro_MS5534A_send();
+	//}
 }
 

@@ -56,49 +56,50 @@ static void SPI1_ISR(void) __attribute__((naked));
 
 void lcd_spi_tx(uint8_t data)
 {
-  SpiClearRti();
-  SpiEnableRti();
-  SpiEnable();
-  SSPDR = data;
+	SpiClearRti();
+	SpiEnableRti();
+	SpiEnable();
+	SSPDR = data;
 }
 
 void lcd_dogm_init_hw(void)
 {
-  /* setup pins for SSP (SCK, MOSI) */
-  PINSEL1 |= PINSEL1_SCK | PINSEL1_MOSI;
+	/* setup pins for SSP (SCK, MOSI) */
+	PINSEL1 |= PINSEL1_SCK | PINSEL1_MOSI;
 
-  /* setup SSP */
-  SSPCR0 = SSP_DSS | SSP_FRF | SSP_CPOL | SSP_CPHA | SSP_SCR;
-  SSPCR1 = SSP_LBM | SSP_MS | SSP_SOD;
-  SSPCPSR = SSPCPSR_VAL; /* Prescaler */
+	/* setup SSP */
+	SSPCR0 = SSP_DSS | SSP_FRF | SSP_CPOL | SSP_CPHA | SSP_SCR;
+	SSPCR1 = SSP_LBM | SSP_MS | SSP_SOD;
+	SSPCPSR = SSPCPSR_VAL; /* Prescaler */
 
-  /* SS, RS pin is output */
-  SetBit(LCDDOGM_SS_IODIR, LCDDOGM_SS_PIN);
-  SetBit(LCDDOGM_RS_IODIR, LCDDOGM_RS_PIN);
-  /* unselected lcd */
-  lcddogmUnselect();
+	/* SS, RS pin is output */
+	SetBit(LCDDOGM_SS_IODIR, LCDDOGM_SS_PIN);
+	SetBit(LCDDOGM_RS_IODIR, LCDDOGM_RS_PIN);
+	/* unselected lcd */
+	lcddogmUnselect();
 
-  /* Configure interrupt vector for SPI */
-  VICIntSelect &= ~VIC_BIT(VIC_SPI1);   /* SPI1 selected as IRQ */
-  VICIntEnable = VIC_BIT(VIC_SPI1);     /* SPI1 interrupt enabled */
-  _VIC_CNTL(SPI1_VIC_SLOT) = VIC_ENABLE | VIC_SPI1;
-  _VIC_CNTL(SPI1_VIC_SLOT) = (uint32_t)SPI1_ISR;    /* address of the ISR */
+	/* Configure interrupt vector for SPI */
+	VICIntSelect &= ~VIC_BIT(VIC_SPI1);   /* SPI1 selected as IRQ */
+	VICIntEnable = VIC_BIT(VIC_SPI1);     /* SPI1 interrupt enabled */
+	_VIC_CNTL(SPI1_VIC_SLOT) = VIC_ENABLE | VIC_SPI1;
+	_VIC_CNTL(SPI1_VIC_SLOT) = (uint32_t)SPI1_ISR;    /* address of the ISR */
 }
 
 void SPI1_ISR(void)
 {
-  ISR_ENTRY();
+	ISR_ENTRY();
 
-  while (bit_is_set(SSPSR, RNE)) {
-    uint16_t foo __attribute__((unused));
-    foo = SSPDR;
-  }
-  SpiClearRti();                  /* clear interrupt */
-  SpiDisableRti();
-  SpiDisable();
-  lcddogmUnselect();
+	while (bit_is_set(SSPSR, RNE))
+	{
+		uint16_t foo __attribute__((unused));
+		foo = SSPDR;
+	}
+	SpiClearRti();                  /* clear interrupt */
+	SpiDisableRti();
+	SpiDisable();
+	lcddogmUnselect();
 
-  VICVectAddr = 0x00000000; /* clear this interrupt from the VIC */
-  ISR_EXIT();
+	VICVectAddr = 0x00000000; /* clear this interrupt from the VIC */
+	ISR_EXIT();
 }
 

@@ -97,7 +97,7 @@ static float vector_angle_calc(struct FloatVect2 *vect_a, struct FloatVect2 *vec
 static float points_length_calc(struct FloatVect2 *point1, struct FloatVect2 *point2);
 static float vector_length_calc(struct FloatVect2 *vect);
 static void get_project_point(struct FloatVect2 *proj_point, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp,
-		struct FloatVect2 *point);
+															struct FloatVect2 *point);
 static uint8_t min_dist_select(float *dist, uint8_t n);
 static void get_oa_search_direction(void);
 static void oa_wp_generation(void);
@@ -109,7 +109,7 @@ static void send_point_to_pprz(void);
 static bool_t get_initial_start_end_oa_wp(struct FloatVect2 *init_start_oa_wp, struct FloatVect2 *init_end_oa_wp,
 		struct _s_planed_obstacle *obstacles, uint8_t o_num, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static void get_s1_s4_wp(struct FloatVect2 *start_oa_wp, struct FloatVect2 *end_oa_wp, struct FloatVect2 *init_start_oa_wp,
-		struct FloatVect2 *init_end_oa_wp, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
+												 struct FloatVect2 *init_end_oa_wp, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacles, uint8_t o_num,
 		struct FloatVect2 *start_wp, struct FloatVect2 *end_wp);
 static void planed_oa_test(void);
@@ -421,7 +421,7 @@ static float vector_angle_calc(struct FloatVect2 *vect_a, struct FloatVect2 *vec
  * Get project point by two input terminal point on project line and on project point
  */
 static void get_project_point(struct FloatVect2 *proj_point, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp,
-		struct FloatVect2 *point)
+															struct FloatVect2 *point)
 {
 	float angle, slope;
 
@@ -584,7 +584,7 @@ static bool_t get_initial_start_end_oa_wp(struct FloatVect2 *init_start_oa_wp, s
  * Get nearest wp (s1 and s4) by inputed start wp, end wp
  */
 static void get_s1_s4_wp(struct FloatVect2 *start_oa_wp, struct FloatVect2 *end_oa_wp, struct FloatVect2 *init_start_oa_wp,
-		struct FloatVect2 *init_end_oa_wp, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp)
+												 struct FloatVect2 *init_end_oa_wp, struct FloatVect2 *start_wp, struct FloatVect2 *end_wp)
 {
 	float h_step = (float) (1.0f / HORIZONTAL_MAX_SEARCH_NUM);
 
@@ -596,8 +596,8 @@ static void get_s1_s4_wp(struct FloatVect2 *start_oa_wp, struct FloatVect2 *end_
 }
 
 /*
- * Judge the necessity of oa by konwn obstacle[]. 
- * Return TRUE: need oa; FALSE: not need oa; 
+ * Judge the necessity of oa by konwn obstacle[].
+ * Return TRUE: need oa; FALSE: not need oa;
  * Get: obstacle[i].obstacle_flag
  */
 static bool_t rectangle_obstacle_on_nav_route(struct _s_planed_obstacle *obstacles, uint8_t o_num,
@@ -612,17 +612,17 @@ static bool_t rectangle_obstacle_on_nav_route(struct _s_planed_obstacle *obstacl
 		 || get_2_segments_strict_relation( start_wp, end_wp, &(obstacle[i].v[0]), &(obstacle[i].v[2]) ) == SR_INTERSECTION_INSIDE
 		 || get_2_segments_strict_relation( start_wp, end_wp, &(obstacle[i].v[1]), &(obstacle[i].v[3]) ) == SR_INTERSECTION_INSIDE )*/
 		enum _e_segment_relation rel_12 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[1]));
+																			&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[1]));
 		enum _e_segment_relation rel_23 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[2]));
+																			&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[2]));
 		enum _e_segment_relation rel_34 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[2]), &(obstacles[i].polygon.v[3]));
+																			&(obstacles[i].polygon.v[2]), &(obstacles[i].polygon.v[3]));
 		enum _e_segment_relation rel_41 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[3]), &(obstacles[i].polygon.v[0]));
+																			&(obstacles[i].polygon.v[3]), &(obstacles[i].polygon.v[0]));
 		enum _e_segment_relation rel_13 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[2]));
+																			&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[2]));
 		enum _e_segment_relation rel_24 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[3]));
+																			&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[3]));
 
 		if (rel_13 == SR_INTERSECTION_INSIDE
 				|| rel_24 == SR_INTERSECTION_INSIDE
@@ -677,17 +677,17 @@ static bool_t rectangle_obstacle_on_oa_route(struct _s_planed_obstacle *obstacle
 		 }*/
 
 		enum _e_segment_relation rel_12 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[1]));
+																			&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[1]));
 		enum _e_segment_relation rel_23 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[2]));
+																			&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[2]));
 		enum _e_segment_relation rel_34 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[2]), &(obstacles[i].polygon.v[3]));
+																			&(obstacles[i].polygon.v[2]), &(obstacles[i].polygon.v[3]));
 		enum _e_segment_relation rel_41 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[3]), &(obstacles[i].polygon.v[0]));
+																			&(obstacles[i].polygon.v[3]), &(obstacles[i].polygon.v[0]));
 		enum _e_segment_relation rel_13 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[2]));
+																			&(obstacles[i].polygon.v[0]), &(obstacles[i].polygon.v[2]));
 		enum _e_segment_relation rel_24 = get_2_segments_strict_relation(start_wp, end_wp,
-				&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[3]));
+																			&(obstacles[i].polygon.v[1]), &(obstacles[i].polygon.v[3]));
 
 		if (rel_13 == SR_INTERSECTION_INSIDE
 				|| rel_24 == SR_INTERSECTION_INSIDE
@@ -793,21 +793,21 @@ static void oa_wp_generation(void)
 		if (horizontal_i < HORIZONTAL_MAX_SEARCH_NUM)
 		{
 			get_s1_s4_wp(&planed_oa.oa_wp.s1, &planed_oa.oa_wp.s4, &planed_oa.init_start_oa_wp, &planed_oa.init_end_oa_wp,
-					&planed_oa.from_wp, &planed_oa.next_wp);
+									 &planed_oa.from_wp, &planed_oa.next_wp);
 
 			if (vertical_i <= vertical_step_num)
 			{
 				vertical_search_dist = vertical_i * VERTICAL_STEP_LENGTH;
 
 				planed_oa.oa_wp.s2.x = planed_oa.oa_wp.s1.x
-						- vertical_search_dist * Sign(vert_search_direction) * cosf(planed_oa.nav_north_angle * ANGLE_RAD);
+															 - vertical_search_dist * Sign(vert_search_direction) * cosf(planed_oa.nav_north_angle * ANGLE_RAD);
 				planed_oa.oa_wp.s2.y = planed_oa.oa_wp.s1.y
-						+ vertical_search_dist * Sign(vert_search_direction) * sinf(planed_oa.nav_north_angle * ANGLE_RAD);
+															 + vertical_search_dist * Sign(vert_search_direction) * sinf(planed_oa.nav_north_angle * ANGLE_RAD);
 
 				planed_oa.oa_wp.s3.x = planed_oa.oa_wp.s4.x
-						- vertical_search_dist * Sign(vert_search_direction) * cosf(planed_oa.nav_north_angle * ANGLE_RAD);
+															 - vertical_search_dist * Sign(vert_search_direction) * cosf(planed_oa.nav_north_angle * ANGLE_RAD);
 				planed_oa.oa_wp.s3.y = planed_oa.oa_wp.s4.y
-						+ vertical_search_dist * Sign(vert_search_direction) * sinf(planed_oa.nav_north_angle * ANGLE_RAD);
+															 + vertical_search_dist * Sign(vert_search_direction) * sinf(planed_oa.nav_north_angle * ANGLE_RAD);
 
 				oa_wp_search_state = on_search;
 
@@ -1020,17 +1020,17 @@ static bool_t achieve_next_oa_wp(void)
 		switch (planed_oa_state)
 		{
 		case release_sp:
-			{
+		{
 			break;
 		}
 		case go_to_start_wp:
-			{
+		{
 			ENU_BFP_VECT2_OF_REAL(oa_from_wp.wp_en, planed_oa.from_wp);
 			ENU_BFP_VECT2_OF_REAL(oa_next_wp.wp_en, planed_oa.oa_wp.s1);
 			break;
 		}
 		case reach_start_wp:
-			{
+		{
 			ENU_BFP_VECT2_OF_REAL(oa_from_wp.wp_en, planed_oa.oa_wp.s1);
 			ENU_BFP_VECT2_OF_REAL(oa_next_wp.wp_en, planed_oa.oa_wp.s2);
 
@@ -1040,7 +1040,7 @@ static bool_t achieve_next_oa_wp(void)
 			break;
 		}
 		case reach_frist_corner_wp:
-			{
+		{
 			ENU_BFP_VECT2_OF_REAL(oa_from_wp.wp_en, planed_oa.oa_wp.s2);
 			ENU_BFP_VECT2_OF_REAL(oa_next_wp.wp_en, planed_oa.oa_wp.s3);
 
@@ -1050,7 +1050,7 @@ static bool_t achieve_next_oa_wp(void)
 			break;
 		}
 		case reach_last_corner_wp:
-			{
+		{
 			ENU_BFP_VECT2_OF_REAL(oa_from_wp.wp_en, planed_oa.oa_wp.s3);
 			ENU_BFP_VECT2_OF_REAL(oa_next_wp.wp_en, planed_oa.oa_wp.s4);
 
@@ -1060,7 +1060,7 @@ static bool_t achieve_next_oa_wp(void)
 			break;
 		}
 		case reach_last_wp:
-			{
+		{
 			ENU_BFP_VECT2_OF_REAL(oa_from_wp.wp_en, planed_oa.oa_wp.s4);
 			ENU_BFP_VECT2_OF_REAL(oa_next_wp.wp_en, planed_oa.next_wp);
 
@@ -1317,7 +1317,7 @@ static void planed_oa_run(void)
 					}
 
 					planed_oa.error_info[0] = planed_oa.spray_area.n;
-				    planed_oa.error_info[1] = planed_oa.flight_area.n;
+					planed_oa.error_info[1] = planed_oa.flight_area.n;
 					planed_oa.error_info[2] = planed_oa.pre_from_wp.x;
 					planed_oa.error_info[3] = planed_oa.pre_from_wp.y;
 					planed_oa.error_info[4] = planed_oa.pre_next_wp.x;
@@ -1335,7 +1335,7 @@ static void planed_oa_run(void)
 		if( planed_oa.spray_boundary_insert_flag )
 		{
 			find_shortest_avaliable_spray_boundary(planed_oa.spray_area.v, planed_oa.spray_area.n,
-					&planed_oa.insert_oa_wp, &planed_oa.pre_from_wp, &planed_oa.pre_next_wp);
+																						 &planed_oa.insert_oa_wp, &planed_oa.pre_from_wp, &planed_oa.pre_next_wp);
 
 			if(oa_wp_search_state != on_search)
 			{
@@ -1359,13 +1359,13 @@ static void planed_oa_run(void)
 
 		/* necessity of oa */
 		planed_oa.oa_necessity_flag = rectangle_obstacle_on_nav_route(planed_oa.obstacles, planed_oa.obstacles_num, &planed_oa.from_wp,
-				&planed_oa.next_wp);
+																	&planed_oa.next_wp);
 
 		if (planed_oa.oa_necessity_flag)
 		{
 			/* get initial start end oa wp to calc s1 and s4 */
 			get_initial_start_end_oa_wp(&planed_oa.init_start_oa_wp, &planed_oa.init_end_oa_wp, planed_oa.obstacles, planed_oa.obstacles_num,
-					&planed_oa.from_wp, &planed_oa.next_wp);
+																	&planed_oa.from_wp, &planed_oa.next_wp);
 		}
 
 		waypoint_set_vect2(WP_T1, &planed_oa.init_start_oa_wp);
@@ -1514,7 +1514,7 @@ static void send_point_to_pprz(void)
 {
 	uint8_t i, j;
 
-	struct FloatVect2 temp; 
+	struct FloatVect2 temp;
 	if(p_transfer_useful == TRUE)
 	{
 		temp.x = POS_FLOAT_OF_BFP(vertipad.x);
@@ -1654,36 +1654,38 @@ void planed_oa_periodic_run(void)
 	/* send message for tuning */
 #if PERIODIC_TELEMETRY
 	RunOnceEvery(20,
-			{
-				xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-				DOWNLINK_SEND_PLANED_OA(DefaultChannel, DefaultDevice,
-						&planed_oa.test_on,
-						&planed_oa.planed_oa_ready,
-						&o_flag[0],
-						&planed_oa.obstacles_num,
-						&oa_wp_search_state,
-						&planed_oa.wp_move_done_flag,
-						&planed_oa.spray_boundary_insert_flag,
-						&vert_search_direction,
-						&planed_oa.search_times,
-						&planed_oa_state,
-						&insert_state,
-						&planed_oa.sp_state,
-						&planed_oa.back_home_ready,
-						&planed_oa.nav_north_angle,
-						&planed_oa.total_search_time,
-						&planed_oa.oa_necessity_flag,
-						&spray_boundary_vaild_flag[0],
-						&error_spray_boundary[0]);});
+	{
+		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+		DOWNLINK_SEND_PLANED_OA(DefaultChannel, DefaultDevice,
+		&planed_oa.test_on,
+		&planed_oa.planed_oa_ready,
+		&o_flag[0],
+		&planed_oa.obstacles_num,
+		&oa_wp_search_state,
+		&planed_oa.wp_move_done_flag,
+		&planed_oa.spray_boundary_insert_flag,
+		&vert_search_direction,
+		&planed_oa.search_times,
+		&planed_oa_state,
+		&insert_state,
+		&planed_oa.sp_state,
+		&planed_oa.back_home_ready,
+		&planed_oa.nav_north_angle,
+		&planed_oa.total_search_time,
+		&planed_oa.oa_necessity_flag,
+		&spray_boundary_vaild_flag[0],
+		&error_spray_boundary[0]);
+	});
 
 	RunOnceEvery(50,
-				{
-					xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-					DOWNLINK_SEND_OA_ERROR(DefaultChannel, DefaultDevice,
-							&oa_wp_search_state,
-							&planed_oa.error_record_flag,
-							&planed_oa.error_flight_area[0],
-							&planed_oa.error_info[0]);});
+	{
+		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+		DOWNLINK_SEND_OA_ERROR(DefaultChannel, DefaultDevice,
+		&oa_wp_search_state,
+		&planed_oa.error_record_flag,
+		&planed_oa.error_flight_area[0],
+		&planed_oa.error_info[0]);
+	});
 #endif
 
 }

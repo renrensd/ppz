@@ -51,13 +51,13 @@ struct MCU_FAULT_INFO
 
 typedef enum
 {
-     MCU_RESET_BY_SW = 0x01,
-     MCU_RESET_BY_PWR = 0x02,
-     MCU_RESET_BY_PIN = 0x03,
-     MCU_RESET_BY_WWDG = 0x04,
-     
-     MCU_RESET_BY_SW_UPGRADE = 0x21,
-}MCU_RESET_TYPE;
+	MCU_RESET_BY_SW = 0x01,
+	MCU_RESET_BY_PWR = 0x02,
+	MCU_RESET_BY_PIN = 0x03,
+	MCU_RESET_BY_WWDG = 0x04,
+
+	MCU_RESET_BY_SW_UPGRADE = 0x21,
+} MCU_RESET_TYPE;
 
 void mcu_fault_info_handle(uint16_t msp_offset);
 extern void mcu_write_file_fault(void);
@@ -78,16 +78,16 @@ extern struct MCU_INFO mcu_info;
 
 #ifdef WDG_OPTION
 typedef enum
-{  
-	WDG_TASK_MAIN,  
+{
+	WDG_TASK_MAIN,
 	WDG_TASK_MODULES,
 	WDG_TASK_FAILSAFE,
-	WDG_TASK_TELEMETRY, 
-    WDG_TASK_BARO,  
-    WDG_TASK_OPS, 
-    WDG_TASK_MONITORING, 
-    WDG_EVENT_ALL, 
-}WDG_TASK_IDS;
+	WDG_TASK_TELEMETRY,
+	WDG_TASK_BARO,
+	WDG_TASK_OPS,
+	WDG_TASK_MONITORING,
+	WDG_EVENT_ALL,
+} WDG_TASK_IDS;
 
 extern void mcu_set_task_wdg_flag(uint16_t task_id);
 

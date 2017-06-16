@@ -34,29 +34,29 @@ enum _e_mag_cali_status
 
 struct MagCali
 {
-  bool_t manual_enable;
-  bool_t manual_enable_prev;
-  bool_t manual_fram_erase;
-  bool_t manual_fram_erase_prev;
-  enum _e_mag_cali_status state;
-  bool_t need_cali;
-  bool_t auto_cali;
-  bool_t cali_ok;
-  bool_t cali_ok_last;
-  bool_t persistent_store;
-  bool_t persistent_read;
-  int32_t nav_heading_ini;
+	bool_t manual_enable;
+	bool_t manual_enable_prev;
+	bool_t manual_fram_erase;
+	bool_t manual_fram_erase_prev;
+	enum _e_mag_cali_status state;
+	bool_t need_cali;
+	bool_t auto_cali;
+	bool_t cali_ok;
+	bool_t cali_ok_last;
+	bool_t persistent_store;
+	bool_t persistent_read;
+	int32_t nav_heading_ini;
 
-  uint8_t grab_tick[MAG_CALI_GRAB_NUM];
-  float grab_sum[MAG_CALI_GRAB_NUM][2];
-  uint8_t grab_index;
-  uint8_t grab_index_lock;
-  uint16_t convergence_tick;
-  float gain[2];
-  float offset[2];
-  float declination;
-  bool_t declination_ok;
-  struct FloatVect3  mag_h_cali;
+	uint8_t grab_tick[MAG_CALI_GRAB_NUM];
+	float grab_sum[MAG_CALI_GRAB_NUM][2];
+	uint8_t grab_index;
+	uint8_t grab_index_lock;
+	uint16_t convergence_tick;
+	float gain[2];
+	float offset[2];
+	float declination;
+	bool_t declination_ok;
+	struct FloatVect3  mag_h_cali;
 };
 
 extern void mag_cali_init(void);

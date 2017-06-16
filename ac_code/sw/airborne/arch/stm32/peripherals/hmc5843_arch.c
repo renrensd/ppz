@@ -34,29 +34,29 @@
 
 void hmc5843_arch_init(void)
 {
-  /* configure external interrupt exti5 on PB5( mag int ) */
-  rcc_periph_clock_enable(RCC_GPIOB);
-  rcc_periph_clock_enable(RCC_AFIO);
-  gpio_set_mode(GPIOB, GPIO_MODE_INPUT,
-                GPIO_CNF_INPUT_FLOAT, GPIO5);
+	/* configure external interrupt exti5 on PB5( mag int ) */
+	rcc_periph_clock_enable(RCC_GPIOB);
+	rcc_periph_clock_enable(RCC_AFIO);
+	gpio_set_mode(GPIOB, GPIO_MODE_INPUT,
+								GPIO_CNF_INPUT_FLOAT, GPIO5);
 
 #ifdef HMC5843_USE_INT
-  exti_select_source(EXTI5, GPIOB);
-  exti_set_trigger(EXTI5, EXTI_TRIGGER_FALLING);
-  exti_enable_request(EXTI5);
+	exti_select_source(EXTI5, GPIOB);
+	exti_set_trigger(EXTI5, EXTI_TRIGGER_FALLING);
+	exti_enable_request(EXTI5);
 
-  nvic_set_priority(NVIC_EXTI9_5_IRQ, 0x0f);
-  nvic_enable_irq(NVIC_EXTI9_5_IRQ);
+	nvic_set_priority(NVIC_EXTI9_5_IRQ, 0x0f);
+	nvic_enable_irq(NVIC_EXTI9_5_IRQ);
 #endif
 }
 
 void hmc5843_arch_reset(void)
 {
-  i2c2_er_irq_handler();
+	i2c2_er_irq_handler();
 }
 
 void exti9_5_isr(void)
 {
 
-  exti_reset_request(EXTI5);
+	exti_reset_request(EXTI5);
 }

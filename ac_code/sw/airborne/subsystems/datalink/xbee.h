@@ -51,7 +51,7 @@
 
 #define XBEE_AT_CMD_EXTRA_LEN	6
 
-#ifdef GCS_V1_OPTION   
+#ifdef GCS_V1_OPTION
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/settings.h"
 
@@ -100,18 +100,19 @@ extern void xbee_periodic(void);
 #define XBEE_GOT_LENGTH_LSB 3
 #define XBEE_GOT_PAYLOAD    4
 
-struct xbee_transport {
-  // generic reception interface
-  struct transport_rx trans_rx;
-  // specific xbee transport variables
-  uint8_t status;
-  uint8_t payload_idx;
-  uint8_t cs_rx;
-  uint8_t rssi;
-  // generic transmission interface
-  struct transport_tx trans_tx;
-  // specific pprz transport_tx variables
-  uint8_t cs_tx;
+struct xbee_transport
+{
+	// generic reception interface
+	struct transport_rx trans_rx;
+	// specific xbee transport variables
+	uint8_t status;
+	uint8_t payload_idx;
+	uint8_t cs_rx;
+	uint8_t rssi;
+	// generic transmission interface
+	struct transport_tx trans_tx;
+	// specific pprz transport_tx variables
+	uint8_t cs_tx;
 };
 
 #ifdef GCS_V1_OPTION

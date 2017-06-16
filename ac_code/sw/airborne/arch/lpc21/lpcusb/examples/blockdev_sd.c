@@ -71,9 +71,11 @@ static U8 Resp8b(void)
 	U8 resp;
 
 	/* Respone will come after 1 - 8 pings */
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++)
+	{
 		resp = SPISend(0xff);
-		if (resp != 0xff) {
+		if (resp != 0xff)
+		{
 			return resp;
 		}
 	}
@@ -85,14 +87,29 @@ static U8 Resp8b(void)
 
 static void Resp8bError(U8 value)
 {
-	switch (value) {
-	case 0x40:	DBG("Argument out of bounds.\n"); 				break;
-	case 0x20:	DBG("Address out of bounds.\n");				break;
-	case 0x10:	DBG("Error during erase sequence.\n"); 			break;
-	case 0x08:	DBG("CRC failed.\n"); 							break;
-	case 0x04:	DBG("Illegal command.\n"); 						break;
-	case 0x02:	DBG("Erase reset (see SanDisk docs p5-13).\n");	break;
-	case 0x01:	DBG("Card is initialising.\n"); 				break;
+	switch (value)
+	{
+	case 0x40:
+		DBG("Argument out of bounds.\n");
+		break;
+	case 0x20:
+		DBG("Address out of bounds.\n");
+		break;
+	case 0x10:
+		DBG("Error during erase sequence.\n");
+		break;
+	case 0x08:
+		DBG("CRC failed.\n");
+		break;
+	case 0x04:
+		DBG("Illegal command.\n");
+		break;
+	case 0x02:
+		DBG("Erase reset (see SanDisk docs p5-13).\n");
+		break;
+	case 0x01:
+		DBG("Card is initialising.\n");
+		break;
 	default:
 		DBG("Unknown error 0x%x (see SanDisk docs p5-13).\n", value);
 		break;
@@ -111,12 +128,15 @@ int BlockDevGetSize(U32 *pdwDriveSize)
 	U16 c_size, c_size_mult, read_bl_len;
 
 	Command(CMD_READCSD, 0);
-	do {
+	do
+	{
 		cardresp = Resp8b();
-	} while (cardresp != 0xFE);
+	}
+	while (cardresp != 0xFE);
 
 	DBG("CSD:");
-	for (i = 0; i < 16; i++) {
+	for (i = 0; i < 16; i++)
+	{
 		iob[i] = SPISend(0xFF);
 		DBG(" %02x", iob[i]);
 	}
@@ -167,21 +187,41 @@ static int State(void)
 	Command(CMD_SENDSTATUS, 0);
 	value = Resp16b();
 
-	switch (value) {
-	case 0x0000: return 1;
-	case 0x0001: DBG("Card is Locked.\n"); 													break;
-	case 0x0002: DBG("WP Erase Skip, Lock/Unlock Cmd Failed.\n"); 							break;
-	case 0x0004: DBG("General / Unknown error -- card broken?.\n"); 						break;
-	case 0x0008: DBG("Internal card controller error.\n"); 									break;
-	case 0x0010: DBG("Card internal ECC was applied, but failed to correct the data.\n");	break;
-	case 0x0020: DBG("Write protect violation.\n"); 										break;
-	case 0x0040: DBG("An invalid selection, sectors for erase.\n"); 						break;
-	case 0x0080: DBG("Out of Range, CSD_Overwrite.\n"); 									break;
+	switch (value)
+	{
+	case 0x0000:
+		return 1;
+	case 0x0001:
+		DBG("Card is Locked.\n");
+		break;
+	case 0x0002:
+		DBG("WP Erase Skip, Lock/Unlock Cmd Failed.\n");
+		break;
+	case 0x0004:
+		DBG("General / Unknown error -- card broken?.\n");
+		break;
+	case 0x0008:
+		DBG("Internal card controller error.\n");
+		break;
+	case 0x0010:
+		DBG("Card internal ECC was applied, but failed to correct the data.\n");
+		break;
+	case 0x0020:
+		DBG("Write protect violation.\n");
+		break;
+	case 0x0040:
+		DBG("An invalid selection, sectors for erase.\n");
+		break;
+	case 0x0080:
+		DBG("Out of Range, CSD_Overwrite.\n");
+		break;
 	default:
-		if (value > 0x00FF) {
+		if (value > 0x00FF)
+		{
 			Resp8bError((U8) (value >> 8));
 		}
-		else {
+		else
+		{
 			DBG("Unknown error: 0x%x (see SanDisk docs p5-14).\n", value);
 		}
 		break;
@@ -201,17 +241,22 @@ int BlockDevInit(void)
 
 	/* Try to send reset command up to 100 times */
 	i = 100;
-	do {
+	do
+	{
 		Command(CMD_GOIDLESTATE, 0);
 		resp = Resp8b();
-	} while (resp != 1 && i--);
+	}
+	while (resp != 1 && i--);
 
-	if (resp != 1) {
-		if (resp == 0xff) {
+	if (resp != 1)
+	{
+		if (resp == 0xff)
+		{
 			DBG("resp=0xff\n");
 			return -1;
 		}
-		else {
+		else
+		{
 			Resp8bError(resp);
 			DBG("resp!=0xff\n");
 			return -2;
@@ -221,16 +266,20 @@ int BlockDevInit(void)
 	/* Wait till card is ready initialising (returns 0 on CMD_1) */
 	/* Try up to 32000 times. */
 	i = 32000;
-	do {
+	do
+	{
 		Command(CMD_SENDOPCOND, 0);
 
 		resp = Resp8b();
-		if (resp != 0) {
+		if (resp != 0)
+		{
 			Resp8bError(resp);
 		}
-	} while (resp == 1 && i--);
+	}
+	while (resp == 1 && i--);
 
-	if (resp != 0) {
+	if (resp != 0)
+	{
 		Resp8bError(resp);
 		return -3;
 	}
@@ -238,7 +287,8 @@ int BlockDevInit(void)
 	/* increase speed after init */
 	SPISetSpeed(SPI_PRESCALE_MIN);
 
-	if (State() < 0) {
+	if (State() < 0)
+	{
 		DBG("Card didn't return the ready state, breaking up...\n");
 		return -2;
 	}
@@ -287,7 +337,8 @@ int BlockDevWrite(U32 dwAddress, U8 * pbBuf)
 
 	SPISend(0xff);
 
-	while (SPISend(0xff) != 0xff) {
+	while (SPISend(0xff) != 0xff)
+	{
 		t++;
 	}
 
@@ -321,11 +372,14 @@ int BlockDevRead(U32 dwAddress, U8 * pbBuf)
 	cardresp = Resp8b();		/* Card response */
 
 	/* Wait for startblock */
-	do {
+	do
+	{
 		firstblock = Resp8b();
-	} while (firstblock == 0xff && fb_timeout--);
+	}
+	while (firstblock == 0xff && fb_timeout--);
 
-	if (cardresp != 0x00 || firstblock != 0xfe) {
+	if (cardresp != 0x00 || firstblock != 0xfe)
+	{
 		Resp8bError(firstblock);
 		return -1;
 	}

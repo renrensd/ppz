@@ -74,7 +74,8 @@
 //	Sense code, which is set on error conditions
 static U32			dwSense;	// hex: 00aabbcc, where aa=KEY, bb=ASC, cc=ASCQ
 
-U8		abInquiry[] = {
+U8		abInquiry[] =
+{
 	0x00,		// PDT = direct-access device
 	0x80,		// removeable medium bit = set
 	0x05,		// version = complies to SPC3
@@ -91,14 +92,16 @@ U8		abInquiry[] = {
 
 //	Data for "request sense" command. The 0xFF are filled in later
 static const U8 abSense[] = { 0x70, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x0A,
-							  0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
-							  0x00, 0x00 };
+															0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
+															0x00, 0x00
+														};
 
 //	Buffer for holding one block of disk data
 static U8 abBlockBuf[512];
 
 
-typedef struct {
+typedef struct
+{
 	U8		bOperationCode;
 	U8		abLBA[3];
 	U8		bLength;
@@ -149,20 +152,22 @@ U8 * SCSIHandleCmd(U8 *pbCDB, U8 iCDBLen, int *piRspLen, BOOL *pfDevIn)
 
 	// check CDB length
 	bGroupCode = (pCDB->bOperationCode >> 5) & 0x7;
-	if (iCDBLen < aiCDBLen[bGroupCode]) {
+	if (iCDBLen < aiCDBLen[bGroupCode])
+	{
 		DBG("Invalid CBD len (expected %d)!\n", aiCDBLen[bGroupCode]);
 		return NULL;
 	}
 
-	switch (pCDB->bOperationCode) {
+	switch (pCDB->bOperationCode)
+	{
 
-	// test unit ready (6)
+		// test unit ready (6)
 	case SCSI_CMD_TEST_UNIT_READY:
 		DBG("TEST UNIT READY\n");
 		*piRspLen = 0;
 		break;
 
-	// request sense (6)
+		// request sense (6)
 	case SCSI_CMD_REQUEST_SENSE:
 		DBG("REQUEST SENSE (%06X)\n", dwSense);
 		// check params
@@ -174,20 +179,20 @@ U8 * SCSIHandleCmd(U8 *pbCDB, U8 iCDBLen, int *piRspLen, BOOL *pfDevIn)
 		*piRspLen = 0;
 		break;
 
-	// inquiry (6)
+		// inquiry (6)
 	case SCSI_CMD_INQUIRY:
 		DBG("INQUIRY\n");
 		// see SPC3r23, 4.3.4.6
 		*piRspLen = MIN(36, pCDB->bLength);
 		break;
 
-	// read capacity (10)
+		// read capacity (10)
 	case SCSI_CMD_READ_CAPACITY_10:
 		DBG("READ CAPACITY\n");
 		*piRspLen = 8;
 		break;
 
-	// read (10)
+		// read (10)
 	case SCSI_CMD_READ_10:
 		dwLBA = (pbCDB[2] << 24) | (pbCDB[3] << 16) | (pbCDB[4] << 8) | (pbCDB[5]);
 		dwLen = (pbCDB[7] << 8) | pbCDB[8];
@@ -195,7 +200,7 @@ U8 * SCSIHandleCmd(U8 *pbCDB, U8 iCDBLen, int *piRspLen, BOOL *pfDevIn)
 		*piRspLen = dwLen * BLOCKSIZE;
 		break;
 
-	// write (10)
+		// write (10)
 	case SCSI_CMD_WRITE_10:
 		dwLBA = (pbCDB[2] << 24) | (pbCDB[3] << 16) | (pbCDB[4] << 8) | (pbCDB[5]);
 		dwLen = (pbCDB[7] << 8) | pbCDB[8];
@@ -206,7 +211,8 @@ U8 * SCSIHandleCmd(U8 *pbCDB, U8 iCDBLen, int *piRspLen, BOOL *pfDevIn)
 
 	case SCSI_CMD_VERIFY_10:
 		DBG("VERIFY10\n");
-		if ((pbCDB[1] & (1 << 1)) != 0) {
+		if ((pbCDB[1] & (1 << 1)) != 0)
+		{
 			// we don't support BYTCHK
 			DBG("BYTCHK not supported\n");
 			return NULL;
@@ -216,7 +222,8 @@ U8 * SCSIHandleCmd(U8 *pbCDB, U8 iCDBLen, int *piRspLen, BOOL *pfDevIn)
 
 	default:
 		DBG("Unhandled SCSI: ");
-		for (i = 0; i < iCDBLen; i++) {
+		for (i = 0; i < iCDBLen; i++)
+		{
 			DBG(" %02X", pbCDB[i]);
 		}
 		DBG("\n");
@@ -253,16 +260,18 @@ U8 * SCSIHandleData(U8 *pbCDB, U8 iCDBLen, U8 *pbData, U32 dwOffset)
 
 	pCDB = (TCDB6 *)pbCDB;
 
-	switch (pCDB->bOperationCode) {
+	switch (pCDB->bOperationCode)
+	{
 
-	// test unit ready
+		// test unit ready
 	case SCSI_CMD_TEST_UNIT_READY:
-		if (dwSense != 0) {
+		if (dwSense != 0)
+		{
 			return NULL;
 		}
 		break;
 
-	// request sense
+		// request sense
 	case SCSI_CMD_REQUEST_SENSE:
 		memcpy(pbData, abSense, 18);
 		// fill in KEY/ASC/ASCQ
@@ -277,12 +286,12 @@ U8 * SCSIHandleData(U8 *pbCDB, U8 iCDBLen, U8 *pbData, U32 dwOffset)
 		// nothing to do, ignore this command
 		break;
 
-	// inquiry
+		// inquiry
 	case SCSI_CMD_INQUIRY:
 		memcpy(pbData, abInquiry, sizeof(abInquiry));
 		break;
 
-	// read capacity
+		// read capacity
 	case SCSI_CMD_READ_CAPACITY_10:
 		// get size of drive (bytes)
 		BlockDevGetSize(&dwDevSize);
@@ -299,17 +308,19 @@ U8 * SCSIHandleData(U8 *pbCDB, U8 iCDBLen, U8 *pbData, U32 dwOffset)
 		pbData[7] = (BLOCKSIZE >> 0) & 0xFF;
 		break;
 
-	// read10
+		// read10
 	case SCSI_CMD_READ_10:
 		dwLBA = (pbCDB[2] << 24) | (pbCDB[3] << 16) | (pbCDB[4] << 8) | (pbCDB[5]);
 
 		// copy data from block buffer
 		dwBufPos = (dwOffset & (BLOCKSIZE - 1));
-		if (dwBufPos == 0) {
+		if (dwBufPos == 0)
+		{
 			// read new block
 			dwBlockNr = dwLBA + (dwOffset / BLOCKSIZE);
 			DBG("R");
-			if (BlockDevRead(dwBlockNr, abBlockBuf) < 0) {
+			if (BlockDevRead(dwBlockNr, abBlockBuf) < 0)
+			{
 				dwSense = READ_ERROR;
 				DBG("BlockDevRead failed\n");
 				return NULL;
@@ -318,17 +329,19 @@ U8 * SCSIHandleData(U8 *pbCDB, U8 iCDBLen, U8 *pbData, U32 dwOffset)
 		// return pointer to data
 		return abBlockBuf + dwBufPos;
 
-	// write10
+		// write10
 	case SCSI_CMD_WRITE_10:
 		dwLBA = (pbCDB[2] << 24) | (pbCDB[3] << 16) | (pbCDB[4] << 8) | (pbCDB[5]);
 
 		// copy data to block buffer
 		dwBufPos = ((dwOffset + 64) & (BLOCKSIZE - 1));
-		if (dwBufPos == 0) {
+		if (dwBufPos == 0)
+		{
 			// write new block
 			dwBlockNr = dwLBA + (dwOffset / BLOCKSIZE);
 			DBG("W");
-			if (BlockDevWrite(dwBlockNr, abBlockBuf) < 0) {
+			if (BlockDevWrite(dwBlockNr, abBlockBuf) < 0)
+			{
 				dwSense = WRITE_ERROR;
 				DBG("BlockDevWrite failed\n");
 				return NULL;

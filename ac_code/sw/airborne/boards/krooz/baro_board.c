@@ -64,56 +64,62 @@ float baro_bmp_alt;
 void baro_init(void)
 {
 
-  bmp085_init(&baro_bmp, &BMP_I2C_DEV, BMP085_SLAVE_ADDR);
+	bmp085_init(&baro_bmp, &BMP_I2C_DEV, BMP085_SLAVE_ADDR);
 
-  baro_bmp_r = BARO_BMP_R;
-  baro_bmp_sigma2 = BARO_BMP_SIGMA2;
-  baro_bmp_enabled = TRUE;
+	baro_bmp_r = BARO_BMP_R;
+	baro_bmp_sigma2 = BARO_BMP_SIGMA2;
+	baro_bmp_enabled = TRUE;
 
 }
 
 void baro_periodic(void)
 {
 
-  if (baro_bmp.initialized) {
-    bmp085_periodic(&baro_bmp);
-  } else {
-    bmp085_read_eeprom_calib(&baro_bmp);
-  }
+	if (baro_bmp.initialized)
+	{
+		bmp085_periodic(&baro_bmp);
+	}
+	else
+	{
+		bmp085_read_eeprom_calib(&baro_bmp);
+	}
 
 }
 
 void baro_event(void)
 {
 
-  bmp085_event(&baro_bmp);
+	bmp085_event(&baro_bmp);
 
-  if (baro_bmp.data_available) {
+	if (baro_bmp.data_available)
+	{
 
-    float tmp = baro_bmp.pressure / 101325.0; // pressure at sea level
-    tmp = pow(tmp, 0.190295);
-    baro_bmp_alt = 44330 * (1.0 - tmp);
+		float tmp = baro_bmp.pressure / 101325.0; // pressure at sea level
+		tmp = pow(tmp, 0.190295);
+		baro_bmp_alt = 44330 * (1.0 - tmp);
 
-    float pressure = (float)baro_bmp.pressure;
-    AbiSendMsgBARO_ABS(BARO_BMP_SENDER_ID, pressure);
-    float temp = baro_bmp.temperature / 10.0f;
-    AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
-    baro_bmp.data_available = FALSE;
+		float pressure = (float)baro_bmp.pressure;
+		AbiSendMsgBARO_ABS(BARO_BMP_SENDER_ID, pressure);
+		float temp = baro_bmp.temperature / 10.0f;
+		AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
+		baro_bmp.data_available = FALSE;
 
 #if PERIODIC_TELEMETRY
 #ifdef SENSOR_SYNC_SEND
-    RunOnceEvery(10, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-       DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice, &baro_bmp.up,
-                             &baro_bmp.ut, &baro_bmp.pressure,
-                             &baro_bmp.temperature);} );
+		RunOnceEvery(10, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+											DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice, &baro_bmp.up,
+													&baro_bmp.ut, &baro_bmp.pressure,
+													&baro_bmp.temperature);
+										 } );
 #else
-    
-    RunOnceEvery(10, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC); 
-       DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice,
-                 &baro_bmp.up, &baro_bmp.ut,
-                 &baro_bmp.pressure,
-                 &baro_bmp.temperature);} );
+
+		RunOnceEvery(10, {xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+											DOWNLINK_SEND_BMP_STATUS(DefaultChannel, DefaultDevice,
+													&baro_bmp.up, &baro_bmp.ut,
+													&baro_bmp.pressure,
+													&baro_bmp.temperature);
+										 } );
 #endif
 #endif
-  }
+	}
 }

@@ -30,9 +30,9 @@
 
 #ifdef OPS_OPTION
 #include "subsystems/ops/ops_app_if.h"
-#include "subsystems/ops/ops_msg_if.h"   
+#include "subsystems/ops/ops_msg_if.h"
 #endif
-#include "subsystems/monitoring/monitoring.h" 
+#include "subsystems/monitoring/monitoring.h"
 
 #include "subsystems/datalink/downlink.h"
 
@@ -109,20 +109,20 @@ void rc_periodic_task(void)  //run 16hz
 #if 0//PERIODIC_TELEMETRY
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	DOWNLINK_SEND_JOYSTICK_DEBUG(DefaultChannel, DefaultDevice,
-			&rc_motion32,
-			&rc_motion_info.joystick_info.current_stick_ratio[0],
-			&rc_motion_info.joystick_info.current_stick_ratio[1],
-			&rc_motion_info.joystick_info.current_stick_ratio[2],
-			&rc_motion_info.joystick_info.current_stick_ratio[3],
-			&rc_motion_info.joystick_info.smooth_stick_ratio[0],
-			&rc_motion_info.joystick_info.smooth_stick_ratio[1],
-			&rc_motion_info.joystick_info.smooth_stick_ratio[2],
-			&rc_motion_info.joystick_info.smooth_stick_ratio[3],
-			&rc_motion_info.joystick_info.percent_rssi,
-			&rc_motion_info.speed_fb,
-			&rc_motion_info.speed_rl,
-			&rc_motion_info.speed_v,
-			&rc_motion_info.rotation_rate );
+															 &rc_motion32,
+															 &rc_motion_info.joystick_info.current_stick_ratio[0],
+															 &rc_motion_info.joystick_info.current_stick_ratio[1],
+															 &rc_motion_info.joystick_info.current_stick_ratio[2],
+															 &rc_motion_info.joystick_info.current_stick_ratio[3],
+															 &rc_motion_info.joystick_info.smooth_stick_ratio[0],
+															 &rc_motion_info.joystick_info.smooth_stick_ratio[1],
+															 &rc_motion_info.joystick_info.smooth_stick_ratio[2],
+															 &rc_motion_info.joystick_info.smooth_stick_ratio[3],
+															 &rc_motion_info.joystick_info.percent_rssi,
+															 &rc_motion_info.speed_fb,
+															 &rc_motion_info.speed_rl,
+															 &rc_motion_info.speed_v,
+															 &rc_motion_info.rotation_rate );
 #endif
 }
 
@@ -198,14 +198,14 @@ static void rc_motion_speed_update(void)
 	speed_limit += (current_speed_limit - speed_limit) * 0.2f;
 
 	rc_motion_info.speed_fb = (float) rc_motion_info.joystick_info.smooth_stick_ratio[0] * JOYSTICK_RATIO * speed_limit
-			* rc_motion_info.max_speed_fb;
+														* rc_motion_info.max_speed_fb;
 	rc_motion_info.speed_rl = (float) rc_motion_info.joystick_info.smooth_stick_ratio[1] * JOYSTICK_RATIO * speed_limit
-			* rc_motion_info.max_speed_rl;
+														* rc_motion_info.max_speed_rl;
 	rc_motion_info.speed_v = (float) rc_motion_info.joystick_info.smooth_stick_ratio[2] * JOYSTICK_RATIO * speed_limit
-			* rc_motion_info.max_speed_v;
+													 * rc_motion_info.max_speed_v;
 
 	rc_motion_info.rotation_rate = (float) rc_motion_info.joystick_info.smooth_stick_ratio[3] * JOYSTICK_RATIO
-			* speed_limit * rc_motion_info.max_rotation_rate;
+																 * speed_limit * rc_motion_info.max_rotation_rate;
 
 }
 
@@ -262,7 +262,8 @@ static uint8_t rc_motion_cmd_verify(uint8_t cmd)
 
 	uint8_t error_code = 0;
 	if (flight_mode != nav_rc_mode)
-	{  //error,request in manual mode
+	{
+		//error,request in manual mode
 		return error_code = 10;
 	}
 
@@ -282,17 +283,20 @@ static uint8_t rc_motion_cmd_verify(uint8_t cmd)
 	}
 
 	if (!autopilot_in_flight)
-	{    //error,ac need take off first
+	{
+		//error,ac need take off first
 		return error_code = 11;
 	}
 
 	if (rc_set_info.home || rc_set_info.vtol == LOCKED)
-	{    //error,refuse action while aircraft in home mode
+	{
+		//error,refuse action while aircraft in home mode
 		return error_code = 12;
 	}
 
 	if (rc_set_info.vtol == TAKE_OFF || rc_set_info.vtol == LAND)
-	{    //error,aircraft is taking off/landing, can not interrupt
+	{
+		//error,aircraft is taking off/landing, can not interrupt
 		return error_code = 13;
 	}
 
@@ -365,7 +369,8 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 	/*check error before motion execution*/
 	error_code = rc_motion_cmd_verify(rc_motion_cmd);
 	if(error_code)
-	{   //something error,return
+	{
+		//something error,return
 		return error_code;
 	}
 
@@ -374,20 +379,20 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 
 	switch(rc_motion_cmd)
 	{
-		case K_HOVER:
-		{
-			RC_HOVER();     //do hover
-			break;
-		}
+	case K_HOVER:
+	{
+		RC_HOVER();     //do hover
+		break;
+	}
 
-		case K_UP:
+	case K_UP:
 		RC_Climb(V_DEFAULT_GRADE);
 		break;
-		case K_DOWN:
+	case K_DOWN:
 		RC_Decline(V_DEFAULT_GRADE);
 		break;
 
-		case K_HOLD:
+	case K_HOLD:
 		if(nav_climb)
 		{
 			//RC_Z_HOLD();  replace with stop climb speed
@@ -401,18 +406,20 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		}
 		break;
 
-		case K_FORWARD:
+	case K_FORWARD:
 		if( 0==(fb_grade+1) )
-		{   //avoid reverse orientation
+		{
+			//avoid reverse orientation
 			break;
 		}
 		fb_grade++;
 		BoundAbs(fb_grade,5);   //avoid out of limit grade
 		rc_motion_info.speed_fb = ( RC_FB_SPEED(fb_grade) );
 		break;
-		case K_BACKWARD:
+	case K_BACKWARD:
 		if( 0==(fb_grade-1) )
-		{   //avoid reverse orientation
+		{
+			//avoid reverse orientation
 			break;
 		}
 		fb_grade--;
@@ -420,32 +427,32 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		rc_motion_info.speed_fb = ( RC_FB_SPEED(fb_grade) );
 		break;
 
-		case K_RIGHT:
+	case K_RIGHT:
+	{
+		if(rc_motion_info.speed_fb!=0.0)
 		{
-			if(rc_motion_info.speed_fb!=0.0)
-			{
-				rc_speed_rl_drift(1);
-			}
-			else
-			{
-				rc_motion_info.speed_rl= RL_SPEED;
-			}
-			break;
+			rc_speed_rl_drift(1);
 		}
-		case K_LEFT:
+		else
 		{
-			if(rc_motion_info.speed_fb!=0.0)
-			{
-				rc_speed_rl_drift(-1);
-			}
-			else
-			{
-				rc_motion_info.speed_rl= -RL_SPEED;
-			}
-			break;
+			rc_motion_info.speed_rl= RL_SPEED;
 		}
+		break;
+	}
+	case K_LEFT:
+	{
+		if(rc_motion_info.speed_fb!=0.0)
+		{
+			rc_speed_rl_drift(-1);
+		}
+		else
+		{
+			rc_motion_info.speed_rl= -RL_SPEED;
+		}
+		break;
+	}
 
-		case K_CW:
+	case K_CW:
 		if(rc_motion_info.speed_fb!=0.0)
 		{
 			rc_rate_rotation_drift(1);
@@ -456,7 +463,7 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 			rc_turn_rate=RATE_BFP_OF_REAL( rc_motion_info.rotation_rate );
 		}
 		break;
-		case K_CCW:
+	case K_CCW:
 		if(rc_motion_info.speed_fb!=0.0)
 		{
 			rc_rate_rotation_drift(-1);
@@ -468,7 +475,8 @@ uint8_t rc_motion_cmd_execution( uint8_t cmd )
 		}
 		break;
 
-		default: return error_code=7; //motion_type wrong
+	default:
+		return error_code=7; //motion_type wrong
 	}
 
 	//execution set guidance_h_speed_sp
@@ -523,7 +531,8 @@ uint8_t rc_set_cmd_parse(uint8_t cmd)
 
 		if (enter)
 		{
-			if (flight_state == taking_off || flight_state == landing)
+			if( flight_state == taking_off || flight_state == landing
+					|| guidance_h_trajectory_tracking_emergency_braking() )
 			{
 				break;
 			}
@@ -559,7 +568,7 @@ uint8_t rc_set_cmd_parse(uint8_t cmd)
 		break;
 
 #else
-		case RC_ADD_SPRAY:
+	case RC_ADD_SPRAY:
 #ifndef DEBUG_RC
 		if(flight_mode==nav_rc_mode)
 #endif
@@ -575,7 +584,7 @@ uint8_t rc_set_cmd_parse(uint8_t cmd)
 #endif
 		}
 		break;
-		case RC_REDUCE_SPRAY:
+	case RC_REDUCE_SPRAY:
 #ifndef DEBUG_RC
 		if(flight_mode==nav_rc_mode)
 #endif
@@ -656,13 +665,13 @@ uint8_t rc_set_cmd_parse(uint8_t cmd)
 		}
 		break;
 #ifdef CALIBRATION_OPTION
-		case RC_MAG_CALIBRATION_BEGIN:
+	case RC_MAG_CALIBRATION_BEGIN:
 		if(kill_throttle)
 		{
 			cali_mag_begin();
 		}
 		break;
-		case RC_MAG_CALIBRATION_END:
+	case RC_MAG_CALIBRATION_END:
 		if(kill_throttle)
 		{
 			cali_mag_end();

@@ -42,56 +42,66 @@
 struct sonar_data Sonar_US100;
 
 void sonar_get_distance(void)
-{ static bool exchange=true;
-  if(exchange)
-  { sonar_uart_send_order(); }
-  else
-  { sonar_uart_read(); }
-  exchange=!exchange;  
+{
+	static bool exchange=true;
+	if(exchange)
+	{
+		sonar_uart_send_order();
+	}
+	else
+	{
+		sonar_uart_read();
+	}
+	exchange=!exchange;
 }
 
 void sonar_uart_read(void)
-{  Sonar_US100.distance_mm=0;
-   uint8_t n_bytes=0;
-   Sonar_US100.distance_m=0.0;
+{
+	Sonar_US100.distance_mm=0;
+	uint8_t n_bytes=0;
+	Sonar_US100.distance_m=0.0;
 
- while(SonarLinkChAvailable())
- { if(n_bytes<2)
- 	{  Sonar_US100.distance_mm|=( SonarLinkGetch()<<(8*(1-n_bytes)) );
-       n_bytes++;
-    }
-   else 
-   	{  SonarLinkGetch();
-	   n_bytes++;
-    }
- }
- 
- if(n_bytes!=2) return;
-   Sonar_US100.distance_m=(float)Sonar_US100.distance_mm/1000.0;
-	 
-	  
- if(Sonar_US100.distance_m<0.05||Sonar_US100.distance_m>7)
-   {   //request above 0.1m
-     return;
-   }
- 
-  // Send ABI message
-  AbiSendMsgAGL(AGL_SONAR_ADC_ID, Sonar_US100.distance_m);
-  //AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, Sonar_US100.distance_m);
+	while(SonarLinkChAvailable())
+	{
+		if(n_bytes<2)
+		{
+			Sonar_US100.distance_mm|=( SonarLinkGetch()<<(8*(1-n_bytes)) );
+			n_bytes++;
+		}
+		else
+		{
+			SonarLinkGetch();
+			n_bytes++;
+		}
+	}
 
-#ifdef SENSOR_SYNC_SEND_SONAR   
-  #if PERIODIC_TELEMETRY
-     xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-     DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &Sonar_US100.distance_mm, &agl_dist_value_filtered);//&Sonar_US100.distance_m);
-  #endif
-#endif 
+	if(n_bytes!=2) return;
+	Sonar_US100.distance_m=(float)Sonar_US100.distance_mm/1000.0;
+
+
+	if(Sonar_US100.distance_m<0.05||Sonar_US100.distance_m>7)
+	{
+		//request above 0.1m
+		return;
+	}
+
+	// Send ABI message
+	AbiSendMsgAGL(AGL_SONAR_ADC_ID, Sonar_US100.distance_m);
+	//AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, Sonar_US100.distance_m);
+
+#ifdef SENSOR_SYNC_SEND_SONAR
+#if PERIODIC_TELEMETRY
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &Sonar_US100.distance_mm, &agl_dist_value_filtered);//&Sonar_US100.distance_m);
+#endif
+#endif
 }
 
 
 void sonar_uart_send_order(void)
 {
-  SonarLinkTransmit(0x55); //send getdata oder(0x55) to sonar
-    
+	SonarLinkTransmit(0x55); //send getdata oder(0x55) to sonar
+
 }
 
 

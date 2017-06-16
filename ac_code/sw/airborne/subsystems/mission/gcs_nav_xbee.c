@@ -4,18 +4,18 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #include "subsystems/mission/gcs_nav_xbee.h"
 #include "firmwares/rotorcraft/nav_flight.h"
@@ -37,14 +37,14 @@
 
 #define GCS_MAX_COUNT  20   //lost_time_out =20/(2hz)=10s
 
-uint8_t gcs_count;  
+uint8_t gcs_count;
 bool_t  gcs_lost;
 
 static inline void gcs_set_connect(void);
 
 void gcs_lost_check(void)
 {
-	#ifdef GCS_V1_OPTION
+#ifdef GCS_V1_OPTION
 	if(!gcs_lost)
 	{
 		gcs_count++;
@@ -59,10 +59,10 @@ void gcs_lost_check(void)
 	{
 		if(xbee_con_info.gcs_con_available)
 		{
-		   	XbeeSetGcsConFalse(); 
+			XbeeSetGcsConFalse();
 		}
 	}
-	#endif	/* GCS_V1_OPTION */
+#endif	/* GCS_V1_OPTION */
 }
 
 static inline void gcs_set_connect(void)
