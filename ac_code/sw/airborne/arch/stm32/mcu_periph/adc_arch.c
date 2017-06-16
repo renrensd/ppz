@@ -171,7 +171,7 @@ PRINT_CONFIG_MSG("Analog to Digital Coverter 3 active")
 static inline void adc_init_single(uint32_t adc, uint8_t nb_channels, uint8_t *channel_map);
 
 static inline void adc_push_sample(struct adc_buf *buf,
-                                   uint16_t sample);
+																	 uint16_t sample);
 
 static inline void adc_init_rcc(void);
 static inline void adc_init_irq(void);
@@ -209,10 +209,11 @@ static struct adc_buf *adc3_buffers[4];
 #if USE_ADC_WATCHDOG
 #include "mcu_periph/sys_time.h"
 // watchdog structure with adc bank and callback
-static struct {
-  uint32_t timeStamp;
-  uint32_t adc;
-  adc_watchdog_callback cb;
+static struct
+{
+	uint32_t timeStamp;
+	uint32_t adc;
+	adc_watchdog_callback cb;
 } adc_watchdog;
 #endif
 
@@ -223,146 +224,155 @@ static struct {
 void adc_init(void)
 {
 
-  uint8_t x = 0;
+	uint8_t x = 0;
 
-  // ADC channel mapping
-  uint8_t adc_channel_map[4];
+	// ADC channel mapping
+	uint8_t adc_channel_map[4];
 
-  /* Init GPIO ports for ADC operation
-   */
+	/* Init GPIO ports for ADC operation
+	 */
 #if USE_ADC_1
-  PRINT_CONFIG_MSG("Info: Using ADC_1")
-  gpio_setup_pin_analog(ADC_1_GPIO_PORT, ADC_1_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_1")
+	gpio_setup_pin_analog(ADC_1_GPIO_PORT, ADC_1_GPIO_PIN);
 #endif
 #if USE_ADC_2
-  PRINT_CONFIG_MSG("Info: Using ADC_2")
-  gpio_setup_pin_analog(ADC_2_GPIO_PORT, ADC_2_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_2")
+	gpio_setup_pin_analog(ADC_2_GPIO_PORT, ADC_2_GPIO_PIN);
 #endif
 #if USE_ADC_3
-  PRINT_CONFIG_MSG("Info: Using ADC_3")
-  gpio_setup_pin_analog(ADC_3_GPIO_PORT, ADC_3_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_3")
+	gpio_setup_pin_analog(ADC_3_GPIO_PORT, ADC_3_GPIO_PIN);
 #endif
 #if USE_ADC_4
-  PRINT_CONFIG_MSG("Info: Using ADC_4")
-  gpio_setup_pin_analog(ADC_4_GPIO_PORT, ADC_4_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_4")
+	gpio_setup_pin_analog(ADC_4_GPIO_PORT, ADC_4_GPIO_PIN);
 #endif
 #if USE_ADC_5
-  PRINT_CONFIG_MSG("Info: Using ADC_5")
-  gpio_setup_pin_analog(ADC_5_GPIO_PORT, ADC_5_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_5")
+	gpio_setup_pin_analog(ADC_5_GPIO_PORT, ADC_5_GPIO_PIN);
 #endif
 #if USE_ADC_6
-  PRINT_CONFIG_MSG("Info: Using ADC_6")
-  gpio_setup_pin_analog(ADC_6_GPIO_PORT, ADC_6_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_6")
+	gpio_setup_pin_analog(ADC_6_GPIO_PORT, ADC_6_GPIO_PIN);
 #endif
 #if USE_ADC_7
-  PRINT_CONFIG_MSG("Info: Using ADC_7")
-  gpio_setup_pin_analog(ADC_7_GPIO_PORT, ADC_7_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_7")
+	gpio_setup_pin_analog(ADC_7_GPIO_PORT, ADC_7_GPIO_PIN);
 #endif
 #if USE_ADC_8
-  PRINT_CONFIG_MSG("Info: Using ADC_8")
-  gpio_setup_pin_analog(ADC_8_GPIO_PORT, ADC_8_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_8")
+	gpio_setup_pin_analog(ADC_8_GPIO_PORT, ADC_8_GPIO_PIN);
 #endif
 #if USE_ADC_9
-  PRINT_CONFIG_MSG("Info: Using ADC_9")
-  gpio_setup_pin_analog(ADC_9_GPIO_PORT, ADC_9_GPIO_PIN);
+	PRINT_CONFIG_MSG("Info: Using ADC_9")
+	gpio_setup_pin_analog(ADC_9_GPIO_PORT, ADC_9_GPIO_PIN);
 #endif
 
-  // Init clock and irq
-  adc_init_rcc();
-  adc_init_irq();
+	// Init clock and irq
+	adc_init_rcc();
+	adc_init_irq();
 
-  /* If fewer than 4 channels are active, say 3, then they are placed in to
-   * injection slots 2,3 and 4 because the stm32 architecture converts injected
-   * slots 2,3 and 4 and skips slot 1 instead of logicaly converting slots 1,2
-   * and 3 and leave slot 4.
-   * EXAMPLE OF ADC EXECUTION ORDER WHEN WE HAVE SAY 2 ADC INPUTS USED on ADC1
-   * The first board adc channel ADC1_1 is mapped to injected channel 3 and ADC1_2
-   * to injected channel 4 and because the conversions start from the lowest
-   * injection channel used, 3 in our case, injected channel 3 data will be
-   * located at JDR1 and 4 to JDR2 so JDR1 = ADC1_1 and JDR2 = ADC1_2.
-   * That's why "adc_channel_map" has this descending order.
-   */
+	/* If fewer than 4 channels are active, say 3, then they are placed in to
+	 * injection slots 2,3 and 4 because the stm32 architecture converts injected
+	 * slots 2,3 and 4 and skips slot 1 instead of logicaly converting slots 1,2
+	 * and 3 and leave slot 4.
+	 * EXAMPLE OF ADC EXECUTION ORDER WHEN WE HAVE SAY 2 ADC INPUTS USED on ADC1
+	 * The first board adc channel ADC1_1 is mapped to injected channel 3 and ADC1_2
+	 * to injected channel 4 and because the conversions start from the lowest
+	 * injection channel used, 3 in our case, injected channel 3 data will be
+	 * located at JDR1 and 4 to JDR2 so JDR1 = ADC1_1 and JDR2 = ADC1_2.
+	 * That's why "adc_channel_map" has this descending order.
+	 */
 
-  nb_adc1_channels = 0;
+	nb_adc1_channels = 0;
 #if USE_AD1
 #ifdef AD1_1_CHANNEL
-  adc_channel_map[AD1_1] = AD1_1_CHANNEL;
-  nb_adc1_channels++;
+	adc_channel_map[AD1_1] = AD1_1_CHANNEL;
+	nb_adc1_channels++;
 #endif
 #ifdef AD1_2_CHANNEL
-  adc_channel_map[AD1_2] = AD1_2_CHANNEL;
-  nb_adc1_channels++;
+	adc_channel_map[AD1_2] = AD1_2_CHANNEL;
+	nb_adc1_channels++;
 #endif
 #ifdef AD1_3_CHANNEL
-  adc_channel_map[AD1_3] = AD1_3_CHANNEL;
-  nb_adc1_channels++;
+	adc_channel_map[AD1_3] = AD1_3_CHANNEL;
+	nb_adc1_channels++;
 #endif
 #ifdef AD1_4_CHANNEL
-  adc_channel_map[AD1_4] = AD1_4_CHANNEL;
-  nb_adc1_channels++;
+	adc_channel_map[AD1_4] = AD1_4_CHANNEL;
+	nb_adc1_channels++;
 #endif
-  // initialize buffer pointers with 0 (not set). Buffer null pointers will be ignored in interrupt
-  // handler, which is important as there are no buffers registered at the time the ADC trigger
-  // interrupt is enabled.
-  for (x = 0; x < 4; x++) { adc1_buffers[x] = NULL; }
-  adc_init_single(ADC1, nb_adc1_channels, adc_channel_map);
+	// initialize buffer pointers with 0 (not set). Buffer null pointers will be ignored in interrupt
+	// handler, which is important as there are no buffers registered at the time the ADC trigger
+	// interrupt is enabled.
+	for (x = 0; x < 4; x++)
+	{
+		adc1_buffers[x] = NULL;
+	}
+	adc_init_single(ADC1, nb_adc1_channels, adc_channel_map);
 #endif // USE_AD1
 
 
-  nb_adc2_channels = 0;
+	nb_adc2_channels = 0;
 #if USE_AD2
 #ifdef AD2_1_CHANNEL
-  adc_channel_map[AD2_1 - nb_adc1_channels] = AD2_1_CHANNEL;
-  nb_adc2_channels++;
+	adc_channel_map[AD2_1 - nb_adc1_channels] = AD2_1_CHANNEL;
+	nb_adc2_channels++;
 #endif
 #ifdef AD2_2_CHANNEL
-  adc_channel_map[AD2_2 - nb_adc1_channels] = AD2_2_CHANNEL;
-  nb_adc2_channels++;
+	adc_channel_map[AD2_2 - nb_adc1_channels] = AD2_2_CHANNEL;
+	nb_adc2_channels++;
 #endif
 #ifdef AD2_3_CHANNEL
-  adc_channel_map[AD2_3 - nb_adc1_channels] = AD2_3_CHANNEL;
-  nb_adc2_channels++;
+	adc_channel_map[AD2_3 - nb_adc1_channels] = AD2_3_CHANNEL;
+	nb_adc2_channels++;
 #endif
 #ifdef AD2_4_CHANNEL
-  adc_channel_map[AD2_4 - nb_adc1_channels] = AD2_4_CHANNEL;
-  nb_adc2_channels++;
+	adc_channel_map[AD2_4 - nb_adc1_channels] = AD2_4_CHANNEL;
+	nb_adc2_channels++;
 #endif
-  // initialize buffer pointers with 0 (not set). Buffer null pointers will be ignored in interrupt
-  // handler, which is important as there are no buffers registered at the time the ADC trigger
-  // interrupt is enabled.
-  for (x = 0; x < 4; x++) { adc2_buffers[x] = NULL; }
-  adc_init_single(ADC2, nb_adc2_channels, adc_channel_map);
+	// initialize buffer pointers with 0 (not set). Buffer null pointers will be ignored in interrupt
+	// handler, which is important as there are no buffers registered at the time the ADC trigger
+	// interrupt is enabled.
+	for (x = 0; x < 4; x++)
+	{
+		adc2_buffers[x] = NULL;
+	}
+	adc_init_single(ADC2, nb_adc2_channels, adc_channel_map);
 #endif // USE_AD2
 
 
-  nb_adc3_channels = 0;
+	nb_adc3_channels = 0;
 #if USE_AD3
 #ifdef AD3_1_CHANNEL
-  adc_channel_map[AD3_1 - nb_adc1_channels - nb_adc2_channels] = AD3_1_CHANNEL;
-  nb_adc3_channels++;
+	adc_channel_map[AD3_1 - nb_adc1_channels - nb_adc2_channels] = AD3_1_CHANNEL;
+	nb_adc3_channels++;
 #endif
 #ifdef AD3_2_CHANNEL
-  adc_channel_map[AD3_2 - nb_adc1_channels - nb_adc2_channels] = AD3_2_CHANNEL;
-  nb_adc3_channels++;
+	adc_channel_map[AD3_2 - nb_adc1_channels - nb_adc2_channels] = AD3_2_CHANNEL;
+	nb_adc3_channels++;
 #endif
 #ifdef AD3_3_CHANNEL
-  adc_channel_map[AD3_3 - nb_adc1_channels - nb_adc2_channels] = AD3_3_CHANNEL;
-  nb_adc3_channels++;
+	adc_channel_map[AD3_3 - nb_adc1_channels - nb_adc2_channels] = AD3_3_CHANNEL;
+	nb_adc3_channels++;
 #endif
 #ifdef AD3_4_CHANNEL
-  adc_channel_map[AD3_4 - nb_adc1_channels - nb_adc2_channels] = AD3_4_CHANNEL;
-  nb_adc3_channels++;
+	adc_channel_map[AD3_4 - nb_adc1_channels - nb_adc2_channels] = AD3_4_CHANNEL;
+	nb_adc3_channels++;
 #endif
-  // initialize buffer pointers with 0 (not set). Buffer null pointers will be ignored in interrupt
-  // handler, which is important as there are no buffers registered at the time the ADC trigger
-  // interrupt is enabled.
-  for (x = 0; x < 4; x++) { adc3_buffers[x] = NULL; }
-  adc_init_single(ADC3, nb_adc3_channels, adc_channel_map);
+	// initialize buffer pointers with 0 (not set). Buffer null pointers will be ignored in interrupt
+	// handler, which is important as there are no buffers registered at the time the ADC trigger
+	// interrupt is enabled.
+	for (x = 0; x < 4; x++)
+	{
+		adc3_buffers[x] = NULL;
+	}
+	adc_init_single(ADC3, nb_adc3_channels, adc_channel_map);
 #endif // USE_AD3
 
 #if USE_ADC_WATCHDOG
-  adc_watchdog.cb = NULL;
-  adc_watchdog.timeStamp = 0;
+	adc_watchdog.cb = NULL;
+	adc_watchdog.timeStamp = 0;
 #endif
 
 }
@@ -370,36 +380,41 @@ void adc_init(void)
 void adc_buf_channel(uint8_t adc_channel, struct adc_buf *s, uint8_t av_nb_sample)
 {
 
-  if (adc_channel < nb_adc1_channels) {
+	if (adc_channel < nb_adc1_channels)
+	{
 #if USE_AD1
-    adc1_buffers[adc_channel] = s;
+		adc1_buffers[adc_channel] = s;
 #endif
-  } else if (adc_channel < (nb_adc1_channels + nb_adc2_channels)) {
+	}
+	else if (adc_channel < (nb_adc1_channels + nb_adc2_channels))
+	{
 #if USE_AD2
-    adc2_buffers[adc_channel - nb_adc1_channels] = s;
+		adc2_buffers[adc_channel - nb_adc1_channels] = s;
 #endif
-  } else if (adc_channel < (nb_adc1_channels + nb_adc2_channels + nb_adc3_channels)) {
+	}
+	else if (adc_channel < (nb_adc1_channels + nb_adc2_channels + nb_adc3_channels))
+	{
 #if USE_AD3
-    adc3_buffers[adc_channel - (nb_adc1_channels + nb_adc2_channels)] = s;
+		adc3_buffers[adc_channel - (nb_adc1_channels + nb_adc2_channels)] = s;
 #endif
-  }
+	}
 
-  s->av_nb_sample = av_nb_sample;
+	s->av_nb_sample = av_nb_sample;
 
 }
 
 #if USE_ADC_WATCHDOG
 void register_adc_watchdog(uint32_t adc, uint8_t chan, uint16_t low, uint16_t high, adc_watchdog_callback cb)
 {
-  adc_watchdog.adc = adc;
-  adc_watchdog.cb = cb;
+	adc_watchdog.adc = adc;
+	adc_watchdog.cb = cb;
 
-  // activated adc watchdog of a single injected channel with interrupt
-  adc_set_watchdog_low_threshold(adc, low);
-  adc_set_watchdog_high_threshold(adc, high);
-  adc_enable_analog_watchdog_injected(adc);
-  adc_enable_analog_watchdog_on_selected_channel(adc, chan);
-  adc_enable_awd_interrupt(adc);
+	// activated adc watchdog of a single injected channel with interrupt
+	adc_set_watchdog_low_threshold(adc, low);
+	adc_set_watchdog_high_threshold(adc, high);
+	adc_enable_analog_watchdog_injected(adc);
+	adc_enable_analog_watchdog_on_selected_channel(adc, chan);
+	adc_enable_awd_interrupt(adc);
 }
 #endif
 
@@ -422,35 +437,35 @@ void register_adc_watchdog(uint32_t adc, uint8_t chan, uint16_t low, uint16_t hi
 static inline void adc_init_rcc(void)
 {
 #if USE_AD1 || USE_AD2 || USE_AD3
-  /* Timer peripheral clock enable. */
-  rcc_periph_clock_enable(RCC_TIM_ADC);
+	/* Timer peripheral clock enable. */
+	rcc_periph_clock_enable(RCC_TIM_ADC);
 #if defined(STM32F4)
-  adc_set_clk_prescale(ADC_CCR_ADCPRE_BY2);
+	adc_set_clk_prescale(ADC_CCR_ADCPRE_BY2);
 #endif
 
-  /* Enable ADC peripheral clocks. */
+	/* Enable ADC peripheral clocks. */
 #if USE_AD1
-  rcc_periph_clock_enable(RCC_ADC1);
+	rcc_periph_clock_enable(RCC_ADC1);
 #endif
 #if USE_AD2
-  rcc_periph_clock_enable(RCC_ADC2);
+	rcc_periph_clock_enable(RCC_ADC2);
 #endif
 #if USE_AD3
-  rcc_periph_clock_enable(RCC_ADC3);
+	rcc_periph_clock_enable(RCC_ADC3);
 #endif
 
-  /* Time Base configuration */
-  timer_reset(TIM_ADC);
-  timer_set_mode(TIM_ADC, TIM_CR1_CKD_CK_INT,
-                 TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  /* timer counts with ADC_TIMER_FREQUENCY */
-  uint32_t timer_clk = timer_get_frequency(TIM_ADC);
-  timer_set_prescaler(TIM_ADC, (timer_clk / ADC_TIMER_FREQUENCY) - 1);
+	/* Time Base configuration */
+	timer_reset(TIM_ADC);
+	timer_set_mode(TIM_ADC, TIM_CR1_CKD_CK_INT,
+								 TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	/* timer counts with ADC_TIMER_FREQUENCY */
+	uint32_t timer_clk = timer_get_frequency(TIM_ADC);
+	timer_set_prescaler(TIM_ADC, (timer_clk / ADC_TIMER_FREQUENCY) - 1);
 
-  timer_set_period(TIM_ADC, ADC_TIMER_PERIOD);
-  /* Generate TRGO on every update (when counter reaches period reload value) */
-  timer_set_master_mode(TIM_ADC, TIM_CR2_MMS_UPDATE);
-  timer_enable_counter(TIM_ADC);
+	timer_set_period(TIM_ADC, ADC_TIMER_PERIOD);
+	/* Generate TRGO on every update (when counter reaches period reload value) */
+	timer_set_master_mode(TIM_ADC, TIM_CR2_MMS_UPDATE);
+	timer_enable_counter(TIM_ADC);
 
 #endif // USE_AD1 || USE_AD2 || USE_AD3
 }
@@ -459,117 +474,118 @@ static inline void adc_init_rcc(void)
 static inline void adc_init_irq(void)
 {
 #if defined(STM32F1)
-  nvic_set_priority(NVIC_ADC1_2_IRQ, NVIC_ADC_IRQ_PRIO);
-  nvic_enable_irq(NVIC_ADC1_2_IRQ);
+	nvic_set_priority(NVIC_ADC1_2_IRQ, NVIC_ADC_IRQ_PRIO);
+	nvic_enable_irq(NVIC_ADC1_2_IRQ);
 #elif defined(STM32F4)
-  nvic_set_priority(NVIC_ADC_IRQ, NVIC_ADC_IRQ_PRIO);
-  nvic_enable_irq(NVIC_ADC_IRQ);
+	nvic_set_priority(NVIC_ADC_IRQ, NVIC_ADC_IRQ_PRIO);
+	nvic_enable_irq(NVIC_ADC_IRQ);
 #endif
 }
 
 
 static inline void adc_init_single(uint32_t adc, uint8_t nb_channels, uint8_t *channel_map)
 {
-  // Paranoia, must be down for 2+ ADC clock cycles before calibration
-  adc_off(adc);
+	// Paranoia, must be down for 2+ ADC clock cycles before calibration
+	adc_off(adc);
 
-  /* Configure ADC */
-  /* Explicitly setting most registers, reset/default values are correct for most */
-  /* Set CR1 register. */
-  /* Clear AWDEN */
-  adc_disable_analog_watchdog_regular(adc);
-  /* Clear JAWDEN */
-  adc_disable_analog_watchdog_injected(adc);
-  /* Clear DISCEN */
-  adc_disable_discontinuous_mode_regular(adc);
-  /* Clear JDISCEN */
-  adc_disable_discontinuous_mode_injected(adc);
-  /* Clear JAUTO */
-  adc_disable_automatic_injected_group_conversion(adc);
-  /* Set SCAN */
-  adc_enable_scan_mode(adc);
-  /* Enable ADC<X> JEOC interrupt (Set JEOCIE) */
-  adc_enable_eoc_interrupt_injected(adc);
-  /* Clear AWDIE */
-  adc_disable_awd_interrupt(adc);
-  /* Clear EOCIE */
-  adc_disable_eoc_interrupt(adc);
+	/* Configure ADC */
+	/* Explicitly setting most registers, reset/default values are correct for most */
+	/* Set CR1 register. */
+	/* Clear AWDEN */
+	adc_disable_analog_watchdog_regular(adc);
+	/* Clear JAWDEN */
+	adc_disable_analog_watchdog_injected(adc);
+	/* Clear DISCEN */
+	adc_disable_discontinuous_mode_regular(adc);
+	/* Clear JDISCEN */
+	adc_disable_discontinuous_mode_injected(adc);
+	/* Clear JAUTO */
+	adc_disable_automatic_injected_group_conversion(adc);
+	/* Set SCAN */
+	adc_enable_scan_mode(adc);
+	/* Enable ADC<X> JEOC interrupt (Set JEOCIE) */
+	adc_enable_eoc_interrupt_injected(adc);
+	/* Clear AWDIE */
+	adc_disable_awd_interrupt(adc);
+	/* Clear EOCIE */
+	adc_disable_eoc_interrupt(adc);
 
-  /* Set CR2 register. */
-  /* Clear TSVREFE */
+	/* Set CR2 register. */
+	/* Clear TSVREFE */
 #if defined(STM32F1)
-  adc_disable_temperature_sensor(adc);
+	adc_disable_temperature_sensor(adc);
 #elif defined(STM32F4)
-  adc_disable_temperature_sensor();
+	adc_disable_temperature_sensor();
 #endif
-  /* Clear EXTTRIG */
-  adc_disable_external_trigger_regular(adc);
-  /* Clear ALIGN */
-  adc_set_right_aligned(adc);
-  /* Clear DMA */
-  adc_disable_dma(adc);
-  /* Clear CONT */
-  adc_set_single_conversion_mode(adc);
+	/* Clear EXTTRIG */
+	adc_disable_external_trigger_regular(adc);
+	/* Clear ALIGN */
+	adc_set_right_aligned(adc);
+	/* Clear DMA */
+	adc_disable_dma(adc);
+	/* Clear CONT */
+	adc_set_single_conversion_mode(adc);
 
-  //uint8_t x = 0;
-  //for (x = 0; x < nb_channels; x++) {
-  //  adc_set_sample_time(adc, channel_map[x], ADC_SAMPLE_TIME);
-  //}
-  adc_set_sample_time_on_all_channels(adc, ADC_SAMPLE_TIME);
+	//uint8_t x = 0;
+	//for (x = 0; x < nb_channels; x++) {
+	//  adc_set_sample_time(adc, channel_map[x], ADC_SAMPLE_TIME);
+	//}
+	adc_set_sample_time_on_all_channels(adc, ADC_SAMPLE_TIME);
 
-  adc_set_injected_sequence(adc, nb_channels, channel_map);
+	adc_set_injected_sequence(adc, nb_channels, channel_map);
 
 #if USE_AD_TIM4
-  PRINT_CONFIG_MSG("Info: Using TIM4 for ADC")
+	PRINT_CONFIG_MSG("Info: Using TIM4 for ADC")
 #if defined(STM32F1)
-  adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM4_TRGO);
+	adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM4_TRGO);
 #elif defined(STM32F4)
-  adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM4_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
+	adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM4_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
 #endif
 #elif USE_AD_TIM5
-  PRINT_CONFIG_MSG("Info: Using TIM5 for ADC")
+	PRINT_CONFIG_MSG("Info: Using TIM5 for ADC")
 #if defined(STM32F1)
-  adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM1_TRGO);
+	adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM1_TRGO);
 #elif defined(STM32F4)
-  adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM5_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
+	adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM5_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
 #endif
 #else
-  PRINT_CONFIG_MSG("Info: Using default TIM2 for ADC")
+	PRINT_CONFIG_MSG("Info: Using default TIM2 for ADC")
 #if defined(STM32F1)
-  adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM2_TRGO);
+	adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM2_TRGO);
 #elif defined(STM32F4)
-  adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM2_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
+	adc_enable_external_trigger_injected(adc, ADC_CR2_JEXTSEL_TIM2_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
 #endif
 #endif
 
-  /* Enable ADC<X> */
-  adc_power_on(adc);
+	/* Enable ADC<X> */
+	adc_power_on(adc);
 #if defined(STM32F1)
-  /* Enable ADC<X> reset calibaration register */
-  adc_reset_calibration(adc);
-  /* Check the end of ADC<X> reset calibration */
-  while ((ADC_CR2(adc) & ADC_CR2_RSTCAL) != 0);
-  /* Start ADC<X> calibaration */
-  adc_calibration(adc);
-  /* Check the end of ADC<X> calibration */
-  while ((ADC_CR2(adc) & ADC_CR2_CAL) != 0);
+	/* Enable ADC<X> reset calibaration register */
+	adc_reset_calibration(adc);
+	/* Check the end of ADC<X> reset calibration */
+	while ((ADC_CR2(adc) & ADC_CR2_RSTCAL) != 0);
+	/* Start ADC<X> calibaration */
+	adc_calibration(adc);
+	/* Check the end of ADC<X> calibration */
+	while ((ADC_CR2(adc) & ADC_CR2_CAL) != 0);
 #endif
 
-  return;
+	return;
 } // adc_init_single
 
 
 static inline void adc_push_sample(struct adc_buf *buf, uint16_t value)
 {
-  uint8_t new_head = buf->head + 1;
+	uint8_t new_head = buf->head + 1;
 
-  if (new_head >= buf->av_nb_sample) {
-    new_head = 0;
-  }
-  buf->sum -= buf->values[new_head];
-  buf->values[new_head] = value;
-  buf->sum += value;
-  buf->head = new_head;
+	if (new_head >= buf->av_nb_sample)
+	{
+		new_head = 0;
+	}
+	buf->sum -= buf->values[new_head];
+	buf->values[new_head] = value;
+	buf->sum += value;
+	buf->head = new_head;
 }
 
 /*********************************/
@@ -582,87 +598,102 @@ void adc1_2_isr(void)
 void adc_isr(void)
 #endif
 {
-  uint8_t channel = 0;
-  uint16_t value  = 0;
-  struct adc_buf *buf;
+	uint8_t channel = 0;
+	uint16_t value  = 0;
+	struct adc_buf *buf;
 
 #if USE_ADC_WATCHDOG
-  /*
-    We need adc sampling fast enough to detect battery plug out, but we did not
-    need to get actual actual value so fast. So timer fire adc conversion fast,
-    at least 500 hz, but we inject adc value in sampling buffer only at 50hz
-   */
-  const uint32_t timeStampDiff = get_sys_time_msec() - adc_watchdog.timeStamp;
-  const bool_t shouldAccumulateValue = timeStampDiff > 20;
-  if (shouldAccumulateValue) {
-    adc_watchdog.timeStamp = get_sys_time_msec();
-  }
+	/*
+	  We need adc sampling fast enough to detect battery plug out, but we did not
+	  need to get actual actual value so fast. So timer fire adc conversion fast,
+	  at least 500 hz, but we inject adc value in sampling buffer only at 50hz
+	 */
+	const uint32_t timeStampDiff = get_sys_time_msec() - adc_watchdog.timeStamp;
+	const bool_t shouldAccumulateValue = timeStampDiff > 20;
+	if (shouldAccumulateValue)
+	{
+		adc_watchdog.timeStamp = get_sys_time_msec();
+	}
 
-  if (adc_watchdog.cb != NULL) {
-    if (adc_awd(adc_watchdog.adc)) {
-      ADC_SR(adc_watchdog.adc) &= ~ADC_SR_AWD; // clear int flag
-      adc_watchdog.cb();
-    }
-  }
+	if (adc_watchdog.cb != NULL)
+	{
+		if (adc_awd(adc_watchdog.adc))
+		{
+			ADC_SR(adc_watchdog.adc) &= ~ADC_SR_AWD; // clear int flag
+			adc_watchdog.cb();
+		}
+	}
 #endif
 
 #if USE_AD1
-  // Clear Injected End Of Conversion
-  if (adc_eoc_injected(ADC1)) {
-    ADC_SR(ADC1) &= ~ADC_SR_JEOC;
+	// Clear Injected End Of Conversion
+	if (adc_eoc_injected(ADC1))
+	{
+		ADC_SR(ADC1) &= ~ADC_SR_JEOC;
 #if USE_ADC_WATCHDOG
-    if (shouldAccumulateValue) {
+		if (shouldAccumulateValue)
+		{
 #endif
-      for (channel = 0; channel < nb_adc1_channels; channel++) {
-        buf = adc1_buffers[channel];
-        if (buf) {
-          value = adc_read_injected(ADC1, channel + 1);
-          adc_push_sample(buf, value);
-        }
-      }
+			for (channel = 0; channel < nb_adc1_channels; channel++)
+			{
+				buf = adc1_buffers[channel];
+				if (buf)
+				{
+					value = adc_read_injected(ADC1, channel + 1);
+					adc_push_sample(buf, value);
+				}
+			}
 #if USE_ADC_WATCHDOG
-    }
+		}
 #endif
-  }
+	}
 #endif // USE_AD1
 
 #if USE_AD2
-  if (adc_eoc_injected(ADC2)) {
-    ADC_SR(ADC2) &= ~ADC_SR_JEOC;
+	if (adc_eoc_injected(ADC2))
+	{
+		ADC_SR(ADC2) &= ~ADC_SR_JEOC;
 #if USE_ADC_WATCHDOG
-    if (shouldAccumulateValue) {
+		if (shouldAccumulateValue)
+		{
 #endif
-      for (channel = 0; channel < nb_adc2_channels; channel++) {
-        buf = adc2_buffers[channel];
-        if (buf) {
-          value = adc_read_injected(ADC2, channel + 1);
-          adc_push_sample(buf, value);
-        }
-      }
+			for (channel = 0; channel < nb_adc2_channels; channel++)
+			{
+				buf = adc2_buffers[channel];
+				if (buf)
+				{
+					value = adc_read_injected(ADC2, channel + 1);
+					adc_push_sample(buf, value);
+				}
+			}
 #if USE_ADC_WATCHDOG
-    }
+		}
 #endif
-  }
+	}
 #endif // USE_AD2
 
 #if USE_AD3
-  if (adc_eoc_injected(ADC3)) {
-    ADC_SR(ADC3) &= ~ADC_SR_JEOC;
+	if (adc_eoc_injected(ADC3))
+	{
+		ADC_SR(ADC3) &= ~ADC_SR_JEOC;
 #if USE_ADC_WATCHDOG
-    if (shouldAccumulateValue) {
+		if (shouldAccumulateValue)
+		{
 #endif
-      for (channel = 0; channel < nb_adc3_channels; channel++) {
-        buf = adc3_buffers[channel];
-        if (buf) {
-          value = adc_read_injected(ADC3, channel + 1);
-          adc_push_sample(buf, value);
-        }
-      }
+			for (channel = 0; channel < nb_adc3_channels; channel++)
+			{
+				buf = adc3_buffers[channel];
+				if (buf)
+				{
+					value = adc_read_injected(ADC3, channel + 1);
+					adc_push_sample(buf, value);
+				}
+			}
 #if USE_ADC_WATCHDOG
-    }
+		}
 #endif
-  }
+	}
 #endif // USE_AD3
 
-  return;
+	return;
 }

@@ -55,11 +55,11 @@ static struct adc_buf sonar_adc_buf;
 
 void sonar_adc_init(void)
 {
-  sonar_adc.meas = 0;
-  sonar_adc.offset = SONAR_OFFSET;
+	sonar_adc.meas = 0;
+	sonar_adc.offset = SONAR_OFFSET;
 
 #ifndef SITL
-  adc_buf_channel(ADC_CHANNEL_SONAR, &sonar_adc_buf, DEFAULT_AV_NB_SAMPLE);
+	adc_buf_channel(ADC_CHANNEL_SONAR, &sonar_adc_buf, DEFAULT_AV_NB_SAMPLE);
 #endif
 }
 
@@ -68,21 +68,21 @@ void sonar_adc_init(void)
 void sonar_adc_read(void)
 {
 #ifndef SITL
-  sonar_adc.meas = sonar_adc_buf.sum / sonar_adc_buf.av_nb_sample;
-  sonar_adc.distance = (float)(sonar_adc.meas - sonar_adc.offset) * SONAR_SCALE;
+	sonar_adc.meas = sonar_adc_buf.sum / sonar_adc_buf.av_nb_sample;
+	sonar_adc.distance = (float)(sonar_adc.meas - sonar_adc.offset) * SONAR_SCALE;
 #else // SITL
-  sonar_adc.distance = stateGetPositionEnu_f()->z;
-  Bound(sonar_adc.distance, 0.1f, 7.0f);
+	sonar_adc.distance = stateGetPositionEnu_f()->z;
+	Bound(sonar_adc.distance, 0.1f, 7.0f);
 #endif // SITL
 
-  // Send ABI message
-  AbiSendMsgAGL(AGL_SONAR_ADC_ID, sonar_adc.distance);
+	// Send ABI message
+	AbiSendMsgAGL(AGL_SONAR_ADC_ID, sonar_adc.distance);
 
 #ifdef SENSOR_SYNC_SEND_SONAR
-  #if PERIODIC_TELEMETRY
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &sonar_adc.meas, &sonar_adc.distance);
-  #endif
+#if PERIODIC_TELEMETRY
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &sonar_adc.meas, &sonar_adc.distance);
+#endif
 #endif
 }
 

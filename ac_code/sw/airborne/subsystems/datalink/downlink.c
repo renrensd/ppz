@@ -44,97 +44,98 @@ static uint32_t last_ts = 0;  // timestamp in usec when last message was send
 
 static void send_downlink(struct transport_tx *trans, struct link_device *dev)
 {
-  // current timestamp
-  uint32_t now_ts = get_sys_time_msec();
-  // compute downlink byte rate
-  if (now_ts > last_ts) {
-    uint16_t down_rate = (1000 * ((uint32_t)dev->nb_bytes - last_down_nb_bytes)) / (now_ts - last_ts);
-    uint16_t up_rate = (1000 * ((uint32_t)datalink_nb_msgs - last_up_nb_msgs)) / (now_ts - last_ts);
+	// current timestamp
+	uint32_t now_ts = get_sys_time_msec();
+	// compute downlink byte rate
+	if (now_ts > last_ts)
+	{
+		uint16_t down_rate = (1000 * ((uint32_t)dev->nb_bytes - last_down_nb_bytes)) / (now_ts - last_ts);
+		uint16_t up_rate = (1000 * ((uint32_t)datalink_nb_msgs - last_up_nb_msgs)) / (now_ts - last_ts);
 
-    last_ts = now_ts;
+		last_ts = now_ts;
 #if defined DATALINK || defined SITL
-    last_down_nb_bytes = dev->nb_bytes;
-    last_up_nb_msgs = datalink_nb_msgs;
+		last_down_nb_bytes = dev->nb_bytes;
+		last_up_nb_msgs = datalink_nb_msgs;
 #else
-    last_down_nb_bytes = 0;
-    last_up_nb_msgs = 0;
+		last_down_nb_bytes = 0;
+		last_up_nb_msgs = 0;
 #endif
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-    pprz_msg_send_DATALINK_REPORT(trans, dev, AC_ID, &datalink_time, &datalink_nb_msgs, &dev->nb_msgs, &down_rate,
-                                  &up_rate, &dev->nb_ovrn);
-  }
+		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+		pprz_msg_send_DATALINK_REPORT(trans, dev, AC_ID, &datalink_time, &datalink_nb_msgs, &dev->nb_msgs, &down_rate,
+																	&up_rate, &dev->nb_ovrn);
+	}
 }
 #endif
 
 void downlink_init(void)
 {
-  // Set initial counters
-  (DefaultDevice).device.nb_ovrn = 0;
-  (DefaultDevice).device.nb_bytes = 0;
-  (DefaultDevice).device.nb_msgs = 0;
-  #if DATALINK == TRANSPTA
-  (SecondDevice).device.nb_ovrn = 0;
-  (SecondDevice).device.nb_bytes = 0;
-  (SecondDevice).device.nb_msgs = 0;
-  #endif
+	// Set initial counters
+	(DefaultDevice).device.nb_ovrn = 0;
+	(DefaultDevice).device.nb_bytes = 0;
+	(DefaultDevice).device.nb_msgs = 0;
+#if DATALINK == TRANSPTA
+	(SecondDevice).device.nb_ovrn = 0;
+	(SecondDevice).device.nb_bytes = 0;
+	(SecondDevice).device.nb_msgs = 0;
+#endif
 
 #if defined DATALINK
 
-  datalink_nb_msgs = 0;
+	datalink_nb_msgs = 0;
 
 #if DATALINK == PPRZ || DATALINK == SUPERBITRF || DATALINK == W5100 || DATALINK == BLUEGIGA || DATALINK == TRANSPTA
-  pprz_transport_init(&pprz_tp);
+	pprz_transport_init(&pprz_tp);
 #endif
 
 #if DATALINK == XBEE
-  xbee_init();
- #if USE_MANU_DEBUG
-  pprz_transport_init(&mdebug_tp);
- #endif
+	xbee_init();
+#if USE_MANU_DEBUG
+	pprz_transport_init(&mdebug_tp);
+#endif
 #endif
 #if DATALINK == TRANSPTA
-  pta_init();
+	pta_init();
 #endif
 #if DATALINK == W5100
-  w5100_init();
+	w5100_init();
 #endif
 #if DATALINK == BLUEGIGA
-  bluegiga_init(&bluegiga_p);
+	bluegiga_init(&bluegiga_p);
 #endif
 
 #endif
 
 #if USE_PPRZLOG
-  pprzlog_transport_init();
+	pprzlog_transport_init();
 #endif
 
 #if SITL && !USE_NPS
-  ivy_transport_init();
+	ivy_transport_init();
 #endif
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DATALINK_REPORT, send_downlink);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DATALINK_REPORT, send_downlink);
 #endif
 }
 
 void downlink_periodic(void)
 {
-	#if DATALINK == XBEE
-  	xbee_periodic();	
-	#endif
+#if DATALINK == XBEE
+	xbee_periodic();
+#endif
 
-	#if DATALINK == TRANSPTA
-  	pta_periodic();	
-	#endif
+#if DATALINK == TRANSPTA
+	pta_periodic();
+#endif
 
-	#ifdef GCS_V1_OPTION
+#ifdef GCS_V1_OPTION
 	downlink_gcs_periodic();
 	downlink_pc_periodic();
-	#endif
+#endif
 
-	#if DATALINK == PPRZ
+#if DATALINK == PPRZ
 	tm_stimulate(TIMER_TASK_TELEMETRY);
-	#endif
+#endif
 }
 
 void xbee_tx_header(uint8_t ack, uint8_t addr)

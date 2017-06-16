@@ -60,7 +60,7 @@ struct rc_motion
 	float max_speed_rl;
 	float rotation_rate;
 	float max_rotation_rate;
-	float speed_v;	
+	float speed_v;
 	float max_speed_v;
 	struct Joystick_Motion joystick_info;
 };
@@ -71,17 +71,17 @@ struct rc_set
 	uint8_t vtol;   //total nav_rc_mode ac state
 	bool_t  home;
 	uint8_t spray_grade;
-	bool_t  m_power;	
+	bool_t  m_power;
 	bool_t  locked; //ac motors locked status
 };
 
 enum manual_mission
 {
 	MAN_HOVER=1,
-    MAN_MOVE,
-    MAN_TAKE_OFF,
-    MAN_LAND,
-    MAN_GROUND
+	MAN_MOVE,
+	MAN_TAKE_OFF,
+	MAN_LAND,
+	MAN_GROUND
 };
 
 /*  RC equiment functions package
@@ -96,7 +96,7 @@ enum manual_mission
     if (climb > RC_MAX_V_SPEED) climb=RC_MAX_V_SPEED; \
     NavVerticalClimbMode(climb); \
   }
-	
+
 #define RC_Decline(_grade)  { \
     float climb = -RC_V_Rate*_grade; \
     if (climb < -RC_MAX_V_SPEED) climb = -RC_MAX_V_SPEED; \
@@ -145,7 +145,7 @@ enum manual_mission
    guidance_h.vrc_heading_rate_sp=0; \
    horizontal_mode = HORIZONTAL_MODE_RC;  \
    RC_Z_HOLD(); \
- }while(0) 
+ }while(0)
 //guidance_h_nav_rc_enter();
 
 extern struct rc_set rc_set_info;
@@ -172,5 +172,5 @@ extern void rc_nav_init(void);
 extern void rc_set_rc_type(void);
 
 extern void rc_periodic_task(void);
-    
+
 #endif /* END OF RC_NAV_XBEE_H */

@@ -4,21 +4,21 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
-/**** System include files ****/  
+/**** System include files ****/
 
 /*---Public include files---------------------------------------------*/
 #include "../../../include/std.h"
@@ -29,10 +29,10 @@
 #include "subsystems/datalink/can_transport.h"
 
 /*---Private include files--------------------------------------------*/
-#include "bbox.h"   
-#include "bbox_if.h" 
-#include "bbox_msg_if.h" 
-#include "bbox_msg_def.h"   
+#include "bbox.h"
+#include "bbox_if.h"
+#include "bbox_msg_if.h"
+#include "bbox_msg_def.h"
 
 
 /*===VARIABLES========================================================*/
@@ -41,21 +41,21 @@ struct BBOX_INFO bbox_info;
 /*---Global-----------------------------------------------------------*/
 /***********************************************************************
 * FUNCTION    : bbox_task
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
 void bbox_task(void)
-{ 
+{
 	bbox_send_polling();
 	bbox_read_polling();
-	
+
 	tm_stimulate(TIMER_TASK_EVENT);
 }
 
 /***********************************************************************
 * FUNCTION    : bbox_init
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/

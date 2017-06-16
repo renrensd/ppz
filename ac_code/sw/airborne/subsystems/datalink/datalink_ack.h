@@ -9,7 +9,7 @@
 
 /*
 enum set_cmd
-{ 
+{
  <!--8bits:abcd efgh                                            -->
  <!--flight_mode:        set_auto  =0x10;    set_manual =0x01   -->
  <!--spray control:      stop_spray=0x20;    open_spray =0x02   -->
@@ -23,9 +23,9 @@ enum set_cmd
     mainpower_off=5,   //0x05
     set_auto   =16,   //0x10,
     stop_spray =32,   //0x20,
-    take_off   =48,   //0x30,    
-    home       =64,   //0x40,    
-    mainpower_on =80, //0x50,    	 
+    take_off   =48,   //0x30,
+    home       =64,   //0x40,
+    mainpower_on =80, //0x50,
 };
 */
 //set_config ID

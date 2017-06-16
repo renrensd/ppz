@@ -8,7 +8,7 @@
 enum XBEE_MSG_ID
 {
 	XBEE_DEV_MANAGE_SERVEICE = 0x01,
-		
+
 };
 
 enum XBEE_TYPE_PARAM
@@ -29,7 +29,7 @@ enum XBEE_ACK_PARAM
 enum XBEE_ADDR_PARAM
 {
 	XBEE_ADDR_BC = 0x00,
-		
+
 	XBEE_ADDR_GCS = 0x10,
 
 	XBEE_ADDR_RC = 0x50,

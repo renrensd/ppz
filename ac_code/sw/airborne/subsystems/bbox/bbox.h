@@ -4,27 +4,27 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _BBOX_H_
-#define _BBOX_H 
+#define _BBOX_H
 
 
 /**** Definition of constants ****/
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 
 /**** Declaration of constants ****/
@@ -33,7 +33,7 @@
 /**** Declaration of variables ****/
 
 
-/**** Declaration of functions ****/ 
+/**** Declaration of functions ****/
 
 
 #endif /*_BBOX_H_*/

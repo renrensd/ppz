@@ -62,7 +62,7 @@ short listFiles(FileSystem *fs, char *dirname)
 	{
 		if( (fs->type == FAT12) || (fs->type == FAT16) )
 		{
-			for(i=0;i<=(fs->volumeId.RootEntryCount/16);i++)
+			for(i=0; i<=(fs->volumeId.RootEntryCount/16); i++)
 			{
 				loc.Sector=fs->FirstSectorRootDir + i;
 				part_readBuf(fs->part,loc.Sector,buf);
@@ -84,9 +84,9 @@ short listFiles(FileSystem *fs, char *dirname)
 		part_readBuf(fs->part,loc.Sector, buf);
 		fileEntry = *(((FileRecord*)buf) + loc.Offset);
 		startCluster = (((unsigned long)fileEntry.FirstClusterHigh)<<16)
-			+ fileEntry.FirstClusterLow;
+									 + fileEntry.FirstClusterLow;
 
-	    /* Init of dir */
+		/* Init of dir */
 		dir.fs=fs;
 		dir.Cache.LogicCluster=-1;
 		dir.Cache.FirstCluster=startCluster;
@@ -95,16 +95,16 @@ short listFiles(FileSystem *fs, char *dirname)
 		while((file_fread(&dir,offset,512,buf)))
 		{
 			DBG((TXT("Read 512 bytes from dir with offset %li.\n"),offset));
-			for(fileEntryCount=0;fileEntryCount<16;fileEntryCount++)
+			for(fileEntryCount=0; fileEntryCount<16; fileEntryCount++)
 			{
 				fileEntry = *(((FileRecord*)buf) + fileEntryCount);
 				if( !( (fileEntry.Attribute & 0x0F) == 0x0F ) )
 				{
 					if
 					(
-					 (fileEntry.FileName[0]>='A' && fileEntry.FileName[0]<='Z')
-					 ||
-					 (fileEntry.FileName[0]>='0' && fileEntry.FileName[0]<='9')
+						(fileEntry.FileName[0]>='A' && fileEntry.FileName[0]<='Z')
+						||
+						(fileEntry.FileName[0]>='0' && fileEntry.FileName[0]<='9')
 					)
 					{
 						DBG((TXT("Filename: %s\n"),fileEntry.FileName));
@@ -136,7 +136,8 @@ esint16 rmfile(FileSystem *fs,euint8* filename)
 	euint8* buf;
 	euint32 firstCluster=0;
 
-	if((fs_findFile(fs,(eint8*)filename,&loc,0))==1){
+	if((fs_findFile(fs,(eint8*)filename,&loc,0))==1)
+	{
 		buf=part_getSect(fs->part,loc.Sector,IOM_MODE_READWRITE);
 		firstCluster = ex_getb16(buf,loc.Offset*32+20);
 		firstCluster <<= 16;
@@ -150,7 +151,7 @@ esint16 rmfile(FileSystem *fs,euint8* filename)
 		part_relSect(fs->part,buf);
 		cache.DiscCluster = cache.LastCluster = cache.Linear = cache.LogicCluster = 0;
 		cache.FirstCluster = firstCluster;
- 		fat_unlinkClusterChain(fs,&cache);
+		fat_unlinkClusterChain(fs,&cache);
 		return(0);
 	}
 	return(-1);
@@ -165,7 +166,8 @@ esint8 mkdir(FileSystem *fs,eint8* dirname)
 	euint8* buf;
 	eint8 ffname[11];
 
-	if( fs_findFile(fs,dirname,&loc,&parentdir) ){
+	if( fs_findFile(fs,dirname,&loc,&parentdir) )
+	{
 		return(-1);
 	}
 	if(parentdir==0)return(-2);
@@ -207,10 +209,12 @@ esint8 mkdir(FileSystem *fs,eint8* dirname)
 	direntry.FirstClusterLow=nc&0xFFFF;
 	memCpy(&direntry,buf,32);
 
-	if(fs->type == FAT32 && parentdir == fs->volumeId.RootCluster){
+	if(fs->type == FAT32 && parentdir == fs->volumeId.RootCluster)
+	{
 		parentdir = 0;
 	}
-	if(fs->type != FAT32 && parentdir<=1){
+	if(fs->type != FAT32 && parentdir<=1)
+	{
 		parentdir = 0;
 	}
 

@@ -56,72 +56,77 @@ struct sonar_data Sonar_MB12;
 
 static inline void parse_sonar(struct sonar_data *t, uint8_t c)
 {
-  switch (t->status) {
-    case SONAR_UNINIT:
-      if (c == SONAR_STX) {
-        t->status++;
-		t->payload_idx = 0;
-      }
-      break;
-    case SONAR_GOT_STX:
-      if (t->msg_received) {
-        t->ovrn++;
-        goto error;
-      }
-      t->payload[t->payload_idx] = c;
-      t->payload_idx++;
-      if (t->payload_idx == SONAR_FRAME_LEN) {
-        t->status++;
-      }
-      break;
-    case SONAR_GOT_PAYLOAD:
-      if (c != SONAR_ETX) {
-        goto error;
-      }
-      t->msg_received = TRUE;
-      goto restart;
-    default:
-      goto error;
-  }
-  return;
+	switch (t->status)
+	{
+	case SONAR_UNINIT:
+		if (c == SONAR_STX)
+		{
+			t->status++;
+			t->payload_idx = 0;
+		}
+		break;
+	case SONAR_GOT_STX:
+		if (t->msg_received)
+		{
+			t->ovrn++;
+			goto error;
+		}
+		t->payload[t->payload_idx] = c;
+		t->payload_idx++;
+		if (t->payload_idx == SONAR_FRAME_LEN)
+		{
+			t->status++;
+		}
+		break;
+	case SONAR_GOT_PAYLOAD:
+		if (c != SONAR_ETX)
+		{
+			goto error;
+		}
+		t->msg_received = TRUE;
+		goto restart;
+	default:
+		goto error;
+	}
+	return;
 error:
-  t->error++;
+	t->error++;
 restart:
-  t->status = UNINIT;
-  return;
+	t->status = UNINIT;
+	return;
 }
 
 void sonar_uart_read(void)
-{  
+{
 	if ( SonarLinkChAvailable() )
 	{
-		while ( SonarLinkChAvailable() && !Sonar_MB12.msg_received ) 
+		while ( SonarLinkChAvailable() && !Sonar_MB12.msg_received )
 		{
-	      	parse_sonar( &Sonar_MB12, SonarLinkGetch() );
-	    }
-	    if (Sonar_MB12.msg_received)
+			parse_sonar( &Sonar_MB12, SonarLinkGetch() );
+		}
+		if (Sonar_MB12.msg_received)
 		{
-		  	Sonar_MB12.distance_cm = (Sonar_MB12.payload[0]-0x30)*100 + (Sonar_MB12.payload[1]-0x30)*10 
-		  						 + (Sonar_MB12.payload[2]-0x30);
+			Sonar_MB12.distance_cm = (Sonar_MB12.payload[0]-0x30)*100 + (Sonar_MB12.payload[1]-0x30)*10
+															 + (Sonar_MB12.payload[2]-0x30);
 
 			Sonar_MB12.msg_received = FALSE;
-			#if 0
+#if 0
 			if ( Sonar_MB12.distance_cm < 20 )
-				 return;
-			
-			if ( Sonar_MB12.distance_cm > 700 )
-				 return;
-			#endif
-				
-			Sonar_MB12.distance_m=(float)Sonar_MB12.distance_cm/100.0;
-		 	 
-		  	// Send ABI message
-		  	AbiSendMsgAGL(AGL_SONAR_ADC_ID, Sonar_MB12.distance_m);
+				return;
 
-			#if PERIODIC_TELEMETRY
-   	        xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-            DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &Sonar_MB12.distance_cm, &agl_dist_value_filtered);
-			#endif
-	    }
+			if ( Sonar_MB12.distance_cm > 700 )
+				return;
+#endif
+
+			Sonar_MB12.distance_m=(float)Sonar_MB12.distance_cm/100.0;
+
+			// Send ABI message
+			AbiSendMsgAGL(AGL_SONAR_ADC_ID, Sonar_MB12.distance_m);
+
+#if PERIODIC_TELEMETRY
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+			DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &Sonar_MB12.distance_cm, &agl_dist_value_filtered);
+#endif
+		}
 	}
 }

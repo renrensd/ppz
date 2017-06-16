@@ -32,10 +32,11 @@
 
 #include "std.h"
 
-enum pwm_input_channels {
-  PWM_INPUT1,
-  PWM_INPUT2,
-  PWM_INPUT_NB
+enum pwm_input_channels
+{
+	PWM_INPUT1,
+	PWM_INPUT2,
+	PWM_INPUT_NB
 };
 
 /**

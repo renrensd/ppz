@@ -46,7 +46,8 @@ static U8	abStdReqData[8];
  */
 static void HandleUsbReset(U8 bDevStatus)
 {
-	if (bDevStatus & DEV_STATUS_RESET) {
+	if (bDevStatus & DEV_STATUS_RESET)
+	{
 		DBG("\n!");
 	}
 }

@@ -4,18 +4,18 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _GCS_NAV_XBEE_H_
 #define _GCS_NAV_XBEE_H_
@@ -23,7 +23,7 @@
 #include <inttypes.h>
 #include "std.h"
 
-extern uint8_t gcs_count;  
+extern uint8_t gcs_count;
 extern bool_t  gcs_lost;
 
 

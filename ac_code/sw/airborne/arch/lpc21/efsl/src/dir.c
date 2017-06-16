@@ -102,7 +102,7 @@ void dir_setFirstCluster(FileSystem *fs,FileLocation *loc,euint32 cluster_addr)
 {
 	euint8 *buf;
 
- 	buf = part_getSect(fs->part,loc->Sector,IOM_MODE_READWRITE);
+	buf = part_getSect(fs->part,loc->Sector,IOM_MODE_READWRITE);
 	(((FileRecord*)buf)+loc->Offset)->FirstClusterHigh=cluster_addr>>16;
 	(((FileRecord*)buf)+loc->Offset)->FirstClusterLow=cluster_addr&0xFFFF;
 	part_relSect(fs->part,buf);
@@ -167,14 +167,17 @@ euint32 dir_findFileinBuf(euint8 *buf, eint8 *fatname, FileLocation *loc)
 				/* The entry has been found, return the location in the dir */
 				if(loc)loc->Offset = c;
 				if(loc)loc->attrib = fileEntry.Attribute;
-				if((((euint32 )fileEntry.FirstClusterHigh)<<16)+ fileEntry.FirstClusterLow==0){
+				if((((euint32 )fileEntry.FirstClusterHigh)<<16)+ fileEntry.FirstClusterLow==0)
+				{
 					return(1); /* Lie about cluster, 0 means not found! */
-				}else{
+				}
+				else
+				{
 					return
-							(
+						(
 							(((euint32 )fileEntry.FirstClusterHigh)<<16)
 							+ fileEntry.FirstClusterLow
-							);
+						);
 				}
 			}
 		}
@@ -193,11 +196,14 @@ euint32 dir_findFreeEntryinBuf(euint8* buf, FileLocation *loc)
 	FileRecord fileEntry;
 	euint8 c;
 
-	for(c=0;c<16;c++){
+	for(c=0; c<16; c++)
+	{
 		fileEntry = *(((FileRecord*)buf) + c);
-		if( !( (fileEntry.Attribute & 0x0F) == 0x0F ) ){
+		if( !( (fileEntry.Attribute & 0x0F) == 0x0F ) )
+		{
 			if(fileEntry.FileName[0] == 0x00 ||
-			   fileEntry.FileName[0] == 0xE5 ){
+					fileEntry.FileName[0] == 0xE5 )
+			{
 				if(loc)loc->Offset=c;
 				return(1);
 			}
@@ -213,16 +219,17 @@ euint32 dir_findFreeEntryinBuf(euint8* buf, FileLocation *loc)
 */
 euint32  dir_findinBuf(euint8 *buf, eint8 *fatname, FileLocation *loc, euint8 mode)
 {
-	switch(mode){
-		case DIRFIND_FILE:
-			return(dir_findFileinBuf(buf,fatname,loc));
-			break;
-		case DIRFIND_FREE:
-			return(dir_findFreeEntryinBuf(buf,loc));
-			break;
-		default:
-			return(0);
-			break;
+	switch(mode)
+	{
+	case DIRFIND_FILE:
+		return(dir_findFileinBuf(buf,fatname,loc));
+		break;
+	case DIRFIND_FREE:
+		return(dir_findFreeEntryinBuf(buf,loc));
+		break;
+	default:
+		return(0);
+		break;
 	}
 	return(0);
 }
@@ -239,9 +246,11 @@ euint32 dir_findinCluster(FileSystem *fs,euint32 cluster,eint8 *fatname, FileLoc
 	euint8 c,*buf=0;
 	euint32 fclus;
 
-	for(c=0;c<fs->volumeId.SectorsPerCluster;c++){
+	for(c=0; c<fs->volumeId.SectorsPerCluster; c++)
+	{
 		buf = part_getSect(fs->part,fs_clusterToSector(fs,cluster)+c,IOM_MODE_READONLY);
-		if((fclus=dir_findinBuf(buf,fatname,loc,mode))){
+		if((fclus=dir_findinBuf(buf,fatname,loc,mode)))
+		{
 			if(loc)loc->Sector=fs_clusterToSector(fs,cluster)+c;
 			part_relSect(fs->part,buf);
 			return(fclus);
@@ -265,12 +274,15 @@ euint32 dir_findinDir(FileSystem *fs, eint8* fatname,euint32 firstcluster, FileL
 	Cache.DiscCluster = Cache.FirstCluster = firstcluster;
 	Cache.LogicCluster = Cache.LastCluster = Cache.Linear = 0;
 
-	if(firstcluster <= 1){
+	if(firstcluster <= 1)
+	{
 		return(dir_findinRootArea(fs,fatname,loc,mode));
 	}
 
-	while(!fat_LogicToDiscCluster(fs,&Cache,c++)){
-		if((cluster=dir_findinCluster(fs,Cache.DiscCluster,fatname,loc,mode))){
+	while(!fat_LogicToDiscCluster(fs,&Cache,c++))
+	{
+		if((cluster=dir_findinCluster(fs,Cache.DiscCluster,fatname,loc,mode)))
+		{
 			return(cluster);
 		}
 	}
@@ -290,9 +302,11 @@ euint32 dir_findinRootArea(FileSystem *fs,eint8* fatname, FileLocation *loc, eui
 
 	if((fs->type != FAT12) && (fs->type != FAT16))return(0);
 
-	for(c=fs->FirstSectorRootDir;c<(fs->FirstSectorRootDir+fs->volumeId.RootEntryCount/32);c++){
+	for(c=fs->FirstSectorRootDir; c<(fs->FirstSectorRootDir+fs->volumeId.RootEntryCount/32); c++)
+	{
 		buf = part_getSect(fs->part,c,IOM_MODE_READONLY);
-		if((fclus=dir_findinBuf(buf,fatname,loc,mode))){
+		if((fclus=dir_findinBuf(buf,fatname,loc,mode)))
+		{
 			if(loc)loc->Sector=c;
 			part_relSect(fs->part,buf);
 			return(fclus);
@@ -313,12 +327,14 @@ esint8 dir_getFatFileName(eint8* filename, eint8* fatfilename)
 {
 	eint8 ffnamec[11],*next,nn=0;
 
-	memClr(ffnamec,11); memClr(fatfilename,11);
+	memClr(ffnamec,11);
+	memClr(fatfilename,11);
 	next = filename;
 
 	if(*filename=='/')next++;
 
-	while((next=file_normalToFatName(next,ffnamec))){
+	while((next=file_normalToFatName(next,ffnamec)))
+	{
 		memCpy(ffnamec,fatfilename,11);
 		nn++;
 	}
@@ -339,20 +355,26 @@ esint8 dir_addCluster(FileSystem *fs,euint32 firstCluster)
 	ClusterChain cache;
 
 	fs_initClusterChain(fs,&cache,firstCluster);
-	if(fat_allocClusterChain(fs,&cache,1)){
+	if(fat_allocClusterChain(fs,&cache,1))
+	{
 		return(-1);
 	}
 	lastc = fs_getLastCluster(fs,&cache);
-	if(CLUSTER_PREALLOC_DIRECTORY){
-		if(fat_allocClusterChain(fs,&cache,CLUSTER_PREALLOC_DIRECTORY)){
+	if(CLUSTER_PREALLOC_DIRECTORY)
+	{
+		if(fat_allocClusterChain(fs,&cache,CLUSTER_PREALLOC_DIRECTORY))
+		{
 			return(-1);
 		}
 		logicalc = fat_DiscToLogicCluster(fs,firstCluster,lastc);
-		while(!fat_LogicToDiscCluster(fs,&cache,++logicalc)){
+		while(!fat_LogicToDiscCluster(fs,&cache,++logicalc))
+		{
 			fs_clearCluster(fs,cache.DiscCluster);
 		}
-	}else{
-			fs_clearCluster(fs,lastc);
+	}
+	else
+	{
+		fs_clearCluster(fs,lastc);
 	}
 	return(0);
 }

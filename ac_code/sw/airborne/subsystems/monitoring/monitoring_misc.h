@@ -4,21 +4,21 @@
 *   Department : RN R&D SW1      									   *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _MONITORING_MISC_H_
-#define _MONITORING_MISC_H_ 
+#define _MONITORING_MISC_H_
 
 #include "std.h"
 #include "math/pprz_algebra_int.h"
@@ -26,7 +26,7 @@
 /**** Definition of constants ****/
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 
 

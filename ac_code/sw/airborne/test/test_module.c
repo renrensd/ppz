@@ -52,40 +52,43 @@ tid_t modules_tid;       ///< id for modules_periodic_task() timer
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic_task();
-    }
-    if (sys_time_check_and_ack_timer(modules_tid)) {
-      modules_periodic_task();
-    }
-    main_event_task();
-  }
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic_task();
+		}
+		if (sys_time_check_and_ack_timer(modules_tid))
+		{
+			modules_periodic_task();
+		}
+		main_event_task();
+	}
 
-  return 0;
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
-  downlink_init();
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	downlink_init();
 
-  modules_init();
+	modules_init();
 
-  modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
+	modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
 }
 
 static inline void main_periodic_task(void)
 {
-  LED_PERIODIC();
-  RunOnceEvery(256, {DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);});
+	LED_PERIODIC();
+	RunOnceEvery(256, {DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);});
 }
 
 static inline void main_event_task(void)
 {
-  mcu_event();
-  modules_event_task();
+	mcu_event();
+	modules_event_task();
 }

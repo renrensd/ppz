@@ -19,46 +19,54 @@
 
 static void delay(void)
 {
-  volatile int i, j;
-  for (i = 0; i < 100; i++)
-    for (j = 0; j < 1000; j++);
+	volatile int i, j;
+	for (i = 0; i < 100; i++)
+		for (j = 0; j < 1000; j++);
 }
 
 int main(void)
 {
 
-  int i;
+	int i;
 
-  MAMCR = 2;  // MAM functions fully enabled
+	MAMCR = 2;  // MAM functions fully enabled
 
-  LED_INIT();
-  YELLOW_LED_OFF();
-  GREEN_LED_OFF();
-  BUTTON_INIT();
-  i = 0;
-  while (i < 10)  {
-    YELLOW_LED_ON();
-    GREEN_LED_OFF();
-    delay();
-    YELLOW_LED_OFF();
-    GREEN_LED_ON();
-    delay();
-    i++;
-  }
+	LED_INIT();
+	YELLOW_LED_OFF();
+	GREEN_LED_OFF();
+	BUTTON_INIT();
+	i = 0;
+	while (i < 10)
+	{
+		YELLOW_LED_ON();
+		GREEN_LED_OFF();
+		delay();
+		YELLOW_LED_OFF();
+		GREEN_LED_ON();
+		delay();
+		i++;
+	}
 
-  while (1) {
-    if (BUTTTON1_OFF()) {
-      YELLOW_LED_ON();
-    } else {
-      YELLOW_LED_OFF();
-    }
+	while (1)
+	{
+		if (BUTTTON1_OFF())
+		{
+			YELLOW_LED_ON();
+		}
+		else
+		{
+			YELLOW_LED_OFF();
+		}
 
-    if (BUTTTON2_OFF()) {
-      GREEN_LED_ON();
-    } else {
-      GREEN_LED_OFF();
-    }
-  }
+		if (BUTTTON2_OFF())
+		{
+			GREEN_LED_ON();
+		}
+		else
+		{
+			GREEN_LED_OFF();
+		}
+	}
 
-  return 0; // never reached
+	return 0; // never reached
 }

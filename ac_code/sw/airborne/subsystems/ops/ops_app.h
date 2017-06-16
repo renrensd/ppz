@@ -4,21 +4,21 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _OPS_APP_H_
-#define _OPS_APP_H 
+#define _OPS_APP_H
 
 #include BOARD_CONFIG
 
@@ -37,7 +37,7 @@
 #define OPS_CNT_MAX 65535
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 enum OPS_SET_SPRAYING_PARAM
 {
 	OPS_SET_SPRAYING_NONE = 0x00,
@@ -54,10 +54,10 @@ enum OPS_WORK_STATE_PARAM
 
 enum OPS_CONIG_STAUS
 {
-  	OPS_CONF_NOT_CONNECT,
+	OPS_CONF_NOT_CONNECT,
 	OPS_CONF_PARAM,
-  	OPS_CONF_START_SPRAY,
-  	OPS_CONF_STOP_SPRAY,
+	OPS_CONF_START_SPRAY,
+	OPS_CONF_STOP_SPRAY,
 
 	OPS_CONF_IDLE,
 };
@@ -73,7 +73,7 @@ enum OPS_CONNECT_PARAM
 /**** Declaration of variables ****/
 
 
-/**** Declaration of functions ****/ 
+/**** Declaration of functions ****/
 void ops_spray_msg_handler(void);
 
 

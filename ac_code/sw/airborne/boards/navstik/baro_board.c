@@ -38,34 +38,38 @@ struct Bmp085 baro_bmp085;
 
 void baro_init(void)
 {
-  bmp085_init(&baro_bmp085, &i2c3, BMP085_SLAVE_ADDR);
+	bmp085_init(&baro_bmp085, &i2c3, BMP085_SLAVE_ADDR);
 
 #ifdef BARO_LED
-  LED_OFF(BARO_LED);
+	LED_OFF(BARO_LED);
 #endif
 }
 
 void baro_periodic(void)
 {
-  if (baro_bmp085.initialized) {
-    bmp085_periodic(&baro_bmp085);
-  } else {
-    bmp085_read_eeprom_calib(&baro_bmp085);
-  }
+	if (baro_bmp085.initialized)
+	{
+		bmp085_periodic(&baro_bmp085);
+	}
+	else
+	{
+		bmp085_read_eeprom_calib(&baro_bmp085);
+	}
 }
 
 void baro_event(void)
 {
-  bmp085_event(&baro_bmp085);
+	bmp085_event(&baro_bmp085);
 
-  if (baro_bmp085.data_available) {
-    float pressure = (float)baro_bmp085.pressure;
-    AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
-    float temp = baro_bmp085.temperature / 10.0f;
-    AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
-    baro_bmp085.data_available = FALSE;
+	if (baro_bmp085.data_available)
+	{
+		float pressure = (float)baro_bmp085.pressure;
+		AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
+		float temp = baro_bmp085.temperature / 10.0f;
+		AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
+		baro_bmp085.data_available = FALSE;
 #ifdef BARO_LED
-    RunOnceEvery(10, LED_TOGGLE(BARO_LED));
+		RunOnceEvery(10, LED_TOGGLE(BARO_LED));
 #endif
-  }
+	}
 }

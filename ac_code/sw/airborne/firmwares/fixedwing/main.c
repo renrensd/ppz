@@ -41,13 +41,14 @@
 
 int main(void)
 {
-  Fbw(init);
-  Ap(init);
-  while (1) {
-    Fbw(handle_periodic_tasks);
-    Ap(handle_periodic_tasks);
-    Fbw(event_task);
-    Ap(event_task);
-  }
-  return 0;
+	Fbw(init);
+	Ap(init);
+	while (1)
+	{
+		Fbw(handle_periodic_tasks);
+		Ap(handle_periodic_tasks);
+		Fbw(event_task);
+		Ap(event_task);
+	}
+	return 0;
 }

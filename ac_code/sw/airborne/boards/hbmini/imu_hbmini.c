@@ -62,65 +62,67 @@ struct ImuHbmini imu_hbmini;
 
 void imu_impl_init(void)
 {
-  max1168_init();
+	max1168_init();
 
-  /////////////////////////////////////////////////////////////////////
-  // HMC58XX
-  hmc58xx_init(&imu_hbmini.hmc, &(IMU_HBMINI_I2C_DEV), HMC58XX_ADDR);
+	/////////////////////////////////////////////////////////////////////
+	// HMC58XX
+	hmc58xx_init(&imu_hbmini.hmc, &(IMU_HBMINI_I2C_DEV), HMC58XX_ADDR);
 }
 
 void imu_periodic(void)
 {
 
-  Max1168Periodic();
+	Max1168Periodic();
 
-  // Read HMC58XX at 100Hz (main loop for rotorcraft: 512Hz)
-  RunOnceEvery(5, hmc58xx_periodic(&imu_hbmini.hmc));
+	// Read HMC58XX at 100Hz (main loop for rotorcraft: 512Hz)
+	RunOnceEvery(5, hmc58xx_periodic(&imu_hbmini.hmc));
 
-  //RunOnceEvery(20,imu_hbmini_downlink_raw());
+	//RunOnceEvery(20,imu_hbmini_downlink_raw());
 }
 
 
 void imu_hbmini_downlink_raw(void)
 {
-  DOWNLINK_SEND_IMU_GYRO_RAW(DefaultChannel, DefaultDevice, &imu.gyro_unscaled.p, &imu.gyro_unscaled.q,
-                             &imu.gyro_unscaled.r);
-  DOWNLINK_SEND_IMU_ACCEL_RAW(DefaultChannel, DefaultDevice, &imu.accel_unscaled.x, &imu.accel_unscaled.y,
-                              &imu.accel_unscaled.z);
-  DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice, &imu.mag_unscaled.x, &imu.mag_unscaled.y, &imu.mag_unscaled.z);
+	DOWNLINK_SEND_IMU_GYRO_RAW(DefaultChannel, DefaultDevice, &imu.gyro_unscaled.p, &imu.gyro_unscaled.q,
+														 &imu.gyro_unscaled.r);
+	DOWNLINK_SEND_IMU_ACCEL_RAW(DefaultChannel, DefaultDevice, &imu.accel_unscaled.x, &imu.accel_unscaled.y,
+															&imu.accel_unscaled.z);
+	DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice, &imu.mag_unscaled.x, &imu.mag_unscaled.y, &imu.mag_unscaled.z);
 }
 
 void imu_hbmini_event(void)
 {
-  uint32_t now_ts = get_sys_time_usec();
+	uint32_t now_ts = get_sys_time_usec();
 
-  max1168_event();
+	max1168_event();
 
-  if (max1168_status == MAX1168_DATA_AVAILABLE) {
-    imu.gyro_unscaled.p  = max1168_values[IMU_GYRO_P_CHAN];
-    imu.gyro_unscaled.q  = max1168_values[IMU_GYRO_Q_CHAN];
-    imu.gyro_unscaled.r  = max1168_values[IMU_GYRO_R_CHAN];
-    imu.accel_unscaled.x = max1168_values[IMU_ACCEL_X_CHAN];
-    imu.accel_unscaled.y = max1168_values[IMU_ACCEL_Y_CHAN];
-    imu.accel_unscaled.z = max1168_values[IMU_ACCEL_Z_CHAN];
-    max1168_status = MAX1168_IDLE;
-    imu_scale_gyro(&imu);
-    imu_scale_accel(&imu);
-    AbiSendMsgIMU_GYRO_INT32(IMU_BOARD_ID, now_ts, &imu.gyro);
-    AbiSendMsgIMU_ACCEL_INT32(IMU_BOARD_ID, now_ts, &imu.accel);
-  }
+	if (max1168_status == MAX1168_DATA_AVAILABLE)
+	{
+		imu.gyro_unscaled.p  = max1168_values[IMU_GYRO_P_CHAN];
+		imu.gyro_unscaled.q  = max1168_values[IMU_GYRO_Q_CHAN];
+		imu.gyro_unscaled.r  = max1168_values[IMU_GYRO_R_CHAN];
+		imu.accel_unscaled.x = max1168_values[IMU_ACCEL_X_CHAN];
+		imu.accel_unscaled.y = max1168_values[IMU_ACCEL_Y_CHAN];
+		imu.accel_unscaled.z = max1168_values[IMU_ACCEL_Z_CHAN];
+		max1168_status = MAX1168_IDLE;
+		imu_scale_gyro(&imu);
+		imu_scale_accel(&imu);
+		AbiSendMsgIMU_GYRO_INT32(IMU_BOARD_ID, now_ts, &imu.gyro);
+		AbiSendMsgIMU_ACCEL_INT32(IMU_BOARD_ID, now_ts, &imu.accel);
+	}
 
-  // HMC58XX event task
-  hmc58xx_event(&imu_hbmini.hmc);
-  if (imu_hbmini.hmc.data_available) {
-    imu.mag_unscaled.z = imu_hbmini.hmc.data.value[IMU_MAG_X_CHAN];
-    imu.mag_unscaled.y = imu_hbmini.hmc.data.value[IMU_MAG_Y_CHAN];
-    imu.mag_unscaled.x = imu_hbmini.hmc.data.value[IMU_MAG_Z_CHAN];
+	// HMC58XX event task
+	hmc58xx_event(&imu_hbmini.hmc);
+	if (imu_hbmini.hmc.data_available)
+	{
+		imu.mag_unscaled.z = imu_hbmini.hmc.data.value[IMU_MAG_X_CHAN];
+		imu.mag_unscaled.y = imu_hbmini.hmc.data.value[IMU_MAG_Y_CHAN];
+		imu.mag_unscaled.x = imu_hbmini.hmc.data.value[IMU_MAG_Z_CHAN];
 
-    imu_hbmini.hmc.data_available = FALSE;
-    imu_scale_mag(&imu);
-    AbiSendMsgIMU_MAG_INT32(IMU_BOARD_ID, now_ts, &imu.mag);
-  }
+		imu_hbmini.hmc.data_available = FALSE;
+		imu_scale_mag(&imu);
+		AbiSendMsgIMU_MAG_INT32(IMU_BOARD_ID, now_ts, &imu.mag);
+	}
 
 }
 

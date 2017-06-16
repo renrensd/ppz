@@ -48,7 +48,8 @@ esint8 efs_init(EmbeddedFileSystem * efs,eint8* opts)
 		ioman_init(&efs->myIOman,&efs->myCard,0);
 		disc_initDisc(&efs->myDisc, &efs->myIOman);
 		part_initPartition(&efs->myPart, &efs->myDisc);
-		if(efs->myPart.activePartition==-1){
+		if(efs->myPart.activePartition==-1)
+		{
 			efs->myDisc.partitions[0].type=0x0B;
 			efs->myDisc.partitions[0].LBA_begin=0;
 			efs->myDisc.partitions[0].numSectors=efs->myCard.sectorCount;

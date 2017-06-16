@@ -52,60 +52,66 @@ static inline void main_event_task(void);
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic_task();
-    }
-    main_event_task();
-  }
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic_task();
+		}
+		main_event_task();
+	}
 
-  return 0;
+	return 0;
 }
 
 
 static inline void main_init(void)
 {
-  mcu_init();
-  mcu_int_enable();
+	mcu_init();
+	mcu_int_enable();
 
-  sys_time_register_timer((1. / 50), NULL);
-  downlink_init();
-  lis302dl_spi_init(&lis302, &(LIS302DL_SPI_DEV), LIS302DL_SPI_SLAVE_IDX);
+	sys_time_register_timer((1. / 50), NULL);
+	downlink_init();
+	lis302dl_spi_init(&lis302, &(LIS302DL_SPI_DEV), LIS302DL_SPI_SLAVE_IDX);
 }
 
 static inline void main_periodic_task(void)
 {
-  RunOnceEvery(100, DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM));
+	RunOnceEvery(100, DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM));
 
-  if (sys_time.nb_sec > 1) {
-    lis302dl_spi_periodic(&lis302);
+	if (sys_time.nb_sec > 1)
+	{
+		lis302dl_spi_periodic(&lis302);
 #if USE_LED_5
-    RunOnceEvery(10, LED_TOGGLE(5););
+		RunOnceEvery(10, LED_TOGGLE(5););
 #endif
-  }
+	}
 }
 
 static inline void main_event_task(void)
 {
-  mcu_event();
+	mcu_event();
 
-  if (sys_time.nb_sec > 1) {
-    lis302dl_spi_event(&lis302);
-  }
+	if (sys_time.nb_sec > 1)
+	{
+		lis302dl_spi_event(&lis302);
+	}
 
-  if (lis302.data_available) {
-    struct Int32Vect3 accel;
-    VECT3_COPY(accel, lis302.data.vect);
-    lis302.data_available = FALSE;
+	if (lis302.data_available)
+	{
+		struct Int32Vect3 accel;
+		VECT3_COPY(accel, lis302.data.vect);
+		lis302.data_available = FALSE;
 
-    RunOnceEvery(10, {
-      DOWNLINK_SEND_IMU_ACCEL_RAW(DefaultChannel, DefaultDevice,
-      &accel.x, &accel.y, &accel.z);
+		RunOnceEvery(10,
+		{
+			DOWNLINK_SEND_IMU_ACCEL_RAW(DefaultChannel, DefaultDevice,
+			&accel.x, &accel.y, &accel.z);
 #if USE_LED_6
-      LED_TOGGLE(6);
+			LED_TOGGLE(6);
 #endif
-    });
-  }
+		});
+	}
 }

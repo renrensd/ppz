@@ -15,7 +15,7 @@
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 /**** System include files ****/
@@ -77,8 +77,8 @@ static bool_t lift_lost_detect(void);
 
 /***********************************************************************
 * FUNCTIONS   : initial functions
-* DESCRIPTION : 
-* INPUTS      : 
+* DESCRIPTION :
+* INPUTS      :
 * RETURN      : none
 ***********************************************************************/
 void misc_moni_init(void)
@@ -100,20 +100,20 @@ uint8_t board_ground_check(void)
 /***********************************************************************
 * FUNCTIONS   : battery ground check
 * DESCRIPTION :  only on ground check once
-* INPUTS      : 
+* INPUTS      :
 * RETURN      : none
 ***********************************************************************/
 uint8_t battery_ground_check(void)
 {
 	//first to sure battery manager is ok
 	uint8_t check_code=0;
-	#if 0
+#if 0
 	if( electrical.energy <GROUND_LIMIT_ELECTRICITY)
 		check_code |=0x01;
 	if( electrical.current >GROUND_LIMIT_CURRENT )
 		check_code |=0x02;
-    #endif
-    return check_code;
+#endif
+	return check_code;
 }
 
 /***********************************************************************
@@ -123,7 +123,7 @@ uint8_t battery_ground_check(void)
 * RETURN      : none
 ***********************************************************************/
 void battery_flight_check(void)
-{	
+{
 	bool_t flag_trigger = 0;
 	static uint8_t bat_counter = 0;
 
@@ -131,17 +131,17 @@ void battery_flight_check(void)
 	{
 		//if( electrical.bat_low || (sqrt(distance2_to_takeoff)*HOME_ELEC_RATIO) >electrical.energy  )
 		if( (electrical.vsupply < BAT_LIMIT_VOL) || (electrical.remain_percent < BAT_LIMIT_CAP) )
-		{   
+		{
 			bat_counter++;
 			if(bat_counter > 3)
 			{
 				/*hover 10s,back home*/
-			    flag_trigger = 1;   //record error trigger
+				flag_trigger = 1;   //record error trigger
 				set_except_mission(BAT_LOW, TRUE, FALSE, TRUE, 10, TRUE, FALSE, 3);
 				//need give special alter to RC and GCS
-		        #if TEST_MSG
+#if TEST_MSG
 				bat_flight=1;
-				#endif
+#endif
 				bat_counter = 3;
 			}
 		}
@@ -153,23 +153,24 @@ void battery_flight_check(void)
 	else
 	{
 		if( autopilot_flight_time >MAX_FLIGHT_TIME)
-		{   //hover 10s,back home
-		    flag_trigger = 1;   //record error trigger
+		{
+			//hover 10s,back home
+			flag_trigger = 1;   //record error trigger
 			set_except_mission(BAT_LOW, TRUE, FALSE, FALSE, 0, TRUE, FALSE, 3);
 			//need give special alter to RC and GCS
-	        #if TEST_MSG
+#if TEST_MSG
 			bat_flight=1;
-			#endif
+#endif
 		}
 	}
-    if(!flag_trigger)
-    {
+	if(!flag_trigger)
+	{
 		em[BAT_CRITICAL].active =0;
 		em[BAT_CRITICAL].finished =0;
 		em[BAT_OTHER].active=0;
 		em[BAT_OTHER].finished=0;
-    }
-	
+	}
+
 }
 
 /***********************************************************************
@@ -204,7 +205,8 @@ void gps_flight_check(void)
 	if(GpsFixValid())
 	{
 		if (rtk_pos_valid)
-		{   //could be recovered
+		{
+			//could be recovered
 			em[GPS_ACC].active = 0;
 			em[GPS_ACC].finished = 0;
 			em[GPS_LOST].active = 0;
@@ -305,24 +307,24 @@ void gps_flight_check(void)
 	{
 		switch( oa_wp_search_state )
 		{
-			case search_error_no_path:
-				set_except_mission(NO_AVOID_PATH, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-				break;
+		case search_error_no_path:
+			set_except_mission(NO_AVOID_PATH, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+			break;
 
-			case search_error_obstacle_invaild:
-				set_except_mission(P_IN_OBS_AREA, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-				break;
+		case search_error_obstacle_invaild:
+			set_except_mission(P_IN_OBS_AREA, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+			break;
 
-			case search_error_no_vaild_insert_wp:
-				set_except_mission(NO_VALID_P, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-				break;
+		case search_error_no_vaild_insert_wp:
+			set_except_mission(NO_VALID_P, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+			break;
 
-			case search_error_obstacle_flag_wrong:
-				set_except_mission(OBS_INFO_ERROR, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-				break;
+		case search_error_obstacle_flag_wrong:
+			set_except_mission(OBS_INFO_ERROR, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
 	}
 #endif
@@ -352,10 +354,10 @@ bool_t ops_ground_check(void)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
-void ops_flight_check(void) 
+void ops_flight_check(void)
 {
 	if( (ops_info.con_flag == OPS_NOT_CONNECT)
-		||(ops_info.sys_error&0x01) )//ops lost,maybe spray is open,bat_info no update
+			||(ops_info.sys_error&0x01) )//ops lost,maybe spray is open,bat_info no update
 	{
 		set_except_mission(OPS_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 	}
@@ -364,13 +366,13 @@ void ops_flight_check(void)
 		em[OPS_LOST].active = FALSE;
 		em[OPS_LOST].finished = FALSE;
 	}
-	
+
 	if(ops_info.res_cap <LESS_RES_CAP )  //no pesticide and open spray
 	{
 		set_except_mission(OPS_EMPTY, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 1);
 	}
 	else
-	{   
+	{
 		if(ops_info.sys_error>>1)        //see spray protocol
 		{
 			set_except_mission(OPS_BLOCKED, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
@@ -399,7 +401,7 @@ void rc_communication_flight_check(void)
 	{
 		em[RC_COM_LOST].active = FALSE;
 		em[RC_COM_LOST].finished = FALSE;
-	}	
+	}
 }
 
 
@@ -419,7 +421,7 @@ void gcs_communication_flight_check(void)
 	{
 		em[GCS_COM_LOST].active = FALSE;
 		em[GCS_COM_LOST].finished = FALSE;
-	}	
+	}
 }
 
 
@@ -431,12 +433,12 @@ void gcs_communication_flight_check(void)
 void lift_flight_check(void)
 {
 	/*ac lower setpoint height >1m and thrust cmd >MAX_ERROR_Z_THRUST*/
-	if( thrust_command_monitor() )  
+	if( thrust_command_monitor() )
 	{
 		set_except_mission(LIFT_POWER, TRUE, FALSE, TRUE, 0XFF, FALSE, FALSE, 3);
 	}
 
-    /*yaw command overrun continual 3s*/
+	/*yaw command overrun continual 3s*/
 	if( yaw_command_monitor() )
 	{
 		set_except_mission(LIFT_POWER, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
@@ -485,7 +487,7 @@ void mode_convert_check(void)
 
 /***********************************************************************
 * FUNCTIONS   : autopilot ground check
-* DESCRIPTION : part of ground check,after other modules pass needed check 
+* DESCRIPTION : part of ground check,after other modules pass needed check
                 the information fuse
 * INPUTS      : none
 * RETURN      : none
@@ -495,7 +497,7 @@ uint8_t autopilot_ground_check(void)
 	//uint8_t check_code=0;
 	if( !ahrs_ground_check() ) return 0;
 	if( !ins_ground_check() ) return 0;
-	else return 1;	
+	else return 1;
 }
 
 static uint8_t ahrs_ground_check(void)
@@ -506,14 +508,14 @@ static uint8_t ahrs_ground_check(void)
 	if( fabs(stateGetBodyRates_f()->p) >MAX_GROUND_RATE)  return 0;
 	if( fabs(stateGetBodyRates_f()->q) >MAX_GROUND_RATE)  return 0;
 	if( fabs(stateGetBodyRates_f()->r) >MAX_GROUND_RATE)  return 0;
-	
+
 	else return 1;
 }
 
 static uint8_t ins_ground_check(void)
 {
 	if( !stateIsLocalCoordinateValid()) return 0;
- 	if( fabs(stateGetSpeedEnu_f()->x) >MAX_GROUND_INS_S)  return 0;
+	if( fabs(stateGetSpeedEnu_f()->x) >MAX_GROUND_INS_S)  return 0;
 	if( fabs(stateGetSpeedEnu_f()->y) >MAX_GROUND_INS_S)  return 0;
 	if( fabs(stateGetSpeedEnu_f()->z) >MAX_GROUND_INS_S)  return 0;
 	if( fabs(stateGetAccelNed_f()->x) >MAX_GROUND_INS_A)  return 0;
@@ -538,7 +540,7 @@ static bool_t lift_lost_detect(void)
 				return TRUE;
 			}
 		}
-		else 
+		else
 		{
 			counter = 0;
 		}

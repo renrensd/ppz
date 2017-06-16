@@ -30,21 +30,25 @@ void UNDEF_Routine (void) __attribute__ ((interrupt("UNDEF")));
 /*  Stubs for various interrupts (may be replaced later)  */
 /*  ----------------------------------------------------  */
 
-void IRQ_Routine (void) {
+void IRQ_Routine (void)
+{
 	while (1) ;
 }
 
-void FIQ_Routine (void)  {
+void FIQ_Routine (void)
+{
 	while (1) ;
 }
 
 
-void SWI_Routine (void)  {
+void SWI_Routine (void)
+{
 	while (1) ;
 }
 
 
-void UNDEF_Routine (void) {
+void UNDEF_Routine (void)
+{
 	while (1) ;
 }
 
@@ -102,8 +106,8 @@ void Initialize(void)
 	//
 
 	// Setting Multiplier and Divider values
-  	PLLCFG = 0x24;
-  	feed();
+	PLLCFG = 0x24;
+	feed();
 
 	// Enabling the PLL */
 	PLLCON = 0x1;

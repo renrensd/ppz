@@ -67,44 +67,48 @@ struct Mpl3115 apogee_baro;
 
 void baro_init(void)
 {
-  mpl3115_init(&apogee_baro, &i2c1, MPL3115_I2C_ADDR);
+	mpl3115_init(&apogee_baro, &i2c1, MPL3115_I2C_ADDR);
 #ifdef BARO_LED
-  LED_OFF(BARO_LED);
+	LED_OFF(BARO_LED);
 #endif
-  startup_cnt = BARO_STARTUP_COUNTER;
+	startup_cnt = BARO_STARTUP_COUNTER;
 }
 
 void baro_periodic(void)
 {
 
-  // Baro is slave of the MPU, only start reading it after MPU is configured
-  if (imu_apogee.mpu.config.initialized) {
+	// Baro is slave of the MPU, only start reading it after MPU is configured
+	if (imu_apogee.mpu.config.initialized)
+	{
 
-    if (startup_cnt > 0 && apogee_baro.data_available) {
-      // Run some loops to get correct readings from the adc
-      --startup_cnt;
-      apogee_baro.data_available = FALSE;
+		if (startup_cnt > 0 && apogee_baro.data_available)
+		{
+			// Run some loops to get correct readings from the adc
+			--startup_cnt;
+			apogee_baro.data_available = FALSE;
 #ifdef BARO_LED
-      LED_TOGGLE(BARO_LED);
-      if (startup_cnt == 0) {
-        LED_ON(BARO_LED);
-      }
+			LED_TOGGLE(BARO_LED);
+			if (startup_cnt == 0)
+			{
+				LED_ON(BARO_LED);
+			}
 #endif
-    }
-    // Read the sensor
-    RunOnceEvery(MPL_PRESCALER, mpl3115_periodic(&apogee_baro));
-  }
+		}
+		// Read the sensor
+		RunOnceEvery(MPL_PRESCALER, mpl3115_periodic(&apogee_baro));
+	}
 }
 
 void apogee_baro_event(void)
 {
-  mpl3115_event(&apogee_baro);
-  if (apogee_baro.data_available && startup_cnt == 0) {
-    float pressure = ((float)apogee_baro.pressure / (1 << 2));
-    AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
-    float temp = apogee_baro.temperature / 16.0f;
-    AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
-    apogee_baro.data_available = FALSE;
-  }
+	mpl3115_event(&apogee_baro);
+	if (apogee_baro.data_available && startup_cnt == 0)
+	{
+		float pressure = ((float)apogee_baro.pressure / (1 << 2));
+		AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
+		float temp = apogee_baro.temperature / 16.0f;
+		AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
+		apogee_baro.data_available = FALSE;
+	}
 }
 

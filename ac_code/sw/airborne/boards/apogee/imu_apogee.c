@@ -73,66 +73,69 @@ bool_t configure_baro_slave(Mpu60x0ConfigSet mpu_set, void *mpu);
 
 bool_t configure_baro_slave(Mpu60x0ConfigSet mpu_set __attribute__((unused)), void *mpu __attribute__((unused)))
 {
-  return TRUE;
+	return TRUE;
 }
 
 void imu_impl_init(void)
 {
-  /////////////////////////////////////////////////////////////////////
-  // MPU-60X0
-  mpu60x0_i2c_init(&imu_apogee.mpu, &(IMU_APOGEE_I2C_DEV), MPU60X0_ADDR_ALT);
-  // change the default configuration
-  imu_apogee.mpu.config.smplrt_div = APOGEE_SMPLRT_DIV;
-  imu_apogee.mpu.config.dlpf_cfg = APOGEE_LOWPASS_FILTER;
-  imu_apogee.mpu.config.gyro_range = APOGEE_GYRO_RANGE;
-  imu_apogee.mpu.config.accel_range = APOGEE_ACCEL_RANGE;
-  // set MPU in bypass mode for the baro
-  imu_apogee.mpu.config.nb_slaves = 1;
-  imu_apogee.mpu.config.slaves[0].configure = &configure_baro_slave;
-  imu_apogee.mpu.config.i2c_bypass = TRUE;
+	/////////////////////////////////////////////////////////////////////
+	// MPU-60X0
+	mpu60x0_i2c_init(&imu_apogee.mpu, &(IMU_APOGEE_I2C_DEV), MPU60X0_ADDR_ALT);
+	// change the default configuration
+	imu_apogee.mpu.config.smplrt_div = APOGEE_SMPLRT_DIV;
+	imu_apogee.mpu.config.dlpf_cfg = APOGEE_LOWPASS_FILTER;
+	imu_apogee.mpu.config.gyro_range = APOGEE_GYRO_RANGE;
+	imu_apogee.mpu.config.accel_range = APOGEE_ACCEL_RANGE;
+	// set MPU in bypass mode for the baro
+	imu_apogee.mpu.config.nb_slaves = 1;
+	imu_apogee.mpu.config.slaves[0].configure = &configure_baro_slave;
+	imu_apogee.mpu.config.i2c_bypass = TRUE;
 }
 
 void imu_periodic(void)
 {
-  // Start reading the latest gyroscope data
-  mpu60x0_i2c_periodic(&imu_apogee.mpu);
+	// Start reading the latest gyroscope data
+	mpu60x0_i2c_periodic(&imu_apogee.mpu);
 
-  //RunOnceEvery(10,imu_apogee_downlink_raw());
+	//RunOnceEvery(10,imu_apogee_downlink_raw());
 }
 
 void imu_apogee_downlink_raw(void)
 {
-  DOWNLINK_SEND_IMU_GYRO_RAW(DefaultChannel, DefaultDevice, &imu.gyro_unscaled.p, &imu.gyro_unscaled.q,
-                             &imu.gyro_unscaled.r);
-  DOWNLINK_SEND_IMU_ACCEL_RAW(DefaultChannel, DefaultDevice, &imu.accel_unscaled.x, &imu.accel_unscaled.y,
-                              &imu.accel_unscaled.z);
+	DOWNLINK_SEND_IMU_GYRO_RAW(DefaultChannel, DefaultDevice, &imu.gyro_unscaled.p, &imu.gyro_unscaled.q,
+														 &imu.gyro_unscaled.r);
+	DOWNLINK_SEND_IMU_ACCEL_RAW(DefaultChannel, DefaultDevice, &imu.accel_unscaled.x, &imu.accel_unscaled.y,
+															&imu.accel_unscaled.z);
 }
 
 
 void imu_apogee_event(void)
 {
-  uint32_t now_ts = get_sys_time_usec();
+	uint32_t now_ts = get_sys_time_usec();
 
-  // If the itg3200 I2C transaction has succeeded: convert the data
-  mpu60x0_i2c_event(&imu_apogee.mpu);
-  if (imu_apogee.mpu.data_available) {
-    struct Int32Rates rates = {
-        (int32_t)( imu_apogee.mpu.data_rates.value[IMU_APOGEE_CHAN_X]),
-        (int32_t)(-imu_apogee.mpu.data_rates.value[IMU_APOGEE_CHAN_Y]),
-        (int32_t)(-imu_apogee.mpu.data_rates.value[IMU_APOGEE_CHAN_Z])
-    };
-    RATES_COPY(imu.gyro_unscaled, rates);
-    struct Int32Vect3 accel = {
-        (int32_t)( imu_apogee.mpu.data_accel.value[IMU_APOGEE_CHAN_X]),
-        (int32_t)(-imu_apogee.mpu.data_accel.value[IMU_APOGEE_CHAN_Y]),
-        (int32_t)(-imu_apogee.mpu.data_accel.value[IMU_APOGEE_CHAN_Z])
-    };
-    VECT3_COPY(imu.accel_unscaled, accel);
-    imu_apogee.mpu.data_available = FALSE;
-    imu_scale_gyro(&imu);
-    imu_scale_accel(&imu);
-    AbiSendMsgIMU_GYRO_INT32(IMU_BOARD_ID, now_ts, &imu.gyro);
-    AbiSendMsgIMU_ACCEL_INT32(IMU_BOARD_ID, now_ts, &imu.accel);
-  }
+	// If the itg3200 I2C transaction has succeeded: convert the data
+	mpu60x0_i2c_event(&imu_apogee.mpu);
+	if (imu_apogee.mpu.data_available)
+	{
+		struct Int32Rates rates =
+		{
+			(int32_t)( imu_apogee.mpu.data_rates.value[IMU_APOGEE_CHAN_X]),
+			(int32_t)(-imu_apogee.mpu.data_rates.value[IMU_APOGEE_CHAN_Y]),
+			(int32_t)(-imu_apogee.mpu.data_rates.value[IMU_APOGEE_CHAN_Z])
+		};
+		RATES_COPY(imu.gyro_unscaled, rates);
+		struct Int32Vect3 accel =
+		{
+			(int32_t)( imu_apogee.mpu.data_accel.value[IMU_APOGEE_CHAN_X]),
+			(int32_t)(-imu_apogee.mpu.data_accel.value[IMU_APOGEE_CHAN_Y]),
+			(int32_t)(-imu_apogee.mpu.data_accel.value[IMU_APOGEE_CHAN_Z])
+		};
+		VECT3_COPY(imu.accel_unscaled, accel);
+		imu_apogee.mpu.data_available = FALSE;
+		imu_scale_gyro(&imu);
+		imu_scale_accel(&imu);
+		AbiSendMsgIMU_GYRO_INT32(IMU_BOARD_ID, now_ts, &imu.gyro);
+		AbiSendMsgIMU_ACCEL_INT32(IMU_BOARD_ID, now_ts, &imu.accel);
+	}
 }
 

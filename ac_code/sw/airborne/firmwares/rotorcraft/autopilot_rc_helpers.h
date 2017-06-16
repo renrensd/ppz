@@ -55,46 +55,47 @@
 
 static inline bool_t rc_attitude_sticks_centered(void)
 {
-  return ROLL_STICK_CENTERED() && PITCH_STICK_CENTERED() && YAW_STICK_CENTERED();
+	return ROLL_STICK_CENTERED() && PITCH_STICK_CENTERED() && YAW_STICK_CENTERED();
 }
 
 #ifdef RADIO_KILL_SWITCH
 static inline bool_t kill_switch_is_on(void)
 {
-  static uint8_t counter = 0;
-  
-  if(radio_control.link_status != RC_LINK_LOST
-  	 && radio_control.status != RC_REALLY_LOST)
-  {
-	  if( radio_control.values[RADIO_RADIO_KILL_SWITCH] < 0) 
-	  {   //must be RADIO_RADIO_KILL_SWITCH,RADIO_KILL_SWITCH is defined true in airframe
-	    counter++;
-		if( counter > 20)
+	static uint8_t counter = 0;
+
+	if(radio_control.link_status != RC_LINK_LOST
+			&& radio_control.status != RC_REALLY_LOST)
+	{
+		if( radio_control.values[RADIO_RADIO_KILL_SWITCH] < 0)
 		{
-			counter = 20;
-			return TRUE;
+			//must be RADIO_RADIO_KILL_SWITCH,RADIO_KILL_SWITCH is defined true in airframe
+			counter++;
+			if( counter > 20)
+			{
+				counter = 20;
+				return TRUE;
+			}
+			return FALSE;
 		}
-	    return FALSE;
-	  } 
-	  else 
-	  {
-	  	counter = 0;
-	    return FALSE;
-	  }
-  }
-  else  //link lost,must set kill,except nav
-  {
-  	  if(autopilot_mode == AP_MODE_NAV)
-  	  {
-	  	return FALSE;
-  	  }
-	  return TRUE;
-  }
+		else
+		{
+			counter = 0;
+			return FALSE;
+		}
+	}
+	else  //link lost,must set kill,except nav
+	{
+		if(autopilot_mode == AP_MODE_NAV)
+		{
+			return FALSE;
+		}
+		return TRUE;
+	}
 }
 #else
 static inline bool_t kill_switch_is_on(void)
 {
-  return FALSE;
+	return FALSE;
 }
 #endif
 
@@ -111,15 +112,15 @@ static inline uint8_t get_ap_mode_of_radio(void)
 	{
 		ap_mode_now = autopilot_mode_auto2;
 	}
-    else if (values > THRESHOLD_1_PPRZ)
-    {
-		ap_mode_now = MODE_AUTO1;  
-    }
-    else 
+	else if (values > THRESHOLD_1_PPRZ)
 	{
-		ap_mode_now = MODE_MANUAL;  
-    }
-	
+		ap_mode_now = MODE_AUTO1;
+	}
+	else
+	{
+		ap_mode_now = MODE_MANUAL;
+	}
+
 	if(ap_mode_now != ap_mode_return)
 	{
 		if(ap_mode_now == ap_mode_last)
@@ -143,13 +144,16 @@ static inline uint8_t get_ap_mode_of_radio(void)
 
 static inline uint8_t percent_from_rc(int channel)
 {
-  int per = (MAX_PPRZ + (int32_t)radio_control.values[channel]) * 50 / MAX_PPRZ;
-  if (per < 0) {
-    per = 0;
-  } else if (per > 100) {
-    per = 100;
-  }
-  return per;
+	int per = (MAX_PPRZ + (int32_t)radio_control.values[channel]) * 50 / MAX_PPRZ;
+	if (per < 0)
+	{
+		per = 0;
+	}
+	else if (per > 100)
+	{
+		per = 100;
+	}
+	return per;
 }
 
 

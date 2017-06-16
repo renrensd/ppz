@@ -40,46 +40,47 @@
 void ms2100_arch_init(void)
 {
 
-  /* set mag reset as output (reset on PC13) ----*/
-  rcc_periph_clock_enable(RCC_GPIOC);
-  rcc_periph_clock_enable(RCC_AFIO);
-  gpio_set(GPIOC, GPIO13);
-  gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO13);
-  Ms2100Reset();
+	/* set mag reset as output (reset on PC13) ----*/
+	rcc_periph_clock_enable(RCC_GPIOC);
+	rcc_periph_clock_enable(RCC_AFIO);
+	gpio_set(GPIOC, GPIO13);
+	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO13);
+	Ms2100Reset();
 
-  /* configure data ready input on PB5 */
-  rcc_periph_clock_enable(RCC_GPIOB);
-  gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO5);
+	/* configure data ready input on PB5 */
+	rcc_periph_clock_enable(RCC_GPIOB);
+	gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO5);
 
-  /* external interrupt for drdy pin */
-  exti_select_source(EXTI5, GPIOB);
-  exti_set_trigger(EXTI5, EXTI_TRIGGER_RISING);
-  exti_enable_request(EXTI5);
+	/* external interrupt for drdy pin */
+	exti_select_source(EXTI5, GPIOB);
+	exti_set_trigger(EXTI5, EXTI_TRIGGER_RISING);
+	exti_enable_request(EXTI5);
 
-  nvic_set_priority(NVIC_EXTI9_5_IRQ, 0x0f);
-  nvic_enable_irq(NVIC_EXTI9_5_IRQ);
+	nvic_set_priority(NVIC_EXTI9_5_IRQ, 0x0f);
+	nvic_enable_irq(NVIC_EXTI9_5_IRQ);
 }
 
 void ms2100_reset_cb(struct spi_transaction *t __attribute__((unused)))
 {
-  // set RESET pin high for at least 100 nsec
-  // busy wait should not harm
-  Ms2100Set();
+	// set RESET pin high for at least 100 nsec
+	// busy wait should not harm
+	Ms2100Set();
 
-  // FIXME, make nanosleep funcion
-  uint32_t dt_ticks = cpu_ticks_of_nsec(110);
-  int32_t end_cpu_ticks = systick_get_value() - dt_ticks;
-  if (end_cpu_ticks < 0) {
-    end_cpu_ticks += systick_get_reload();
-  }
-  while (systick_get_value() > (uint32_t)end_cpu_ticks)
-    ;
+	// FIXME, make nanosleep funcion
+	uint32_t dt_ticks = cpu_ticks_of_nsec(110);
+	int32_t end_cpu_ticks = systick_get_value() - dt_ticks;
+	if (end_cpu_ticks < 0)
+	{
+		end_cpu_ticks += systick_get_reload();
+	}
+	while (systick_get_value() > (uint32_t)end_cpu_ticks)
+		;
 
-  Ms2100Reset();
+	Ms2100Reset();
 }
 
 void exti9_5_isr(void)
 {
-  ms2100.status = MS2100_GOT_EOC;
-  exti_reset_request(EXTI5);
+	ms2100.status = MS2100_GOT_EOC;
+	exti_reset_request(EXTI5);
 }

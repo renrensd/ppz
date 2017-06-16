@@ -188,22 +188,22 @@
 /*
  * GPIOA setup:
  *
-#define GPIOA_UART4_TX              0 // 
-#define GPIOA_UART4_RX              1 // 
-#define GPIOA_ETH_RMII_MDIO         2 // 
+#define GPIOA_UART4_TX              0 //
+#define GPIOA_UART4_RX              1 //
+#define GPIOA_ETH_RMII_MDIO         2 //
 #define GPIOA_ADC1_IN3              3 // BAT ADC
-#define GPIOA_ADC1_IN4              4 // 
+#define GPIOA_ADC1_IN4              4 //
 #define GPIOA_SPI1_SCK              5
 #define GPIOA_SPI1_MISO             6
 #define GPIOA_ETH_RMII_CRS_DV       7
 #define GPIOA_I2C3_SCL              8 // I2C3-SCL / MCO
 #define GPIOA_OTG_FS_VBUS           9 //
-#define GPIOA_IO_3V3_SENS_EN        10 // 
+#define GPIOA_IO_3V3_SENS_EN        10 //
 #define GPIOA_OTG_FS_DM             11 //
 #define GPIOA_OTG_FS_DP             12 //
 #define GPIOA_SWDIO                 13 // SERIAL WIRE DEBUG
 #define GPIOA_SWCLK                 14 // SERIAL WIRE DEBUG
-#define GPIOA_PPM_IN                15 // 
+#define GPIOA_PPM_IN                15 //
  */
 #define VAL_GPIOA_MODER             (PIN_MODE_ALTERNATE(GPIOA_UART4_TX)       |     \
                                      PIN_MODE_ALTERNATE(GPIOA_UART4_RX)       |     \
@@ -307,11 +307,11 @@
 /*
  * GPIOB setup:
  *
-#define GPIOB_ADC1_IN8              0 // 
-#define GPIOB_ADC1_IN9              1 // 
+#define GPIOB_ADC1_IN8              0 //
+#define GPIOB_ADC1_IN9              1 //
 #define GPIOB_BOOT1                 2 //
-#define GPIOB_PIN3                  3 // 
-#define GPIOB_PIN4                  4 // 
+#define GPIOB_PIN3                  3 //
+#define GPIOB_PIN4                  4 //
 #define GPIOB_SPI1_MOSI             5 //
 #define GPIOB_PWM4_CH1              6 // SERO_CH5
 #define GPIOB_SPI1_CS0_IMU          7
@@ -411,8 +411,8 @@
 
 #define VAL_GPIOB_AFRL              (PIN_AFIO_AF(GPIOB_SPI1_MOSI, 5) |     \
                                      PIN_AFIO_AF(GPIOB_PWM4_CH1, 2))
-                                     
-                                     
+
+
 #define VAL_GPIOB_AFRH              (PIN_AFIO_AF(GPIOB_I2C1_SDA, 4) |    \
 									 PIN_AFIO_AF(GPIOB_I2C1_SCL, 4) |       \
                                      PIN_AFIO_AF(GPIOB_SPI2_SCK, 5) |       \
@@ -426,11 +426,11 @@
  * GPIOC setup:
  *
 #define GPIOC_ADC1_IN10             0 //
-#define GPIOC_ETH_RMII_MDC          1 // 
-#define GPIOC_ADC1_IN12             2 // 
-#define GPIOC_ADC1_IN13             3 // 
-#define GPIOC_ETH_RMII_RXD0         4 // 
-#define GPIOC_ETH_RMII_RXD1         5 // 
+#define GPIOC_ETH_RMII_MDC          1 //
+#define GPIOC_ADC1_IN12             2 //
+#define GPIOC_ADC1_IN13             3 //
+#define GPIOC_ETH_RMII_RXD0         4 //
+#define GPIOC_ETH_RMII_RXD1         5 //
 #define GPIOC_USART6_TX             6 // jaune
 #define GPIOC_USART6_RX             7 // vert
 #define GPIOC_SDIO_D0               8
@@ -802,7 +802,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void boardInit(void);
+void boardInit(void);
 #ifdef __cplusplus
 }
 #endif

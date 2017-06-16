@@ -268,7 +268,7 @@ void USBHwConnect(BOOL fConnect)
 **************************************************************************/
 BOOL USBHwGetEPStall(U8 bEP)
 {
-   	int idx = EP2IDX(bEP);
+	int idx = EP2IDX(bEP);
 
 	return (USBHwCmdRead(CMD_EP_SELECT | idx) & 2 ? TRUE : FALSE);
 }
@@ -318,7 +318,8 @@ BOOL USBHwEPWrite(U8 bEP, U8 *pbBuf, int iLen)
 	USBTxPLen = iLen;
 
 	// write data
-	while (USBCtrl & WR_EN) {
+	while (USBCtrl & WR_EN)
+	{
 		USBTxData = (pbBuf[3] << 24) | (pbBuf[2] << 16) | (pbBuf[1] << 8) | pbBuf[0];
 		pbBuf += 4;
 	}
@@ -353,12 +354,15 @@ BOOL USBHwEPRead(U8 bEP, U8 *pbBuf, int *piLen)
 	USBCtrl = RD_EN | ((bEP & 0xF) << 2);
 
 	// wait for PKT_RDY
-	do {
+	do
+	{
 		dwLen = USBRxPLen;
-	} while ((dwLen & PKT_RDY) == 0);
+	}
+	while ((dwLen & PKT_RDY) == 0);
 
 	// packet valid?
-	if ((dwLen & DV) == 0) {
+	if ((dwLen & DV) == 0)
+	{
 		*piLen = 0;
 		return FALSE;
 	}
@@ -367,9 +371,11 @@ BOOL USBHwEPRead(U8 bEP, U8 *pbBuf, int *piLen)
 	dwLen &= PKT_LNGTH_MASK;
 
 	// get data in 4-byte units
-	while (USBCtrl & RD_EN) {
+	while (USBCtrl & RD_EN)
+	{
 		dwData = USBRxData;
-		if (pbBuf != NULL) {
+		if (pbBuf != NULL)
+		{
 			*pbBuf++ = dwData >> 0;
 			*pbBuf++ = dwData >> 8;
 			*pbBuf++ = dwData >> 16;
@@ -409,8 +415,10 @@ void USBHwConfigDevice(BOOL fConfigured)
 	USBReEP = USBEpIntEn;
 
 	// enable all installed endpoints
-	for (i = 0; i < 32; i++) {
-		if (USBEpIntEn & (1 << i)) {
+	for (i = 0; i < 32; i++)
+	{
+		if (USBEpIntEn & (1 << i))
+		{
 			USBHwEPEnable(i, TRUE);
 		}
 	}
@@ -441,61 +449,70 @@ void USBHwISR(void)
 	dwStatus = USBDevIntSt;
 
 	// handle device dwStatus interrupts
-	if (dwStatus & DEV_STAT) {
-DEBUG_LED_ON(8);
+	if (dwStatus & DEV_STAT)
+	{
+		DEBUG_LED_ON(8);
 		bDevStat = USBHwCmdRead(CMD_DEV_STATUS);
-		if (bDevStat & (CON_CH | SUS_CH | RST)) {
+		if (bDevStat & (CON_CH | SUS_CH | RST))
+		{
 			// convert device status into something HW independent
 			bStat = ((bDevStat & CON) ? DEV_STATUS_CONNECT : 0) |
-					((bDevStat & SUS) ? DEV_STATUS_SUSPEND : 0) |
-					((bDevStat & RST) ? DEV_STATUS_RESET : 0);
+							((bDevStat & SUS) ? DEV_STATUS_SUSPEND : 0) |
+							((bDevStat & RST) ? DEV_STATUS_RESET : 0);
 			// call handler
-			if (_pfnDevIntHandler != NULL) {
+			if (_pfnDevIntHandler != NULL)
+			{
 				_pfnDevIntHandler(bStat);
 			}
 		}
 		// clear DEV_STAT;
 		USBDevIntClr = DEV_STAT;
-DEBUG_LED_OFF(8);
+		DEBUG_LED_OFF(8);
 	}
 
 	// check endpoint interrupts
-	if (dwStatus & EP_SLOW) {
-DEBUG_LED_ON(9);
+	if (dwStatus & EP_SLOW)
+	{
+		DEBUG_LED_ON(9);
 		dwEPIntStat = USBEpIntSt;
-		for (i = 0; i < 32; i++) {
+		for (i = 0; i < 32; i++)
+		{
 			dwIntBit = (1 << i);
-			if (dwEPIntStat & dwIntBit) {
+			if (dwEPIntStat & dwIntBit)
+			{
 				// clear int (and retrieve status)
 				USBEpIntClr = dwIntBit;
 				Wait4DevInt(CDFULL);
 				bEPStat = USBCmdData;
 				// convert EP pipe stat into something HW independent
 				bStat = ((bEPStat & EPSTAT_FE) ? EP_STATUS_DATA : 0) |
-						((bEPStat & EPSTAT_ST) ? EP_STATUS_STALLED : 0) |
-						((bEPStat & EPSTAT_STP) ? EP_STATUS_SETUP : 0) |
-						((bEPStat & EPSTAT_EPN) ? EP_STATUS_NACKED : 0) |
-						((bEPStat & EPSTAT_PO) ? EP_STATUS_ERROR : 0);
+								((bEPStat & EPSTAT_ST) ? EP_STATUS_STALLED : 0) |
+								((bEPStat & EPSTAT_STP) ? EP_STATUS_SETUP : 0) |
+								((bEPStat & EPSTAT_EPN) ? EP_STATUS_NACKED : 0) |
+								((bEPStat & EPSTAT_PO) ? EP_STATUS_ERROR : 0);
 				// call handler
-				if (_apfnEPIntHandlers[i / 2] != NULL) {
+				if (_apfnEPIntHandlers[i / 2] != NULL)
+				{
 					_apfnEPIntHandlers[i / 2](IDX2EP(i), bStat);
 				}
 			}
 		}
 		// clear EP_SLOW
 		USBDevIntClr = EP_SLOW;
-DEBUG_LED_OFF(9);
+		DEBUG_LED_OFF(9);
 	}
 
 	// handle frame interrupt
-	if (dwStatus & FRAME) {
-DEBUG_LED_ON(10);
-		if (_pfnFrameHandler != NULL) {
+	if (dwStatus & FRAME)
+	{
+		DEBUG_LED_ON(10);
+		if (_pfnFrameHandler != NULL)
+		{
 			_pfnFrameHandler(0);	// implement counter later
 		}
 		// clear int
 		USBDevIntClr = FRAME;
-DEBUG_LED_OFF(10);
+		DEBUG_LED_OFF(10);
 	}
 }
 
@@ -519,13 +536,13 @@ DEBUG_LED_OFF(10);
 BOOL USBHwInit(void)
 {
 #ifdef PROC_TINYJ
-    /* turn on Vbus as not connected in hardware */
-    IOPIN0 |= (1 << 23); //TODO FIXME
+	/* turn on Vbus as not connected in hardware */
+	IOPIN0 |= (1 << 23); //TODO FIXME
 #endif
 
 #ifdef PROC_TINY
-    /* turn on Vbus as not connected in hardware */
-    IOPIN0 |= (1 << 23); //TODO FIXME
+	/* turn on Vbus as not connected in hardware */
+	IOPIN0 |= (1 << 23); //TODO FIXME
 #endif
 
 #ifdef PROC_FBW

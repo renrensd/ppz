@@ -45,81 +45,95 @@ void Delay(volatile uint32_t nCount);
 
 void Delay(volatile uint32_t nCount)
 {
-  for (; nCount != 0; nCount--);
+	for (; nCount != 0; nCount--);
 }
 
 int main(void)
 {
 
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
 
-  /* Init GPIO for rx pins */
-  gpio_setup_input_pullup(A_RX_PORT, A_RX_PIN);
-  gpio_setup_input_pullup(B_RX_PORT, B_RX_PIN);
+	/* Init GPIO for rx pins */
+	gpio_setup_input_pullup(A_RX_PORT, A_RX_PIN);
+	gpio_setup_input_pullup(B_RX_PORT, B_RX_PIN);
 
-  /* Init GPIO for tx pins */
-  gpio_setup_output(A_TX_PORT, A_TX_PIN);
-  gpio_setup_output(B_TX_PORT, B_TX_PIN);
+	/* Init GPIO for tx pins */
+	gpio_setup_output(A_TX_PORT, A_TX_PIN);
+	gpio_setup_output(B_TX_PORT, B_TX_PIN);
 
-  gpio_clear(A_TX_PORT, A_TX_PIN);
+	gpio_clear(A_TX_PORT, A_TX_PIN);
 
-  /* */
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic();
-    }
-    main_event();
-  }
+	/* */
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic();
+		}
+		main_event();
+	}
 
-  return 0;
+	return 0;
 }
 
 
 
 static inline void main_periodic(void)
 {
-  LED_PERIODIC();
+	LED_PERIODIC();
 }
 
 static inline void main_event(void)
 {
-  //  Delay(2000);
-  static uint8_t foo = 0;
-  foo++;
+	//  Delay(2000);
+	static uint8_t foo = 0;
+	foo++;
 
 #if 0
-  if (!(foo % 2)) {
-    gpio_set(B_TX_PORT, B_TX_PIN);
-  } else {
-    gpio_clear(B_TX_PORT, B_TX_PIN);
-  }
+	if (!(foo % 2))
+	{
+		gpio_set(B_TX_PORT, B_TX_PIN);
+	}
+	else
+	{
+		gpio_clear(B_TX_PORT, B_TX_PIN);
+	}
 #endif
 
 #if 0
-  if (!(foo % 2)) {
-    gpio_clear(A_TX_PORT, A_TX_PIN);
-  } else {
-    gpio_set(A_TX_PORT, A_TX_PIN);
-  }
+	if (!(foo % 2))
+	{
+		gpio_clear(A_TX_PORT, A_TX_PIN);
+	}
+	else
+	{
+		gpio_set(A_TX_PORT, A_TX_PIN);
+	}
 #endif
 
 #if 1
-  /* passthrough B_RX to A_TX */
-  if (GPIO_IDR(B_RX_PORT) & B_RX_PIN) {
-    gpio_set(A_TX_PORT, A_TX_PIN);
-  } else {
-    gpio_clear(A_TX_PORT, A_TX_PIN);
-  }
+	/* passthrough B_RX to A_TX */
+	if (GPIO_IDR(B_RX_PORT) & B_RX_PIN)
+	{
+		gpio_set(A_TX_PORT, A_TX_PIN);
+	}
+	else
+	{
+		gpio_clear(A_TX_PORT, A_TX_PIN);
+	}
 #endif
-  /* passthrough A_RX to B_TX */
-  if (gpio_get(A_RX_PORT, A_RX_PIN)) {
-    gpio_set(B_TX_PORT, B_TX_PIN);
-    LED_ON(2);
-  } else {
-    gpio_clear(B_TX_PORT, B_TX_PIN);
-    LED_OFF(2);
-  }
+	/* passthrough A_RX to B_TX */
+	if (gpio_get(A_RX_PORT, A_RX_PIN))
+	{
+		gpio_set(B_TX_PORT, B_TX_PIN);
+		LED_ON(2);
+	}
+	else
+	{
+		gpio_clear(B_TX_PORT, B_TX_PIN);
+		LED_OFF(2);
+	}
 
 
 }

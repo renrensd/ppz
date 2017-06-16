@@ -51,7 +51,7 @@ static uint32_t samples_idx;
 static abi_event gyro_ev;
 
 static void gyro_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp __attribute__((unused)),
-		struct Int32Rates *gyro __attribute__((unused)))
+										struct Int32Rates *gyro __attribute__((unused)))
 {
 	if (ahrs_aligner.status != AHRS_ALIGNER_LOCKED)
 	{
@@ -66,15 +66,15 @@ static void send_aligner(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_FILTER_ALIGNER(trans, dev, AC_ID,
-			&ahrs_aligner.lp_gyro.p,
-			&ahrs_aligner.lp_gyro.q,
-			&ahrs_aligner.lp_gyro.r,
-			&imu.gyro.p,
-			&imu.gyro.q,
-			&imu.gyro.r,
-			&ahrs_aligner.noise,
-			&ahrs_aligner.low_noise_cnt,
-			&ahrs_aligner.status);
+															 &ahrs_aligner.lp_gyro.p,
+															 &ahrs_aligner.lp_gyro.q,
+															 &ahrs_aligner.lp_gyro.r,
+															 &imu.gyro.p,
+															 &imu.gyro.q,
+															 &imu.gyro.r,
+															 &ahrs_aligner.noise,
+															 &ahrs_aligner.low_noise_cnt,
+															 &ahrs_aligner.status);
 }
 #endif
 
@@ -166,7 +166,7 @@ void ahrs_aligner_run(void)
 			ahrs_aligner.status = AHRS_ALIGNER_LOCKED;
 			uint32_t now_ts = get_sys_time_usec();
 			AbiSendMsgIMU_LOWPASSED(ABI_BROADCAST, now_ts, &ahrs_aligner.lp_gyro, &ahrs_aligner.lp_accel,
-					&ahrs_aligner.lp_mag);
+															&ahrs_aligner.lp_mag);
 		}
 	}
 

@@ -33,40 +33,45 @@ static inline void main_event_task(void);
 
 int main(void)
 {
-  main_init();
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic_task();
-    }
-    main_event_task();
-  }
-  return 0;
+	main_init();
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic_task();
+		}
+		main_event_task();
+	}
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
 }
 
 static inline void main_periodic_task(void)
 {
-  RunOnceEvery(100, {
-    LED_TOGGLE(4);
-    LED_PERIODIC();
-  });
+	RunOnceEvery(100,
+	{
+		LED_TOGGLE(4);
+		LED_PERIODIC();
+	});
 
 }
 
 static inline void main_event_task(void)
 {
-  mcu_event();
+	mcu_event();
 
-  if (uart_char_available(&uart2)) {
-    uart_put_byte(&uart1, uart_getch(&uart2));
-  }
+	if (uart_char_available(&uart2))
+	{
+		uart_put_byte(&uart1, uart_getch(&uart2));
+	}
 
-  if (uart_char_available(&uart1)) {
-    uart_put_byte(&uart2, uart_getch(&uart1));
-  }
+	if (uart_char_available(&uart1))
+	{
+		uart_put_byte(&uart2, uart_getch(&uart1));
+	}
 }

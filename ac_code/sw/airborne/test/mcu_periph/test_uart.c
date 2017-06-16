@@ -31,98 +31,120 @@ static inline void main_periodic(void);
 int main(void)
 {
 
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic();
-    }
-  }
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic();
+		}
+	}
 
-  return 0;
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
 }
 
 static inline void main_periodic(void)
 {
-  char ch;
+	char ch;
 
 #if USE_UART1
-  uart_put_byte(&uart1, 'a');
+	uart_put_byte(&uart1, 'a');
 #endif
 #if USE_UART2
-  uart_put_byte(&uart2, 'b');
+	uart_put_byte(&uart2, 'b');
 #endif
 #if USE_UART3
-  uart_put_byte(&uart3, 'c');
+	uart_put_byte(&uart3, 'c');
 #endif
 #if USE_UART4
-  uart_put_byte(&uart4, 'd');
+	uart_put_byte(&uart4, 'd');
 #endif
 #if USE_UART5
-  uart_put_byte(&uart5, 'e');
+	uart_put_byte(&uart5, 'e');
 #endif
 
-  LED_OFF(1);
-  LED_OFF(2);
+	LED_OFF(1);
+	LED_OFF(2);
 
 #if USE_UART1
-  if (uart_char_available(&uart1)) {
-    ch = uart_getch(&uart1);
-    if (ch == 'a') {
-      LED_ON(1);
-    } else {
-      LED_ON(2);
-    }
-  }
+	if (uart_char_available(&uart1))
+	{
+		ch = uart_getch(&uart1);
+		if (ch == 'a')
+		{
+			LED_ON(1);
+		}
+		else
+		{
+			LED_ON(2);
+		}
+	}
 #endif
 
 #if USE_UART2
-  if (uart_char_available(&uart2)) {
-    ch =  uart_getch(&uart2);
-    if (ch == 'b') {
-      LED_ON(1);
-    } else {
-      LED_ON(2);
-    }
-  }
+	if (uart_char_available(&uart2))
+	{
+		ch =  uart_getch(&uart2);
+		if (ch == 'b')
+		{
+			LED_ON(1);
+		}
+		else
+		{
+			LED_ON(2);
+		}
+	}
 #endif
 
 #if USE_UART3
-  if (uart_char_available(&uart3)) {
-    ch =  uart_getch(&uart3);
-    if (ch == 'c') {
-      LED_ON(1);
-    } else {
-      LED_ON(2);
-    }
-  }
+	if (uart_char_available(&uart3))
+	{
+		ch =  uart_getch(&uart3);
+		if (ch == 'c')
+		{
+			LED_ON(1);
+		}
+		else
+		{
+			LED_ON(2);
+		}
+	}
 #endif
 
 #if USE_UART4
-  if (uart_char_available(&uart4)) {
-    ch =  uart_getch(&uart4);
-    if (ch == 'd') {
-      LED_ON(1);
-    } else {
-      LED_ON(2);
-    }
-  }
+	if (uart_char_available(&uart4))
+	{
+		ch =  uart_getch(&uart4);
+		if (ch == 'd')
+		{
+			LED_ON(1);
+		}
+		else
+		{
+			LED_ON(2);
+		}
+	}
 #endif
 
 #if USE_UART5
-  if (uart_char_available(&uart5)) {
-    ch =  uart_getch(&uart5);
-    if (ch == 'e') {
-      LED_ON(1);
-    } else {
-      LED_ON(2);
-    }
-  }
+	if (uart_char_available(&uart5))
+	{
+		ch =  uart_getch(&uart5);
+		if (ch == 'e')
+		{
+			LED_ON(1);
+		}
+		else
+		{
+			LED_ON(2);
+		}
+	}
 #endif
 }

@@ -165,110 +165,112 @@ tid_t ahrs_tid;
 #ifndef SITL
 int main(void)
 {
-  main_init();
+	main_init();
 
 #if LIMIT_EVENT_POLLING
-  /* Limit main loop frequency to 1kHz.
-   * This is a kludge until we can better leverage threads and have real events.
-   * Without this limit the event flags will constantly polled as fast as possible,
-   * resulting on 100% cpu load on boards with an (RT)OS.
-   * On bare metal boards this is not an issue, as you have nothing else running anyway.
-   */
-  uint32_t t_begin = 0;
-  uint32_t t_diff = 0;
-  while (1) {
-    t_begin = get_sys_time_usec();
+	/* Limit main loop frequency to 1kHz.
+	 * This is a kludge until we can better leverage threads and have real events.
+	 * Without this limit the event flags will constantly polled as fast as possible,
+	 * resulting on 100% cpu load on boards with an (RT)OS.
+	 * On bare metal boards this is not an issue, as you have nothing else running anyway.
+	 */
+	uint32_t t_begin = 0;
+	uint32_t t_diff = 0;
+	while (1)
+	{
+		t_begin = get_sys_time_usec();
 
-    handle_periodic_tasks();
-    main_event();
+		handle_periodic_tasks();
+		main_event();
 
-    /* sleep remaining time to limit to 1kHz */
-    t_diff = get_sys_time_usec() - t_begin;
-    if (t_diff < 1000) {
-      sys_time_usleep(1000 - t_diff);
-    }
-  }
+		/* sleep remaining time to limit to 1kHz */
+		t_diff = get_sys_time_usec() - t_begin;
+		if (t_diff < 1000)
+		{
+			sys_time_usleep(1000 - t_diff);
+		}
+	}
 #else
-  while (1) 
-  {
-	  handle_periodic_tasks();
-      main_event();
-  }
+	while (1)
+	{
+		handle_periodic_tasks();
+		main_event();
+	}
 #endif
 
-  return 0;
+	return 0;
 }
 #endif /* SITL */
 
 STATIC_INLINE void main_init(void)
 {
-  mcu_init();
+	mcu_init();
 
 #if defined(PPRZ_TRIG_INT_COMPR_FLASH)
-  pprz_trig_int_init();
+	pprz_trig_int_init();
 #endif
 
 #ifdef FRAM_OPTION
-  fram_init_all_data();
+	fram_init_all_data();
 #endif
 
 #ifdef ENG_OPTION
-  eng_init();
+	eng_init();
 #endif	/* ENG_OPTION */
 
-  electrical_init();
+	electrical_init();
 
-  stateInit();
+	stateInit();
 
 #ifndef INTER_MCU_AP
-  actuators_init();
+	actuators_init();
 #else
-  intermcu_init();
+	intermcu_init();
 #endif
 
 #if USE_MOTOR_MIXING
-  motor_mixing_init();
+	motor_mixing_init();
 #endif
 
 #ifndef INTER_MCU_AP
-  radio_control_init();
+	radio_control_init();
 #endif
 
 #if USE_BARO_BOARD
-  baro_init();
+	baro_init();
 #endif
 
 #if USE_IMU
-  imu_init();
+	imu_init();
 #endif
 #if USE_AHRS_ALIGNER
-  ahrs_aligner_init();
+	ahrs_aligner_init();
 #endif
 
 #if USE_AHRS
-  ahrs_init();
+	ahrs_init();
 #endif
 
-  ins_init();
+	ins_init();
 
 #if USE_GPS
-  gps_init();
+	gps_init();
 #endif
 
-  autopilot_init();
+	autopilot_init();
 
-  modules_init();
+	modules_init();
 
-  settings_init();
+	settings_init();
 
-  mcu_int_enable();
+	mcu_int_enable();
 
 #if DOWNLINK
-  downlink_init();  //requested after settings_init(),to get flash data set var
+	downlink_init();  //requested after settings_init(),to get flash data set var
 #endif
 
 #ifdef INTER_MCU_AP
-  intermcu_init();
+	intermcu_init();
 #endif
 
 #ifdef OPS_OPTION
@@ -276,97 +278,102 @@ STATIC_INLINE void main_init(void)
 #endif	/* OPS_OPTION */
 
 #ifdef MONITORING_OPTION
-    monitoring_init();
+	monitoring_init();
 #endif
 
 #ifdef WDG_OPTION
-  wdg_enable(); 
+	wdg_enable();
 #endif
-  // register the timers for the periodic functions
-  main_periodic_tid = sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
-  modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
-  radio_control_tid = sys_time_register_timer((1. / 60.), NULL);
-  failsafe_tid = sys_time_register_timer(0.05, NULL);
-  electrical_tid = sys_time_register_timer(0.1, NULL);
-  telemetry_tid = sys_time_register_timer((1. / TELEMETRY_FREQUENCY), NULL);
+	// register the timers for the periodic functions
+	main_periodic_tid = sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
+	radio_control_tid = sys_time_register_timer((1. / 60.), NULL);
+	failsafe_tid = sys_time_register_timer(0.05, NULL);
+	electrical_tid = sys_time_register_timer(0.1, NULL);
+	telemetry_tid = sys_time_register_timer((1. / TELEMETRY_FREQUENCY), NULL);
 #if USE_BARO_BOARD
-  baro_tid = sys_time_register_timer(1. / BARO_PERIODIC_FREQUENCY, NULL);
+	baro_tid = sys_time_register_timer(1. / BARO_PERIODIC_FREQUENCY, NULL);
 #endif
 
 #ifdef OPS_OPTION
-  ops_tid = sys_time_register_timer(1. / OPS_PERIODIC_FREQUENCY, NULL);
+	ops_tid = sys_time_register_timer(1. / OPS_PERIODIC_FREQUENCY, NULL);
 #endif	/* OPS_OPTION */
 
 #ifdef ENG_OPTION
-  eng_tid = sys_time_register_timer(1. / ENG_PERIODIC_FREQUENCY, NULL);
+	eng_tid = sys_time_register_timer(1. / ENG_PERIODIC_FREQUENCY, NULL);
 #endif	/* ENG_OPTION */
 
-  ins_tid = sys_time_register_timer(1. / PERIODIC_FREQUENCY, NULL);
-  ahrs_tid = sys_time_register_timer(1. / PERIODIC_FREQUENCY, NULL);
+	ins_tid = sys_time_register_timer(1. / PERIODIC_FREQUENCY, NULL);
+	ahrs_tid = sys_time_register_timer(1. / PERIODIC_FREQUENCY, NULL);
 
 #ifdef MONITORING_OPTION
-  monitor_tid = sys_time_register_timer(1. /MONITORING_FREQUENCY, NULL);
+	monitor_tid = sys_time_register_timer(1. /MONITORING_FREQUENCY, NULL);
 #endif
 #if USE_IMU
-  // send body_to_imu from here for now
-  AbiSendMsgBODY_TO_IMU_QUAT(1, orientationGetQuat_f(&imu.body_to_imu));
+	// send body_to_imu from here for now
+	AbiSendMsgBODY_TO_IMU_QUAT(1, orientationGetQuat_f(&imu.body_to_imu));
 #endif
 
 
-  // Do a failsafe check first
-  failsafe_check();
+	// Do a failsafe check first
+	failsafe_check();
 }
 
 STATIC_INLINE void handle_periodic_tasks(void)
 {
-  if (sys_time_check_and_ack_timer(main_periodic_tid)) {
-    main_periodic();
-  }
-  if (sys_time_check_and_ack_timer(modules_tid)) 
-  {
-	#ifdef WDG_OPTION
-	mcu_set_task_wdg_flag(WDG_TASK_MODULES);
-	#endif	/* WDG_OPTION */
-	modules_periodic_task();
-  }
+	if (sys_time_check_and_ack_timer(main_periodic_tid))
+	{
+		main_periodic();
+	}
+	if (sys_time_check_and_ack_timer(modules_tid))
+	{
+#ifdef WDG_OPTION
+		mcu_set_task_wdg_flag(WDG_TASK_MODULES);
+#endif	/* WDG_OPTION */
+		modules_periodic_task();
+	}
 
-  if(autopilot_rc)		//add by lg
-  {
-	if (sys_time_check_and_ack_timer(radio_control_tid)) {
-    	radio_control_periodic_task();
-  	}
-  } 
-  if (sys_time_check_and_ack_timer(failsafe_tid)) {
-    failsafe_check();
-  }
-  if (sys_time_check_and_ack_timer(electrical_tid)) {
-    electrical_periodic();
-  }
-  if (sys_time_check_and_ack_timer(telemetry_tid)) {
-    telemetry_periodic();
-  }
+	if(autopilot_rc)		//add by lg
+	{
+		if (sys_time_check_and_ack_timer(radio_control_tid))
+		{
+			radio_control_periodic_task();
+		}
+	}
+	if (sys_time_check_and_ack_timer(failsafe_tid))
+	{
+		failsafe_check();
+	}
+	if (sys_time_check_and_ack_timer(electrical_tid))
+	{
+		electrical_periodic();
+	}
+	if (sys_time_check_and_ack_timer(telemetry_tid))
+	{
+		telemetry_periodic();
+	}
 #if USE_BARO_BOARD
-  if (sys_time_check_and_ack_timer(baro_tid)) 
-  {
-    #ifdef WDG_OPTION
-	mcu_set_task_wdg_flag(WDG_TASK_BARO);
-	#endif	/* WDG_OPTION */
-	baro_periodic();
-  }
+	if (sys_time_check_and_ack_timer(baro_tid))
+	{
+#ifdef WDG_OPTION
+		mcu_set_task_wdg_flag(WDG_TASK_BARO);
+#endif	/* WDG_OPTION */
+		baro_periodic();
+	}
 #endif
 
 #ifdef OPS_OPTION
-  if (sys_time_check_and_ack_timer(ops_tid)) 
-  {
-    ops_task();
-  }
+	if (sys_time_check_and_ack_timer(ops_tid))
+	{
+		ops_task();
+	}
 #endif	/* OPS_OPTION */
 
 #ifdef ENG_OPTION
-  if (sys_time_check_and_ack_timer(eng_tid)) 
-  {
-    eng_task();
-  }
+	if (sys_time_check_and_ack_timer(eng_tid))
+	{
+		eng_task();
+	}
 #endif	/* ENG_OPTION */
 
 	if (sys_time_check_and_ack_timer(ins_tid))
@@ -380,13 +387,13 @@ STATIC_INLINE void handle_periodic_tasks(void)
 	}
 
 #ifdef MONITORING_OPTION
-  if (sys_time_check_and_ack_timer(monitor_tid)) 
-  {
-	 #ifdef WDG_OPTION
-	 mcu_set_task_wdg_flag(WDG_TASK_MONITORING);
-	 #endif	/* WDG_OPTION */
-	 monitoring_periodic();
-  }
+	if (sys_time_check_and_ack_timer(monitor_tid))
+	{
+#ifdef WDG_OPTION
+		mcu_set_task_wdg_flag(WDG_TASK_MONITORING);
+#endif	/* WDG_OPTION */
+		monitoring_periodic();
+	}
 #endif
 }
 
@@ -398,60 +405,63 @@ STATIC_INLINE void main_periodic(void)
 #endif	/* WDG_OPTION */
 
 #if USE_IMU
-  imu_periodic();
+	imu_periodic();
 #endif
 
-  //FIXME: temporary hack, remove me
+	//FIXME: temporary hack, remove me
 #ifdef InsPeriodic
-  InsPeriodic();
+	InsPeriodic();
 #endif
 
-  /* run control loops */
-  autopilot_periodic();
-  /* set actuators     */
-  //actuators_set(autopilot_motors_on);
+	/* run control loops */
+	autopilot_periodic();
+	/* set actuators     */
+	//actuators_set(autopilot_motors_on);
 #ifndef INTER_MCU_AP
-  SetActuatorsFromCommands(commands, autopilot_mode);
+	SetActuatorsFromCommands(commands, autopilot_mode);
 #else
-  intermcu_set_actuators(commands, autopilot_mode);
+	intermcu_set_actuators(commands, autopilot_mode);
 #endif
 
-  if (autopilot_in_flight) {
-    RunOnceEvery(PERIODIC_FREQUENCY, autopilot_flight_time++);
-  }
+	if (autopilot_in_flight)
+	{
+		RunOnceEvery(PERIODIC_FREQUENCY, autopilot_flight_time++);
+	}
 
 #if defined DATALINK || defined SITL
-  RunOnceEvery(PERIODIC_FREQUENCY, datalink_time++);
+	RunOnceEvery(PERIODIC_FREQUENCY, datalink_time++);
 #endif
 
-  RunOnceEvery(10, LED_PERIODIC());
+	RunOnceEvery(10, LED_PERIODIC());
 }
 
 STATIC_INLINE void telemetry_periodic(void)
 {
-  static uint8_t boot = TRUE;
+	static uint8_t boot = TRUE;
 
-	#ifdef WDG_OPTION
+#ifdef WDG_OPTION
 	mcu_set_task_wdg_flag(WDG_TASK_TELEMETRY);
-	#endif	/* WDG_OPTION */
-  /* initialisation phase during boot */
-  if (boot) {
+#endif	/* WDG_OPTION */
+	/* initialisation phase during boot */
+	if (boot)
+	{
 #if DOWNLINK
- #if PERIODIC_TELEMETRY
-    send_autopilot_version(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
- #endif
-#endif
-    boot = FALSE;
-  }
-  /* then report periodicly */
-  else {
 #if PERIODIC_TELEMETRY
-    periodic_telemetry_send_Main(DefaultPeriodic, &(DefaultChannel).trans_tx, &(DefaultDevice).device);
+		send_autopilot_version(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
 #endif
-  }
+#endif
+		boot = FALSE;
+	}
+	/* then report periodicly */
+	else
+	{
+#if PERIODIC_TELEMETRY
+		periodic_telemetry_send_Main(DefaultPeriodic, &(DefaultChannel).trans_tx, &(DefaultDevice).device);
+#endif
+	}
 
 #if DOWNLINK
-  downlink_periodic();
+	downlink_periodic();
 #endif //DOWNLINK
 }
 
@@ -462,63 +472,68 @@ STATIC_INLINE void telemetry_periodic(void)
 
 STATIC_INLINE void failsafe_check(void)
 {
-	#ifdef WDG_OPTION
+#ifdef WDG_OPTION
 	mcu_set_task_wdg_flag(WDG_TASK_FAILSAFE);
-	#endif	/* WDG_OPTION */
+#endif	/* WDG_OPTION */
 	autopilot_check_in_flight(autopilot_motors_on);
-   #if USE_GPS
-    gps_periodic_check();
-   #endif
+#if USE_GPS
+	gps_periodic_check();
+#endif
 
-   #ifndef USE_MISSION   //our flight use mission,not use radio and only AP_MODE_NAV
-   
-	  if (radio_control.status == RC_REALLY_LOST &&
-	      autopilot_mode != AP_MODE_KILL &&
-	      autopilot_mode != AP_MODE_HOME &&
-	      autopilot_mode != AP_MODE_FAILSAFE &&
-	      autopilot_mode != AP_MODE_NAV) {   //radio lost,will set mode kill
-	    autopilot_set_mode(RC_LOST_MODE);
-	  }
+#ifndef USE_MISSION   //our flight use mission,not use radio and only AP_MODE_NAV
 
-    #if FAILSAFE_ON_BAT_CRITICAL
-	  if (autopilot_mode != AP_MODE_KILL &&
-	      electrical.bat_critical) {
-	    autopilot_set_mode(AP_MODE_FAILSAFE);
-	  }
-    #endif
+	if (radio_control.status == RC_REALLY_LOST &&
+			autopilot_mode != AP_MODE_KILL &&
+			autopilot_mode != AP_MODE_HOME &&
+			autopilot_mode != AP_MODE_FAILSAFE &&
+			autopilot_mode != AP_MODE_NAV)     //radio lost,will set mode kill
+	{
+		autopilot_set_mode(RC_LOST_MODE);
+	}
 
-    #if USE_GPS
-	  if (autopilot_mode == AP_MODE_NAV &&
-	      autopilot_motors_on &&
-    #if NO_GPS_LOST_WITH_RC_VALID
-	      radio_control.status != RC_OK &&
-    #endif
-	      GpsIsLost()) {
-	    autopilot_set_mode(AP_MODE_FAILSAFE);
-	  }
+#if FAILSAFE_ON_BAT_CRITICAL
+	if (autopilot_mode != AP_MODE_KILL &&
+			electrical.bat_critical)
+	{
+		autopilot_set_mode(AP_MODE_FAILSAFE);
+	}
+#endif
 
-	  if (autopilot_mode == AP_MODE_HOME &&
-	      autopilot_motors_on && GpsIsLost()) {
-	    autopilot_set_mode(AP_MODE_FAILSAFE);
-	  }
-    #endif  //end of USE_GPS
+#if USE_GPS
+	if (autopilot_mode == AP_MODE_NAV &&
+			autopilot_motors_on &&
+#if NO_GPS_LOST_WITH_RC_VALID
+			radio_control.status != RC_OK &&
+#endif
+			GpsIsLost())
+	{
+		autopilot_set_mode(AP_MODE_FAILSAFE);
+	}
 
-  #else
-   if (radio_control.link_status == RC_LINK_LOST || radio_control.status == RC_REALLY_LOST ) 
-   {   //radio lost,will set mode kill
-   	   if(autopilot_mode == AP_MODE_ATTITUDE_DIRECT)
-   	   {
-	   	   if(gps.p_stable && autopilot_in_flight)
-	   	   {
-		   	autopilot_set_mode(AP_MODE_HOVER_Z_HOLD);
-	   	   }
-		   else
-		   {
-		   	autopilot_set_mode(AP_MODE_KILL);
-		   }
-   	   }
-   }
-  #endif //end of ndef USE_MISSION
+	if (autopilot_mode == AP_MODE_HOME &&
+			autopilot_motors_on && GpsIsLost())
+	{
+		autopilot_set_mode(AP_MODE_FAILSAFE);
+	}
+#endif  //end of USE_GPS
+
+#else
+	if (radio_control.link_status == RC_LINK_LOST || radio_control.status == RC_REALLY_LOST )
+	{
+		//radio lost,will set mode kill
+		if(autopilot_mode == AP_MODE_ATTITUDE_DIRECT)
+		{
+			if(gps.p_stable && autopilot_in_flight)
+			{
+				autopilot_set_mode(AP_MODE_HOVER_Z_HOLD);
+			}
+			else
+			{
+				autopilot_set_mode(AP_MODE_KILL);
+			}
+		}
+	}
+#endif //end of ndef USE_MISSION
 
 }
 
@@ -526,46 +541,46 @@ STATIC_INLINE void failsafe_check(void)
 
 STATIC_INLINE void main_event(void)
 {
-  #ifdef WDG_OPTION
-  mcu_set_task_wdg_flag(WDG_EVENT_ALL);
-  #endif	/* WDG_OPTION */
+#ifdef WDG_OPTION
+	mcu_set_task_wdg_flag(WDG_EVENT_ALL);
+#endif	/* WDG_OPTION */
 
-  /* event functions for mcu peripherals: i2c, usb_serial.. */
-  mcu_event();
+	/* event functions for mcu peripherals: i2c, usb_serial.. */
+	mcu_event();
 
-  DatalinkEvent();
+	DatalinkEvent();
 
-  if(autopilot_rc) 
-  {
-    RadioControlEvent(autopilot_on_rc_frame);
-  }
-  else  //use ground_check_pass to set mode,instead of radio control
-  {
-  	autopilot_ready_check();
-  }
+	if(autopilot_rc)
+	{
+		RadioControlEvent(autopilot_on_rc_frame);
+	}
+	else  //use ground_check_pass to set mode,instead of radio control
+	{
+		autopilot_ready_check();
+	}
 
 #if USE_IMU
-  ImuEvent();
+	ImuEvent();
 #endif
 
 #ifdef InsEvent
-  TODO("calling InsEvent, remove me..")
-  InsEvent();
+	TODO("calling InsEvent, remove me..")
+	InsEvent();
 #endif
 
 #if USE_BARO_BOARD
-  BaroEvent();
+	BaroEvent();
 #endif
 
 #if USE_GPS
-  GpsEvent();
+	GpsEvent();
 #endif
 
 #if FAILSAFE_GROUND_DETECT || KILL_ON_GROUND_DETECT
-  DetectGroundEvent();
+	DetectGroundEvent();
 #endif
 
-  modules_event_task();
+	modules_event_task();
 
 #ifdef BBOX_OPTION
 	bbox_task();

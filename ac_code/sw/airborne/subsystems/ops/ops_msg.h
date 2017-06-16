@@ -4,23 +4,23 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   : 										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _OPS_UART_MSG_H_
-#define _OPS_UART_MSG_H_ 
+#define _OPS_UART_MSG_H_
 #include "../../modules/system/types.h"
-#include "ops_msg_if.h"   
+#include "ops_msg_if.h"
 /**** Definition of constants ****/
 
 

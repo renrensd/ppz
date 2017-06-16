@@ -4,21 +4,21 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _OPS_APP_IF_H_
-#define _OPS_APP_IF_H_ 
+#define _OPS_APP_IF_H_
 /**** Definition of constants ****/
 
 #define PARAM_FLOW_SPEED  1
@@ -30,7 +30,7 @@
 
 #define MAX_OPS_SV_VERSION_LEN  30
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 /**** Definition of macros ****/
 struct OPS_INFO
@@ -73,7 +73,7 @@ struct OPS_CONFIG_PARAM
 	uint16_t drop_cm2;	//droplets/cm2
 	uint16_t atom;		//um
 	uint16_t  spray_wide; //cm
-	uint8_t  spray_chal;	
+	uint8_t  spray_chal;
 };
 /**** Declaration of constants ****/
 
@@ -94,7 +94,7 @@ extern void ops_set_config_param(uint16_t param, uint8_t param_type);
 extern void ops_update_config_param(void);
 extern void rc_update_ops_config_param(uint8_t grade);
 extern void ops_software_version_handler(uint8_t *param, uint8_t len);
-extern void ops_delay_spraying(void); 
+extern void ops_delay_spraying(void);
 
 #endif /*_OPS_APP_IF_H_*/
 /****************************** END OF FILE ***************************/

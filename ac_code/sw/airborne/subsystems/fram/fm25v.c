@@ -4,18 +4,18 @@
 *   Department : R&D SW      									       *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 /**** System include files ****/
@@ -37,7 +37,7 @@
 
 /*---Global-----------------------------------------------------------*/
 
- 
+
 /*---Private----------------------------------------------------------*/
 
 /*===FUNCTIONS========================================================*/
@@ -46,8 +46,8 @@
 /*---Global-----------------------------------------------------------*/
 /*****************************************************************************
 *  Name        : fm25v_init
-*  Description : 
-*  Parameter   : void  
+*  Description :
+*  Parameter   : void
 *  Returns     : None
 *****************************************************************************/
 void fm25v_init(struct FM25V_SPI *fm, struct spi_periph *spi_p, const uint8_t slave_idx, SPICallback spi_cb)
@@ -80,70 +80,70 @@ void fm25v_init(struct FM25V_SPI *fm, struct spi_periph *spi_p, const uint8_t sl
 
 /*****************************************************************************
 *  Name        : fm25v_spi_cb
-*  Description : 
-*  Parameter   : void  
+*  Description :
+*  Parameter   : void
 *  Returns     : None
 *****************************************************************************/
 void fm25v_spi_cb(struct FM25V_SPI *fm)
 {
 	switch(fm->status)
 	{
-		case FM25V_STATE_READ_ID:
-			if( (fm->input_buf[7] == FM25V_DEV_ID_7) && (fm->input_buf[8] == FM25V_DEV_ID_8) )
-			{
-				fm->valid = TRUE;
-			}
-			
-      		fm->status = FM25V_STATE_IDLE;
-			fm->spi_t.input_buf = fm->input_buf;
-			break;
-		case FM25V_STATE_WRITE_BYTES:
-			switch(fm->status_idx)
-		  	{
-		        // Send the address with 2 or 1 byte(s) of data
-		        case 0:
-			        fm->status_idx = 1;
-			        fm->output_buf[0] = FM25V_WRITE;
-			        fm->output_buf[1] = ((fm->flash_addr&0x3F) >> 8) & 0xFF;
-			        fm->output_buf[2] = fm->flash_addr & 0xFF;
-					fm->transfer_idx = 0;
-					for(uint16_t i=0; i<fm->transfer_length; i++)
-					{
-						fm->output_buf[3+i] = fm->transfer_buf[i];
-					}
-			        fm->spi_t.output_length = 3 + fm->transfer_length;
-			        fm->spi_t.input_length = 0;
-			        spi_submit(fm->spi_p, &fm->spi_t);
-			        break;
-				case 1:
-					fm->writing_flag = FALSE;
-					fm->status = FM25V_STATE_IDLE;
-					break;
-		        
-		        default:
-					fm->error_cnt++;
-					fm->status = FM25V_STATE_IDLE;
-		          break;
-	      	}
-	      	break;
+	case FM25V_STATE_READ_ID:
+		if( (fm->input_buf[7] == FM25V_DEV_ID_7) && (fm->input_buf[8] == FM25V_DEV_ID_8) )
+		{
+			fm->valid = TRUE;
+		}
 
-		case FM25V_STATE_READ_BYTES:
-      		for(uint16_t idx=0; idx < fm->spi_t.input_length-3; idx++)
-      		{
-      			fm->input_temp_buf[idx] = fm->input_buf[idx+3];
-      		}
-      		fm->status = FM25V_STATE_IDLE;
-			fm->reading_flag = FALSE;
+		fm->status = FM25V_STATE_IDLE;
+		fm->spi_t.input_buf = fm->input_buf;
+		break;
+	case FM25V_STATE_WRITE_BYTES:
+		switch(fm->status_idx)
+		{
+			// Send the address with 2 or 1 byte(s) of data
+		case 0:
+			fm->status_idx = 1;
+			fm->output_buf[0] = FM25V_WRITE;
+			fm->output_buf[1] = ((fm->flash_addr&0x3F) >> 8) & 0xFF;
+			fm->output_buf[2] = fm->flash_addr & 0xFF;
+			fm->transfer_idx = 0;
+			for(uint16_t i=0; i<fm->transfer_length; i++)
+			{
+				fm->output_buf[3+i] = fm->transfer_buf[i];
+			}
+			fm->spi_t.output_length = 3 + fm->transfer_length;
+			fm->spi_t.input_length = 0;
+			spi_submit(fm->spi_p, &fm->spi_t);
 			break;
+		case 1:
+			fm->writing_flag = FALSE;
+			fm->status = FM25V_STATE_IDLE;
+			break;
+
 		default:
+			fm->error_cnt++;
+			fm->status = FM25V_STATE_IDLE;
 			break;
+		}
+		break;
+
+	case FM25V_STATE_READ_BYTES:
+		for(uint16_t idx=0; idx < fm->spi_t.input_length-3; idx++)
+		{
+			fm->input_temp_buf[idx] = fm->input_buf[idx+3];
+		}
+		fm->status = FM25V_STATE_IDLE;
+		fm->reading_flag = FALSE;
+		break;
+	default:
+		break;
 	}
 }
 
 /*****************************************************************************
 *  Name        : fm25v_read_id
-*  Description : 
-*  Parameter   : void  
+*  Description :
+*  Parameter   : void
 *  Returns     : None
 *****************************************************************************/
 void fm25v_read_id(struct FM25V_SPI *fm)
@@ -163,13 +163,13 @@ void fm25v_read_id(struct FM25V_SPI *fm)
 
 /*****************************************************************************
 *  Name        : fm25v_write
-*  Description : 
-*  Parameter   : void  
+*  Description :
+*  Parameter   : void
 *  Returns     : 0-Success, other-Fail
 *****************************************************************************/
 uint8_t fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len)
 {
-	if(fm->status != FM25V_STATE_IDLE) 
+	if(fm->status != FM25V_STATE_IDLE)
 	{
 		fm->error_cnt++;
 		return 2;
@@ -198,7 +198,7 @@ uint8_t fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t 
 
 	uint16_t fm_timeout = 0;
 	while( fm->writing_flag && (++fm_timeout < FM25V_TIMEOUT_VAL) );
-	
+
 	if(fm->writing_flag == TRUE)
 	{
 		fm->error_cnt++;
@@ -213,13 +213,13 @@ uint8_t fm25v_write(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t 
 //uint16_t fm_t1,fm_t2,fm_tt;
 /*****************************************************************************
 *  Name        : fm25v_read
-*  Description : 
-*  Parameter   : void  
+*  Description :
+*  Parameter   : void
 *  Returns     : 0-Success, other-Fail.
 *****************************************************************************/
 uint8_t fm25v_read(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t len)
 {
-	if(fm->status != FM25V_STATE_IDLE) 
+	if(fm->status != FM25V_STATE_IDLE)
 	{
 		fm->error_cnt++;
 		return 2;
@@ -238,7 +238,7 @@ uint8_t fm25v_read(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t l
 	fm->output_buf[0] = FM25V_READ;
 	fm->output_buf[1] = ((addr&0x3F) >> 8) & 0xFF;
 	fm->output_buf[2] = addr & 0xFF;
-	
+
 	fm->spi_t.output_length = 3;
 	fm->spi_t.input_length = 3 + len;
 	fm->reading_flag = TRUE;
@@ -247,7 +247,7 @@ uint8_t fm25v_read(struct FM25V_SPI *fm, uint16_t addr, uint8_t *buf, uint16_t l
 	//fm_t1 = get_sys_time_usec();
 	uint16_t fm_timeout = 0;
 	while( fm->reading_flag && (++fm_timeout < FM25V_TIMEOUT_VAL) );
-	
+
 	if(fm->reading_flag == TRUE)
 	{
 		fm->error_cnt++;

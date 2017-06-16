@@ -33,10 +33,11 @@
 #include "std.h"
 #include "LPC21xx.h"
 
-enum pwm_input_channels {
-  PWM_INPUT1,
-  PWM_INPUT2,
-  PWM_INPUT_NB
+enum pwm_input_channels
+{
+	PWM_INPUT1,
+	PWM_INPUT2,
+	PWM_INPUT_NB
 };
 
 #include "mcu_periph/pwm_input.h"

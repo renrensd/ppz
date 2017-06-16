@@ -30,10 +30,11 @@
 #include "std.h"
 #include "mcu_periph/link_device.h"
 
-struct sonar_data {
-  uint16_t distance_mm;          ///< Raw ADC value
-  //uint16_t offset;        ///< Sonar offset in ADC units
-  float distance_m;         ///< Distance measured in meters
+struct sonar_data
+{
+	uint16_t distance_mm;          ///< Raw ADC value
+	//uint16_t offset;        ///< Sonar offset in ADC units
+	float distance_m;         ///< Distance measured in meters
 };
 
 extern struct sonar_data Sonar_US100;

@@ -36,38 +36,39 @@ uint32_t servos_delay;
 
 void actuators_4015_init(void)
 {
-  /* select clock pin as MAT0.1 output */
-  IO0DIR |= _BV(SERVO_CLOCK_PIN);
-  SERVO_CLOCK_PINSEL |= SERVO_CLOCK_PINSEL_VAL << SERVO_CLOCK_PINSEL_BIT;
+	/* select clock pin as MAT0.1 output */
+	IO0DIR |= _BV(SERVO_CLOCK_PIN);
+	SERVO_CLOCK_PINSEL |= SERVO_CLOCK_PINSEL_VAL << SERVO_CLOCK_PINSEL_BIT;
 
-  /* select reset pin as GPIO output */
-  IO1DIR |= _BV(SERVO_RESET_PIN);
-  PINSEL2 &= ~(_BV(3)); /* P1.25-16 are used as GPIO */
-  /* assert RESET */
-  IO1SET = _BV(SERVO_RESET_PIN);
+	/* select reset pin as GPIO output */
+	IO1DIR |= _BV(SERVO_RESET_PIN);
+	PINSEL2 &= ~(_BV(3)); /* P1.25-16 are used as GPIO */
+	/* assert RESET */
+	IO1SET = _BV(SERVO_RESET_PIN);
 
-  /* DATA pin output */
-  IO1DIR |= _BV(SERVO_DATA_PIN);
+	/* DATA pin output */
+	IO1DIR |= _BV(SERVO_DATA_PIN);
 
-  /* enable match 1 interrupt */
-  T0MCR |= TMCR_MR1_I;
+	/* enable match 1 interrupt */
+	T0MCR |= TMCR_MR1_I;
 
-  /* lower clock         */
-  T0EMR &= ~TEMR_EM1;
-  /* set high on match 1 */
-  T0EMR |= TEMR_EMC1_2;
+	/* lower clock         */
+	T0EMR &= ~TEMR_EM1;
+	/* set high on match 1 */
+	T0EMR |= TEMR_EMC1_2;
 
-  /* set first pulse in a while */
-  T0MR1 = START_TIMEOUT;
-  servos_4015_idx = _4015_NB_CHANNELS;
-  /* Set all servos at their midpoints */
-  /* compulsory for unaffected servos  */
-  uint8_t i;
-  for (i = 0 ; i < _4015_NB_CHANNELS ; i++) {
-    servos_values[i] = SERVOS_TICS_OF_USEC(1500);
-  }
+	/* set first pulse in a while */
+	T0MR1 = START_TIMEOUT;
+	servos_4015_idx = _4015_NB_CHANNELS;
+	/* Set all servos at their midpoints */
+	/* compulsory for unaffected servos  */
+	uint8_t i;
+	for (i = 0 ; i < _4015_NB_CHANNELS ; i++)
+	{
+		servos_values[i] = SERVOS_TICS_OF_USEC(1500);
+	}
 
-  servos_delay = SERVO_REFRESH_TICS;
+	servos_delay = SERVO_REFRESH_TICS;
 }
 
 

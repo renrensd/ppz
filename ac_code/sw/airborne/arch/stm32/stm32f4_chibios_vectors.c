@@ -41,24 +41,25 @@ void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress)  __attribute__((un
 /**
  * @brief   Type of a structure representing the whole vectors table.
  */
-typedef struct {
-  uint32_t      *init_stack;
-  irq_vector_t  reset_vector;
-  irq_vector_t  nmi_vector;
-  irq_vector_t  hardfault_vector;
-  irq_vector_t  memmanage_vector;
-  irq_vector_t  busfault_vector;
-  irq_vector_t  usagefault_vector;
-  irq_vector_t  vector1c;
-  irq_vector_t  vector20;
-  irq_vector_t  vector24;
-  irq_vector_t  vector28;
-  irq_vector_t  svcall_vector;
-  irq_vector_t  debugmonitor_vector;
-  irq_vector_t  vector34;
-  irq_vector_t  pendsv_vector;
-  irq_vector_t  systick_vector;
-  irq_vector_t  vectors[82];
+typedef struct
+{
+	uint32_t      *init_stack;
+	irq_vector_t  reset_vector;
+	irq_vector_t  nmi_vector;
+	irq_vector_t  hardfault_vector;
+	irq_vector_t  memmanage_vector;
+	irq_vector_t  busfault_vector;
+	irq_vector_t  usagefault_vector;
+	irq_vector_t  vector1c;
+	irq_vector_t  vector20;
+	irq_vector_t  vector24;
+	irq_vector_t  vector28;
+	irq_vector_t  svcall_vector;
+	irq_vector_t  debugmonitor_vector;
+	irq_vector_t  vector34;
+	irq_vector_t  pendsv_vector;
+	irq_vector_t  systick_vector;
+	irq_vector_t  vectors[82];
 } vectors_t;
 
 #if !defined(__DOXYGEN__)
@@ -172,14 +173,15 @@ extern void Vector184(void);
 #if !defined(__DOXYGEN__)
 __attribute__((used, section("vectors")))
 #endif
-vectors_t _vectors = {
-  &__main_stack_end__, ResetHandler,       NMIVector,          HardFaultVector,
-  MemManageVector,    BusFaultVector,     UsageFaultVector,   Vector1C,
-  Vector20,           Vector24,           Vector28,           SVCallVector,
-  DebugMonitorVector, Vector34,           PendSVVector,       SysTickVector,
-  {
-    DECLARE_IRQS
-  }
+vectors_t _vectors =
+{
+	&__main_stack_end__, ResetHandler,       NMIVector,          HardFaultVector,
+	MemManageVector,    BusFaultVector,     UsageFaultVector,   Vector1C,
+	Vector20,           Vector24,           Vector28,           SVCallVector,
+	DebugMonitorVector, Vector34,           PendSVVector,       SysTickVector,
+	{
+		DECLARE_IRQS
+	}
 };
 
 /**
@@ -197,39 +199,39 @@ static void  _unhandled_exception(void) __attribute__((naked));
 
 void _unhandled_exception(void)
 {
-  __asm volatile
-  (
-    " tst lr, #4                                                \n"
-    " ite eq                                                    \n"
-    " mrseq r0, msp                                             \n"
-    " mrsne r0, psp                                             \n"
-    " ldr r1, [r0, #24]                                         \n"
-    " ldr r2, handler2_address_const                            \n"
-    " bx r2                                                     \n"
-    " handler2_address_const: .word prvGetRegistersFromStack    \n"
-  );
+	__asm volatile
+	(
+		" tst lr, #4                                                \n"
+		" ite eq                                                    \n"
+		" mrseq r0, msp                                             \n"
+		" mrsne r0, psp                                             \n"
+		" ldr r1, [r0, #24]                                         \n"
+		" ldr r2, handler2_address_const                            \n"
+		" bx r2                                                     \n"
+		" handler2_address_const: .word prvGetRegistersFromStack    \n"
+	);
 }
 
 
 void _unhandled_exception_NMIVector(void)
 {
-  while (TRUE);
+	while (TRUE);
 }
 
 void _unhandled_exception_MemManageVector(void)
 {
-  hardwareFaultType = HardwareFault_MEM;
-  _unhandled_exception();
+	hardwareFaultType = HardwareFault_MEM;
+	_unhandled_exception();
 }
 void _unhandled_exception_BusFaultVector(void)
 {
-  hardwareFaultType = HardwareFault_BUS;
-  _unhandled_exception();
+	hardwareFaultType = HardwareFault_BUS;
+	_unhandled_exception();
 }
 void _unhandled_exception_UsageFaultVector(void)
 {
-  hardwareFaultType = HardwareFault_USAGE;
-  _unhandled_exception();
+	hardwareFaultType = HardwareFault_USAGE;
+	_unhandled_exception();
 }
 
 void NMIVector(void) __attribute__((weak, alias("_unhandled_exception_NMIVector")));
@@ -332,43 +334,43 @@ void Vector184(void) __attribute__((weak, alias("_unhandled_exception")));
 
 void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress)
 {
-  /* These are volatile to try and prevent the compiler/linker optimising them
-     away as the variables never actually get used.  If the debugger won't show the
-     values of the variables, make them global my moving their declaration outside
-     of this function. */
+	/* These are volatile to try and prevent the compiler/linker optimising them
+	   away as the variables never actually get used.  If the debugger won't show the
+	   values of the variables, make them global my moving their declaration outside
+	   of this function. */
 
-  /*
-    When entering hard fault, the stm32 push the value of register on the stack, and loop forever.
-    You can easily retrieve address of faulty instruction in variable pc,
-    status in variable psr.
+	/*
+	  When entering hard fault, the stm32 push the value of register on the stack, and loop forever.
+	  You can easily retrieve address of faulty instruction in variable pc,
+	  status in variable psr.
 
-    in gdb, after when hard-fault is triggered, you just have to type some commands :
+	  in gdb, after when hard-fault is triggered, you just have to type some commands :
 
-    ° print /x pc => retrieve instruction
-    ° info line *pc : see the source code of the line which has triggered exception
-    ° disassemble pc : see the assembly of the address which has triggered exception
-   */
+	  ° print /x pc => retrieve instruction
+	  ° info line *pc : see the source code of the line which has triggered exception
+	  ° disassemble pc : see the assembly of the address which has triggered exception
+	 */
 
-  volatile uint32_t r0 __attribute__((unused));
-  volatile uint32_t r1 __attribute__((unused));
-  volatile uint32_t r2 __attribute__((unused));
-  volatile uint32_t r3 __attribute__((unused));
-  volatile uint32_t r12 __attribute__((unused));
-  volatile uint32_t lr __attribute__((unused)); /* Link register. */
-  volatile uint32_t pc __attribute__((unused)); /* Program counter. */
-  volatile uint32_t psr __attribute__((unused));/* Program status register. */
+	volatile uint32_t r0 __attribute__((unused));
+	volatile uint32_t r1 __attribute__((unused));
+	volatile uint32_t r2 __attribute__((unused));
+	volatile uint32_t r3 __attribute__((unused));
+	volatile uint32_t r12 __attribute__((unused));
+	volatile uint32_t lr __attribute__((unused)); /* Link register. */
+	volatile uint32_t pc __attribute__((unused)); /* Program counter. */
+	volatile uint32_t psr __attribute__((unused));/* Program status register. */
 
-  r0 = pulFaultStackAddress[ 0 ];
-  r1 = pulFaultStackAddress[ 1 ];
-  r2 = pulFaultStackAddress[ 2 ];
-  r3 = pulFaultStackAddress[ 3 ];
+	r0 = pulFaultStackAddress[ 0 ];
+	r1 = pulFaultStackAddress[ 1 ];
+	r2 = pulFaultStackAddress[ 2 ];
+	r3 = pulFaultStackAddress[ 3 ];
 
-  r12 = pulFaultStackAddress[ 4 ];
-  lr = pulFaultStackAddress[ 5 ];
-  pc = pulFaultStackAddress[ 6 ];
-  psr = pulFaultStackAddress[ 7 ];
+	r12 = pulFaultStackAddress[ 4 ];
+	lr = pulFaultStackAddress[ 5 ];
+	pc = pulFaultStackAddress[ 6 ];
+	psr = pulFaultStackAddress[ 7 ];
 
-  /* When the following line is hit, the variables contain the register values. */
-  while (1);
+	/* When the following line is hit, the variables contain the register values. */
+	while (1);
 }
 

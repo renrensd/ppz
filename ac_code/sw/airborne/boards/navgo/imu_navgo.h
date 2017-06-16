@@ -59,10 +59,11 @@
 #endif
 
 
-struct ImuNavgo {
-  struct Itg3200 itg;
-  struct Adxl345_I2c adxl;
-  struct Hmc58xx hmc;
+struct ImuNavgo
+{
+	struct Itg3200 itg;
+	struct Adxl345_I2c adxl;
+	struct Hmc58xx hmc;
 };
 
 extern struct ImuNavgo imu_navgo;

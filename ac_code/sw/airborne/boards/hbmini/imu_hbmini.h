@@ -58,8 +58,9 @@
 #endif
 
 
-struct ImuHbmini {
-  struct Hmc58xx hmc;
+struct ImuHbmini
+{
+	struct Hmc58xx hmc;
 };
 
 extern struct ImuHbmini imu_hbmini;

@@ -17,57 +17,57 @@
 // System Control Block Registers
 typedef struct
 {
-  // Memory Accelerator Module Registers (MAM)
-  struct
-    {
-    REG_8 cr;                           // Control Register
-    REG_8 _pad0[3];
-    REG_8 tim;                          // Timing Control Register
-    REG32 _pad1[14];
-    } mam;
+	// Memory Accelerator Module Registers (MAM)
+	struct
+	{
+		REG_8 cr;                           // Control Register
+		REG_8 _pad0[3];
+		REG_8 tim;                          // Timing Control Register
+		REG32 _pad1[14];
+	} mam;
 
-  // Memory Mapping Control Register
-  REG_8 memmap;
-  REG32 _pad0[15];
+	// Memory Mapping Control Register
+	REG_8 memmap;
+	REG32 _pad0[15];
 
-  // Phase Locked Loop Registers (PLL)
-  struct
-    {
-    REG_8 con;                          // Control Register
-    REG_8 _pad0[3];
-    REG_8 cfg;                          // Configuration Register
-    REG_8 _pad1[3];
-    REG16 stat;                         // Status Register
-    REG16 _pad2;
-    REG_8 feed;                         // Feed Register
-    REG32 _pad3[12];
-    } pll;
+	// Phase Locked Loop Registers (PLL)
+	struct
+	{
+		REG_8 con;                          // Control Register
+		REG_8 _pad0[3];
+		REG_8 cfg;                          // Configuration Register
+		REG_8 _pad1[3];
+		REG16 stat;                         // Status Register
+		REG16 _pad2;
+		REG_8 feed;                         // Feed Register
+		REG32 _pad3[12];
+	} pll;
 
-  // Power Control Registers
-  struct
-    {
-    REG_8 con;                          // Control Register
-    REG_8 _pad0[3];
-    REG32 conp;                         // Peripherals Register
-    REG32 _pad1[14];
-    } p;
+	// Power Control Registers
+	struct
+	{
+		REG_8 con;                          // Control Register
+		REG_8 _pad0[3];
+		REG32 conp;                         // Peripherals Register
+		REG32 _pad1[14];
+	} p;
 
-  // VPB Divider Register
-  REG_8 vpbdiv;
-  REG32 _pad1[15];
+	// VPB Divider Register
+	REG_8 vpbdiv;
+	REG32 _pad1[15];
 
-  // External Interrupt Registers
-  struct
-    {
-    REG_8 flag;                         // Flag Register
-    REG_8 _pad0[3];
-    REG_8 wake;                         // Wakeup Register
-    REG_8 _pad1[3];
-    REG_8 mode;                         // Mode Register
-    REG_8 _pad2[3];
-    REG_8 polar;                        // Polarity Register
-    REG32 _pad3[12];
-    } ext;
+	// External Interrupt Registers
+	struct
+	{
+		REG_8 flag;                         // Flag Register
+		REG_8 _pad0[3];
+		REG_8 wake;                         // Wakeup Register
+		REG_8 _pad1[3];
+		REG_8 mode;                         // Mode Register
+		REG_8 _pad2[3];
+		REG_8 polar;                        // Polarity Register
+		REG32 _pad3[12];
+	} ext;
 } scbRegs_t;
 
 

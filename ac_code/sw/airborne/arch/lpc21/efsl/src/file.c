@@ -58,29 +58,37 @@ euint32 file_fread(File *file,euint32 offset, euint32 size,euint8 *buf)
 	if( (offset+size > file->FileSize) && size_left!=0)
 		size_left=file->FileSize-offset;
 
-	while(size_left>0){
+	while(size_left>0)
+	{
 
 		cclus = coffset/(512*file->fs->volumeId.SectorsPerCluster);
 		csec = (coffset/(512))%file->fs->volumeId.SectorsPerCluster;
 		cbyte = coffset%512;
 
-		if(cbyte!=0 || size_left<512){
+		if(cbyte!=0 || size_left<512)
+		{
 			btr = 512-(coffset%512)>=size_left?size_left:512-(coffset%512);
-		}else{
+		}
+		else
+		{
 			btr = 512;
 		}
 
-		if((fat_LogicToDiscCluster(file->fs,&(file->Cache),cclus))!=0){
+		if((fat_LogicToDiscCluster(file->fs,&(file->Cache),cclus))!=0)
+		{
 			return(0);
 		}
 		rclus=file->Cache.DiscCluster;
 		rsec=fs_clusterToSector(file->fs,rclus);
 
 
-		if(btr==512){
+		if(btr==512)
+		{
 			/*part_readBuf(file->fs->part,rsec+csec,buf+bytes_read);*/
 			part_directSectorRead(file->fs->part,rsec+csec,buf+bytes_read);
-		}else{
+		}
+		else
+		{
 			/*part_readBuf(file->fs->part,rsec+csec,tbuf);*/
 			tbuf = part_getSect(file->fs->part,rsec+csec,IOM_MODE_READONLY);
 			memCpy(tbuf+(coffset%512),buf+bytes_read,btr);
@@ -136,7 +144,8 @@ euint32 file_write(File *file, euint32 size,euint8 *buf)
 */
 esint16 file_setpos(File *file,euint32 pos)
 {
-	if(pos<=file->FileSize){
+	if(pos<=file->FileSize)
+	{
 		file->FilePtr=pos;
 		return(0);
 	}
@@ -162,31 +171,39 @@ euint32 file_fwrite(File* file,euint32 offset,euint32 size,euint8* buf)
 
 	if(!file_getAttr(file,FILE_STATUS_OPEN) || !file_getAttr(file,FILE_STATUS_WRITE))return(0);
 
-	if(offset>file->FileSize){
+	if(offset>file->FileSize)
+	{
 		offset=file->FileSize;
 	}
 
 	need_cluster = file_requiredCluster(file,offset,size);
 
-	if(need_cluster){
-		if(fat_allocClusterChain(file->fs,&(file->Cache),need_cluster+CLUSTER_PREALLOC_FILE)!=0){
+	if(need_cluster)
+	{
+		if(fat_allocClusterChain(file->fs,&(file->Cache),need_cluster+CLUSTER_PREALLOC_FILE)!=0)
+		{
 			return(0);
 		}
 	}
 
-	while(size_left>0){
+	while(size_left>0)
+	{
 
 		cclus = coffset/(512*file->fs->volumeId.SectorsPerCluster);
 		csec = (coffset/(512))%file->fs->volumeId.SectorsPerCluster;
 		cbyte = coffset%512;
 
-		if(cbyte!=0 || size_left<512){
+		if(cbyte!=0 || size_left<512)
+		{
 			btr = 512-(coffset%512)>=size_left?size_left:512-(coffset%512);
-		}else{
+		}
+		else
+		{
 			btr = 512;
 		}
 
-		if((fat_LogicToDiscCluster(file->fs,&(file->Cache),cclus))!=0){
+		if((fat_LogicToDiscCluster(file->fs,&(file->Cache),cclus))!=0)
+		{
 			file->FileSize+=bytes_written;
 			dir_setFileSize(file->fs,&(file->Location),file->FileSize);
 			return(bytes_written);
@@ -194,10 +211,13 @@ euint32 file_fwrite(File* file,euint32 offset,euint32 size,euint8* buf)
 		rclus=file->Cache.DiscCluster;
 		rsec=fs_clusterToSector(file->fs,rclus);
 
-		if(btr==512){
+		if(btr==512)
+		{
 			/*part_writeBuf(file->fs->part,rsec+csec,buf+bytes_written);*/
 			part_directSectorWrite(file->fs->part,rsec+csec,buf+bytes_written);
-		}else{
+		}
+		else
+		{
 			/*part_readBuf(file->fs->part,rsec+csec,tbuf);*/
 			tbuf = part_getSect(file->fs->part,rsec+csec,IOM_MODE_READWRITE);
 			memCpy(buf+bytes_written,tbuf+(coffset%512),btr);
@@ -210,9 +230,10 @@ euint32 file_fwrite(File* file,euint32 offset,euint32 size,euint8* buf)
 		size_left-=btr;
 	}
 
-	if(bytes_written>file->FileSize-offset){
+	if(bytes_written>file->FileSize-offset)
+	{
 		file->FileSize+=bytes_written-(file->FileSize-offset);
-    }
+	}
 
 	return(bytes_written);
 }
@@ -225,98 +246,100 @@ euint32 file_fwrite(File* file,euint32 offset,euint32 size,euint8* buf)
 */
 esint8 file_fopen(File* file,FileSystem *fs,eint8* filename,eint8 mode)
 {
-    FileLocation loc;
-    FileRecord wtmp;
-    eint8 fatfilename[11];
-    euint32 sec;
+	FileLocation loc;
+	FileRecord wtmp;
+	eint8 fatfilename[11];
+	euint32 sec;
 
-    dir_getFatFileName(filename,fatfilename);
+	dir_getFatFileName(filename,fatfilename);
 
-    switch(mode)
+	switch(mode)
 	{
-        case MODE_READ:
-            if(fs_findFile(fs,filename,&loc,0)==1)
-			{
-                dir_getFileStructure(fs,&(file->DirEntry), &loc);
-                file_initFile(file,fs,&loc);
-				file_setAttr(file,FILE_STATUS_OPEN,1);
-				file_setAttr(file,FILE_STATUS_WRITE,0);
-                return(0);
-            }
-            return(-1);
-            break;
-        case MODE_WRITE:
-            if(fs_findFile(fs,filename,&loc,&sec)) /* File may NOT exist, but parent HAS to exist */
-			{
-                return(-2);
-			}
-			if(sec==0){ /* Parent dir does not exist */
- 				return(-4);
-			}
-            if(fs_findFreeFile(fs,filename,&loc,0))
-			{
-                dir_createDefaultEntry(fs,&wtmp,fatfilename);
-                dir_createDirectoryEntry(fs,&wtmp,&loc);
-                memCpy(&wtmp,&(file->DirEntry),sizeof(wtmp));
-				file_initFile(file,fs,&loc);
-                sec=fs_getNextFreeCluster(file->fs,fs_giveFreeClusterHint(file->fs));
-                dir_setFirstCluster(file->fs,&(file->Location),sec);
-                fs_setFirstClusterInDirEntry(&(file->DirEntry),sec);
-                fs_initClusterChain(fs,&(file->Cache),sec);
-                fat_setNextClusterAddress(fs,sec,fat_giveEocMarker(fs));
-				file_setAttr(file,FILE_STATUS_OPEN,1);
-				file_setAttr(file,FILE_STATUS_WRITE,1);
-            	return(0);
-			}
-            else
-			{
-                return(-3);
-			}
-            break;
-        case MODE_APPEND:
-			if(fs_findFile(fs,filename,&loc,0)==1) /* File exists */
-			{
-				dir_getFileStructure(fs,&(file->DirEntry), &loc);
-				file_initFile(file,fs,&loc);
-				if(file->Cache.FirstCluster==0){
-					sec=fs_getNextFreeCluster(file->fs,fs_giveFreeClusterHint(file->fs));
-					dir_setFirstCluster(file->fs,&(file->Location),sec);
-					fs_setFirstClusterInDirEntry(&(file->DirEntry),sec);
-					fat_setNextClusterAddress(fs,sec,fat_giveEocMarker(fs));
-					file_initFile(file,fs,&loc);
-				}
-				file_setpos(file,file->FileSize);
-				file_setAttr(file,FILE_STATUS_OPEN,1);
-				file_setAttr(file,FILE_STATUS_WRITE,1);
-			}
-			else /* File does not excist */
-			{
-				if(fs_findFreeFile(fs,filename,&loc,0))
-				{
-					dir_createDefaultEntry(fs,&wtmp,fatfilename);
-					dir_createDirectoryEntry(fs,&wtmp,&loc);
-					memCpy(&wtmp,&(file->DirEntry),sizeof(wtmp));
-					file_initFile(file,fs,&loc);
-					sec=fs_getNextFreeCluster(file->fs,fs_giveFreeClusterHint(file->fs));
-					dir_setFirstCluster(file->fs,&(file->Location),sec);
-	                fs_setFirstClusterInDirEntry(&(file->DirEntry),sec);
-    	            fs_initClusterChain(fs,&(file->Cache),sec);
-					fat_setNextClusterAddress(fs,sec,fat_giveEocMarker(fs));
-					file_setAttr(file,FILE_STATUS_OPEN,1);
-					file_setAttr(file,FILE_STATUS_WRITE,1);
-				}
-				else
-				{
-					return(-3);
-				}
-			}
+	case MODE_READ:
+		if(fs_findFile(fs,filename,&loc,0)==1)
+		{
+			dir_getFileStructure(fs,&(file->DirEntry), &loc);
+			file_initFile(file,fs,&loc);
+			file_setAttr(file,FILE_STATUS_OPEN,1);
+			file_setAttr(file,FILE_STATUS_WRITE,0);
 			return(0);
-            break;
-        default:
-            return(-4);
-            break;
-    }
-    return(-5);
+		}
+		return(-1);
+		break;
+	case MODE_WRITE:
+		if(fs_findFile(fs,filename,&loc,&sec)) /* File may NOT exist, but parent HAS to exist */
+		{
+			return(-2);
+		}
+		if(sec==0)  /* Parent dir does not exist */
+		{
+			return(-4);
+		}
+		if(fs_findFreeFile(fs,filename,&loc,0))
+		{
+			dir_createDefaultEntry(fs,&wtmp,fatfilename);
+			dir_createDirectoryEntry(fs,&wtmp,&loc);
+			memCpy(&wtmp,&(file->DirEntry),sizeof(wtmp));
+			file_initFile(file,fs,&loc);
+			sec=fs_getNextFreeCluster(file->fs,fs_giveFreeClusterHint(file->fs));
+			dir_setFirstCluster(file->fs,&(file->Location),sec);
+			fs_setFirstClusterInDirEntry(&(file->DirEntry),sec);
+			fs_initClusterChain(fs,&(file->Cache),sec);
+			fat_setNextClusterAddress(fs,sec,fat_giveEocMarker(fs));
+			file_setAttr(file,FILE_STATUS_OPEN,1);
+			file_setAttr(file,FILE_STATUS_WRITE,1);
+			return(0);
+		}
+		else
+		{
+			return(-3);
+		}
+		break;
+	case MODE_APPEND:
+		if(fs_findFile(fs,filename,&loc,0)==1) /* File exists */
+		{
+			dir_getFileStructure(fs,&(file->DirEntry), &loc);
+			file_initFile(file,fs,&loc);
+			if(file->Cache.FirstCluster==0)
+			{
+				sec=fs_getNextFreeCluster(file->fs,fs_giveFreeClusterHint(file->fs));
+				dir_setFirstCluster(file->fs,&(file->Location),sec);
+				fs_setFirstClusterInDirEntry(&(file->DirEntry),sec);
+				fat_setNextClusterAddress(fs,sec,fat_giveEocMarker(fs));
+				file_initFile(file,fs,&loc);
+			}
+			file_setpos(file,file->FileSize);
+			file_setAttr(file,FILE_STATUS_OPEN,1);
+			file_setAttr(file,FILE_STATUS_WRITE,1);
+		}
+		else /* File does not excist */
+		{
+			if(fs_findFreeFile(fs,filename,&loc,0))
+			{
+				dir_createDefaultEntry(fs,&wtmp,fatfilename);
+				dir_createDirectoryEntry(fs,&wtmp,&loc);
+				memCpy(&wtmp,&(file->DirEntry),sizeof(wtmp));
+				file_initFile(file,fs,&loc);
+				sec=fs_getNextFreeCluster(file->fs,fs_giveFreeClusterHint(file->fs));
+				dir_setFirstCluster(file->fs,&(file->Location),sec);
+				fs_setFirstClusterInDirEntry(&(file->DirEntry),sec);
+				fs_initClusterChain(fs,&(file->Cache),sec);
+				fat_setNextClusterAddress(fs,sec,fat_giveEocMarker(fs));
+				file_setAttr(file,FILE_STATUS_OPEN,1);
+				file_setAttr(file,FILE_STATUS_WRITE,1);
+			}
+			else
+			{
+				return(-3);
+			}
+		}
+		return(0);
+		break;
+	default:
+		return(-4);
+		break;
+	}
+	return(-5);
 }
 /*****************************************************************************/
 
@@ -327,16 +350,21 @@ esint8 file_fopen(File* file,FileSystem *fs,eint8* filename,eint8 mode)
 */
 esint8 file_fclose(File *file)
 {
-	if(fs_hasTimeSupport()){
+	if(fs_hasTimeSupport())
+	{
 		file->DirEntry.AccessDate = time_getDate();
-		if(file_getAttr(file,FILE_STATUS_WRITE)){
+		if(file_getAttr(file,FILE_STATUS_WRITE))
+		{
 			file->DirEntry.FileSize = file->FileSize;
 			file->DirEntry.WriteDate = file->DirEntry.AccessDate;
 			file->DirEntry.WriteTime = time_getTime();
 		}
 		dir_updateDirectoryEntry(file->fs,&(file->DirEntry),&(file->Location));
-	}else{
-		if(file_getAttr(file,FILE_STATUS_WRITE)){
+	}
+	else
+	{
+		if(file_getAttr(file,FILE_STATUS_WRITE))
+		{
 			dir_setFileSize(file->fs,&(file->Location),file->FileSize);
 		}
 	}
@@ -364,7 +392,7 @@ void file_initFile(File *file, FileSystem *fs, FileLocation *loc)
 	file->Location.Offset=loc->Offset;
 	file->Cache.Linear=0;
 	file->Cache.FirstCluster=(((euint32)file->DirEntry.FirstClusterHigh)<<16)+
-	                                    file->DirEntry.FirstClusterLow;
+													 file->DirEntry.FirstClusterLow;
 	file->Cache.LastCluster=0;
 	file->Cache.LogicCluster=0;
 	file->Cache.DiscCluster=file->Cache.FirstCluster;
@@ -383,34 +411,50 @@ eint8* file_normalToFatName(eint8* filename,eint8* fatfilename)
 {
 	euint8 c,dot=0,vc=0;
 
-	for(c=0;c<11;c++)fatfilename[c]=' ';
+	for(c=0; c<11; c++)fatfilename[c]=' ';
 
 	c=0;
 
-	if(*filename == '.'){
+	if(*filename == '.')
+	{
 		fatfilename[0]='.';
 		vc++;
-		if(*(filename+1) == '.'){
+		if(*(filename+1) == '.')
+		{
 			fatfilename[1]='.';
 			filename+=2;
-		}else{
+		}
+		else
+		{
 			filename++;
 		}
-	}else{
-		while(*filename != '\0' && *filename != ' ' && *filename != '/'){
-			if(*filename=='.' && !dot){
+	}
+	else
+	{
+		while(*filename != '\0' && *filename != ' ' && *filename != '/')
+		{
+			if(*filename=='.' && !dot)
+			{
 				dot=1;
 				c=8;
-			}else{
-				if(dot){
-					if(c<=10){
+			}
+			else
+			{
+				if(dot)
+				{
+					if(c<=10)
+					{
 						fatfilename[c]=file_validateChar(*filename);
 						c++;
 					}
-				}else{
-					if(c<=7){
+				}
+				else
+				{
+					if(c<=7)
+					{
 						fatfilename[c]=file_validateChar(*filename);
-						c++; vc++;
+						c++;
+						vc++;
 					}
 				}
 			}
@@ -418,13 +462,19 @@ eint8* file_normalToFatName(eint8* filename,eint8* fatfilename)
 		}
 	}
 
-	if(vc>0){
-		if(*filename=='\0'){
+	if(vc>0)
+	{
+		if(*filename=='\0')
+		{
 			return(filename);
-		}else{
+		}
+		else
+		{
 			return(filename+1);
 		}
-	}else{
+	}
+	else
+	{
 		return(0);
 	}
 }
@@ -440,9 +490,9 @@ eint8* file_normalToFatName(eint8* filename,eint8* fatfilename)
 */
 euint8 file_validateChar(euint8 c)
 {
-    if( (c<0x20) || (c>0x20&&c<0x30&&c!='-') || (c>0x39&&c<0x41) || (c>0x5A&&c<0x61&&c!='_') ||	(c>0x7A&&c!='~') )
+	if( (c<0x20) || (c>0x20&&c<0x30&&c!='-') || (c>0x39&&c<0x41) || (c>0x5A&&c<0x61&&c!='_') ||	(c>0x7A&&c!='~') )
 		return(0x58);
-    if( c>=0x61 && c<=0x7A )
+	if( c>=0x61 && c<=0x7A )
 		return(c-32);
 
 	return(c);
@@ -457,9 +507,12 @@ euint8 file_validateChar(euint8 c)
 */
 void file_setAttr(File* file,euint8 attribute,euint8 val)
 {
-	if(val){
+	if(val)
+	{
 		file->FileStatus|=1<<attribute;
-	}else{
+	}
+	else
+	{
 		file->FileStatus&=~(1<<attribute);
 	}
 }
@@ -483,21 +536,30 @@ euint32 file_requiredCluster(File *file,euint32 offset, euint32 size)
 	euint32 clusters_required,clustersize;
 	euint32 hc;
 
-	if((offset+size)>file->FileSize){
-		if(file->Cache.ClusterCount==0){ /* Number of cluster unknown */
+	if((offset+size)>file->FileSize)
+	{
+		if(file->Cache.ClusterCount==0)  /* Number of cluster unknown */
+		{
 			hc = fat_countClustersInChain(file->fs,file->Cache.FirstCluster);
 			file->Cache.ClusterCount = hc;
-		}else{
+		}
+		else
+		{
 			hc = file->Cache.ClusterCount; /* This better be right */
 		}
 		clustersize = file->fs->volumeId.BytesPerSector * file->fs->volumeId.SectorsPerCluster;
 		if((size-file->FileSize+offset)>
-		   ((hc-((file->FileSize+clustersize-1)/clustersize))*clustersize)){
+				((hc-((file->FileSize+clustersize-1)/clustersize))*clustersize))
+		{
 			clusters_required = (((offset+size)-(hc*clustersize))+clustersize-1)/clustersize;
-		}else{
+		}
+		else
+		{
 			clusters_required = 0;
 		}
-	}else{
+	}
+	else
+	{
 		clusters_required = 0;
 	}
 	return(clusters_required);

@@ -51,11 +51,11 @@
 static inline uint32_t get_sys_time_usec(void)
 {
 #ifdef RTOS_IS_CHIBIOS
-  return (chibios_chTimeNow() * (1000000 / CH_FREQUENCY));
+	return (chibios_chTimeNow() * (1000000 / CH_FREQUENCY));
 #else
-  return sys_time.nb_sec * 1000000 +
-         usec_of_cpu_ticks(sys_time.nb_sec_rem) +
-         usec_of_cpu_ticks(systick_get_reload() - systick_get_value());
+	return sys_time.nb_sec * 1000000 +
+				 usec_of_cpu_ticks(sys_time.nb_sec_rem) +
+				 usec_of_cpu_ticks(systick_get_reload() - systick_get_value());
 #endif
 }
 
@@ -66,11 +66,11 @@ static inline uint32_t get_sys_time_usec(void)
 static inline uint32_t get_sys_time_msec(void)
 {
 #ifdef RTOS_IS_CHIBIOS
-  return (chibios_chTimeNow() * (1000 / CH_FREQUENCY));
+	return (chibios_chTimeNow() * (1000 / CH_FREQUENCY));
 #else
-  return sys_time.nb_sec * 1000 +
-         msec_of_cpu_ticks(sys_time.nb_sec_rem) +
-         msec_of_cpu_ticks(systick_get_reload() - systick_get_value());
+	return sys_time.nb_sec * 1000 +
+				 msec_of_cpu_ticks(sys_time.nb_sec_rem) +
+				 msec_of_cpu_ticks(systick_get_reload() - systick_get_value());
 #endif
 }
 
@@ -83,32 +83,36 @@ static inline uint32_t get_sys_time_msec(void)
 static inline void sys_time_usleep(uint32_t us)
 {
 #ifdef RTOS_IS_CHIBIOS
-  chibios_chThdSleepMicroseconds(us);
+	chibios_chThdSleepMicroseconds(us);
 #else
-  // start time
-  uint32_t start = systick_get_value();
-  // max time of one full counter cycle (n + 1 ticks)
-  uint32_t DT = usec_of_cpu_ticks(systick_get_reload() + 1);
-  // number of cycles
-  uint32_t n = us / DT;
-  // remaining number of cpu ticks
-  uint32_t rem = cpu_ticks_of_usec(us % DT);
-  // end time depend on the current value of the counter
-  uint32_t end;
-  if (rem < start) {
-    end = start - rem;
-  } else {
-    // one more count flag is required
-    n++;
-    end = systick_get_reload() - rem + start;
-  }
-  // count number of cycles (when counter reachs 0)
-  while (n) {
-    while (!systick_get_countflag());
-    n--;
-  }
-  // wait remaining ticks
-  while (systick_get_value() > end);
+	// start time
+	uint32_t start = systick_get_value();
+	// max time of one full counter cycle (n + 1 ticks)
+	uint32_t DT = usec_of_cpu_ticks(systick_get_reload() + 1);
+	// number of cycles
+	uint32_t n = us / DT;
+	// remaining number of cpu ticks
+	uint32_t rem = cpu_ticks_of_usec(us % DT);
+	// end time depend on the current value of the counter
+	uint32_t end;
+	if (rem < start)
+	{
+		end = start - rem;
+	}
+	else
+	{
+		// one more count flag is required
+		n++;
+		end = systick_get_reload() - rem + start;
+	}
+	// count number of cycles (when counter reachs 0)
+	while (n)
+	{
+		while (!systick_get_countflag());
+		n--;
+	}
+	// wait remaining ticks
+	while (systick_get_value() > end);
 #endif
 }
 

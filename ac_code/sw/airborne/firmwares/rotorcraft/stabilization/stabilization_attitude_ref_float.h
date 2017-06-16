@@ -36,9 +36,10 @@ extern struct FloatQuat   stab_att_ref_quat;
 extern struct FloatRates  stab_att_ref_rate;
 extern struct FloatRates  stab_att_ref_accel;
 
-struct FloatRefModel {
-  struct FloatRates omega;
-  struct FloatRates zeta;
+struct FloatRefModel
+{
+	struct FloatRates omega;
+	struct FloatRates zeta;
 };
 
 extern struct FloatRefModel stab_att_ref_model[];

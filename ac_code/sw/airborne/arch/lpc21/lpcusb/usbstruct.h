@@ -38,7 +38,8 @@
 
 
 /** setup packet definitions */
-typedef struct {
+typedef struct
+{
 	U8	bmRequestType;			/**< characteristics of the specific request */
 	U8	bRequest;				/**< specific request */
 	U16	wValue;					/**< request specific parameter */
@@ -95,7 +96,8 @@ typedef struct {
 */
 
 /** USB descriptor header */
-typedef struct {
+typedef struct
+{
 	U8	bLength;			/**< descriptor length */
 	U8	bDescriptorType;	/**< descriptor type */
 } TUSBDescHeader;

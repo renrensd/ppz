@@ -35,20 +35,22 @@
 /* Include common ADXRS290 options and definitions */
 #include "peripherals/adxrs290.h"
 
-struct Adxrs290_Spi {
-  struct spi_periph *spi_p;
-  struct spi_transaction spi_trans;
-  volatile uint8_t tx_buf[2];
-  volatile uint8_t rx_buf[8];
-  enum Adxrs290ConfStatus init_status; ///< init status
-  bool_t initialized;                  ///< config done flag
-  volatile bool_t data_available;      ///< data ready flag
-  uint16_t temp;
-  union {
-    struct Int16Rates rates;           ///< data vector in accel coordinate system
-    int16_t value[3];                 ///< data values accessible by channel index
-  } data;
-  struct Adxrs290Config config;
+struct Adxrs290_Spi
+{
+	struct spi_periph *spi_p;
+	struct spi_transaction spi_trans;
+	volatile uint8_t tx_buf[2];
+	volatile uint8_t rx_buf[8];
+	enum Adxrs290ConfStatus init_status; ///< init status
+	bool_t initialized;                  ///< config done flag
+	volatile bool_t data_available;      ///< data ready flag
+	uint16_t temp;
+	union
+	{
+		struct Int16Rates rates;           ///< data vector in accel coordinate system
+		int16_t value[3];                 ///< data values accessible by channel index
+	} data;
+	struct Adxrs290Config config;
 };
 
 // Functions
@@ -60,14 +62,14 @@ extern void adxrs290_spi_event(struct Adxrs290_Spi *adxrs290);
 /// convenience function: read or start configuration if not already initialized
 static inline void adxrs290_spi_periodic(struct Adxrs290_Spi *adxrs290, uint8_t axis)
 {
-  if( adxrs290->initialized)
-  {
-    adxrs290_spi_read(adxrs290,axis);
-  } 
-  else 
-  {
-    adxrs290_spi_start_configure(adxrs290);
-  }
+	if( adxrs290->initialized)
+	{
+		adxrs290_spi_read(adxrs290,axis);
+	}
+	else
+	{
+		adxrs290_spi_start_configure(adxrs290);
+	}
 }
 
 #endif // ADXRS290_SPI_H

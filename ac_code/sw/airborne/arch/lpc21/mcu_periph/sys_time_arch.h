@@ -66,7 +66,7 @@ void TIMER0_ISR(void) __attribute__((naked));
  */
 static inline uint32_t get_sys_time_usec(void)
 {
-  return usec_of_cpu_ticks(T0TC);
+	return usec_of_cpu_ticks(T0TC);
 }
 
 /**
@@ -75,7 +75,7 @@ static inline uint32_t get_sys_time_usec(void)
  */
 static inline uint32_t get_sys_time_msec(void)
 {
-  return msec_of_cpu_ticks(T0TC);
+	return msec_of_cpu_ticks(T0TC);
 }
 
 
@@ -86,9 +86,9 @@ static inline uint32_t get_sys_time_msec(void)
 /** Busy wait, in microseconds */
 static inline void sys_time_usleep(uint32_t us)
 {
-  uint32_t start = T0TC;
-  uint32_t ticks = cpu_ticks_of_usec(us);
-  while ((uint32_t)(T0TC - start) < ticks);
+	uint32_t start = T0TC;
+	uint32_t ticks = cpu_ticks_of_usec(us);
+	while ((uint32_t)(T0TC - start) < ticks);
 }
 
 #endif /* SYS_TIME_ARCH_H */

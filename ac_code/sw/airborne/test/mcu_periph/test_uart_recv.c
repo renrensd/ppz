@@ -44,48 +44,54 @@ static inline void main_event(void);
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic();
-    }
-    main_event();
-  }
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic();
+		}
+		main_event();
+	}
 
-  return 0;
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
 }
 
 static inline void main_periodic(void)
 {
-  static uint8_t expected_i = 0;
-  static float last_ts = 0;
-  static float recv_ts = 0;
+	static uint8_t expected_i = 0;
+	static float last_ts = 0;
+	static float recv_ts = 0;
 
-  if (uart_char_available(&TEST_UART)) {
-    uint8_t c =  uart_getch(&TEST_UART);
-    RunOnceEvery(1, printf("%f, received: '%d'\n", get_sys_time_float(), c);)
-    if (c != expected_i) {
-      printf("%f, sequence interrupted: expected %d, received %d\n", get_sys_time_float(),
-             expected_i, c);
-    }
-    expected_i = c+1;
-    recv_ts = get_sys_time_float();
-  }
-  /* print info if nothing recieved for 1s */
-  float now = get_sys_time_float();
-  if (now - last_ts > 1.0) {
-    if (now - recv_ts > 1.0) {
-      printf("time: %f, last received at %f\n", now, recv_ts);
-    }
-    last_ts = now;
-  }
+	if (uart_char_available(&TEST_UART))
+	{
+		uint8_t c =  uart_getch(&TEST_UART);
+		RunOnceEvery(1, printf("%f, received: '%d'\n", get_sys_time_float(), c);)
+		if (c != expected_i)
+		{
+			printf("%f, sequence interrupted: expected %d, received %d\n", get_sys_time_float(),
+						 expected_i, c);
+		}
+		expected_i = c+1;
+		recv_ts = get_sys_time_float();
+	}
+	/* print info if nothing recieved for 1s */
+	float now = get_sys_time_float();
+	if (now - last_ts > 1.0)
+	{
+		if (now - recv_ts > 1.0)
+		{
+			printf("time: %f, last received at %f\n", now, recv_ts);
+		}
+		last_ts = now;
+	}
 }
 
 static inline void main_event(void)

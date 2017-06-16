@@ -37,7 +37,7 @@
  */
 static inline void Ms2100Reset(void)
 {
-  GPIOC_BRR = GPIO13;
+	GPIOC_BRR = GPIO13;
 }
 
 /**
@@ -46,7 +46,7 @@ static inline void Ms2100Reset(void)
  */
 static inline void Ms2100Set(void)
 {
-  GPIOC_BSRR = GPIO13;
+	GPIOC_BSRR = GPIO13;
 }
 
 #define Ms2100HasEOC() (gpio_get(GPIOB, GPIO5) != 0)

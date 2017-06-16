@@ -20,7 +20,7 @@
 
 /**** System include files ****/
 #include "subsystems/monitoring/monitoring_imu.h"
-#include "subsystems/monitoring/monitoring.h" 
+#include "subsystems/monitoring/monitoring.h"
 #include "subsystems/abi.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "firmwares/rotorcraft/autopilot.h"
@@ -51,11 +51,11 @@ static abi_event accel_ev_mo;
 static abi_event mag_ev_mo;
 
 static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
-		uint32_t stamp, struct Int32Rates *gyro);
+												 uint32_t stamp, struct Int32Rates *gyro);
 static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
-		uint32_t stamp, struct Int32Vect3 *accel);
+													uint32_t stamp, struct Int32Vect3 *accel);
 static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
-		uint32_t stamp, struct Int32Vect3 *mag);
+												uint32_t stamp, struct Int32Vect3 *mag);
 
 /*===FUNCTIONS========================================================*/
 
@@ -204,7 +204,7 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 		em[IMU_CRITICAL].active = FALSE;
 		em[IMU_CRITICAL].finished = FALSE;
 		//only momentary,recover do nothing
-		//set_except_mission(IMU_MOMENTARY,FALSE,FALSE, FALSE,0, FALSE,FALSE,0);	
+		//set_except_mission(IMU_MOMENTARY,FALSE,FALSE, FALSE,0, FALSE,FALSE,0);
 
 		//TODOM:need add to black_block for recording
 #if TEST_MSG
@@ -223,8 +223,9 @@ void imu_flight_check(void)  //only accel/gyro/mag fix_data+frequence +mag_EMI
 #endif
 	}
 	else
-	{   //other error:fix_data or frequence
-			//set limit height hover until other cmd
+	{
+		//other error:fix_data or frequence
+		//set limit height hover until other cmd
 		set_except_mission(IMU_CRITICAL, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 #if TEST_MSG
 		fs_imu = 3;
@@ -337,7 +338,7 @@ void imu_frequence_check(void)   //need periodic run to avoid counter overflow
  * RETURN      : none
  ***********************************************************************/
 static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
-		uint32_t stamp __attribute__((unused)), struct Int32Vect3 *accel)
+													uint32_t stamp __attribute__((unused)), struct Int32Vect3 *accel)
 {
 
 	static struct Int32Vect3 accel_last;
@@ -347,7 +348,8 @@ static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
 	if (data_fix_check(accel->x, accel_last.x, &imu_moni.accel_fix_counter.x, DATA_FIX_MAX) ||
 			data_fix_check(accel->y, accel_last.y, &imu_moni.accel_fix_counter.y, DATA_FIX_MAX) ||
 			data_fix_check(accel->z, accel_last.z, &imu_moni.accel_fix_counter.z, DATA_FIX_MAX))
-	{  //fix data
+	{
+		//fix data
 		imu_moni.imu_error[1] |= 0x02;  //fix data
 		imu_moni.imu_status = 0;  //set imu fail
 #if TEST_MSG
@@ -374,10 +376,11 @@ static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
 	{
 		//data inspect counter request 5000
 		if ( //check accel data is horizontal
-		(abs(imu_moni.accel_aver.x) + abs(imu_moni.accel_aver.y)) < ACC_XY &&
-				-imu_moni.accel_aver.z < ACC_Z_MAX &&
-				-imu_moni.accel_aver.z > ACC_Z_MIN)
-		{   //data is normal(horizontal),caculate noise
+			(abs(imu_moni.accel_aver.x) + abs(imu_moni.accel_aver.y)) < ACC_XY &&
+			-imu_moni.accel_aver.z < ACC_Z_MAX &&
+			-imu_moni.accel_aver.z > ACC_Z_MIN)
+		{
+			//data is normal(horizontal),caculate noise
 			if (!CHECK_INTERVAL(accel->x, imu_moni.accel_aver.x, DETA_ACCEL))
 			{
 				imu_moni.accel_interval_counter.x++;
@@ -392,7 +395,8 @@ static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
 			}
 		}
 		else
-		{   //data is unnormal(not horizontal),set fail
+		{
+			//data is unnormal(not horizontal),set fail
 			imu_moni.imu_error[1] |= 0x08;  //data out of range
 			imu_moni.imu_status = 0;  //set imu fail
 			//device_status &=0xFFFDFFFF;  //bit 18 set 0
@@ -410,7 +414,8 @@ static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
 		if (imu_moni.accel_interval_counter.x > 500 ||
 				imu_moni.accel_interval_counter.y > 500 ||
 				imu_moni.accel_interval_counter.z > 500)
-		{   //data is unnormal, set fail
+		{
+			//data is unnormal, set fail
 			imu_moni.imu_error[1] |= 4;  //noise error
 			imu_moni.imu_status = 0;  //set imu fail
 			//device_status &=0xFFFDFFFF;  //bit 18 set 0
@@ -422,7 +427,8 @@ static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
 			return;   //finished ground inspect
 		}
 		else
-		{   //data is normal, set pass
+		{
+			//data is normal, set pass
 			imu_moni.imu_error[1] = 0;  //normal
 			//imu_moni.imu_status=1;  //use default,back to ground need reset default 1
 			//device_status |=0x00020000;  //bit 18 set 1
@@ -441,7 +447,7 @@ static void accel_moni_cb(uint8_t sender_id __attribute__((unused)),
  * RETURN      : none
  ***********************************************************************/
 static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
-		uint32_t stamp __attribute__((unused)), struct Int32Rates *gyro)
+												 uint32_t stamp __attribute__((unused)), struct Int32Rates *gyro)
 {
 	static struct Int32Rates gyro_last;
 	imu_moni.gyro_update_counter++;    //reset to 0 in main monitoring
@@ -450,7 +456,8 @@ static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
 	if (data_fix_check(gyro->p, gyro_last.p, &imu_moni.gyro_fix_counter.x, DATA_FIX_MAX) ||
 			data_fix_check(gyro->q, gyro_last.q, &imu_moni.gyro_fix_counter.y, DATA_FIX_MAX) ||
 			data_fix_check(gyro->r, gyro_last.r, &imu_moni.gyro_fix_counter.z, DATA_FIX_MAX))
-	{  //fix data
+	{
+		//fix data
 		imu_moni.imu_error[0] |= 0x01;  //fix data
 		imu_moni.imu_status = 0;  //set imu fail
 #if TEST_MSG
@@ -476,12 +483,14 @@ static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
 		return;   //give up data before 1000th
 
 	else if (imu_moni.gyro_ground_counter < 6000)    //run ground inspect
-	{ //data inspect counter request 5000
+	{
+		//data inspect counter request 5000
 		if ( //check average out of static
-		abs(imu_moni.gyro_aver.p) < GYRO_P_Q_R &&
-				abs(imu_moni.gyro_aver.q) < GYRO_P_Q_R &&
-				abs(imu_moni.gyro_aver.r) < GYRO_P_Q_R)
-		{   //data is normal,continue caculate noise
+			abs(imu_moni.gyro_aver.p) < GYRO_P_Q_R &&
+			abs(imu_moni.gyro_aver.q) < GYRO_P_Q_R &&
+			abs(imu_moni.gyro_aver.r) < GYRO_P_Q_R)
+		{
+			//data is normal,continue caculate noise
 			if (!CHECK_INTERVAL(gyro->p, imu_moni.gyro_aver.p, DETA_GYRO))
 			{
 				imu_moni.gyro_interval_counter.x++;
@@ -496,7 +505,8 @@ static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
 			}
 		}
 		else
-		{   //data is unnormal(out of static), set fail
+		{
+			//data is unnormal(out of static), set fail
 			imu_moni.imu_error[0] |= 0x08; //out of range
 			imu_moni.imu_status = 0;
 			//device_status &=0xFFFEFFFF;  //bit 17 set 0
@@ -514,7 +524,8 @@ static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
 		if (imu_moni.gyro_interval_counter.x > 200 ||
 				imu_moni.gyro_interval_counter.y > 200 ||
 				imu_moni.gyro_interval_counter.z > 200)
-		{   //data is unnormal, set fail
+		{
+			//data is unnormal, set fail
 			imu_moni.imu_error[0] |= 0x04; //noise error
 			imu_moni.imu_status = 0;
 			//device_status &=0xFFFEFFFF;  //bit 17 set 0
@@ -526,7 +537,8 @@ static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
 			return;
 		}
 		else
-		{   //data is normal,set pass
+		{
+			//data is normal,set pass
 			imu_moni.imu_error[0] = 0; //normal
 			//imu_moni.imu_status=1;  //use default,back to ground need reset default 1
 			//device_status |=0x00010000;  //bit 17 set 1
@@ -545,7 +557,7 @@ static void gyro_moni_cb(uint8_t sender_id __attribute__((unused)),
  * RETURN      : none
  ***********************************************************************/
 static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
-		uint32_t stamp __attribute__((unused)), struct Int32Vect3 *mag)
+												uint32_t stamp __attribute__((unused)), struct Int32Vect3 *mag)
 {
 	static struct Int32Vect3 mag_last;
 
@@ -555,7 +567,8 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 	if (data_fix_check(mag->x, mag_last.x, &imu_moni.mag_fix_counter.x, DATA_FIX_MAX) ||
 			data_fix_check(mag->y, mag_last.y, &imu_moni.mag_fix_counter.y, DATA_FIX_MAX) ||
 			data_fix_check(mag->z, mag_last.z, &imu_moni.mag_fix_counter.z, DATA_FIX_MAX))
-	{  //fix data
+	{
+		//fix data
 		imu_moni.imu_error[2] |= 0x01;  //fix data
 		imu_moni.imu_status = 0;  //set imu fail
 #if TEST_MSG
@@ -624,19 +637,26 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 		mag_len2_aver = (mag_len2 + mag_len2_aver * SUM_RATIO)/(SUM_RATIO +1 );
 
 		if(//check mag data is in horizon
-				abs(imu_moni.mag_aver.x)<MAG_X_Y_Z &&
-				abs(imu_moni.mag_aver.y)<MAG_X_Y_Z &&
-				abs(imu_moni.mag_aver.z)<MAG_X_Y_Z )
+			abs(imu_moni.mag_aver.x)<MAG_X_Y_Z &&
+			abs(imu_moni.mag_aver.y)<MAG_X_Y_Z &&
+			abs(imu_moni.mag_aver.z)<MAG_X_Y_Z )
 		{
 			if( !CHECK_INTERVAL(mag->x, imu_moni.mag_aver.x, DETA_MAG) )
-			{	imu_moni.mag_interval_counter.x++;}
+			{
+				imu_moni.mag_interval_counter.x++;
+			}
 			if( !CHECK_INTERVAL(mag->y, imu_moni.mag_aver.y, DETA_MAG) )
-			{	imu_moni.mag_interval_counter.y++;}
+			{
+				imu_moni.mag_interval_counter.y++;
+			}
 			if( !CHECK_INTERVAL(mag->z, imu_moni.mag_aver.z, DETA_MAG) )
-			{	imu_moni.mag_interval_counter.z++;}
+			{
+				imu_moni.mag_interval_counter.z++;
+			}
 		}
 		else
-		{   //mag average out of design range
+		{
+			//mag average out of design range
 			imu_moni.imu_error[2] |=0x08;//out of range
 			imu_moni.imu_status = 0;
 			//device_status &=0xFFFBFFFF;  //bit 19 set 0
@@ -654,7 +674,8 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 		if(imu_moni.mag_interval_counter.x >50 ||
 				imu_moni.mag_interval_counter.y >50 ||
 				imu_moni.mag_interval_counter.z >50)
-		{ //noise error
+		{
+			//noise error
 			imu_moni.imu_error[2] |=0x04;
 			imu_moni.imu_status=0;
 			//device_status &=0xFFFBFFFF;  //bit 19 set 0
@@ -666,10 +687,11 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 			return;
 		}
 		else
-		{  //data pass ground check
+		{
+			//data pass ground check
 			imu_moni.imu_error[2] =0;
-			 //imu_moni.imu_status=1;  //use default,back to ground need reset default 1
-			 //device_status |=0x00040000;  //bit 19 set 1
+			//imu_moni.imu_status=1;  //use default,back to ground need reset default 1
+			//device_status |=0x00040000;  //bit 19 set 1
 			imu_moni.mag_ground_check=TRUE;
 			imu_moni.mag_ground_counter=0;//reset counter
 			return;

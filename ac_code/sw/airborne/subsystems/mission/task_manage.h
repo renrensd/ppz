@@ -4,18 +4,18 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _TASK_MANAGE_H_
 #define _TASK_MANAGE_H_
@@ -77,10 +77,10 @@ enum Task_Action
 <field name="task_code" type="uint8"/>
 <field name="wp_type"  type="uint8"/>
 <field name="wp_start_id" type="uint8"/>
-<field name="wp_end_id" type="uint8"/>    
+<field name="wp_end_id" type="uint8"/>
 <field name="wp_action" type="uint8[]"/>
-<field name="waypoints_lon" type="int32[]"/>  
-<field name="waypoints_lat" type="int32[]"/> 
+<field name="waypoints_lon" type="int32[]"/>
+<field name="waypoints_lat" type="int32[]"/>
 */
 struct Task_Info
 {
@@ -100,9 +100,9 @@ struct Task_Info
 <field name="task_code" type="uint8"/>
 <field name="bp_type"  type="uint8"/>
 <field name="bp_start_id" type="uint8"/>
-<field name="bp_end_id" type="uint8"/>    
-<field name="bp_points_lon" type="int32[]" unit="e8,rad"/>  
-<field name="bp_points_lat" type="int32[]" unit="e8,rad"/>  
+<field name="bp_end_id" type="uint8"/>
+<field name="bp_points_lon" type="int32[]" unit="e8,rad"/>
+<field name="bp_points_lat" type="int32[]" unit="e8,rad"/>
 */
 struct bp_Info
 {
@@ -118,8 +118,8 @@ struct bp_Info
 <field name="task_code" type="uint8"/>
 <field name="op_type"  type="uint8"/>
 <field name="op_start_id" type="uint8"/>
-<field name="op_end_id" type="uint8"/>    
-<field name="op_points_lon" type="int32[]" unit="e8,rad"/>  
+<field name="op_end_id" type="uint8"/>
+<field name="op_points_lon" type="int32[]" unit="e8,rad"/>
 <field name="op_points_lat" type="int32[]" unit="e8,rad"/>
 <field name="op_radius" type="int32[]" unit="cm"/>
 */
@@ -150,8 +150,8 @@ struct _s_oa_data
 <field name="operation_type" type="uint8"/>
 <field name="land_type" type="uint8"/>
 <field name="wp_type"  type="uint8"/>
-<field name="waypoints_lon" type="int32[]" unit="e8,rad"/>  
-<field name="waypoints_lat" type="int32[]" unit="e8,rad"/> 
+<field name="waypoints_lon" type="int32[]" unit="e8,rad"/>
+<field name="waypoints_lat" type="int32[]" unit="e8,rad"/>
 */
 struct Land_Info
 {
@@ -161,21 +161,21 @@ struct Land_Info
 	uint8_t waypoints_length;
 	uint8_t *land_type;
 	int32_t *waypoints_lon;
-	int32_t *waypoints_lat;	
+	int32_t *waypoints_lat;
 };
 
 struct Task_Wp
 {
 	struct Int32Vect2  wp_en;
 	enum Task_Action   action;
-	uint16_t            wp_id;	
+	uint16_t            wp_id;
 };
 
 struct Task_Wp_Enu
 {
 	struct EnuCoor_i   wp_en;
 	enum Task_Action   action;
-	uint8_t            wp_id;	
+	uint8_t            wp_id;
 };
 
 #define TASK_WP_LEFT_SHIFT(_id, _n) { \
@@ -194,10 +194,10 @@ extern bool_t wp_home_useful;
 extern struct Int32Vect2 vertipad;
 extern bool_t p_transfer_useful;
 extern struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];
-extern uint8_t nb_pending_reland; 
+extern uint8_t nb_pending_reland;
 
-extern struct Task_Wp_Enu from_wp;  
-extern struct Task_Wp_Enu next_wp; 
+extern struct Task_Wp_Enu from_wp;
+extern struct Task_Wp_Enu next_wp;
 
 #ifdef USE_PLANED_OA
 

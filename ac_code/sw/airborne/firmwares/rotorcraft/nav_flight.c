@@ -13,7 +13,7 @@
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/rc_nav/rc_nav_xbee.h"
 
-#include "subsystems/monitoring/monitoring.h" 
+#include "subsystems/monitoring/monitoring.h"
 #include "subsystems/gps.h"
 #ifndef USE_MISSION
 #include "generated/flight_plan.h"
@@ -52,7 +52,7 @@ static void gcs_mode_enter(void);
 
 
 void nav_flight_init(void)
-{ 
+{
 	flight_mode = nav_gcs_mode;  //default in nav_kill_mode
 	is_force_use_all_redundency = FALSE;
 	task_init();                 //mission initial
@@ -73,222 +73,222 @@ void nav_flight_init(void)
  */
 void nav_flight(void)
 {
-  static bool_t takeoff_done = FALSE;
+	static bool_t takeoff_done = FALSE;
 
- #ifndef DEBUG_RC
-  if ( autopilot_mode != AP_MODE_NAV) 
-  {
-  	  nav_mode_enter();
-	  return;  /*stop run*/
-  }
- #endif
- 
-  /*caculate distance to takeoff waypoint*/
-  RunOnceEvery( NAV_FREQ,
-      { if(flight_state==cruising)  distance2_to_takeoff = get_dist2_to_point(&wp_take_off); } );
+#ifndef DEBUG_RC
+	if ( autopilot_mode != AP_MODE_NAV)
+	{
+		nav_mode_enter();
+		return;  /*stop run*/
+	}
+#endif
 
-  RunOnceEvery( (NAV_FREQ/RC_PERIODIC_FRE), rc_periodic_task() );
+	/*caculate distance to takeoff waypoint*/
+	RunOnceEvery( NAV_FREQ,
+	{ if(flight_state==cruising)  distance2_to_takeoff = get_dist2_to_point(&wp_take_off); } );
 
-  /*RC/GCS timer run*/
-  tm_stimulate(TIMER_TASK_RC);
-  tm_stimulate(TIMER_TASK_GCS);
-  
-  /*run except mission from monitoring*/
-  ept_ms_run();
-  
-  /*main nav run with flight step*/
-  switch(flight_step)
-  {
-  	   case 0:  /*flight prepare  (lock motors -->wait GPS fixed and set ground reference)*/
-  	   		flight_state = preparing;
-			if( !flight_prepare(FALSE) )  
+	RunOnceEvery( (NAV_FREQ/RC_PERIODIC_FRE), rc_periodic_task() );
+
+	/*RC/GCS timer run*/
+	tm_stimulate(TIMER_TASK_RC);
+	tm_stimulate(TIMER_TASK_GCS);
+
+	/*run except mission from monitoring*/
+	ept_ms_run();
+
+	/*main nav run with flight step*/
+	switch(flight_step)
+	{
+	case 0:  /*flight prepare  (lock motors -->wait GPS fixed and set ground reference)*/
+		flight_state = preparing;
+		if( !flight_prepare(FALSE) )
+		{
+			flight_step++;  /*once prepare finish, jump to next step:ready*/
+		}
+
+		break;
+
+	case 1:  /*wait for take_off cmd*/
+		flight_state = ready;
+
+		/*gcs mode*/
+		if( flight_mode==nav_gcs_mode && !autopilot_in_flight )
+		{
+			lock_motion(FALSE);   /*lock motor, keep safe*/
+
+			if( auto_task_ready_check() )   /*get gcs start cmd*/
 			{
-				flight_step++;  /*once prepare finish, jump to next step:ready*/
-			}
-			
-			break;
-			
-		case 1:  /*wait for take_off cmd*/
-			flight_state = ready;
-
-			/*gcs mode*/
-			if( flight_mode==nav_gcs_mode && !autopilot_in_flight )
-			{
-				lock_motion(FALSE);   /*lock motor, keep safe*/ 
-				
-				if( auto_task_ready_check() )   /*get gcs start cmd*/
-				{
-					monitoring_reset_emer();
-					flight_mode_enter(nav_gcs_mode);   //make sure get sp before take off,meas less
-					takeoff_done = FALSE;
-					flight_step++;  /*once get gcs start cmd, jump to next step: take off*/
-				}
-			}
-
-			/*rc mode*/
-			else if( flight_mode==nav_rc_mode && !autopilot_in_flight )
-			{  
-				if(rc_set_info.vtol == LAND)
-				{
-					if(!lock_motion(FALSE))
-					{
-						rc_set_info.vtol = LOCKED;  /*finish land, reset to locked*/
-						rc_set_info.locked = TRUE;  /*lock, refuse other rc cmd until unlock cmd*/
-					}
-				}
-		  	   else if(rc_set_info.vtol==TAKE_OFF) 
-			   {
-				   	monitoring_reset_emer();
-				   	flight_mode_enter(nav_rc_mode); 	/*get rc take off cmd*/
-				   	takeoff_done = FALSE;
-					flight_step++;
-		  	   }
-			   else   /*rc_set_info.vtol==LOCKED/CRUISE*/
-			   {
-			   		rc_set_info.vtol = LOCKED;     //set other vtol state to LOCKED
-			   		lock_motion(FALSE);   /*lock motor, keep safe*/ 
-			   }
-			}
-			
-			break;
-
-		case 2:  /*take off motion*/
-			flight_state = taking_off;
-
-			if( (flight_mode == nav_rc_mode && rc_set_info.vtol == LAND)
-				|| (flight_mode == nav_gcs_mode && gcs_task_cmd == GCS_CMD_DLAND) )
-			{
-				take_off_motion(TRUE);
-				flight_step = 5;      /*jump from take off to land*/
-				mag_cali_nav_loop(FALSE);
+				monitoring_reset_emer();
+				flight_mode_enter(nav_gcs_mode);   //make sure get sp before take off,meas less
 				takeoff_done = FALSE;
+				flight_step++;  /*once get gcs start cmd, jump to next step: take off*/
+			}
+		}
+
+		/*rc mode*/
+		else if( flight_mode==nav_rc_mode && !autopilot_in_flight )
+		{
+			if(rc_set_info.vtol == LAND)
+			{
+				if(!lock_motion(FALSE))
+				{
+					rc_set_info.vtol = LOCKED;  /*finish land, reset to locked*/
+					rc_set_info.locked = TRUE;  /*lock, refuse other rc cmd until unlock cmd*/
+				}
+			}
+			else if(rc_set_info.vtol==TAKE_OFF)
+			{
+				monitoring_reset_emer();
+				flight_mode_enter(nav_rc_mode); 	/*get rc take off cmd*/
+				takeoff_done = FALSE;
+				flight_step++;
+			}
+			else   /*rc_set_info.vtol==LOCKED/CRUISE*/
+			{
+				rc_set_info.vtol = LOCKED;     //set other vtol state to LOCKED
+				lock_motion(FALSE);   /*lock motor, keep safe*/
+			}
+		}
+
+		break;
+
+	case 2:  /*take off motion*/
+		flight_state = taking_off;
+
+		if( (flight_mode == nav_rc_mode && rc_set_info.vtol == LAND)
+				|| (flight_mode == nav_gcs_mode && gcs_task_cmd == GCS_CMD_DLAND) )
+		{
+			take_off_motion(TRUE);
+			flight_step = 5;      /*jump from take off to land*/
+			mag_cali_nav_loop(FALSE);
+			takeoff_done = FALSE;
+			break;
+		}
+
+		if(!takeoff_done)
+		{
+			if( !take_off_motion(FALSE) )	// take off done
+			{
+				takeoff_done = TRUE;
+				record_current_waypoint(&wp_take_off);  /*record take off waypoint as wp_take_off*/
+			}
+		}
+		else
+		{
+			if( mag_cali_nav_loop(TRUE) )	// mag_cali done or not necessary to cali
+			{
+				flight_step++;          /*take_off motion finished, next cruise step*/
+			}
+		}
+		break;
+
+	case 3:   /*cruise, normal flight*/
+		flight_state = cruising;
+
+		/*gcs mode*/
+		if(flight_mode==nav_gcs_mode && autopilot_in_flight)
+		{
+			if(0)   //task interrupt ,do not doing now
+			{
+			}
+
+			else   /*run gcs task*/
+			{
+				task_state = gcs_task_run();
+
+				if( GCS_RUN_LANDING==task_state ) /*task finished success,goto landing*/
+				{
+					flight_step = 5;  //goto landing motion
+				}
+				//else task state need add !!!
+			}
+		}
+
+		/*rc mode*/
+		else if(flight_mode==nav_rc_mode && autopilot_in_flight)
+		{
+			if(rc_set_info.vtol==TAKE_OFF)  /*take_off finished, convert to cruise*/
+			{
+				rc_set_info.vtol = CRUISE;
+				rc_mode_enter();
+			}
+			else if(rc_set_info.vtol==LAND)
+			{
+				RC_HOVER();
+				set_current_pos_to_target();
+				flight_step = 5;          //goto landing
+			}
+			else if(rc_set_info.home)
+			{
+				RC_HOVER();
+
+				/*get current height, if height lower 2m, set height 2m*/
+				wp_take_off.z = stateGetPositionEnu_i()->z;
+				if( wp_take_off.z < POS_BFP_OF_REAL(2.0) )
+				{
+					wp_take_off.z = POS_BFP_OF_REAL(2.0);
+				}
+
+				nav_vrc_back_home(TRUE);   //reset the step
+				flight_step = 4;          //goto home
+			}
+			//else: execution rc_cmd
+		}
+
+		break;
+
+	case 4:  /*back home, only for rc mode*/
+		flight_state = home;
+
+		if(flight_mode == nav_rc_mode)
+		{
+			/*land cmd:return to cruise state, and set land*/
+			if(rc_set_info.vtol==LAND)
+			{
+				flight_step = 3;
+				rc_mode_enter();
 				break;
 			}
 
-			if(!takeoff_done)
+			/*stop home,convert to cruise(hover)*/
+			if(!rc_set_info.home)  /*stop home motion, return to cruise*/
 			{
-				if( !take_off_motion(FALSE) )	// take off done
-				{
-					takeoff_done = TRUE;
-					record_current_waypoint(&wp_take_off);  /*record take off waypoint as wp_take_off*/
-				}
-			}
-			else
-			{
-				if( mag_cali_nav_loop(TRUE) )	// mag_cali done or not necessary to cali
-				{
-					flight_step++;          /*take_off motion finished, next cruise step*/
-				}
-			}
-			break;
-
-		case 3:   /*cruise, normal flight*/
-			flight_state = cruising;
-
-			/*gcs mode*/
-			if(flight_mode==nav_gcs_mode && autopilot_in_flight)
-			{
-				if(0)   //task interrupt ,do not doing now
-				{
-				}
-
-				else   /*run gcs task*/
-				{
-					task_state = gcs_task_run();
-					
-					if( GCS_RUN_LANDING==task_state ) /*task finished success,goto landing*/
-					{
-						flight_step = 5;  //goto landing motion
-					}
-					//else task state need add !!!
-				}
+				flight_step = 3;  //return to cruise(mode enter)
+				rc_mode_enter();
+				break;
 			}
 
-			/*rc mode*/
-			else if(flight_mode==nav_rc_mode && autopilot_in_flight)  
+			/*run back home */
+			if(nav_vrc_back_home(FALSE))
 			{
-				if(rc_set_info.vtol==TAKE_OFF)  /*take_off finished, convert to cruise*/
-				{
-					rc_set_info.vtol = CRUISE;		 
-					rc_mode_enter(); 
-				}
-				else if(rc_set_info.vtol==LAND)
-				{
-					RC_HOVER();
-					set_current_pos_to_target();
-					flight_step = 5;          //goto landing
-				}
-				else if(rc_set_info.home)
-				{
-					RC_HOVER();
-
-					/*get current height, if height lower 2m, set height 2m*/
-					wp_take_off.z = stateGetPositionEnu_i()->z;
-					if( wp_take_off.z < POS_BFP_OF_REAL(2.0) )
-					{
-						wp_take_off.z = POS_BFP_OF_REAL(2.0);
-					}
-					
-					nav_vrc_back_home(TRUE);   //reset the step
-					flight_step = 4;          //goto home
-				}
-				//else: execution rc_cmd
+				rc_set_info.vtol = LAND;
+				rc_set_info.home = FALSE;
+				flight_step++;            /*arrived home, jump to next step: land motion*/
 			}
-			
-			break;
+		}
+		else if(flight_mode == nav_gcs_mode)
+		{
+			flight_step = 3;  /*gcs mode not use home motion here,jump to cruise*/
+		}
 
-		case 4:  /*back home, only for rc mode*/
-			flight_state = home;
+		break;
 
-			if(flight_mode == nav_rc_mode)
+	case 5: /*land motion(need set hover before land)*/
+		flight_state = landing;
+		guidance_h_set_rc_pos_sp_i(POS_FLOAT_OF_BFP(navigation_target.y), POS_FLOAT_OF_BFP(navigation_target.x));
+		if( !land_motion(FALSE) )   //doing landing
+		{
+			task_init();  /*reset task*/
+			if(!autopilot_rc)
 			{
-				/*land cmd:return to cruise state, and set land*/
-				if(rc_set_info.vtol==LAND)
-				{
-					flight_step = 3;  
-					rc_mode_enter();
-					break;
-				}
-				
-				/*stop home,convert to cruise(hover)*/
-				if(!rc_set_info.home)  /*stop home motion, return to cruise*/
-				{
-					flight_step = 3;  //return to cruise(mode enter)
-					rc_mode_enter();
-					break;
-				}
-
-				/*run back home */
-				if(nav_vrc_back_home(FALSE))    
-				{
-					rc_set_info.vtol = LAND;
-					rc_set_info.home = FALSE;
-					flight_step++;            /*arrived home, jump to next step: land motion*/
-				}
+				NavKillThrottle();
 			}
-			else if(flight_mode == nav_gcs_mode)
-			{
-				flight_step = 3;  /*gcs mode not use home motion here,jump to cruise*/
-			}
+			flight_step = 1;  /*land motion finished,jump to ready state*/
+		}
+		break;
 
-			break;
-
-		case 5: /*land motion(need set hover before land)*/
-			flight_state = landing;
-			guidance_h_set_rc_pos_sp_i(POS_FLOAT_OF_BFP(navigation_target.y), POS_FLOAT_OF_BFP(navigation_target.x));
-			if( !land_motion(FALSE) )   //doing landing
-			{
-				task_init();  /*reset task*/
-				if(!autopilot_rc)
-				{
-					NavKillThrottle();
-				}
-				flight_step = 1;  /*land motion finished,jump to ready state*/
-			}
-			break;
-
-		default: 
-			break;  /*error step*/
+	default:
+		break;  /*error step*/
 	}
 }
 
@@ -307,15 +307,16 @@ static void ept_ms_run(void)
 		monitor_cmd = CM_LAND;
 		last_cmd = monitor_cmd;
 		return;
-	}	
-	if(last_cmd==monitor_cmd) 
-	{ //same cmd,void do again 
-		return;    
-	} 
-	
+	}
+	if(last_cmd==monitor_cmd)
+	{
+		//same cmd,void do again
+		return;
+	}
+
 	if(flight_mode==nav_rc_mode)
 	{
-		if( flight_state>taking_off && (monitor_cmd+2)>=flight_state )  
+		if( flight_state>taking_off && (monitor_cmd+2)>=flight_state )
 		{
 			flight_step = monitor_cmd + 2;    //change nav_flight step,so it will do monitor_cmd
 			if(monitor_cmd==CM_HOVER)
@@ -331,7 +332,7 @@ static void ept_ms_run(void)
 			{
 				rc_set_info.vtol = LAND;
 			}
-				
+
 			last_cmd = monitor_cmd;   //update last_cmd
 		}
 		if(monitor_cmd==CM_NONE)
@@ -349,32 +350,32 @@ static void ept_ms_run(void)
 	{
 		switch(monitor_cmd)
 		{
-			case CM_NONE:
+		case CM_NONE:
+			last_cmd = monitor_cmd;
+			break;
+		case CM_HOVER:
+			if(gcs_task_cmd <= GCS_CMD_BHOME)
+			{
+				gcs_task_cmd = GCS_CMD_PAUSE;
 				last_cmd = monitor_cmd;
-				break;
-			case CM_HOVER:
-				if(gcs_task_cmd <= GCS_CMD_BHOME)
-				{
-					gcs_task_cmd = GCS_CMD_PAUSE;
-					last_cmd = monitor_cmd;
-				}
-				break;
-			case CM_HOME:
-				if(gcs_task_cmd < GCS_CMD_CONTI)
-				{
-					gcs_task_cmd = GCS_CMD_BHOME;
-					last_cmd = monitor_cmd;
-				}
-				break;
-			case CM_LAND:
-				if(gcs_task_cmd <GCS_CMD_DLAND)
-				{
-					gcs_task_cmd = GCS_CMD_DLAND;
-					last_cmd = monitor_cmd;
-				}
-				break;
-			default:
-				break;
+			}
+			break;
+		case CM_HOME:
+			if(gcs_task_cmd < GCS_CMD_CONTI)
+			{
+				gcs_task_cmd = GCS_CMD_BHOME;
+				last_cmd = monitor_cmd;
+			}
+			break;
+		case CM_LAND:
+			if(gcs_task_cmd <GCS_CMD_DLAND)
+			{
+				gcs_task_cmd = GCS_CMD_DLAND;
+				last_cmd = monitor_cmd;
+			}
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -390,15 +391,15 @@ void flight_mode_enter(uint8_t new_mode)
 {
 	if(flight_mode == new_mode) return;
 	flight_mode = new_mode;
-	
+
 	if(flight_mode == nav_rc_mode)
-	{   
+	{
 		rc_mode_enter();
 		if(autopilot_in_flight)     //if in_flight,hover
 		{
 			rc_set_info.vtol = CRUISE;
 			rc_set_info.locked = FALSE;    //force to open rc cmd
-			RC_HOVER();  
+			RC_HOVER();
 		}
 		else
 		{
@@ -407,12 +408,12 @@ void flight_mode_enter(uint8_t new_mode)
 		}
 		rc_set_info.mode_state = nav_rc_mode;
 	}
-	
+
 	else if(flight_mode==nav_gcs_mode)
 	{
 		gcs_mode_enter();
 		rc_set_info.mode_state = nav_gcs_mode;
-	}	
+	}
 }
 
 /*AP_MODE_NAV enter handle*/
@@ -428,70 +429,70 @@ static void rc_mode_enter(void)
 {
 	rc_set_info_reset();        //clear rc_set_info
 	guidance_h_nav_rc_enter();  //guidance_enter run
-	
+
 }
 
 static void gcs_mode_enter(void)
-{	
+{
 }
 
 /***********************************************************************
 * FUNCTION    : get_flight_status
-* DESCRIPTION : assemble all flight status, one bit of flight_status 
+* DESCRIPTION : assemble all flight status, one bit of flight_status
                 express one flight status
 * INPUTS      : new mode
 * RETURN      : void
 ***********************************************************************/
 uint16_t get_flight_status(void)
-{                
- /*flight_status:
-    bit1: 0=ac_unready;         1=ac_ready
-    bit2: 0=motors_locked;      1=motors_unlocked
-    bit3: 0=on_ground;          1=in_flight
-    bit4: 0=manual_mode;        1=auto_mode                         
-    bit5: 0=back_home;          1=others
-    bit6: 0=take_off;           1=others
-    bit7: 0=landing;            1=others
-    bit8: 0=spray_stop;         1=spray_open
+{
+	/*flight_status:
+	   bit1: 0=ac_unready;         1=ac_ready
+	   bit2: 0=motors_locked;      1=motors_unlocked
+	   bit3: 0=on_ground;          1=in_flight
+	   bit4: 0=manual_mode;        1=auto_mode
+	   bit5: 0=back_home;          1=others
+	   bit6: 0=take_off;           1=others
+	   bit7: 0=landing;            1=others
+	   bit8: 0=spray_stop;         1=spray_open
 	 other bits keep 0
-  */
-  flight_status = 0;   //reset 0 use for update
-  if(ground_check_pass)
-  {
-   		flight_status |=(1<<0);
-  }
-  if(autopilot_motors_on)
-  {
-   		flight_status |=(1<<1);
-  }
-  if(autopilot_in_flight)
-  {
-  		flight_status |=(1<<2);
-  }
-  if(flight_mode==nav_gcs_mode)
-  {
-  		flight_status |=(1<<3);
-  }
-  if( (flight_mode==nav_gcs_mode && task_state==GCS_RUN_HOME)
-  	  ||(flight_mode==nav_rc_mode && flight_state==home) )
-  {
-  		flight_status |=(1<<4);
-  }
-  if(flight_state==taking_off)
-  {
-  		flight_status |=(1<<5);
-  }
-  if(flight_state==landing)
-  {
-  		flight_status |=(1<<6);
-  }
-  if(get_spray_switch_state())
-  {
-  		flight_status |=(1<<7);
-  }
-  
-  return flight_status;
-	
+	 */
+	flight_status = 0;   //reset 0 use for update
+	if(ground_check_pass)
+	{
+		flight_status |=(1<<0);
+	}
+	if(autopilot_motors_on)
+	{
+		flight_status |=(1<<1);
+	}
+	if(autopilot_in_flight)
+	{
+		flight_status |=(1<<2);
+	}
+	if(flight_mode==nav_gcs_mode)
+	{
+		flight_status |=(1<<3);
+	}
+	if( (flight_mode==nav_gcs_mode && task_state==GCS_RUN_HOME)
+			||(flight_mode==nav_rc_mode && flight_state==home) )
+	{
+		flight_status |=(1<<4);
+	}
+	if(flight_state==taking_off)
+	{
+		flight_status |=(1<<5);
+	}
+	if(flight_state==landing)
+	{
+		flight_status |=(1<<6);
+	}
+	if(get_spray_switch_state())
+	{
+		flight_status |=(1<<7);
+	}
+
+	return flight_status;
+
 }
 
 void force_use_heading_redundency(bool_t enable)

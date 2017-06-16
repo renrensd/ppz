@@ -29,7 +29,7 @@
 #include "mcu.h"
 #include "std.h"
 #ifndef NPS_SIMU
- #include <libopencm3/cm3/scb.h>
+#include <libopencm3/cm3/scb.h>
 #endif
 #ifdef PERIPHERALS_AUTO_INIT
 #include "mcu_periph/sys_time.h"
@@ -81,7 +81,7 @@
 #endif
 
 #ifdef BBOX_OPTION
-#include "subsystems/bbox/bbox_msg_if.h"   
+#include "subsystems/bbox/bbox_msg_if.h"
 #include"subsystems/bbox/bbox_if.h"
 #include "subsystems/datalink/can_transport.h"
 #endif	/* BBOX_OPTION */
@@ -116,142 +116,142 @@ struct MCU_INFO mcu_info;
 
 void WEAK board_init(void)
 {
-  // default board init function does nothing...
-  #ifndef NPS_SIMU
+	// default board init function does nothing...
+#ifndef NPS_SIMU
 	gpio_setup_output(ECS_PWM_EN_GPIO);
-  	gpio_set(ECS_PWM_EN_GPIO);
+	gpio_set(ECS_PWM_EN_GPIO);
 	gpio_setup_output(OPS_PWR_EN_GPIO);
-  	gpio_set(OPS_PWR_EN_GPIO);
-	
-    //gpio_setup_input_pulldown(DEBUG_GPIO);
-  #endif
+	gpio_set(OPS_PWR_EN_GPIO);
+
+	//gpio_setup_input_pulldown(DEBUG_GPIO);
+#endif
 }
 
 void mcu_init(void)
 {
-  mcu_arch_init();
-  #ifdef FAULT_OPTION
-  mcu_check_reset_source();
-  #endif
-  
-  /* If we have a board specific init function, call it.
-   * Otherwise it will simply call the empty weak function.
-   */
-  board_init();
+	mcu_arch_init();
+#ifdef FAULT_OPTION
+	mcu_check_reset_source();
+#endif
+
+	/* If we have a board specific init function, call it.
+	 * Otherwise it will simply call the empty weak function.
+	 */
+	board_init();
 
 #ifdef PERIPHERALS_AUTO_INIT
-  //#ifndef RTOS_IS_CHIBIOS	// TODOM:
-  sys_time_init();
-  //#endif //RTOS_IS_CHIBIOS
-#ifdef SYS_TIMER_OPTION 
- #ifndef NPS_SIMU    //nps not use timer
-  tm_reset_create();
- #endif
+	//#ifndef RTOS_IS_CHIBIOS	// TODOM:
+	sys_time_init();
+	//#endif //RTOS_IS_CHIBIOS
+#ifdef SYS_TIMER_OPTION
+#ifndef NPS_SIMU    //nps not use timer
+	tm_reset_create();
+#endif
 #endif
 #ifdef USE_LED
-  led_init();
+	led_init();
 #endif
-  /* for now this means using spektrum */
+	/* for now this means using spektrum */
 #if defined RADIO_CONTROL & defined RADIO_CONTROL_SPEKTRUM_PRIMARY_PORT & defined RADIO_CONTROL_BIND_IMPL_FUNC
-  RADIO_CONTROL_BIND_IMPL_FUNC();
+	RADIO_CONTROL_BIND_IMPL_FUNC();
 #endif
 #if USE_UART0
-  uart0_init();
+	uart0_init();
 #endif
 #if USE_UART1
-  uart1_init();
+	uart1_init();
 #endif
 #if USE_UART2
-  uart2_init();
+	uart2_init();
 #endif
 #if USE_UART3
-  uart3_init();
+	uart3_init();
 #endif
 #if USE_UART4
-  uart4_init();
+	uart4_init();
 #endif
 #if USE_UART5
-  uart5_init();
+	uart5_init();
 #endif
 #if USE_UART6
-  uart6_init();
+	uart6_init();
 #endif
 #if USE_UART7
-  uart7_init();
+	uart7_init();
 #endif
 #if USE_UART8
-  uart8_init();
+	uart8_init();
 #endif
 #if USING_UART
-  uart_arch_init();
+	uart_arch_init();
 #endif
 #ifdef USE_I2C0
-  i2c0_init();
+	i2c0_init();
 #endif
 #ifdef USE_I2C1
-  i2c1_init();
+	i2c1_init();
 #endif
 #ifdef USE_I2C2
-  i2c2_init();
+	i2c2_init();
 #endif
 #ifdef USE_I2C3
-  i2c3_init();
+	i2c3_init();
 #endif
 #if USE_ADC
-  adc_init();
+	adc_init();
 #endif
 #if USE_USB_SERIAL
-  VCOM_init();
+	VCOM_init();
 #endif
 
 #if USE_SPI
 #if SPI_MASTER
 
 #if USE_SPI0
-  spi0_init();
+	spi0_init();
 #endif
 #if USE_SPI1
-  spi1_init();
+	spi1_init();
 #endif
 #if USE_SPI2
-  spi2_init();
+	spi2_init();
 #endif
 #if USE_SPI3
-  spi3_init();
+	spi3_init();
 #endif
-  spi_init_slaves();
+	spi_init_slaves();
 #endif // SPI_MASTER
 
 #if SPI_SLAVE
 #if USE_SPI0_SLAVE
-  spi0_slave_init();
+	spi0_slave_init();
 #endif
 #if USE_SPI1_SLAVE
-  spi1_slave_init();
+	spi1_slave_init();
 #endif
 #if USE_SPI2_SLAVE
-  spi2_slave_init();
+	spi2_slave_init();
 #endif
 #if USE_SPI3_SLAVE
-  spi3_slave_init();
+	spi3_slave_init();
 #endif
 #endif // SPI_SLAVE
 
 #if SPI_SLAVE_HS
-  spi_slave_hs_init();
+	spi_slave_hs_init();
 #endif
 #endif // USE_SPI
 
 #ifdef USE_DAC
-  dac_init();
+	dac_init();
 #endif
 
 #if USE_UDP0 || USE_UDP1 || USE_UDP2
-  udp_arch_init();
+	udp_arch_init();
 #endif
 
 #ifdef FRAM_OPTION
-  fram_init();
+	fram_init();
 #endif
 
 #ifdef BBOX_OPTION
@@ -259,10 +259,10 @@ void mcu_init(void)
 #endif	/* BBOX_OPTION */
 
 #ifdef CALIBRATION_OPTION
-  sd_fatfs_init();
-  #ifdef FAULT_OPTION
-  mcu_write_file_fault();
-  #endif	/* FAULT_OPTION */
+	sd_fatfs_init();
+#ifdef FAULT_OPTION
+	mcu_write_file_fault();
+#endif	/* FAULT_OPTION */
 #endif	/* CALIBRATION_OPTION */
 
 #ifdef WDG_OPTION
@@ -272,7 +272,7 @@ void mcu_init(void)
 #endif
 
 #else
-  INFO("PERIPHERALS_AUTO_INIT not enabled! Peripherals (including sys_time) need explicit initialization.")
+	INFO("PERIPHERALS_AUTO_INIT not enabled! Peripherals (including sys_time) need explicit initialization.")
 #endif /* PERIPHERALS_AUTO_INIT */
 
 }
@@ -292,13 +292,13 @@ void mcu_usagefault_test(void)
 
 uint8_t mcu_val;
 void mcu_event(void)
-{	
+{
 #if USING_I2C
-  i2c_event();
+	i2c_event();
 #endif
 
 #if USE_USB_SERIAL
-  VCOM_event();
+	VCOM_event();
 #endif
 
 #if 0
@@ -320,12 +320,12 @@ void mcu_fault_info_handle(uint16_t msp_offset)
 {
 	//gpio_set(ECS_PWM_EN_GPIO);
 	uint32_t *vp = (uint32_t*)(mcu_fault_info.msp + msp_offset);
-	
+
 	for(uint8_t i=0; i<15; i++)
 	{
 		mcu_fault_info.msp_data[i] = *(vp+i);
 	}
-	
+
 	mcu_fault_info.hfsr= SCB_HFSR;
 	mcu_fault_info.bfar= SCB_BFAR;
 	mcu_fault_info.cfsr= SCB_CFSR;
@@ -339,17 +339,17 @@ void mcu_fault_info_handle(uint16_t msp_offset)
 	while(1);
 
 #if 0
-	  __asm volatile
-    (
-    " tst lr, #4                                                \n"
-    " ite eq                                                    \n"
-    " mrseq r0, msp                                             \n"
-    " mrsne r0, psp                                             \n"
-    " ldr r1, [r0, #24]                                         \n"
-    " ldr r2, handler2_address_const                            \n"
-    " bx r2                                                     \n"
-    " handler2_address_const: .word _prvGetRegistersFromStack    \n"
-    );
+	__asm volatile
+	(
+		" tst lr, #4                                                \n"
+		" ite eq                                                    \n"
+		" mrseq r0, msp                                             \n"
+		" mrsne r0, psp                                             \n"
+		" ldr r1, [r0, #24]                                         \n"
+		" ldr r2, handler2_address_const                            \n"
+		" bx r2                                                     \n"
+		" handler2_address_const: .word _prvGetRegistersFromStack    \n"
+	);
 	volatile uint32_t psr __attribute__((unused));
 	volatile uint32_t pc __attribute__((unused));
 	volatile uint32_t msp __attribute__((unused));
@@ -359,16 +359,16 @@ void mcu_fault_info_handle(uint16_t msp_offset)
 	volatile uint32_t r3 __attribute__((unused));
 	volatile uint32_t r12 __attribute__((unused));
 	volatile uint32_t lr __attribute__((unused));
-	 
+
 	__asm volatile ("MOV %0, pc" : "=r" (pc) );
-    __asm volatile ("MOV %0, r0" : "=r" (r0) );
+	__asm volatile ("MOV %0, r0" : "=r" (r0) );
 	__asm volatile ("MOV %0, r1" : "=r" (r1) );
 	__asm volatile ("MOV %0, r2" : "=r" (r2) );
 	__asm volatile ("MOV %0, r3" : "=r" (r3) );
 	__asm volatile ("MOV %0, r12" : "=r" (r12) );
 	__asm volatile ("MOV %0, lr" : "=r" (lr) );
 	__asm volatile ("MRS %0, psr" : "=r" (psr) );
-#endif	
+#endif
 }
 
 /*****************************************************************************
@@ -379,14 +379,14 @@ void mcu_fault_info_handle(uint16_t msp_offset)
 *****************************************************************************/
 void mcu_check_reset_source(void)
 {
-    uint32_t rst_source;
-	
+	uint32_t rst_source;
+
 	rst_source = RCC_CSR;
 	mcu_info.reset_src = rst_source;
 	mcu_fault_info.reset_src = rst_source;
-	
+
 	if( (rst_source & RCC_CSR_PORRSTF) == RCC_CSR_PORRSTF )
-    {
+	{
 		memset(&mcu_fault_info,0,sizeof(mcu_fault_info));
 #ifdef WDG_OPTION
 		mcu_watchdog_flag = 0;
@@ -405,7 +405,7 @@ void mcu_check_reset_source(void)
 #ifdef FAULT_OPTION
 /*****************************************************************************
 *  Name        : mcu_set_reset_type
-*  Description : 
+*  Description :
 *  Parameter   : None
 *  Returns     : None
 *****************************************************************************/
@@ -416,7 +416,7 @@ void mcu_set_reset_type(uint8_t type)
 
 /*****************************************************************************
 *  Name        : mcu_get_reset_type
-*  Description : 
+*  Description :
 *  Parameter   : None
 *  Returns     : None
 *****************************************************************************/
@@ -452,9 +452,9 @@ void mem_manage_handler(void)
 
 void nmi_handler(void)
 {
-    //gpio_set(ECS_PWM_EN_GPIO);
-    __asm volatile ("MRS %0, msp" : "=r" (mcu_fault_info.msp) );
-    mcu_fault_info_handle(0x08);
+	//gpio_set(ECS_PWM_EN_GPIO);
+	__asm volatile ("MRS %0, msp" : "=r" (mcu_fault_info.msp) );
+	mcu_fault_info_handle(0x08);
 	while(1);
 }
 
@@ -472,7 +472,7 @@ void hard_fault_handler(void)
 #ifdef WDG_OPTION
 /***********************************************************************
 * FUNCTION    : nvic_wwdg_isr
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -498,90 +498,90 @@ void nvic_wwdg_isr(void)
 			mcu_set_reset_type(MCU_RESET_BY_WWDG);
 			mcu_fault_info_handle(0x08);
 		}
-	}	
+	}
 }
 
 /*****************************************************************************
 *  Name        : mcu_set_task_wdg_flag
-*  Description : 
+*  Description :
 *  Parameter   : WDG_TASK_IDS
 *  Returns     : None
 *****************************************************************************/
 void mcu_set_task_wdg_flag(uint16_t task_id)
 {
-	 mcu_watchdog_flag = 1 << task_id;
+	mcu_watchdog_flag = 1 << task_id;
 }
 #endif /* WDG_OPTION */
 
 #ifdef FAULT_OPTION
 /***********************************************************************
 * FUNCTION    : mcu_write_file_fault
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
 void mcu_write_file_fault(void)
 {
 	if(mcu_info.pw_is_first_on == FALSE)
-  	{
-	
-	#ifndef BBOX_OPTION
-	 #if 0
+	{
+
+#ifndef BBOX_OPTION
+#if 0
 		sd_write_file_fault("<--- mcu_fault_info_start --->", 0, 1);
 		sd_write_file_fault("mcu_reset_source", mcu_fault_info.reset_src, 0);
 		sd_write_file_fault("mcu_reset_type", mcu_fault_info.reset_type, 0);
 		sd_write_file_fault("mcu_reset_time", sys_time.nb_sec, 0);
-		#ifdef WDG_OPTION
+#ifdef WDG_OPTION
 		sd_write_file_fault("mcu_watchdog_flag", mcu_watchdog_flag, 0);
-		#endif
+#endif
 		sd_write_file_fault("mcu_fault_info.msp", mcu_fault_info.msp, 0);
 		sd_write_file_fault("mcu_fault_info.hfsr", mcu_fault_info.hfsr, 0);
 		sd_write_file_fault("mcu_fault_info.bfar", mcu_fault_info.bfar, 0);
 		sd_write_file_fault("mcu_fault_info.cfsr", mcu_fault_info.cfsr, 0);
 		sd_write_file_fault("mcu_fault_info.mmfar", mcu_fault_info.mmfar, 0);
-		
+
 		for(uint8_t i=0; i<15; i++)
 		{
 			sd_write_file_fault("mcu_fault_info.msp_data", mcu_fault_info.msp_data[i], 0);
 		}
 
 		sd_write_file_fault("<--- mcu_fault_info_end --->", 0, 2);
-	 #endif
-	#else
+#endif
+#else
 		uint8_t len;
-	    char temp_buf[256];
+		char temp_buf[256];
 
 		len = sprintf(temp_buf, "reset_src:%x", mcu_fault_info.reset_src);
-	    bbox_write_file_fault(temp_buf, len);
+		bbox_write_file_fault(temp_buf, len);
 		len = sprintf(temp_buf, "type:%x", mcu_fault_info.reset_type);
-	    bbox_write_file_fault(temp_buf, len);
+		bbox_write_file_fault(temp_buf, len);
 		//len = sprintf(temp_buf, "time:%x", sys_time.nb_sec);
 		uint32_t current_time = get_utc_time_decimal();
 		len = sprintf(temp_buf, "time:%x", current_time);
-	    bbox_write_file_fault(temp_buf, len);
-		#ifdef WDG_OPTION
+		bbox_write_file_fault(temp_buf, len);
+#ifdef WDG_OPTION
 		len = sprintf(temp_buf, "wdg:%x", mcu_watchdog_flag);
-	    bbox_write_file_fault(temp_buf, len);
-		#endif
+		bbox_write_file_fault(temp_buf, len);
+#endif
 		bbox_send_polling();
 		len = sprintf(temp_buf, "msp:%x", mcu_fault_info.msp);
-	    bbox_write_file_fault(temp_buf, len);
+		bbox_write_file_fault(temp_buf, len);
 		len = sprintf(temp_buf, "hfsr:%x", mcu_fault_info.hfsr);
-	    bbox_write_file_fault(temp_buf, len);
+		bbox_write_file_fault(temp_buf, len);
 		len = sprintf(temp_buf, "bfar:%x", mcu_fault_info.bfar);
-	    bbox_write_file_fault(temp_buf, len);
+		bbox_write_file_fault(temp_buf, len);
 		len = sprintf(temp_buf, "cfsr:%x", mcu_fault_info.cfsr);
-	    bbox_write_file_fault(temp_buf, len);
+		bbox_write_file_fault(temp_buf, len);
 		len = sprintf(temp_buf, "mmfar:%x", mcu_fault_info.mmfar);
-	    bbox_write_file_fault(temp_buf, len);
+		bbox_write_file_fault(temp_buf, len);
 		bbox_send_polling();
 		for(uint8_t i=0; i<13; i++)
 		{
 			len = sprintf(temp_buf, "msp:%x", mcu_fault_info.msp_data[i]);
-	    	bbox_write_file_fault(temp_buf, len);
+			bbox_write_file_fault(temp_buf, len);
 		}
 		bbox_send_polling();
-	#endif	/* BBOX_OPTION */
+#endif	/* BBOX_OPTION */
 	}
 }
 #endif	/* FAULT_OPTION */

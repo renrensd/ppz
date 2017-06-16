@@ -4,18 +4,18 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _OPS_MSG_UART_DEF_H_
 #define _OPS_MSG_UART_DEF_H_
@@ -31,13 +31,13 @@ enum OPS_COMPONENT_ID
 
 enum OPS_MSG_TYPE
 {
-    OPS_REQ_ACK_NEEDED,
-    OPS_REQ_ACK_NOT_NEEDED,
-    OPS_RES_ACK_NEEDED,
-    OPS_RES_ACK_NOT_NEEDED,
-    
-    OPS_FRAME_TYPE_MAX,
-    OPS_ACK_FRAME = 0xFF,
+	OPS_REQ_ACK_NEEDED,
+	OPS_REQ_ACK_NOT_NEEDED,
+	OPS_RES_ACK_NEEDED,
+	OPS_RES_ACK_NOT_NEEDED,
+
+	OPS_FRAME_TYPE_MAX,
+	OPS_ACK_FRAME = 0xFF,
 };
 
 enum OPS_MSG_PRIORITY
@@ -114,7 +114,7 @@ enum OPS_SPRAY_RES_STATE_PARAM
 	OPS_SPRAY_IS_ON,
 };
 
-enum OPS_UPDATE_MSG_ID  
+enum OPS_UPDATE_MSG_ID
 {
 	OPS_UPGRADE_ID=0x0701,
 };
@@ -128,7 +128,7 @@ enum OPS_UPDATE_PROCESS_PARAM
 	OPS_UPDATE_DATA,//A4
 	OPS_UPDATE_RES_DATA,//A5
 	OPS_UPDATE_OVER_DATA,//A6
-	OPS_UPDATE_OVER_RES_DATA, //A7	
+	OPS_UPDATE_OVER_RES_DATA, //A7
 };
 
 #endif /*_OPS_MSG_UART_DEF_H_*/

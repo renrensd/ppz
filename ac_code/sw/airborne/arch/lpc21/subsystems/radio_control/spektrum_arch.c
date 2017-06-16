@@ -29,6 +29,6 @@ const int16_t rc_spk_throw[RADIO_CONTROL_NB_CHANNEL] = RC_SPK_THROWS;
 
 void radio_control_impl_init(void)
 {
-  rc_spk_parser_status = RC_SPK_STA_UNINIT;
-  rc_spk_parser_idx = 0;
+	rc_spk_parser_status = RC_SPK_STA_UNINIT;
+	rc_spk_parser_idx = 0;
 }

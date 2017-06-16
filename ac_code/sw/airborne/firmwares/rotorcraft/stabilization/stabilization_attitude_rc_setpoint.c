@@ -203,7 +203,8 @@ void stabilization_attitude_read_rc_setpoint_eulers(struct Int32Eulers *sp, bool
 				omega = ANGLE_BFP_OF_REAL(1.3 * tanf(ANGLE_FLOAT_OF_BFP(sp->phi)));
 			}
 			else
-			{ //max 60 degrees roll, then take constant omega
+			{
+				//max 60 degrees roll, then take constant omega
 				omega = ANGLE_BFP_OF_REAL(1.3 * 1.72305 * ((sp->phi > 0) - (sp->phi < 0)));
 			}
 
@@ -245,15 +246,16 @@ void stabilization_attitude_read_rc_setpoint_eulers(struct Int32Eulers *sp, bool
 			PPRZ_ITRIG_COS(cos_psi, care_free_delta_psi_i);
 
 			temp_theta = INT_MULT_RSHIFT(cos_psi, sp->theta, INT32_ANGLE_FRAC) - INT_MULT_RSHIFT(sin_psi, sp->phi,
-					INT32_ANGLE_FRAC);
+									 INT32_ANGLE_FRAC);
 			sp->phi = INT_MULT_RSHIFT(cos_psi, sp->phi,
-					INT32_ANGLE_FRAC) - INT_MULT_RSHIFT(sin_psi, sp->theta, INT32_ANGLE_FRAC);
+																INT32_ANGLE_FRAC) - INT_MULT_RSHIFT(sin_psi, sp->theta, INT32_ANGLE_FRAC);
 
 			sp->theta = temp_theta;
 		}
 	}
 	else
-	{ /* if not flying, use current yaw as setpoint */
+	{
+		/* if not flying, use current yaw as setpoint */
 		sp->psi = stateGetNedToBodyEulers_i()->psi;
 	}
 
@@ -295,7 +297,8 @@ void stabilization_attitude_read_rc_setpoint_eulers_f(struct FloatEulers *sp, bo
 				omega = 1.3 * tanf(sp->phi);
 			}
 			else
-			{ //max 60 degrees roll, then take constant omega
+			{
+				//max 60 degrees roll, then take constant omega
 				omega = 1.3 * 1.72305 * ((sp->phi > 0) - (sp->phi < 0));
 			}
 
@@ -340,7 +343,8 @@ void stabilization_attitude_read_rc_setpoint_eulers_f(struct FloatEulers *sp, bo
 		}
 	}
 	else
-	{ /* if not flying, use current yaw as setpoint */
+	{
+		/* if not flying, use current yaw as setpoint */
 		sp->psi = stateGetNedToBodyEulers_f()->psi;
 	}
 

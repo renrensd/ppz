@@ -15,7 +15,7 @@
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 /**** System include files ****/
@@ -23,13 +23,13 @@
 #include "../../modules/system/types.h"
 /*---Public include files---------------------------------------------*/
 
-#include "ops_app_if.h" 
+#include "ops_app_if.h"
 
 /*---Private include files--------------------------------------------*/
 #include "ops_comm.h"
 #include "ops_comm_if.h"
 #include "uart_ops_if.h"
-#include "ops_msg_if.h"   
+#include "ops_msg_if.h"
 
 
 /*===VARIABLES========================================================*/
@@ -63,13 +63,13 @@ void ops_comm_create(void)
 BOOL ops_comm_send_frame(U8 type, U16 id, U8 nArgs, U8 const *pArg)
 {
 	U8 ret_val = FALSE;
-	
-    //os_mut_wait(mutex_ops_comm_fifo, 0xFFFF);
-	
+
+	//os_mut_wait(mutex_ops_comm_fifo, 0xFFFF);
+
 	/** if fifo  full, the ret_val=FALSE **/
 	ret_val = ops_uart_msg_send(type, id, nArgs, pArg);
-	
-    //os_mut_release(mutex_ops_comm_fifo);   
+
+	//os_mut_release(mutex_ops_comm_fifo);
 	return ret_val;
 }
 

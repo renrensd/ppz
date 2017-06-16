@@ -104,43 +104,43 @@
 
 void sys_time_arch_init(void)
 {
-  sys_time.cpu_ticks_per_sec = PCLK / T0_PCLK_DIV;
-  /* cpu ticks per desired sys_time timer step */
-  sys_time.resolution_cpu_ticks = (uint32_t)(sys_time.resolution * sys_time.cpu_ticks_per_sec + 0.5);
+	sys_time.cpu_ticks_per_sec = PCLK / T0_PCLK_DIV;
+	/* cpu ticks per desired sys_time timer step */
+	sys_time.resolution_cpu_ticks = (uint32_t)(sys_time.resolution * sys_time.cpu_ticks_per_sec + 0.5);
 
-  /* setup Timer 0 to count forever  */
-  /* reset & disable timer 0         */
-  T0TCR = TCR_RESET;
-  /* set the prescale divider        */
-  T0PR = T0_PCLK_DIV - 1;
-  /* enable interrupt on match0  for sys_ticks */
-  T0MCR = TMCR_MR0_I;
-  /* disable capture registers       */
-  T0CCR = 0;
-  /* disable external match register */
-  T0EMR = 0;
+	/* setup Timer 0 to count forever  */
+	/* reset & disable timer 0         */
+	T0TCR = TCR_RESET;
+	/* set the prescale divider        */
+	T0PR = T0_PCLK_DIV - 1;
+	/* enable interrupt on match0  for sys_ticks */
+	T0MCR = TMCR_MR0_I;
+	/* disable capture registers       */
+	T0CCR = 0;
+	/* disable external match register */
+	T0EMR = 0;
 
-  /* set first sys tick interrupt    */
-  /* We need to wait long enough to be sure
-   * that all the init part is finished before
-   * the first interrupt. Since the global
-   * interrupts are enable at the end of the init
-   * phase, if we miss the first one, the
-   * sys_tick_handler is not called afterward
-   */
-  T0MR0 = 4 * sys_time.resolution_cpu_ticks;
+	/* set first sys tick interrupt    */
+	/* We need to wait long enough to be sure
+	 * that all the init part is finished before
+	 * the first interrupt. Since the global
+	 * interrupts are enable at the end of the init
+	 * phase, if we miss the first one, the
+	 * sys_tick_handler is not called afterward
+	 */
+	T0MR0 = 4 * sys_time.resolution_cpu_ticks;
 
-  /* enable timer 0                  */
-  T0TCR = TCR_ENABLE;
+	/* enable timer 0                  */
+	T0TCR = TCR_ENABLE;
 
-  /* select TIMER0 as IRQ    */
-  VICIntSelect &= ~VIC_BIT(VIC_TIMER0);
-  /* enable TIMER0 interrupt */
-  VICIntEnable = VIC_BIT(VIC_TIMER0);
-  /* on slot vic slot 1      */
-  _VIC_CNTL(TIMER0_VIC_SLOT) = VIC_ENABLE | VIC_TIMER0;
-  /* address of the ISR      */
-  _VIC_ADDR(TIMER0_VIC_SLOT) = (uint32_t)TIMER0_ISR;
+	/* select TIMER0 as IRQ    */
+	VICIntSelect &= ~VIC_BIT(VIC_TIMER0);
+	/* enable TIMER0 interrupt */
+	VICIntEnable = VIC_BIT(VIC_TIMER0);
+	/* on slot vic slot 1      */
+	_VIC_CNTL(TIMER0_VIC_SLOT) = VIC_ENABLE | VIC_TIMER0;
+	/* address of the ISR      */
+	_VIC_ADDR(TIMER0_VIC_SLOT) = (uint32_t)TIMER0_ISR;
 }
 
 
@@ -152,100 +152,114 @@ void sys_time_arch_init(void)
 static inline void sys_tick_irq_handler(void)
 {
 
-  /* set match register for next interrupt */
-  T0MR0 += sys_time.resolution_cpu_ticks - 1;
+	/* set match register for next interrupt */
+	T0MR0 += sys_time.resolution_cpu_ticks - 1;
 
-  sys_time.nb_tick++;
-  sys_time.nb_sec_rem += sys_time.resolution_cpu_ticks;
-  if (sys_time.nb_sec_rem >= sys_time.cpu_ticks_per_sec) {
-    sys_time.nb_sec_rem -= sys_time.cpu_ticks_per_sec;
-    sys_time.nb_sec++;
+	sys_time.nb_tick++;
+	sys_time.nb_sec_rem += sys_time.resolution_cpu_ticks;
+	if (sys_time.nb_sec_rem >= sys_time.cpu_ticks_per_sec)
+	{
+		sys_time.nb_sec_rem -= sys_time.cpu_ticks_per_sec;
+		sys_time.nb_sec++;
 #ifdef SYS_TIME_LED
-    LED_TOGGLE(SYS_TIME_LED);
+		LED_TOGGLE(SYS_TIME_LED);
 #endif
-  }
-  for (unsigned int i = 0; i < SYS_TIME_NB_TIMER; i++) {
-    if (sys_time.timer[i].in_use &&
-        sys_time.nb_tick >= sys_time.timer[i].end_time) {
-      sys_time.timer[i].end_time += sys_time.timer[i].duration;
-      sys_time.timer[i].elapsed = TRUE;
-      if (sys_time.timer[i].cb) {
-        sys_time.timer[i].cb(i);
-      }
-    }
-  }
+	}
+	for (unsigned int i = 0; i < SYS_TIME_NB_TIMER; i++)
+	{
+		if (sys_time.timer[i].in_use &&
+				sys_time.nb_tick >= sys_time.timer[i].end_time)
+		{
+			sys_time.timer[i].end_time += sys_time.timer[i].duration;
+			sys_time.timer[i].elapsed = TRUE;
+			if (sys_time.timer[i].cb)
+			{
+				sys_time.timer[i].cb(i);
+			}
+		}
+	}
 }
 
 void TIMER0_ISR(void)
 {
-  ISR_ENTRY();
+	ISR_ENTRY();
 
-  while (T0IR & TIMER0_IT_MASK) {
+	while (T0IR & TIMER0_IT_MASK)
+	{
 
-    if (T0IR & SYS_TICK_IT) {
-      sys_tick_irq_handler();
-      T0IR = SYS_TICK_IT;
-    }
+		if (T0IR & SYS_TICK_IT)
+		{
+			sys_tick_irq_handler();
+			T0IR = SYS_TICK_IT;
+		}
 
 #if defined ACTUATORS && ( defined SERVOS_4017 || defined SERVOS_4015_MAT || defined SERVOS_PPM_MAT)
-    if (T0IR & ACTUATORS_IT) {
+		if (T0IR & ACTUATORS_IT)
+		{
 #ifdef SERVOS_4017
-      SERVOS_4017_ISR();
+			SERVOS_4017_ISR();
 #endif
 #ifdef SERVOS_4015_MAT
-      Servos4015Mat_ISR();
+			Servos4015Mat_ISR();
 #endif
 #ifdef SERVOS_PPM_MAT
-      ServosPPMMat_ISR();
+			ServosPPMMat_ISR();
 #endif
-      T0IR = ACTUATORS_IT;
-    }
+			T0IR = ACTUATORS_IT;
+		}
 #endif /* ACTUATORS && (SERVOS_4017 || SERVOS_4015_MAT || SERVOS_PPM_MAT) */
 
 #if defined RADIO_CONTROL && defined RADIO_CONTROL_TYPE_PPM
-    if (T0IR & PPM_IT) {
-      PPM_ISR();
-      T0IR = PPM_IT;
-    }
+		if (T0IR & PPM_IT)
+		{
+			PPM_ISR();
+			T0IR = PPM_IT;
+		}
 #endif
 #ifdef TRIGGER_EXT
-    if (T0IR & TRIGGER_IT) {
-      TRIG_ISR();
-      T0IR = TRIGGER_IT;
-      LED_TOGGLE(3);
-    }
+		if (T0IR & TRIGGER_IT)
+		{
+			TRIG_ISR();
+			T0IR = TRIGGER_IT;
+			LED_TOGGLE(3);
+		}
 #endif
 #ifdef MB_SCALE
-    if (T0IR & MB_SCALE_IT) {
-      MB_SCALE_ICP_ISR();
-      T0IR = MB_SCALE_IT;
-    }
+		if (T0IR & MB_SCALE_IT)
+		{
+			MB_SCALE_ICP_ISR();
+			T0IR = MB_SCALE_IT;
+		}
 #endif
 #ifdef MB_TACHO
-    if (T0IR & MB_TACHO_IT) {
-      MB_TACHO_ISR();
-      T0IR = MB_TACHO_IT;
-    }
+		if (T0IR & MB_TACHO_IT)
+		{
+			MB_TACHO_ISR();
+			T0IR = MB_TACHO_IT;
+		}
 #endif
 #ifdef USE_PWM_INPUT1
-    if (T0IR & PWM_INPUT_IT1) {
-      PWM_INPUT_ISR_1();
-      T0IR = PWM_INPUT_IT1;
-    }
+		if (T0IR & PWM_INPUT_IT1)
+		{
+			PWM_INPUT_ISR_1();
+			T0IR = PWM_INPUT_IT1;
+		}
 #endif
 #ifdef USE_PWM_INPUT2
-    if (T0IR & PWM_INPUT_IT2) {
-      PWM_INPUT_ISR_2();
-      T0IR = PWM_INPUT_IT2;
-    }
+		if (T0IR & PWM_INPUT_IT2)
+		{
+			PWM_INPUT_ISR_2();
+			T0IR = PWM_INPUT_IT2;
+		}
 #endif
 #ifdef USE_AMI601
-    if (T0IR & AMI601_IT) {
-      AMI601_ISR();
-      T0IR = AMI601_IT;
-    }
+		if (T0IR & AMI601_IT)
+		{
+			AMI601_ISR();
+			T0IR = AMI601_IT;
+		}
 #endif
-  }
-  VICVectAddr = 0x00000000;
-  ISR_EXIT();
+	}
+	VICVectAddr = 0x00000000;
+	ISR_EXIT();
 }

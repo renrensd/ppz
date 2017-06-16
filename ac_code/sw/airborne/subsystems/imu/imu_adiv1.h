@@ -92,7 +92,7 @@ enum ADXRS_AXIS_TYPE
 /** default accel sensitivy using 16 bit AD7689 adc
  * adxl350 with 4g has 128 LSB/g
  * sens = 9.81 [m/s^2] / 512 [LSB/g] * 2^INT32_ACCEL_FRAC = 19.62
- 
+
  */
 #if 0
 #if !defined IMU_ACCEL_X_SENS & !defined IMU_ACCEL_Y_SENS & !defined IMU_ACCEL_Z_SENS
@@ -114,17 +114,18 @@ enum ADXRS_AXIS_TYPE
 #endif
 #endif
 
-struct ImuAdiv1 {
-  volatile uint8_t accel_valid;
-  volatile uint8_t gyro_x_valid;
-  volatile uint8_t gyro_y_valid;
-  volatile uint8_t gyro_z_valid;
-  volatile uint8_t mag_valid;
-  struct Adxl350_Spi acc_adxl;
-  struct Adxrs453_Spi gyro_x;
-  struct Adxrs453_Spi gyro_y;
-  struct Adxrs453_Spi gyro_z;
-  struct Hmc58xx mag_hmc;
+struct ImuAdiv1
+{
+	volatile uint8_t accel_valid;
+	volatile uint8_t gyro_x_valid;
+	volatile uint8_t gyro_y_valid;
+	volatile uint8_t gyro_z_valid;
+	volatile uint8_t mag_valid;
+	struct Adxl350_Spi acc_adxl;
+	struct Adxrs453_Spi gyro_x;
+	struct Adxrs453_Spi gyro_y;
+	struct Adxrs453_Spi gyro_z;
+	struct Hmc58xx mag_hmc;
 };
 
 extern struct ImuAdiv1 imu_adiv1;

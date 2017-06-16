@@ -237,7 +237,7 @@
 #endif
 
 /*
- * IDs of flow sensors 
+ * IDs of flow sensors
  */
 #ifndef FLOW_PX4_ID
 #define FLOW_PX4_ID 1

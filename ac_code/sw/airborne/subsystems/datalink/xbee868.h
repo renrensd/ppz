@@ -25,7 +25,7 @@
  * Configuration for 868MHz modules
  */
 
-/* 
+/*
  Transmit Request (API 1)
 
 7E 00 12 10 01 00 13 A2 00 40 F3 3B 4B FF FE 00 00 54 45 53 54 43

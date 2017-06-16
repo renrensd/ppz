@@ -4,18 +4,18 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _MONITORING_H_
 #define _MONITORING_H_
@@ -43,7 +43,7 @@
 #define GPS_ACC  13
 #define GPS_LOST  14
 #define OPS_EMPTY  15
-#define OPS_LOST  16 
+#define OPS_LOST  16
 #define LIFT_POWER  17
 #define TASK_NO 18
 #define TASK_PARSE 19
@@ -54,8 +54,8 @@
 #define NO_AVOID_PATH   24
 #define P_IN_OBS_AREA   25
 #define NO_VALID_P      26
-#define OBS_INFO_ERROR  27			
-			
+#define OBS_INFO_ERROR  27
+
 #define EPT_MS_NB 28
 
 /*use for monitor_cmd*/
@@ -81,7 +81,7 @@ struct except_mission
 	bool_t land;
 	//bool_t lock;
 	uint8_t alert_grade;  //0--->3:none  low  middle  high
-    //int8_t error_code;
+	//int8_t error_code;
 };
 
 enum Ground_Check_Step

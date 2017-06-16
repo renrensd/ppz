@@ -148,36 +148,36 @@ struct _s_trajectory_tracking
 
 struct HorizontalGuidance
 {
-  uint8_t mode;
+	uint8_t mode;
 
-  struct Int32Eulers src_sp;    ///< with #INT32_ANGLE_FRAC
+	struct Int32Eulers src_sp;    ///< with #INT32_ANGLE_FRAC
 
-  struct FloatVect2 ned_acc;
-  struct FloatVect2 ned_vel;
-  struct FloatVect2 ned_pos;
+	struct FloatVect2 ned_acc;
+	struct FloatVect2 ned_vel;
+	struct FloatVect2 ned_pos;
 
-  struct FloatVect2 vrc_vel_sp_b;
-  struct FloatVect2 src_vel_sp_b;
-  bool_t is_src_vel_in_deadband;
-  struct FloatVect2 rc_pos_sp_i;
-  struct FloatVect2 guided_pos_sp_i;
-  float guided_heading;
-  float vrc_heading_rate_sp;
-  float vrc_heading_sp;
+	struct FloatVect2 vrc_vel_sp_b;
+	struct FloatVect2 src_vel_sp_b;
+	bool_t is_src_vel_in_deadband;
+	struct FloatVect2 rc_pos_sp_i;
+	struct FloatVect2 guided_pos_sp_i;
+	float guided_heading;
+	float vrc_heading_rate_sp;
+	float vrc_heading_sp;
 
-  float ned_acc_filter_fc;
-  float ned_vel_filter_fc;
-  struct FloatVect2 ned_acc_filter;
-  struct FloatVect2 ned_vel_filter;
-  Butterworth2LowPass ned_acc_x_filter;
-  Butterworth2LowPass ned_acc_y_filter;
-  Butterworth2LowPass ned_vel_x_filter;
-  Butterworth2LowPass ned_vel_y_filter;
+	float ned_acc_filter_fc;
+	float ned_vel_filter_fc;
+	struct FloatVect2 ned_acc_filter;
+	struct FloatVect2 ned_vel_filter;
+	Butterworth2LowPass ned_acc_x_filter;
+	Butterworth2LowPass ned_acc_y_filter;
+	Butterworth2LowPass ned_vel_x_filter;
+	Butterworth2LowPass ned_vel_y_filter;
 
-  bool_t rc_pos_sp_reset;
+	bool_t rc_pos_sp_reset;
 
-  enum _e_h_pid_loop_mode pid_loop_mode_running;
-  enum _e_h_pid_loop_mode pid_loop_mode_gcs;
+	enum _e_h_pid_loop_mode pid_loop_mode_running;
+	enum _e_h_pid_loop_mode pid_loop_mode_gcs;
 };
 
 extern struct HorizontalGuidance guidance_h;

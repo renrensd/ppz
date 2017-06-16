@@ -78,8 +78,8 @@
 //#define DefaultVoltageOfAdc(adc) (0.0088623*adc)
 #define DefaultVoltageOfAdc(adc) (0.008862*2600)
 #define DefaultMilliAmpereOfAdc(adc) 	(600000-adc*183.15018315)   	//*3300*6000/26.4/4095 ) )
-
-
+ 
+ 
 /* UART */
 //Laser
 #define UART1_GPIO_AF GPIO_AF7
@@ -177,7 +177,7 @@
  * these directly map to the index number of the 4 adc channels defined above
  * 4th (index 3) is used for bat monitoring by default
  */
- // Internal ADC for battery enabled by default
+// Internal ADC for battery enabled by default
 #ifndef USE_ADC_1
 #define USE_ADC_1 1
 #endif

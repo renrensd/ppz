@@ -12,8 +12,10 @@
 
 struct _s_matrix22
 {
-	float m11;float m12;
-	float m21;float m22;
+	float m11;
+	float m12;
+	float m21;
+	float m22;
 };
 
 extern float determinant(float a, float b, float c, float d);

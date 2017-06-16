@@ -4,14 +4,14 @@
 *   Department : R&D SW   									           *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
@@ -49,7 +49,7 @@
 
 /*---Global-----------------------------------------------------------*/
 
- 
+
 /*---Private----------------------------------------------------------*/
 static uint8_t  eol_state;
 static uint8_t  ac_version[SIZE_OF_AC_VERSION + SIZE_OF_AC_PROJECT_NAME];
@@ -57,7 +57,7 @@ static HW_VERSION  ac_hardware_version;
 static MANUFACTURE_INFO  manufacture_info;
 static uint32_t  checksum_result;
 static uint8_t *checksum_ptr;
-static uint16_t counter_rom_segment; 
+static uint16_t counter_rom_segment;
 static uint8_t eng_con_flag = 2;
 uint8_t debug_sn_code;
 uint8_t dev_sn_code;
@@ -75,29 +75,29 @@ static void get_components_sv_version(void);
 
 /*---Global-----------------------------------------------------------*/
 void eng_task(void)
-{ 
+{
 	tm_stimulate(TIMER_TASK_ENG);
 
 	if(eng_con_flag == 1)	//write
 	{
 		eng_con_flag = 0;
-    	fram_write(CL_PRODUCT_SERIES_NUMBER, 0, cl_ac_serial_number_array);
+		fram_write(CL_PRODUCT_SERIES_NUMBER, 0, cl_ac_serial_number_array);
 		fram_write(CL_HARDWARE_VERSION, 0, cl_ac_hw_version_array);
 		fram_write(CL_GCS_MAC_ADDR, 0, cl_gcs_mac_address);
 		fram_write(CL_RC_MAC_ADDR, 0, cl_rc_mac_address);
-		#ifdef UPGRADE_OPTION
+#ifdef UPGRADE_OPTION
 		fram_erase_swdl_mask();
-		#endif	/* UPGRADE_OPTION */
+#endif	/* UPGRADE_OPTION */
 	}
 	else if(eng_con_flag == 2)	//read
 	{
 		eng_con_flag = 0;
 		eng_get_ac_identification(ENG_GET_AC_VERSION);
-    	eng_get_ac_identification(ENG_GET_AC_HW_VERSION);
+		eng_get_ac_identification(ENG_GET_AC_HW_VERSION);
 		eng_get_ac_identification(ENG_GET_MANUFACTURE_INFO);
 		eng_get_ac_identification(ENG_GET_AC_CHECKSUM);
 	}
-	
+
 	RunOnceEvery(ENG_PERIODIC_FREQUENCY/5, eng_update_components_info());
 }
 
@@ -154,14 +154,14 @@ bool_t eng_app_check_debug_sn(void)
 
 static void eng_update_components_info(void)
 {
-	request_components_sv_version();	
+	request_components_sv_version();
 	get_components_sv_version();
 }
 
 static void request_components_sv_version(void)
 {
 	static bool_t ops_timer_creat = FALSE;
-	
+
 	if(!eng_components_info.ops_sv.sv_update && !ops_timer_creat)
 	{
 		tm_create_timer((uint8_t)TIMER_GET_OPS_SV_VERSION,2 SECONDS,10,0);
@@ -173,10 +173,10 @@ static void request_components_sv_version(void)
 		ops_timer_creat = FALSE;
 	}
 
-   #ifdef BBOX_OPTION
-    static bool_t bbox_timer_creat = FALSE;
-   
-  if(!eng_components_info.bbox_sv.sv_update && !bbox_timer_creat)
+#ifdef BBOX_OPTION
+	static bool_t bbox_timer_creat = FALSE;
+
+	if(!eng_components_info.bbox_sv.sv_update && !bbox_timer_creat)
 	{
 		tm_create_timer((uint8_t)TIMER_GET_BBOX_SV_VERSION,2 SECONDS,10,0);
 		bbox_timer_creat = TRUE;
@@ -186,7 +186,7 @@ static void request_components_sv_version(void)
 		tm_kill_timer((uint8_t)TIMER_GET_BBOX_SV_VERSION);
 		bbox_timer_creat = FALSE;
 	}
-   #endif
+#endif
 }
 
 static void get_components_sv_version(void)
@@ -204,7 +204,7 @@ static void get_components_sv_version(void)
 		}
 	}
 
-	#ifdef BBOX_OPTION
+#ifdef BBOX_OPTION
 	if(!eng_components_info.bbox_sv.sv_update)
 	{
 		if(bbox_info.sv_update)
@@ -217,8 +217,8 @@ static void get_components_sv_version(void)
 			eng_components_info.bbox_sv.sv_update = TRUE;
 		}
 	}
-	#endif
-	
+#endif
+
 	if(!eng_components_info.ac_sv.sv_update)
 	{
 		uint8_t* ac_sv = eng_get_ac_version();
@@ -234,18 +234,18 @@ static void get_components_sv_version(void)
 
 /***********************************************************************
 * FUNCTION    : eng_init
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
 void eng_init(void)
 {
-	fram_read((uint8_t)CL_PRODUCT_SERIES_NUMBER,0,&manufacture_info.cl_product_sn[0]); 
+	fram_read((uint8_t)CL_PRODUCT_SERIES_NUMBER,0,&manufacture_info.cl_product_sn[0]);
 }
 
 /***********************************************************************
 * FUNCTION    : eng_get_ac_checksum
-* DESCRIPTION : Return ac checksum after it is requeted correctly.  
+* DESCRIPTION : Return ac checksum after it is requeted correctly.
 * INPUTS      : Message Pointer
 * RETURN      : uint16_t
 ***********************************************************************/
@@ -256,7 +256,7 @@ uint16_t eng_get_ac_checksum(void)
 
 /***********************************************************************
 * FUNCTION    : eng_get_ac_version
-* DESCRIPTION : Return ac version after it is requeted correctly.  
+* DESCRIPTION : Return ac version after it is requeted correctly.
 * INPUTS      : void
 * RETURN      : uint8_t*
 ***********************************************************************/
@@ -267,7 +267,7 @@ uint8_t* eng_get_ac_version(void)
 
 /***********************************************************************
 * FUNCTION    : eng_get_ac_project_name
-* DESCRIPTION : Return ac project name.  
+* DESCRIPTION : Return ac project name.
 * INPUTS      : void
 * RETURN      : uint8_t*
 ***********************************************************************/
@@ -278,7 +278,7 @@ uint8_t* eng_get_ac_project_name(void)
 
 /***********************************************************************
 * FUNCTION    : eng_get_ac_hardware_version
-* DESCRIPTION : Return ac hardware version after it is requeted correctly.  
+* DESCRIPTION : Return ac hardware version after it is requeted correctly.
 * INPUTS      : void
 * RETURN      : uint8_t
 ***********************************************************************/
@@ -298,10 +298,10 @@ uint8_t* eng_get_ac_hardware_version(void)
 	version_ptr[i++] = 0;
 	return version_ptr;
 }
-	
+
 /***********************************************************************
 * FUNCTION    : eng_get_product_series_number
-* DESCRIPTION : Return product_series_number after it is requeted correctly.  
+* DESCRIPTION : Return product_series_number after it is requeted correctly.
 * INPUTS      : void
 * RETURN      : uint8_t*
 ***********************************************************************/
@@ -312,7 +312,7 @@ uint8_t* eng_get_product_series_number(void)
 
 /***********************************************************************
 * FUNCTION    : eng_get_12nc_series_number
-* DESCRIPTION : Return 12nc_series_number after it is requeted correctly.  
+* DESCRIPTION : Return 12nc_series_number after it is requeted correctly.
 * INPUTS      : void
 * RETURN      : uint8_t*
 ***********************************************************************/
@@ -323,7 +323,7 @@ uint8_t* eng_get_12nc_series_number(void)
 
 /***********************************************************************
 * FUNCTION    : eng_get_manufacture_date
-* DESCRIPTION : Return manufacture_date after it is requeted correctly.  
+* DESCRIPTION : Return manufacture_date after it is requeted correctly.
 * INPUTS      : void
 * RETURN      : uint8_t*
 ***********************************************************************/
@@ -334,9 +334,9 @@ uint8_t* eng_get_manufacture_date(void)
 
 /***********************************************************************
 * FUNCTION    : eng_request_ops_sw_version
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : void
-* RETURN      : 
+* RETURN      :
 ***********************************************************************/
 void eng_request_ops_sw_version(void)
 {
@@ -345,20 +345,20 @@ void eng_request_ops_sw_version(void)
 
 /***********************************************************************
 * FUNCTION    : eng_request_bbox_sw_version
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : void
-* RETURN      : 
+* RETURN      :
 ***********************************************************************/
 void eng_request_bbox_sw_version(void)
 {
-	#ifdef BBOX_OPTION
+#ifdef BBOX_OPTION
 	bbox_request_software_version();
-	#endif
+#endif
 }
 
 /***********************************************************************
 * FUNCTION    : eng_get_ac_identification
-* DESCRIPTION : Handle AC identification acqucition.  
+* DESCRIPTION : Handle AC identification acqucition.
 * INPUTS      : Message Pointer
 * RETURN      : void
 ***********************************************************************/
@@ -369,12 +369,12 @@ void eng_get_ac_identification(uint8_t val)
 	uint8_t i;
 	uint8_t j;
 	uint8_t length;
-	
+
 	if(ENG_GET_AC_VERSION == val)
 	{
 		//request version
 		fram_read((uint8_t)CL_SOFTWARE_VERSION,0,&ac_version[0]);
-		
+
 		mptr = eng_get_ac_project_name();
 		length = get_size_of_string(mptr);
 		if(length > SIZE_OF_AC_PROJECT_NAME)
@@ -395,13 +395,13 @@ void eng_get_ac_identification(uint8_t val)
 		{
 			ac_version[i] = arg[i];
 		}
-		
+
 	}
 	else if(ENG_GET_AC_CHECKSUM == val)
 	{
 		//request checksum
 		counter_rom_segment = 0;
-		tm_create_timer((uint8_t)TIMER_GET_CAL_AC_CHECKSUM,12 MSECONDS,(uint8_t)TIMER_PERIODIC,0);		
+		tm_create_timer((uint8_t)TIMER_GET_CAL_AC_CHECKSUM,12 MSECONDS,(uint8_t)TIMER_PERIODIC,0);
 	}
 	else if(ENG_GET_AC_HW_VERSION == val)
 	{
@@ -417,40 +417,40 @@ void eng_get_ac_identification(uint8_t val)
 	else if(ENG_GET_MANUFACTURE_INFO == val)
 	{
 		//request product_series_number
-		fram_read((uint8_t)CL_PRODUCT_SERIES_NUMBER,0,&manufacture_info.cl_product_sn[0]); 
+		fram_read((uint8_t)CL_PRODUCT_SERIES_NUMBER,0,&manufacture_info.cl_product_sn[0]);
 	}
 }
 
 /***********************************************************************
 * FUNCTION    : eng_ac_checksum_calculation
-* DESCRIPTION : Calculate flash bin file checksum.  
+* DESCRIPTION : Calculate flash bin file checksum.
 * INPUTS      : uint16_t param
 * RETURN      : void
 ***********************************************************************/
 void eng_ac_checksum_calculation(void)
 {
 	uint32_t i;
-      
+
 	if(counter_rom_segment >= ROM_OF_BLOCK_NUM)
 	{
 		counter_rom_segment = 0;
-		tm_kill_timer((uint8_t)TIMER_GET_CAL_AC_CHECKSUM);		  
-		
+		tm_kill_timer((uint8_t)TIMER_GET_CAL_AC_CHECKSUM);
+
 		return;
 	}
-	
-    if(counter_rom_segment == 0)
-    {  
-		checksum_ptr = (uint8_t *)ROM_START_ADDRESS;
-	  	checksum_result = 0;
-    }
 
-    for(i = ROM_OF_ONE_BLOCK_SIZE; i > 0; i--)
-    {  
+	if(counter_rom_segment == 0)
+	{
+		checksum_ptr = (uint8_t *)ROM_START_ADDRESS;
+		checksum_result = 0;
+	}
+
+	for(i = ROM_OF_ONE_BLOCK_SIZE; i > 0; i--)
+	{
 		checksum_result += *checksum_ptr;
 		checksum_ptr++;
-    }
-    counter_rom_segment++;
+	}
+	counter_rom_segment++;
 }
 
 /**************** END OF FILE *****************************************/

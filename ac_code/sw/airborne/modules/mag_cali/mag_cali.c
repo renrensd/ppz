@@ -46,8 +46,8 @@ static bool_t is_mag_cali_done(void);
 extern int32_t nav_heading; // from navigation.c
 
 static void mag_cb(uint8_t sender_id __attribute__((unused)),
-                     uint32_t stamp __attribute__((unused)),
-                     struct Int32Vect3 *mag __attribute__((unused)) )
+									 uint32_t stamp __attribute__((unused)),
+									 struct Int32Vect3 *mag __attribute__((unused)) )
 {
 	uint8_t ok = 0;
 
@@ -70,7 +70,7 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 			mag_cali.grab_sum[mag_cali.grab_index][1] += (float)imu.mag_unscaled.y/(float)MAG_SENSITIVITY;
 		}
 
-		for(uint8_t i=0;i<MAG_CALI_GRAB_NUM;++i)
+		for(uint8_t i=0; i<MAG_CALI_GRAB_NUM; ++i)
 		{
 			if( mag_cali.grab_tick[i] > 50 )
 			{
@@ -85,8 +85,8 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
 }
 
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
-                   uint32_t stamp __attribute__((unused)),
-                   struct GpsState *gps_s)
+									 uint32_t stamp __attribute__((unused)),
+									 struct GpsState *gps_s)
 {
 	if(!mag_cali.declination_ok)
 	{
@@ -118,7 +118,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 
 	if(mag_cali.state == MAG_CALI_INI)
 	{
-		for(uint8_t i=0;i<MAG_CALI_GRAB_NUM;++i)
+		for(uint8_t i=0; i<MAG_CALI_GRAB_NUM; ++i)
 		{
 			mag_cali.grab_tick[i] = 0;
 			mag_cali.grab_sum[i][0] = 0;
@@ -487,29 +487,31 @@ void mag_cali_periodic(void)
 		mag_cali_stop(mag_cali_load_to_imu());
 	}
 
-float grab_x[MAG_CALI_GRAB_NUM];
-float grab_y[MAG_CALI_GRAB_NUM];
+	float grab_x[MAG_CALI_GRAB_NUM];
+	float grab_y[MAG_CALI_GRAB_NUM];
 
-for(int i=0;i<MAG_CALI_GRAB_NUM;++i)
-{
-	grab_x[i] = mag_cali.grab_sum[i][0];
-	grab_y[i] = mag_cali.grab_sum[i][1];
-}
+	for(int i=0; i<MAG_CALI_GRAB_NUM; ++i)
+	{
+		grab_x[i] = mag_cali.grab_sum[i][0];
+		grab_y[i] = mag_cali.grab_sum[i][1];
+	}
 
 #if PERIODIC_TELEMETRY
-		RunOnceEvery(50,   {
+	RunOnceEvery(50,
+	{
 		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 		DOWNLINK_SEND_MAG_CALI(DefaultChannel, DefaultDevice,
-				&mag_cali.state,
-				&mag_cali.cali_ok,
-				&mag_cali.grab_index,
-				MAG_CALI_GRAB_NUM,
-				mag_cali.grab_tick,
-				&mag_cali.gain[0],
-				&mag_cali.gain[1],
-				&mag_cali.offset[0],
-				&mag_cali.offset[1],
-				&mag_cali.declination);}   );
+		&mag_cali.state,
+		&mag_cali.cali_ok,
+		&mag_cali.grab_index,
+		MAG_CALI_GRAB_NUM,
+		mag_cali.grab_tick,
+		&mag_cali.gain[0],
+		&mag_cali.gain[1],
+		&mag_cali.offset[0],
+		&mag_cali.offset[1],
+		&mag_cali.declination);
+	}   );
 #endif
 }
 
@@ -604,7 +606,7 @@ static void mag_cali_calc_F(struct _s_matrix *_F, struct _s_matrix *_p, float _v
 	float vy2;
 	//float vz2;
 
-	for(i=0;i<MAG_CALI_GRAB_NUM;++i)
+	for(i=0; i<MAG_CALI_GRAB_NUM; ++i)
 	{
 		vx = _v[i][0];
 		vy = _v[i][1];
@@ -612,7 +614,7 @@ static void mag_cali_calc_F(struct _s_matrix *_F, struct _s_matrix *_p, float _v
 		vy2 = vy * vy;
 
 		_F->data[i] =  kx2*vx2 - 2.0f*kx2*vx*bx + kx2*bx2 +
-									ky2*vy2 - 2.0f*ky2*vy*by + ky2*by2 - 1.0f;
+									 ky2*vy2 - 2.0f*ky2*vy*by + ky2*by2 - 1.0f;
 	}
 }
 
@@ -632,7 +634,7 @@ static void mag_cali_calc_JT(struct _s_matrix *_JT, struct _s_matrix *_p, float 
 	float vx2;
 	float vy2;
 
-	for(i=0;i<MAG_CALI_GRAB_NUM;++i)
+	for(i=0; i<MAG_CALI_GRAB_NUM; ++i)
 	{
 		vx = _v[i][0];
 		vy = _v[i][1];

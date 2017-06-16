@@ -31,8 +31,8 @@ static void sensors_acc_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, 
 static void acc_cali_write_data(void);
 
 static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
-                     uint32_t stamp __attribute__((unused)),
-                     struct Int32Vect3 *accel __attribute__((unused)) )
+												uint32_t stamp __attribute__((unused)),
+												struct Int32Vect3 *accel __attribute__((unused)) )
 {
 #define ACC_CALI_CHECK_MIN	(0.6f)
 #define ACC_CALI_CHECK_MAX	(1.4f)
@@ -68,7 +68,7 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 														acc_cali.acc_phy_nc[1]*acc_cali.acc_phy_nc[1] +
 														acc_cali.acc_phy_nc[2]*acc_cali.acc_phy_nc[2]);
 	acc_cali.acc_norm_filter = acc_cali.acc_norm_filter +
-														(acc_cali.acc_norm - acc_cali.acc_norm_filter) * ACC_NORM_FILTER_COEF;
+														 (acc_cali.acc_norm - acc_cali.acc_norm_filter) * ACC_NORM_FILTER_COEF;
 
 	if( fabsf(acc_cali.acc_norm - acc_cali.acc_norm_filter) < ACC_STATIC_VALUE_THRESHOLD )
 	{
@@ -86,9 +86,9 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 
 	if( acc_cali.state == ACC_CALI_INI )
 	{
-		for(i=0;i<6;++i)
+		for(i=0; i<6; ++i)
 		{
-			for(j=0;j<3;++j)
+			for(j=0; j<3; ++j)
 			{
 				acc_cali.acc_6point[i][j] = 0;
 			}
@@ -104,12 +104,12 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 		acc_cali.acc_cali_tick = 0;
 		acc_cali.state = ACC_CALI_GRAB_PX;
 	}
-	
+
 	else if( acc_cali.state == ACC_CALI_CALC )
 	{
-		for(i=0;i<6;++i)
+		for(i=0; i<6; ++i)
 		{
-			for(j=0;j<3;++j)
+			for(j=0; j<3; ++j)
 			{
 				acc_cali.acc_6point[i][j] /= (float)ACC_CALI_GRAB_TIME;
 			}
@@ -122,7 +122,7 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 		p.data[4] = 0.2f;
 		p.data[5] = 0.2f;
 
-		for(i=0;i<100;++i)
+		for(i=0; i<100; ++i)
 		{
 			sensors_acc_cali_calc_F(&F, &p, acc_cali.acc_6point);
 			sensors_acc_cali_calc_JT(&JT, &p, acc_cali.acc_6point);
@@ -148,7 +148,7 @@ static void acc_cali_cb(uint8_t sender_id __attribute__((unused)),
 		}
 		acc_cali.state = ACC_CALI_IDLE;
 	}
-	
+
 	else
 	{
 		grab_enable = 0;
@@ -297,36 +297,40 @@ void acc_cali_periodic(void)
 	acc_cali.enable_prev = acc_cali.enable;
 
 
-    if(acc_cali.enable)
-    {
-		#if PERIODIC_TELEMETRY
-		RunOnceEvery(25,   {
-		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-		DOWNLINK_SEND_ACC_CALI(DefaultChannel, DefaultDevice, &acc_cali.acc_norm,
-																		&acc_cali.acc_norm_filter,
-																		&acc_cali.acc_gain[0],
-																		&acc_cali.acc_gain[1],
-																		&acc_cali.acc_gain[2],
-																		&acc_cali.acc_offset[0],
-																		&acc_cali.acc_offset[1],
-																		&acc_cali.acc_offset[2],
-																		&acc_cali.is_body_static,
-																		&acc_cali.state);}         );
-		#endif
-		#if USE_MANU_DEBUG
-		RunOnceEvery(50,   {
-		DOWNLINK_SEND_ACC_CALI(MdebugChannel, MdebugDevice, &acc_cali.acc_norm,
-																		&acc_cali.acc_norm_filter,
-																		&acc_cali.acc_SENS[0],
-																		&acc_cali.acc_SENS[1],
-																		&acc_cali.acc_SENS[2],
-																		&acc_cali.acc_NEUTRAL[0],
-																		&acc_cali.acc_NEUTRAL[1],
-																		&acc_cali.acc_NEUTRAL[2],
-																		&acc_cali.cali_success,
-																		&acc_cali.state);}         );
-		#endif
-    }
+	if(acc_cali.enable)
+	{
+#if PERIODIC_TELEMETRY
+		RunOnceEvery(25,
+		{
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+			DOWNLINK_SEND_ACC_CALI(DefaultChannel, DefaultDevice, &acc_cali.acc_norm,
+			&acc_cali.acc_norm_filter,
+			&acc_cali.acc_gain[0],
+			&acc_cali.acc_gain[1],
+			&acc_cali.acc_gain[2],
+			&acc_cali.acc_offset[0],
+			&acc_cali.acc_offset[1],
+			&acc_cali.acc_offset[2],
+			&acc_cali.is_body_static,
+			&acc_cali.state);
+		}         );
+#endif
+#if USE_MANU_DEBUG
+		RunOnceEvery(50,
+		{
+			DOWNLINK_SEND_ACC_CALI(MdebugChannel, MdebugDevice, &acc_cali.acc_norm,
+			&acc_cali.acc_norm_filter,
+			&acc_cali.acc_SENS[0],
+			&acc_cali.acc_SENS[1],
+			&acc_cali.acc_SENS[2],
+			&acc_cali.acc_NEUTRAL[0],
+			&acc_cali.acc_NEUTRAL[1],
+			&acc_cali.acc_NEUTRAL[2],
+			&acc_cali.cali_success,
+			&acc_cali.state);
+		}         );
+#endif
+	}
 
 }
 
@@ -372,7 +376,7 @@ static void acc_cali_write_data(void)
 	{
 		acc_cali.cali_success = FALSE;
 	}
-		
+
 }
 
 static void sensors_acc_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, float v[6][3])
@@ -397,7 +401,7 @@ static void sensors_acc_cali_calc_F(struct _s_matrix *F, struct _s_matrix *p, fl
 	float vy2;
 	float vz2;
 
-	for(i=0;i<6;++i)
+	for(i=0; i<6; ++i)
 	{
 		vx = v[i][0];
 		vy = v[i][1];
@@ -434,7 +438,7 @@ static void sensors_acc_cali_calc_JT(struct _s_matrix *JT, struct _s_matrix *p, 
 	float vy2;
 	float vz2;
 
-	for(i=0;i<6;++i)
+	for(i=0; i<6; ++i)
 	{
 		vx = v[i][0];
 		vy = v[i][1];

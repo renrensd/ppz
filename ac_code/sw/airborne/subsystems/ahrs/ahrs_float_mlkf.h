@@ -44,33 +44,34 @@ enum _e_ahrs_mlkf_heading_status
 	AMHS_SWITCHING
 };
 
-struct AhrsMlkf {
-  struct FloatQuat   ltp_to_imu_quat;  ///< Rotation from LocalTangentPlane to IMU frame as unit quaternion
-  struct FloatQuat   ltp_to_body_quat; ///< Rotation from LocalTangentPlane to body frame as unit quaternion
-  struct FloatRates  imu_rate;         ///< Rotational velocity in IMU frame
-  struct FloatRates  gyro_bias;
-  struct FloatRates  gyro_bias_ini;
-  struct Int32Vect3  lp_accel_ini;
+struct AhrsMlkf
+{
+	struct FloatQuat   ltp_to_imu_quat;  ///< Rotation from LocalTangentPlane to IMU frame as unit quaternion
+	struct FloatQuat   ltp_to_body_quat; ///< Rotation from LocalTangentPlane to body frame as unit quaternion
+	struct FloatRates  imu_rate;         ///< Rotational velocity in IMU frame
+	struct FloatRates  gyro_bias;
+	struct FloatRates  gyro_bias_ini;
+	struct Int32Vect3  lp_accel_ini;
 
-  struct FloatVect3  mag_h;
+	struct FloatVect3  mag_h;
 
-  struct FloatVect3  mag_noise;
-  struct FloatVect3  gps_heading_noise;
+	struct FloatVect3  mag_noise;
+	struct FloatVect3  gps_heading_noise;
 
-  struct FloatQuat  gibbs_cor;
-  float P[6][6];
-  float lp_accel;
+	struct FloatQuat  gibbs_cor;
+	float P[6][6];
+	float lp_accel;
 
-  /** body_to_imu rotation */
-  struct OrientationReps body_to_imu;
+	/** body_to_imu rotation */
+	struct OrientationReps body_to_imu;
 
-  bool_t is_aligned;
-  bool_t virtual_rtk_heading_valid;
-  bool_t rtk_gps_update;
-  enum _e_ahrs_mlkf_heading_status heading_state;
-  float mag_heading;
-  float mlkf_heading;
-  float diff_heading;
+	bool_t is_aligned;
+	bool_t virtual_rtk_heading_valid;
+	bool_t rtk_gps_update;
+	enum _e_ahrs_mlkf_heading_status heading_state;
+	float mag_heading;
+	float mlkf_heading;
+	float diff_heading;
 };
 
 extern struct AhrsMlkf ahrs_mlkf;
@@ -80,7 +81,7 @@ extern void ahrs_mlkf_init(void);
 extern void ahrs_mlkf_set_body_to_imu(struct OrientationReps *body_to_imu);
 extern void ahrs_mlkf_set_body_to_imu_quat(struct FloatQuat *q_b2i);
 extern bool_t ahrs_mlkf_align(struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
-                              struct Int32Vect3 *lp_mag);
+															struct Int32Vect3 *lp_mag);
 extern void ahrs_mlkf_update_mag(struct Int32Vect3 *mag);
 extern void ahrs_mlkf_propagate(struct Int32Rates *gyro, float dt);
 extern void ahrs_mlkf_update_accel(struct Int32Vect3 *accel);

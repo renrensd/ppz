@@ -4,18 +4,18 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 #ifndef __CAN_H__
@@ -81,46 +81,46 @@ enum CAN_TX_FRAME_PARAM
 #define CANID_AC					0x0010
 
 
-struct can_transport 
+struct can_transport
 {
 	// generic reception interface,can transport variables
-  	uint8_t rx_status;
+	uint8_t rx_status;
 	uint8_t rx_frame_status;
-  	uint16_t payload_idx;
- 	uint8_t cs_rx;
-  	volatile uint16_t len;
-  	uint16_t rx_canid;
+	uint16_t payload_idx;
+	uint8_t cs_rx;
+	volatile uint16_t len;
+	uint16_t rx_canid;
 	volatile bool_t msg_received;           ///< message received flag
-  	uint8_t rx_seq;	//rx frame sequence
- 	uint8_t last_rx_seq;
+	uint8_t rx_seq;	//rx frame sequence
+	uint8_t last_rx_seq;
 	uint32_t rx_ts;
- 	uint8_t rx_buf[CAN_RX_BUFFER_SIZE+5];
+	uint8_t rx_buf[CAN_RX_BUFFER_SIZE+5];
 	uint8_t rx_data[CAN_FRAME_SIZE+5];
-  	uint16_t rx_insert_idx;
+	uint16_t rx_insert_idx;
 	uint16_t rx_last_frame_insert_idx;
-  	uint16_t rx_extract_idx;
+	uint16_t rx_extract_idx;
 	uint32_t rx_frame_counter;
 	uint32_t rx_frame_handled_counter;
 	uint16_t rx_cur_frame_len;
-	 
- 	 // generic transmission interface
- 	uint8_t tx_status;
-  	struct transport_tx trans_tx;
-  	uint8_t cs_tx;
+
+	// generic transmission interface
+	uint8_t tx_status;
+	struct transport_tx trans_tx;
+	uint8_t cs_tx;
 	uint16_t tx_canid;
-  	uint8_t tx_buf[CAN_TX_BUFFER_SIZE+5];
-  	uint16_t tx_insert_idx;
-  	uint16_t tx_extract_idx;
+	uint8_t tx_buf[CAN_TX_BUFFER_SIZE+5];
+	uint16_t tx_insert_idx;
+	uint16_t tx_extract_idx;
 	uint16_t tx_frame_len;
 	uint16_t tx_cur_frame_len;
 	uint16_t tx_rem_len;
 	uint32_t tx_frame_counter;
 	uint32_t tx_frame_handled_counter;
-	
-  	volatile uint16_t ore;    ///< overrun or error counter
-  	/** Generic device interface */
- 	 struct link_device device;
-	
+
+	volatile uint16_t ore;    ///< overrun or error counter
+	/** Generic device interface */
+	struct link_device device;
+
 };
 
 void can_msg_handle(struct can_transport *p, uint8_t len);

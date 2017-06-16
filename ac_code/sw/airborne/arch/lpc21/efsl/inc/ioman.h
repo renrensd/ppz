@@ -50,14 +50,16 @@
 #define IOM_MODE_READWRITE 2
 #define IOM_MODE_EXP_REQ   4
 
-struct IOManStack{
+struct IOManStack
+{
 	euint32 sector;
 	euint8  status;
 	euint8  usage;
 };
 typedef struct IOManStack IOManStack;
 
-struct IOManager{
+struct IOManager
+{
 	hwInterface *iface;
 
 	euint8 *bufptr;

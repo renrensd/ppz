@@ -4,25 +4,25 @@
 *   Department : R&D SW      									       *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _OPS_MSG_IF_H_
-#define _OPS_MSG_IF_H_ 
+#define _OPS_MSG_IF_H_
 
 #include "../../modules/system/types.h"
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 #define OPS_CMD_TYPE        0
 #define OPS_CMD_ID_H        1
 #define OPS_CMD_ID_L        2
@@ -34,20 +34,20 @@
 
 typedef union
 {
-    struct
-    {
-        U8 msgseq;
-        U8 compid;
-    }msgid;
-    U16 msg_id;
+	struct
+	{
+		U8 msgseq;
+		U8 compid;
+	} msgid;
+	U16 msg_id;
 } OPS_MSG_ID;
 
-typedef struct 
+typedef struct
 {
-    U8 type;
-    OPS_MSG_ID msg_id;
-    U8 size;
-    U8 *param;
+	U8 type;
+	OPS_MSG_ID msg_id;
+	U8 size;
+	U8 *param;
 } OPS_UART_FRAME;
 
 /**** Definition of macros ****/

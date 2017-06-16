@@ -4,33 +4,33 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   : 										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _FIFO_IF_H_
-#define _FIFO_IF_H_ 
-#include "types.h" 
+#define _FIFO_IF_H_
+#include "types.h"
 
 /**** Definition of constants ****/
 
 
-/**** Definition of types ****/ 
-typedef struct 
+/**** Definition of types ****/
+typedef struct
 {
-    U8  *mpFIFOBuffer;
-    U16  mFIFOHead;   
-    U16  mFIFOTail;  
-    U16  mFIFOSize;
+	U8  *mpFIFOBuffer;
+	U16  mFIFOHead;
+	U16  mFIFOTail;
+	U16  mFIFOSize;
 } FIFO_TYPE;
 
 /**** Definition of macros ****/
