@@ -43,85 +43,85 @@
 /*****************************************************************************/
 
 #ifndef DEBUG
-	#define TXT(x) ;
-	#define DBG(x) ;
-	#define FUNC_IN(x) ;
-	#define FUNC_OUT(x) ;
+#define TXT(x) ;
+#define DBG(x) ;
+#define FUNC_IN(x) ;
+#define FUNC_OUT(x) ;
 #endif
 
 #ifdef DEBUG
-	#if defined(HW_ENDPOINT_LINUX) || defined(HW_ENDPOINT_LINUX64)
-	    #define HW_ENDPOINT_LINUX_ALL
-	#endif
+#if defined(HW_ENDPOINT_LINUX) || defined(HW_ENDPOINT_LINUX64)
+#define HW_ENDPOINT_LINUX_ALL
+#endif
 
-	#ifdef HW_ENDPOINT_ATMEGA128_SD
-		#include <avr/io.h>
-		#include <compat/ina90.h>
-		#include <avr/pgmspace.h>
-		#include <stdio.h>
+#ifdef HW_ENDPOINT_ATMEGA128_SD
+#include <avr/io.h>
+#include <compat/ina90.h>
+#include <avr/pgmspace.h>
+#include <stdio.h>
 
-		#define TXT(x) PSTR(x)
-		#define DBG(x) debug x
-		#define FUNC_IN(x) ;
-		#define FUNC_OUT(x) ;
-	#endif
+#define TXT(x) PSTR(x)
+#define DBG(x) debug x
+#define FUNC_IN(x) ;
+#define FUNC_OUT(x) ;
+#endif
 
-	#ifdef HW_ENDPOINT_LINUX_ALL
-		#include <stdio.h>
-		#include <stdarg.h>
+#ifdef HW_ENDPOINT_LINUX_ALL
+#include <stdio.h>
+#include <stdarg.h>
 
-		#define TXT(x) x
-		#define DBG(x) debug x
-		#define FUNC_IN(x) debug_funcin(x)
-		#define FUNC_OUT(x) debug_funcout(x)
-	#endif
+#define TXT(x) x
+#define DBG(x) debug x
+#define FUNC_IN(x) debug_funcin(x)
+#define FUNC_OUT(x) debug_funcout(x)
+#endif
 
-	#ifdef HW_ENDPOINT_DSP_TI6713_SD
-		#include <stdio.h>
-		#include <stdarg.h>
+#ifdef HW_ENDPOINT_DSP_TI6713_SD
+#include <stdio.h>
+#include <stdarg.h>
 
-		#define TXT(x) x
-		#define DBG(x) printf x
-		#define FUNC_IN(x) ;
-		#define FUNC_OUT(x) ;
-	#endif
-	#ifdef HW_ENDPOINT_NIOS_2_SD
-		#include <stdio.h>
-		#include <stdarg.h>
+#define TXT(x) x
+#define DBG(x) printf x
+#define FUNC_IN(x) ;
+#define FUNC_OUT(x) ;
+#endif
+#ifdef HW_ENDPOINT_NIOS_2_SD
+#include <stdio.h>
+#include <stdarg.h>
 
-		#define TXT(x) x
-		#define DBG(x) printf x
-		#define FUNC_IN(x) ;
-		#define FUNC_OUT(x) ;
-	#endif
-	#ifdef HW_ENDPOINT_LPC2000_SD
-		#include "interfaces/lpc2000_dbg_printf.h"
+#define TXT(x) x
+#define DBG(x) printf x
+#define FUNC_IN(x) ;
+#define FUNC_OUT(x) ;
+#endif
+#ifdef HW_ENDPOINT_LPC2000_SD
+#include "interfaces/lpc2000_dbg_printf.h"
 
-		#define TXT(x) x
-		#define DBG(x) debug x
-		#define FUNC_IN(x) ;
-		#define FUNC_OUT(x) ;
-		#define debug lpc2000_debug_printf
-	#else
-	void debug(const eint8 *format, ...); /* This is messy FIXME */
-	#endif
+#define TXT(x) x
+#define DBG(x) debug x
+#define FUNC_IN(x) ;
+#define FUNC_OUT(x) ;
+#define debug lpc2000_debug_printf
+#else
+void debug(const eint8 *format, ...); /* This is messy FIXME */
+#endif
 
-	void debug_init();
-	void debug_end();
+void debug_init();
+void debug_end();
 
-	#ifdef HW_ENDPOINT_LINUX_ALL
-	FILE* debugfile;
-	volatile euint8 tw;
-	void debug_funcin(const eint8 *format, ...);
-	void debug_funcout(const eint8 *format, ...);
-	euint8 debug_getByte();
-	euint8 debug_getString(euint8 *data,euint16 length);
-	#endif
+#ifdef HW_ENDPOINT_LINUX_ALL
+FILE* debugfile;
+volatile euint8 tw;
+void debug_funcin(const eint8 *format, ...);
+void debug_funcout(const eint8 *format, ...);
+euint8 debug_getByte();
+euint8 debug_getString(euint8 *data,euint16 length);
+#endif
 
-	#ifdef HW_ENDPOINT_ATMEGA128_SD
-	void debug_initUART(euint16 baudrate );
-	void debug_sendByte(euint8 data );
-	#endif
+#ifdef HW_ENDPOINT_ATMEGA128_SD
+void debug_initUART(euint16 baudrate );
+void debug_sendByte(euint8 data );
+#endif
 
 #endif
 

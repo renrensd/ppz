@@ -99,99 +99,114 @@ struct MotorMixing motor_mixing;
 #if PERIODIC_TELEMETRY
 static void send_motormixing(struct transport_tx *trans, struct link_device *dev)
 {
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  pprz_msg_send_MOTOR_MIXING(trans, dev, AC_ID,
-                &motor_mixing.commands[0],
-			    &motor_mixing.commands[1],
-			    &motor_mixing.commands[2],
-			    &motor_mixing.commands[3],
-			    &motor_mixing.commands[4],
-			    &motor_mixing.commands[5]);
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	pprz_msg_send_MOTOR_MIXING(trans, dev, AC_ID,
+														 &motor_mixing.commands[0],
+														 &motor_mixing.commands[1],
+														 &motor_mixing.commands[2],
+														 &motor_mixing.commands[3],
+														 &motor_mixing.commands[4],
+														 &motor_mixing.commands[5]);
 }
 #endif
 
 void motor_mixing_init(void)
 {
-  uint8_t i;
-  for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
-    motor_mixing.commands[i] = 0;
-    motor_mixing.trim[i] =
-      roll_coef[i]  * MOTOR_MIXING_TRIM_ROLL +
-      pitch_coef[i] * MOTOR_MIXING_TRIM_PITCH +
-      yaw_coef[i]   * MOTOR_MIXING_TRIM_YAW;
-    motor_mixing.override_enabled[i] = FALSE;
-    motor_mixing.override_value[i] = MOTOR_MIXING_STOP_MOTOR;
-  }
-  motor_mixing.nb_failure = 0;
-  motor_mixing.nb_saturation = 0;
+	uint8_t i;
+	for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+	{
+		motor_mixing.commands[i] = 0;
+		motor_mixing.trim[i] =
+			roll_coef[i]  * MOTOR_MIXING_TRIM_ROLL +
+			pitch_coef[i] * MOTOR_MIXING_TRIM_PITCH +
+			yaw_coef[i]   * MOTOR_MIXING_TRIM_YAW;
+		motor_mixing.override_enabled[i] = FALSE;
+		motor_mixing.override_value[i] = MOTOR_MIXING_STOP_MOTOR;
+	}
+	motor_mixing.nb_failure = 0;
+	motor_mixing.nb_saturation = 0;
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MOTOR_MIXING, send_motormixing);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MOTOR_MIXING, send_motormixing);
 #endif
 }
 
 static void offset_commands(int32_t offset)
 {
-  uint8_t j;
-  for (j = 0; j < MOTOR_MIXING_NB_MOTOR; j++) {
-    motor_mixing.commands[j] += (offset);
-  }
+	uint8_t j;
+	for (j = 0; j < MOTOR_MIXING_NB_MOTOR; j++)
+	{
+		motor_mixing.commands[j] += (offset);
+	}
 }
 
 static void bound_commands(void)
 {
-  uint8_t j;
-  for (j = 0; j < MOTOR_MIXING_NB_MOTOR; j++) {
-    Bound(motor_mixing.commands[j], MOTOR_MIXING_MIN_MOTOR, MOTOR_MIXING_MAX_MOTOR);
-  }
+	uint8_t j;
+	for (j = 0; j < MOTOR_MIXING_NB_MOTOR; j++)
+	{
+		Bound(motor_mixing.commands[j], MOTOR_MIXING_MIN_MOTOR, MOTOR_MIXING_MAX_MOTOR);
+	}
 }
 
 static void bound_commands_step(void)
 {
 #ifdef MOTOR_MIXING_USE_MAX_MOTOR_STEP_BINDING
-  uint8_t j;
-  static int32_t prev_commands[MOTOR_MIXING_NB_MOTOR];
-  static uint8_t initialized = 0;
+	uint8_t j;
+	static int32_t prev_commands[MOTOR_MIXING_NB_MOTOR];
+	static uint8_t initialized = 0;
 
-  if (initialized == 1) {
-    for (j = 0; j < MOTOR_MIXING_NB_MOTOR; j++) {
-      int32_t new_command_diff = motor_mixing.commands[j] - prev_commands[j];
-      Bound(new_command_diff,
-            MOTOR_MIXING_MAX_NEGATIVE_MOTOR_STEP, MOTOR_MIXING_MAX_POSITIVE_MOTOR_STEP);
-      motor_mixing.commands[j] = prev_commands[j] + new_command_diff;
-    }
-  } else {
-    initialized = 1;
-  }
+	if (initialized == 1)
+	{
+		for (j = 0; j < MOTOR_MIXING_NB_MOTOR; j++)
+		{
+			int32_t new_command_diff = motor_mixing.commands[j] - prev_commands[j];
+			Bound(new_command_diff,
+						MOTOR_MIXING_MAX_NEGATIVE_MOTOR_STEP, MOTOR_MIXING_MAX_POSITIVE_MOTOR_STEP);
+			motor_mixing.commands[j] = prev_commands[j] + new_command_diff;
+		}
+	}
+	else
+	{
+		initialized = 1;
+	}
 
-  for (j = 0; j < MOTOR_MIXING_NB_MOTOR; j++) {
-    prev_commands[j] = motor_mixing.commands[j];
-  }
+	for (j = 0; j < MOTOR_MIXING_NB_MOTOR; j++)
+	{
+		prev_commands[j] = motor_mixing.commands[j];
+	}
 #endif
 }
 
 void motor_mixing_run_spinup(uint32_t counter, uint32_t max_counter)
 {
-  int i;
-  for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
+	int i;
+	for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+	{
 #ifdef MOTOR_MIXING_STARTUP_DELAY
-    if (counter > i * max_counter / (MOTOR_MIXING_NB_MOTOR + MOTOR_MIXING_STARTUP_DELAY)) {
-      if (counter > MOTOR_MIXING_NB_MOTOR * max_counter /
-          (MOTOR_MIXING_NB_MOTOR + MOTOR_MIXING_STARTUP_DELAY))
-      {
-        motor_mixing.commands[i] = MOTOR_MIXING_MIN_MOTOR_STARTUP +
-          (MOTOR_MIXING_MIN_MOTOR - MOTOR_MIXING_MIN_MOTOR_STARTUP) * counter / max_counter;
-      } else {
-        motor_mixing.commands[i] = MOTOR_MIXING_MIN_MOTOR_STARTUP;
-      }
-    } else {
-      motor_mixing.commands[i] = 0;
-    }
+		if (counter > i * max_counter / (MOTOR_MIXING_NB_MOTOR + MOTOR_MIXING_STARTUP_DELAY))
+		{
+			if (counter > MOTOR_MIXING_NB_MOTOR * max_counter /
+					(MOTOR_MIXING_NB_MOTOR + MOTOR_MIXING_STARTUP_DELAY))
+			{
+				motor_mixing.commands[i] = MOTOR_MIXING_MIN_MOTOR_STARTUP +
+																	 (MOTOR_MIXING_MIN_MOTOR - MOTOR_MIXING_MIN_MOTOR_STARTUP) * counter / max_counter;
+			}
+			else
+			{
+				motor_mixing.commands[i] = MOTOR_MIXING_MIN_MOTOR_STARTUP;
+			}
+		}
+		else
+		{
+			motor_mixing.commands[i] = 0;
+		}
 #else
-    if (counter < i * max_counter / MOTOR_MIXING_NB_MOTOR) {
-      motor_mixing.commands[i] = MOTOR_MIXING_MIN_MOTOR_STARTUP;
-    }
+		if (counter < i * max_counter / MOTOR_MIXING_NB_MOTOR)
+		{
+			motor_mixing.commands[i] = MOTOR_MIXING_MIN_MOTOR_STARTUP;
+		}
 #endif
-  }
+	}
 }
 
 #if USE_MANU_DEBUG
@@ -208,7 +223,7 @@ void set_esc_calibration(uint8_t value)
 	else
 	{
 		mc_esc_calibration_state = 0;   //give min limit
-	}	
+	}
 	mc_test_motor_step = 0;  //if in esc calibration, reset all motor test
 }
 
@@ -224,105 +239,120 @@ void set_particular_motor_run(uint8_t value)
 
 void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
 {
-  uint8_t i;
-  static uint8_t esc_cali_status = 0;
-  static pprz_t value = MOTOR_MIXING_STOP_MOTOR;
+	uint8_t i;
+	static uint8_t esc_cali_status = 0;
+	static pprz_t value = MOTOR_MIXING_STOP_MOTOR;
 
 #if !HITL
-  if (motors_on) {
+	if (motors_on)
+	{
 #else
-  if (FALSE) {
+	if (FALSE)
+	{
 #endif
 
-    int32_t tmp_cmd;
-    int32_t max_overflow = 0;
+		int32_t tmp_cmd;
+		int32_t max_overflow = 0;
 
-    /* first calculate the highest priority part of the command:
-     * - add trim + roll + pitch + thrust for each motor
-     * - calc max saturation/overflow when yaw command is also added
-     */
-    for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
-      motor_mixing.commands[i] = motor_mixing.trim[i] +
-        roll_coef[i] * in_cmd[COMMAND_ROLL] +
-        pitch_coef[i] * in_cmd[COMMAND_PITCH] +
-        thrust_coef[i] * in_cmd[COMMAND_THRUST];
+		/* first calculate the highest priority part of the command:
+		 * - add trim + roll + pitch + thrust for each motor
+		 * - calc max saturation/overflow when yaw command is also added
+		 */
+		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+		{
+			motor_mixing.commands[i] = motor_mixing.trim[i] +
+																 roll_coef[i] * in_cmd[COMMAND_ROLL] +
+																 pitch_coef[i] * in_cmd[COMMAND_PITCH] +
+																 thrust_coef[i] * in_cmd[COMMAND_THRUST];
 
-      /* compute the command with yaw for each motor to check how much it would saturate */
-      tmp_cmd = motor_mixing.commands[i] + yaw_coef[i] * in_cmd[COMMAND_YAW];
-      tmp_cmd /= MOTOR_MIXING_SCALE;
+			/* compute the command with yaw for each motor to check how much it would saturate */
+			tmp_cmd = motor_mixing.commands[i] + yaw_coef[i] * in_cmd[COMMAND_YAW];
+			tmp_cmd /= MOTOR_MIXING_SCALE;
 
-      /* remember max overflow (how much in saturation) */
-      if (-tmp_cmd > max_overflow) {
-        max_overflow = -tmp_cmd;
-      }
-      else if (tmp_cmd - MAX_PPRZ > max_overflow) {
-        max_overflow = tmp_cmd - MAX_PPRZ;
-      }
-    }
+			/* remember max overflow (how much in saturation) */
+			if (-tmp_cmd > max_overflow)
+			{
+				max_overflow = -tmp_cmd;
+			}
+			else if (tmp_cmd - MAX_PPRZ > max_overflow)
+			{
+				max_overflow = tmp_cmd - MAX_PPRZ;
+			}
+		}
 
-    /* calculate how much authority is left for yaw command */
-    int32_t yaw_authority = ABS(in_cmd[COMMAND_YAW]) - max_overflow;
-    Bound(yaw_authority, 0, MAX_PPRZ);
-    int32_t bounded_yaw_cmd = in_cmd[COMMAND_YAW];
-    BoundAbs(bounded_yaw_cmd, yaw_authority);
+		/* calculate how much authority is left for yaw command */
+		int32_t yaw_authority = ABS(in_cmd[COMMAND_YAW]) - max_overflow;
+		Bound(yaw_authority, 0, MAX_PPRZ);
+		int32_t bounded_yaw_cmd = in_cmd[COMMAND_YAW];
+		BoundAbs(bounded_yaw_cmd, yaw_authority);
 
-    /* min/max of commands */
-    int32_t min_cmd = INT32_MAX;
-    int32_t max_cmd = INT32_MIN;
+		/* min/max of commands */
+		int32_t min_cmd = INT32_MAX;
+		int32_t max_cmd = INT32_MIN;
 
-    /* add the bounded yaw command and scale */
-    for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
-      motor_mixing.commands[i] += yaw_coef[i] * bounded_yaw_cmd;
-      motor_mixing.commands[i] /= MOTOR_MIXING_SCALE;
+		/* add the bounded yaw command and scale */
+		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+		{
+			motor_mixing.commands[i] += yaw_coef[i] * bounded_yaw_cmd;
+			motor_mixing.commands[i] /= MOTOR_MIXING_SCALE;
 
-      /* remember min/max */
-      if (motor_mixing.commands[i] < min_cmd) {
-        min_cmd = motor_mixing.commands[i];
-      }
-      if (motor_mixing.commands[i] > max_cmd) {
-        max_cmd = motor_mixing.commands[i];
-      }
-    }
+			/* remember min/max */
+			if (motor_mixing.commands[i] < min_cmd)
+			{
+				min_cmd = motor_mixing.commands[i];
+			}
+			if (motor_mixing.commands[i] > max_cmd)
+			{
+				max_cmd = motor_mixing.commands[i];
+			}
+		}
 
-    if (min_cmd < MOTOR_MIXING_MIN_MOTOR && max_cmd > MOTOR_MIXING_MAX_MOTOR) {
-      motor_mixing.nb_failure++;
-    }
+		if (min_cmd < MOTOR_MIXING_MIN_MOTOR && max_cmd > MOTOR_MIXING_MAX_MOTOR)
+		{
+			motor_mixing.nb_failure++;
+		}
 
-    /* In case of both min and max saturation, only lower the throttle
-     * instead of applying both. This should prevent your quad shooting up,
-     * but it might loose altitude in case of such a saturation failure.
-     */
-    if (max_cmd > MOTOR_MIXING_MAX_MOTOR) {
-      int32_t saturation_offset = MOTOR_MIXING_MAX_MOTOR - max_cmd;
-      BoundAbs(saturation_offset, MOTOR_MIXING_MAX_SATURATION_OFFSET);
-      offset_commands(saturation_offset);
-      motor_mixing.nb_saturation++;
-    } else if (min_cmd < MOTOR_MIXING_MIN_MOTOR) {
-      int32_t saturation_offset = MOTOR_MIXING_MIN_MOTOR - min_cmd;
-      BoundAbs(saturation_offset, MOTOR_MIXING_MAX_SATURATION_OFFSET);
-      offset_commands(saturation_offset);
-      motor_mixing.nb_saturation++;
-    }
+		/* In case of both min and max saturation, only lower the throttle
+		 * instead of applying both. This should prevent your quad shooting up,
+		 * but it might loose altitude in case of such a saturation failure.
+		 */
+		if (max_cmd > MOTOR_MIXING_MAX_MOTOR)
+		{
+			int32_t saturation_offset = MOTOR_MIXING_MAX_MOTOR - max_cmd;
+			BoundAbs(saturation_offset, MOTOR_MIXING_MAX_SATURATION_OFFSET);
+			offset_commands(saturation_offset);
+			motor_mixing.nb_saturation++;
+		}
+		else if (min_cmd < MOTOR_MIXING_MIN_MOTOR)
+		{
+			int32_t saturation_offset = MOTOR_MIXING_MIN_MOTOR - min_cmd;
+			BoundAbs(saturation_offset, MOTOR_MIXING_MAX_SATURATION_OFFSET);
+			offset_commands(saturation_offset);
+			motor_mixing.nb_saturation++;
+		}
 
-    /* For testing motor failure */
-    if (motors_on && override_on) {
-      for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
-        if (motor_mixing.override_enabled[i]) {
-          motor_mixing.commands[i] = motor_mixing.override_value[i];
-        }
-      }
-    }
-    bound_commands();
-    bound_commands_step();
+		/* For testing motor failure */
+		if (motors_on && override_on)
+		{
+			for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+			{
+				if (motor_mixing.override_enabled[i])
+				{
+					motor_mixing.commands[i] = motor_mixing.override_value[i];
+				}
+			}
+		}
+		bound_commands();
+		bound_commands_step();
 
-  } 
-  else 
-  {  
-    for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) 
+	}
+	else
 	{
-      motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
-    }
-	#ifdef ESC_CALIBRATION
+		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
+		{
+			motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
+		}
+#ifdef ESC_CALIBRATION
 		if(esc_cali_status == 0)
 		{
 			if(radio_control.values[RADIO_THROTTLE] > (MOTOR_MIXING_MAX_MOTOR/2))
@@ -357,17 +387,17 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
 				motor_mixing.commands[num] = MOTOR_MIXING_MIN_MOTOR;
 			}
 		}
-     #endif
-  }
+#endif
+	}
 
-  #if USE_MANU_DEBUG
-  	if(mc_esc_calibration_state)
-  	{		
+#if USE_MANU_DEBUG
+	if(mc_esc_calibration_state)
+	{
 		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
 		{
 			motor_mixing.commands[i] = MOTOR_MIXING_MAX_MOTOR;
 		}
-  	}
+	}
 	else
 	{
 		for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++)
@@ -379,6 +409,6 @@ void motor_mixing_run(bool_t motors_on, bool_t override_on, pprz_t in_cmd[])
 			motor_mixing.commands[mc_test_motor_step-1] = MOTOR_MIXING_MIN_MOTOR;
 		}
 	}
-    #endif
+#endif
 
 }

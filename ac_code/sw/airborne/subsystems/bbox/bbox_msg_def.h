@@ -4,18 +4,18 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _BBOX_MSG_UART_DEF_H_
 #define _BBOX_MSG_UART_DEF_H_
@@ -32,14 +32,14 @@ enum BBOX_COMPONENT_ID
 	BBOX_UPGRADE_SERVIC=0X05,
 };
 
-enum BBOX_UPGRADE_PROCESS_PARAM	//add by lg 
+enum BBOX_UPGRADE_PROCESS_PARAM	//add by lg
 {
 	BBOX_UPDATE_REQ_DATA=0X01,
 	BBOX_UPDATE_REQ_RES_DATA,    //0X02
 	BBOX_UPDATE_ASK_READY_DATA,	//0X03
 	BBOX_UPDATE_ASK_READY_RES_DATA,	//0X04
 	BBOX_UPDATE_DATA,				//0X05
-	BBOX_UPDATE_RES_DATA,		//0X06	
+	BBOX_UPDATE_RES_DATA,		//0X06
 	BBOX_UPDATE_OVER_DATA,		//0X07
 	BBOX_UPDATE_OVER_RES_DATA, 	//0X08
 };

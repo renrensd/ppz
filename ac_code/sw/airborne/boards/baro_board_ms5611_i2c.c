@@ -68,67 +68,70 @@ struct Ms5611_I2c bb_ms5611;
 
 void baro_init(void)
 {
-  ms5611_i2c_init(&bb_ms5611, &BB_MS5611_I2C_DEV, BB_MS5611_SLAVE_ADDR, BB_MS5611_TYPE_MS5607);
+	ms5611_i2c_init(&bb_ms5611, &BB_MS5611_I2C_DEV, BB_MS5611_SLAVE_ADDR, BB_MS5611_TYPE_MS5607);
 
 #ifdef BARO_LED
-  LED_OFF(BARO_LED);
+	LED_OFF(BARO_LED);
 #endif
 }
 
 void baro_periodic(void)
 {
-  if (sys_time.nb_sec > 1) {
+	if (sys_time.nb_sec > 1)
+	{
 
-    /* call the convenience periodic that initializes the sensor and starts reading*/
-    ms5611_i2c_periodic(&bb_ms5611);
+		/* call the convenience periodic that initializes the sensor and starts reading*/
+		ms5611_i2c_periodic(&bb_ms5611);
 
 #if DEBUG
-   #if PERIODIC_TELEMETRY
-    if (bb_ms5611.initialized)
-    {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-      RunOnceEvery((50 * 30), DOWNLINK_SEND_MS5611_COEFF(DefaultChannel, DefaultDevice,
-                   &bb_ms5611.data.c[0],
-                   &bb_ms5611.data.c[1],
-                   &bb_ms5611.data.c[2],
-                   &bb_ms5611.data.c[3],
-                   &bb_ms5611.data.c[4],
-                   &bb_ms5611.data.c[5],
-                   &bb_ms5611.data.c[6],
-                   &bb_ms5611.data.c[7]));
-    }
-   #endif
+#if PERIODIC_TELEMETRY
+		if (bb_ms5611.initialized)
+		{
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+			RunOnceEvery((50 * 30), DOWNLINK_SEND_MS5611_COEFF(DefaultChannel, DefaultDevice,
+									 &bb_ms5611.data.c[0],
+									 &bb_ms5611.data.c[1],
+									 &bb_ms5611.data.c[2],
+									 &bb_ms5611.data.c[3],
+									 &bb_ms5611.data.c[4],
+									 &bb_ms5611.data.c[5],
+									 &bb_ms5611.data.c[6],
+									 &bb_ms5611.data.c[7]));
+		}
 #endif
-  }
+#endif
+	}
 }
 
 void baro_event(void)
 {
-  if (sys_time.nb_sec > 1) {
-    ms5611_i2c_event(&bb_ms5611);
+	if (sys_time.nb_sec > 1)
+	{
+		ms5611_i2c_event(&bb_ms5611);
 
-    if (bb_ms5611.data_available) {
-      float pressure = (float)bb_ms5611.data.pressure;
-      //AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
-      float temp = bb_ms5611.data.temperature / 100.0f;
-      uint32_t now_ts = get_sys_time_usec();
-      AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, now_ts, pressure, temp);
-      AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
-      bb_ms5611.data_available = FALSE;
+		if (bb_ms5611.data_available)
+		{
+			float pressure = (float)bb_ms5611.data.pressure;
+			//AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
+			float temp = bb_ms5611.data.temperature / 100.0f;
+			uint32_t now_ts = get_sys_time_usec();
+			AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, now_ts, pressure, temp);
+			AbiSendMsgTEMPERATURE(BARO_BOARD_SENDER_ID, temp);
+			bb_ms5611.data_available = FALSE;
 
 #ifdef BARO_LED
-      RunOnceEvery(10, LED_TOGGLE(BARO_LED));
+			RunOnceEvery(10, LED_TOGGLE(BARO_LED));
 #endif
 
 #if DEBUG
-   #if PERIODIC_TELEMETRY
-      float fbaroms = bb_ms5611.data.pressure / 100.;
-      xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-      DOWNLINK_SEND_BARO_MS5611(DefaultChannel, DefaultDevice,
-                                &bb_ms5611.data.d1, &bb_ms5611.data.d2,
-                                &fbaroms, &temp);
-   #endif
+#if PERIODIC_TELEMETRY
+			float fbaroms = bb_ms5611.data.pressure / 100.;
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+			DOWNLINK_SEND_BARO_MS5611(DefaultChannel, DefaultDevice,
+																&bb_ms5611.data.d1, &bb_ms5611.data.d2,
+																&fbaroms, &temp);
 #endif
-    }
-  }
+#endif
+		}
+	}
 }

@@ -36,19 +36,21 @@
 #include "peripherals/adxl350.h"
 
 
-struct Adxl350_Spi {
-  struct spi_periph *spi_p;
-  struct spi_transaction spi_trans;
-  volatile uint8_t tx_buf[7];
-  volatile uint8_t rx_buf[7];
-  enum Adxl350ConfStatus init_status; ///< init status
-  bool_t initialized;                 ///< config done flag
-  volatile bool_t data_available;     ///< data ready flag
-  union {
-    struct Int16Vect3 vect;           ///< data vector in accel coordinate system
-    int16_t value[3];                 ///< data values accessible by channel index
-  } data;
-  struct Adxl350Config config;
+struct Adxl350_Spi
+{
+	struct spi_periph *spi_p;
+	struct spi_transaction spi_trans;
+	volatile uint8_t tx_buf[7];
+	volatile uint8_t rx_buf[7];
+	enum Adxl350ConfStatus init_status; ///< init status
+	bool_t initialized;                 ///< config done flag
+	volatile bool_t data_available;     ///< data ready flag
+	union
+	{
+		struct Int16Vect3 vect;           ///< data vector in accel coordinate system
+		int16_t value[3];                 ///< data values accessible by channel index
+	} data;
+	struct Adxl350Config config;
 };
 
 // Functions
@@ -60,11 +62,14 @@ extern void adxl350_spi_event(struct Adxl350_Spi *adxl);
 /// convenience function: read or start configuration if not already initialized
 static inline void adxl350_spi_periodic(struct Adxl350_Spi *adxl)
 {
-  if (adxl->initialized) {
-    adxl350_spi_read(adxl);
-  } else {
-    adxl350_spi_start_configure(adxl);
-  }
+	if (adxl->initialized)
+	{
+		adxl350_spi_read(adxl);
+	}
+	else
+	{
+		adxl350_spi_start_configure(adxl);
+	}
 }
 
 #endif // ADXL350_SPI_H

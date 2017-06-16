@@ -58,7 +58,8 @@ void disc_loadMBR(Disc *disc)
 	euint8 *buf;
 
 	buf=ioman_getSector(disc->ioman,LBA_ADDR_MBR,IOM_MODE_READONLY|IOM_MODE_EXP_REQ);
-	for(x=0;x<4;x++){
+	for(x=0; x<4; x++)
+	{
 		ex_getPartitionField(buf,&(disc->partitions[x]),PARTITION_TABLE_OFFSET+(x*SIZE_PARTITION_FIELD));
 	}
 	ioman_releaseSector(disc->ioman,buf);

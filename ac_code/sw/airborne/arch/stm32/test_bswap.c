@@ -33,25 +33,25 @@
 int main(void)
 {
 
-  //  uint32_t foo = 0;
-  //  uint32_t bar = __builtin_bswap32(*(uint32_t*)&foo);
+	//  uint32_t foo = 0;
+	//  uint32_t bar = __builtin_bswap32(*(uint32_t*)&foo);
 
-  //  uint16_t foo = 12345;
-  //  uint16_t bar = foo >> 8 | foo << 8;
+	//  uint16_t foo = 12345;
+	//  uint16_t bar = foo >> 8 | foo << 8;
 
-  //  uint16_t foo = 12345;
-  //  uint16_t bar = ByteSwap(foo);
+	//  uint16_t foo = 12345;
+	//  uint16_t bar = ByteSwap(foo);
 
-  uint16_t foo = 12345;
-  uint16_t bar = MyByteSwap16(foo);
-  MyByteSwap16_1(foo, bar);
-  bar = __REV16(foo);
+	uint16_t foo = 12345;
+	uint16_t bar = MyByteSwap16(foo);
+	MyByteSwap16_1(foo, bar);
+	bar = __REV16(foo);
 
 
 
-  uint32_t a = 23456;
-  uint32_t b = MyByteSwap32(a);
-  MyByteSwap32_1(a, b);
+	uint32_t a = 23456;
+	uint32_t b = MyByteSwap32(a);
+	MyByteSwap32_1(a, b);
 
-  return 0;
+	return 0;
 }

@@ -48,39 +48,43 @@ uint16_t startup_cnt;
 
 void baro_init(void)
 {
-  ads1114_init();
+	ads1114_init();
 #ifdef BARO_LED
-  LED_OFF(BARO_LED);
+	LED_OFF(BARO_LED);
 #endif
-  startup_cnt = BARO_STARTUP_COUNTER;
+	startup_cnt = BARO_STARTUP_COUNTER;
 }
 
 void baro_periodic(void)
 {
 
-  // Run some loops to get correct readings from the adc
-  if (startup_cnt > 0) {
-    --startup_cnt;
+	// Run some loops to get correct readings from the adc
+	if (startup_cnt > 0)
+	{
+		--startup_cnt;
 #ifdef BARO_LED
-    LED_TOGGLE(BARO_LED);
-    if (startup_cnt == 0) {
-      LED_ON(BARO_LED);
-    }
+		LED_TOGGLE(BARO_LED);
+		if (startup_cnt == 0)
+		{
+			LED_ON(BARO_LED);
+		}
 #endif
-  }
-  // Read the ADC
-  ads1114_read(&BARO_ABS_ADS);
+	}
+	// Read the ADC
+	ads1114_read(&BARO_ABS_ADS);
 }
 
 void umarim_baro_event(void)
 {
-  Ads1114Event();
-  if (BARO_ABS_ADS.data_available) {
-    if (startup_cnt == 0) {
-      float pressure = UMARIM_BARO_SENS * Ads1114GetValue(BARO_ABS_ADS);
-      AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
-    }
-    BARO_ABS_ADS.data_available = FALSE;
-  }
+	Ads1114Event();
+	if (BARO_ABS_ADS.data_available)
+	{
+		if (startup_cnt == 0)
+		{
+			float pressure = UMARIM_BARO_SENS * Ads1114GetValue(BARO_ABS_ADS);
+			AbiSendMsgBARO_ABS(BARO_BOARD_SENDER_ID, pressure);
+		}
+		BARO_ABS_ADS.data_available = FALSE;
+	}
 }
 

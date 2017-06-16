@@ -34,9 +34,10 @@
 #include "std.h"
 #include "mcu_periph/link_device.h"
 
-struct spi_slave_hs {
-  /** Generic device interface */
-  struct link_device device;
+struct spi_slave_hs
+{
+	/** Generic device interface */
+	struct link_device device;
 };
 
 extern struct spi_slave_hs spi_slave_hs;

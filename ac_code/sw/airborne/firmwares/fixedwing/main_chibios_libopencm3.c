@@ -52,45 +52,47 @@ bool_t pprzReady = FALSE;
 
 int main(void)
 {
-  // Init
-  sys_time_init();
+	// Init
+	sys_time_init();
 
-  // Init ChibiOS
-  sdlogOk = chibios_init();
+	// Init ChibiOS
+	sdlogOk = chibios_init();
 
-  // Init PPRZ
-  Fbw(init);
-  Ap(init);
+	// Init PPRZ
+	Fbw(init);
+	Ap(init);
 
-  chibios_chThdSleepMilliseconds(100);
+	chibios_chThdSleepMilliseconds(100);
 
-  launch_pprz_thd(&pprz_thd);
-  pprzReady = TRUE;
-  // Call PPRZ periodic and event functions
-  while (TRUE) {
-    chibios_chThdSleepMilliseconds(1000);
-  }
-  return 0;
+	launch_pprz_thd(&pprz_thd);
+	pprzReady = TRUE;
+	// Call PPRZ periodic and event functions
+	while (TRUE)
+	{
+		chibios_chThdSleepMilliseconds(1000);
+	}
+	return 0;
 }
 
 
 static int32_t pprz_thd(void *arg)
 {
-  /*
-     To be compatible with rtos architecture, each of this 4 workers should
-     be implemented in differents threads, each of them waiting for job to be done:
-     periodic task should sleep, and event task should wait for event
-     */
-  (void) arg;
-  chibios_chRegSetThreadName("pprz big loop");
+	/*
+	   To be compatible with rtos architecture, each of this 4 workers should
+	   be implemented in differents threads, each of them waiting for job to be done:
+	   periodic task should sleep, and event task should wait for event
+	   */
+	(void) arg;
+	chibios_chRegSetThreadName("pprz big loop");
 
-  while (!chThdShouldTerminate()) {
-    Fbw(handle_periodic_tasks);
-    Ap(handle_periodic_tasks);
-    Fbw(event_task);
-    Ap(event_task);
-    chibios_chThdSleepMilliseconds(1);
-  }
+	while (!chThdShouldTerminate())
+	{
+		Fbw(handle_periodic_tasks);
+		Ap(handle_periodic_tasks);
+		Fbw(event_task);
+		Ap(event_task);
+		chibios_chThdSleepMilliseconds(1);
+	}
 
-  return 0;
+	return 0;
 }

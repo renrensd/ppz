@@ -1,23 +1,23 @@
- /*
- * Copyright (C) 2008-2011  The Paparazzi Team
- *
- * This file is part of paparazzi.
- *
- * paparazzi is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- *
- * paparazzi is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with paparazzi; see the file COPYING.  If not, write to
- * the Free Software Foundation, 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- */
+/*
+* Copyright (C) 2008-2011  The Paparazzi Team
+*
+* This file is part of paparazzi.
+*
+* paparazzi is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2, or (at your option)
+* any later version.
+*
+* paparazzi is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with paparazzi; see the file COPYING.  If not, write to
+* the Free Software Foundation, 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*/
 
 /**
  * @file firmwares/rotorcraft/navigation.h
@@ -203,7 +203,7 @@ extern void nav_circle(struct EnuCoor_i *wp_center, int32_t radius);
 #define NavCircleCount() ((float)abs(nav_circle_radians) / INT32_ANGLE_2_PI)
 #define NavCircleQdr() ({ int32_t qdr = INT32_DEG_OF_RAD(INT32_ANGLE_PI_2 - nav_circle_qdr) >> INT32_ANGLE_FRAC; NormCourse(qdr); qdr; })
 
-/** True if x (in degrees) is close to the current QDR (less than 10 degrees)*/ 
+/** True if x (in degrees) is close to the current QDR (less than 10 degrees)*/
 //#define NavQdrCloseTo(x) {} //TODOM:
 //#define NavCourseCloseTo(x) {}
 #define CloseDegAngles(_c1, _c2) ({ float _diff = _c1 - _c2; NormCourse(_diff); 350 < _diff || _diff < 10; })
@@ -229,7 +229,7 @@ extern void nav_route(struct EnuCoor_i *wp_star, struct EnuCoor_i *wp_end);
 bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_t approaching_time);
 #define NavApproaching(wp, time) nav_approaching_from(&waypoints[wp].enu_i, NULL, time)
 #define NavApproachingFrom(wp, from, time) nav_approaching_from(&waypoints[wp].enu_i, &waypoints[from].enu_i, time)
-extern bool_t nav_approaching_target(struct EnuCoor_i *wp, struct EnuCoor_i *from, float arrived_distance); 
+extern bool_t nav_approaching_target(struct EnuCoor_i *wp, struct EnuCoor_i *from, float arrived_distance);
 extern float distance_to_target(void);
 extern void set_current_pos_to_target(void);
 /** Check the time spent in a radius of 'ARRIVED_AT_WAYPOINT' around a wp  */

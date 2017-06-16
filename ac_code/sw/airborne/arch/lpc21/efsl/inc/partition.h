@@ -54,9 +54,10 @@
 * Disc*		disc				Pointer to disc containing this partition.
 * eint8		activePartition	 	Array subscript for disc->partitions[activePartition]
 \*************************************************************************************/
-struct Partition{
+struct Partition
+{
 	Disc *disc;
- 	esint8 activePartition;
+	esint8 activePartition;
 };
 typedef struct Partition Partition;
 

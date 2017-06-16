@@ -4,31 +4,31 @@
 *   Department 	: R&D SW      									       *
 *   AUTHOR	   	:            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _FRAM_H_
-#define _FRAM_H_ 
+#define _FRAM_H_
 
 /* Include address and register definition */
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 typedef struct
 {
 	uint8_t section;
 	uint8_t fram_id_start;
 	uint8_t fram_id_end;
-}FRAM_DATA_INIT_TYPE;
+} FRAM_DATA_INIT_TYPE;
 /**** Definition of macros ****/
 
 

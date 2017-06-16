@@ -4,21 +4,21 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   : 										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _BBOX_UART_MSG_H_
-#define _BBOX_UART_MSG_H_ 
+#define _BBOX_UART_MSG_H_
 #include "subsystems/datalink/can_transport.h"
 /**** Definition of constants ****/
 

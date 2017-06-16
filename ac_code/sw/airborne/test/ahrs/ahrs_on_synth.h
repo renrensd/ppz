@@ -3,40 +3,42 @@
 
 #include "math/pprz_algebra_float.h"
 
-struct traj {
-  char *name;
-  char *desc;
-  void (*init_fun)(void);
-  void (*update_fun)(void);
+struct traj
+{
+	char *name;
+	char *desc;
+	void (*init_fun)(void);
+	void (*update_fun)(void);
 
-  double ts;
-  double te;
+	double ts;
+	double te;
 };
 
-struct AhrsOnSynth {
+struct AhrsOnSynth
+{
 
-  struct traj *traj;
+	struct traj *traj;
 
-  double time;
-  double dt;
+	double time;
+	double dt;
 
-  /* sensors */
-  struct FloatRates  gyro_bias;
-  struct FloatRates  gyro_noise;
-  struct FloatVect3  accel_noise;
+	/* sensors */
+	struct FloatRates  gyro_bias;
+	struct FloatRates  gyro_noise;
+	struct FloatVect3  accel_noise;
 
-  float heading_noise;
-  float heading_meas;
+	float heading_noise;
+	float heading_meas;
 
-  /* state */
-  struct FloatEulers ltp_to_imu_euler;
-  struct FloatQuat   ltp_to_imu_quat;
-  struct FloatRates  imu_rates;
+	/* state */
+	struct FloatEulers ltp_to_imu_euler;
+	struct FloatQuat   ltp_to_imu_quat;
+	struct FloatRates  imu_rates;
 
-  struct FloatVect3  ltp_jerk;
-  struct FloatVect3  ltp_accel;
-  struct FloatVect3  ltp_vel;
-  struct FloatVect3  ltp_pos;
+	struct FloatVect3  ltp_jerk;
+	struct FloatVect3  ltp_accel;
+	struct FloatVect3  ltp_vel;
+	struct FloatVect3  ltp_pos;
 
 
 

@@ -125,175 +125,186 @@ bool_t pprzReady = FALSE;
 #ifndef SITL
 int main(void)
 {
-  mcu_init();
-  // Init ChibiOS
-  sdlogOk = chibios_init();
+	mcu_init();
+	// Init ChibiOS
+	sdlogOk = chibios_init();
 
-  main_init();
+	main_init();
 
-  chibios_chThdSleepMilliseconds(100);
+	chibios_chThdSleepMilliseconds(100);
 
-  launch_pprz_thd(&pprz_thd);
-  pprzReady = TRUE;
-  // Call PPRZ periodic and event functions
-  while (TRUE) {
-    chibios_chThdSleepMilliseconds(1000);
-  }
-  return 0;
+	launch_pprz_thd(&pprz_thd);
+	pprzReady = TRUE;
+	// Call PPRZ periodic and event functions
+	while (TRUE)
+	{
+		chibios_chThdSleepMilliseconds(1000);
+	}
+	return 0;
 }
 #endif /* SITL */
 
 static int32_t pprz_thd(void *arg)
 {
-  /*
-     To be compatible with rtos architecture, each of this 4 workers should
-     be implemented in differents threads, each of them waiting for job to be done:
-     periodic task should sleep, and event task should wait for event
-     */
-  (void) arg;
-  chibios_chRegSetThreadName("pprz big loop");
+	/*
+	   To be compatible with rtos architecture, each of this 4 workers should
+	   be implemented in differents threads, each of them waiting for job to be done:
+	   periodic task should sleep, and event task should wait for event
+	   */
+	(void) arg;
+	chibios_chRegSetThreadName("pprz big loop");
 
-  while (!chThdShouldTerminate()) 
-  {
-    handle_periodic_tasks();
-    main_event();
-    chibios_chThdSleepMilliseconds(1);
-  }
+	while (!chThdShouldTerminate())
+	{
+		handle_periodic_tasks();
+		main_event();
+		chibios_chThdSleepMilliseconds(1);
+	}
 
-  return 0;
+	return 0;
 }
 
 STATIC_INLINE void main_init(void)
 {
-  //mcu_init();
+	//mcu_init();
 
-  electrical_init();
+	electrical_init();
 
-  stateInit();
+	stateInit();
 
-  actuators_init();
+	actuators_init();
 #if USE_MOTOR_MIXING
-  motor_mixing_init();
+	motor_mixing_init();
 #endif
 
-  radio_control_init();
+	radio_control_init();
 
 #if USE_BARO_BOARD
-  baro_init();
+	baro_init();
 #endif
-  imu_init();
+	imu_init();
 #if USE_AHRS_ALIGNER
-  ahrs_aligner_init();
+	ahrs_aligner_init();
 #endif
 
 #if USE_AHRS
-  ahrs_init();
+	ahrs_init();
 #endif
 
-  ins_init();
+	ins_init();
 
 #if USE_GPS
-  gps_init();
+	gps_init();
 #endif
 
-  autopilot_init();
+	autopilot_init();
 
-  modules_init();
+	modules_init();
 
-  settings_init();
+	settings_init();
 
-  mcu_int_enable();
+	mcu_int_enable();
 
 #if DOWNLINK
-  downlink_init();
+	downlink_init();
 #endif
 
-  // register the timers for the periodic functions
-  main_periodic_tid = sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
-  modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
-  radio_control_tid = sys_time_register_timer((1. / 60.), NULL);
-  failsafe_tid = sys_time_register_timer(0.05, NULL);
-  electrical_tid = sys_time_register_timer(0.1, NULL);
-  telemetry_tid = sys_time_register_timer((1. / TELEMETRY_FREQUENCY), NULL);
+	// register the timers for the periodic functions
+	main_periodic_tid = sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	modules_tid = sys_time_register_timer(1. / MODULES_FREQUENCY, NULL);
+	radio_control_tid = sys_time_register_timer((1. / 60.), NULL);
+	failsafe_tid = sys_time_register_timer(0.05, NULL);
+	electrical_tid = sys_time_register_timer(0.1, NULL);
+	telemetry_tid = sys_time_register_timer((1. / TELEMETRY_FREQUENCY), NULL);
 #if USE_BARO_BOARD
-  baro_tid = sys_time_register_timer(1. / BARO_PERIODIC_FREQUENCY, NULL);
+	baro_tid = sys_time_register_timer(1. / BARO_PERIODIC_FREQUENCY, NULL);
 #endif
 
-  // send body_to_imu from here for now
-  AbiSendMsgBODY_TO_IMU_QUAT(1, orientationGetQuat_f(&imu.body_to_imu));
+	// send body_to_imu from here for now
+	AbiSendMsgBODY_TO_IMU_QUAT(1, orientationGetQuat_f(&imu.body_to_imu));
 }
 
 STATIC_INLINE void handle_periodic_tasks(void)
 {
-  if (sys_time_check_and_ack_timer(main_periodic_tid)) {
-    main_periodic();
-  }
-  if (sys_time_check_and_ack_timer(modules_tid)) {
-    modules_periodic_task();
-  }
-  if (sys_time_check_and_ack_timer(radio_control_tid)) {
-    radio_control_periodic_task();
-  }
-  if (sys_time_check_and_ack_timer(failsafe_tid)) {
-    failsafe_check();
-  }
-  if (sys_time_check_and_ack_timer(electrical_tid)) {
-    electrical_periodic();
-  }
-  if (sys_time_check_and_ack_timer(telemetry_tid)) {
-    telemetry_periodic();
-  }
+	if (sys_time_check_and_ack_timer(main_periodic_tid))
+	{
+		main_periodic();
+	}
+	if (sys_time_check_and_ack_timer(modules_tid))
+	{
+		modules_periodic_task();
+	}
+	if (sys_time_check_and_ack_timer(radio_control_tid))
+	{
+		radio_control_periodic_task();
+	}
+	if (sys_time_check_and_ack_timer(failsafe_tid))
+	{
+		failsafe_check();
+	}
+	if (sys_time_check_and_ack_timer(electrical_tid))
+	{
+		electrical_periodic();
+	}
+	if (sys_time_check_and_ack_timer(telemetry_tid))
+	{
+		telemetry_periodic();
+	}
 #if USE_BARO_BOARD
-  if (sys_time_check_and_ack_timer(baro_tid)) {
-    baro_periodic();
-  }
+	if (sys_time_check_and_ack_timer(baro_tid))
+	{
+		baro_periodic();
+	}
 #endif
 }
 
 STATIC_INLINE void main_periodic(void)
 {
 
-  imu_periodic();
+	imu_periodic();
 
-  //FIXME: temporary hack, remove me
+	//FIXME: temporary hack, remove me
 #ifdef InsPeriodic
-  InsPeriodic();
+	InsPeriodic();
 #endif
 
-  /* run control loops */
-  autopilot_periodic();
-  /* set actuators     */
-  //actuators_set(autopilot_motors_on);
-  SetActuatorsFromCommands(commands, autopilot_mode);
+	/* run control loops */
+	autopilot_periodic();
+	/* set actuators     */
+	//actuators_set(autopilot_motors_on);
+	SetActuatorsFromCommands(commands, autopilot_mode);
 
-  if (autopilot_in_flight) {
-    RunOnceEvery(PERIODIC_FREQUENCY, autopilot_flight_time++);
-  }
+	if (autopilot_in_flight)
+	{
+		RunOnceEvery(PERIODIC_FREQUENCY, autopilot_flight_time++);
+	}
 
 #if defined DATALINK || defined SITL
-  RunOnceEvery(PERIODIC_FREQUENCY, datalink_time++);
+	RunOnceEvery(PERIODIC_FREQUENCY, datalink_time++);
 #endif
 
-  RunOnceEvery(10, LED_PERIODIC());
+	RunOnceEvery(10, LED_PERIODIC());
 }
 
 STATIC_INLINE void telemetry_periodic(void)
 {
-  static uint8_t boot = TRUE;
+	static uint8_t boot = TRUE;
 
-  /* initialisation phase during boot */
-  if (boot) {
+	/* initialisation phase during boot */
+	if (boot)
+	{
 #if DOWNLINK
-    send_autopilot_version(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
+		send_autopilot_version(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
 #endif
-    boot = FALSE;
-  }
-  /* then report periodicly */
-  else {
+		boot = FALSE;
+	}
+	/* then report periodicly */
+	else
+	{
 #if PERIODIC_TELEMETRY
-    periodic_telemetry_send_Main(DefaultPeriodic, &(DefaultChannel).trans_tx, &(DefaultDevice).device);
+		periodic_telemetry_send_Main(DefaultPeriodic, &(DefaultChannel).trans_tx, &(DefaultDevice).device);
 #endif
-  }
+	}
 }
 
 /** mode to enter when RC is lost while using a mode with RC input (not AP_MODE_NAV) */
@@ -303,67 +314,72 @@ STATIC_INLINE void telemetry_periodic(void)
 
 STATIC_INLINE void failsafe_check(void)
 {
-  if (radio_control.status == RC_REALLY_LOST &&
-      autopilot_mode != AP_MODE_KILL &&
-      autopilot_mode != AP_MODE_HOME &&
-      autopilot_mode != AP_MODE_FAILSAFE &&
-      autopilot_mode != AP_MODE_NAV) {
-    autopilot_set_mode(RC_LOST_MODE);
-  }
+	if (radio_control.status == RC_REALLY_LOST &&
+			autopilot_mode != AP_MODE_KILL &&
+			autopilot_mode != AP_MODE_HOME &&
+			autopilot_mode != AP_MODE_FAILSAFE &&
+			autopilot_mode != AP_MODE_NAV)
+	{
+		autopilot_set_mode(RC_LOST_MODE);
+	}
 
 #if FAILSAFE_ON_BAT_CRITICAL
-  if (autopilot_mode != AP_MODE_KILL &&
-      electrical.bat_critical) {
-    autopilot_set_mode(AP_MODE_FAILSAFE);
-  }
+	if (autopilot_mode != AP_MODE_KILL &&
+			electrical.bat_critical)
+	{
+		autopilot_set_mode(AP_MODE_FAILSAFE);
+	}
 #endif
 
 #if USE_GPS
-  gps_periodic_check();
-  if (autopilot_mode == AP_MODE_NAV &&
-      autopilot_motors_on &&
+	gps_periodic_check();
+	if (autopilot_mode == AP_MODE_NAV &&
+			autopilot_motors_on &&
 #if NO_GPS_LOST_WITH_RC_VALID
-      radio_control.status != RC_OK &&
+			radio_control.status != RC_OK &&
 #endif
-      GpsIsLost()) {
-    autopilot_set_mode(AP_MODE_FAILSAFE);
-  }
+			GpsIsLost())
+	{
+		autopilot_set_mode(AP_MODE_FAILSAFE);
+	}
 
-  if (autopilot_mode == AP_MODE_HOME &&
-      autopilot_motors_on && GpsIsLost()) {
-    autopilot_set_mode(AP_MODE_FAILSAFE);
-  }
+	if (autopilot_mode == AP_MODE_HOME &&
+			autopilot_motors_on && GpsIsLost())
+	{
+		autopilot_set_mode(AP_MODE_FAILSAFE);
+	}
 #endif
 
-  autopilot_check_in_flight(autopilot_motors_on);
+	autopilot_check_in_flight(autopilot_motors_on);
 }
 
 STATIC_INLINE void main_event(void)
 {
-  /* event functions for mcu peripherals: i2c, usb_serial.. */
-  mcu_event();
+	/* event functions for mcu peripherals: i2c, usb_serial.. */
+	mcu_event();
 
-  DatalinkEvent();
+	DatalinkEvent();
 
-  if (autopilot_rc) {
-    RadioControlEvent(autopilot_on_rc_frame);
-  }
+	if (autopilot_rc)
+	{
+		RadioControlEvent(autopilot_on_rc_frame);
+	}
 
-  ImuEvent();
+	ImuEvent();
 
 #if USE_BARO_BOARD
-  BaroEvent();
+	BaroEvent();
 #endif
 
 #if USE_GPS
-  GpsEvent();
+	GpsEvent();
 #endif
 
 #if FAILSAFE_GROUND_DETECT || KILL_ON_GROUND_DETECT
-  DetectGroundEvent();
+	DetectGroundEvent();
 #endif
 
-  modules_event_task();
+	modules_event_task();
 }
 
 

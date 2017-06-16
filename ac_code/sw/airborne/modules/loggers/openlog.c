@@ -36,8 +36,8 @@
 void periodic_2Hz_openlog(void)
 {
 #if PERIODIC_TELEMETRY
-  uint32_t timestamp = get_sys_time_msec();
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  DOWNLINK_SEND_TIMESTAMP(DefaultChannel, DefaultDevice, &timestamp);
+	uint32_t timestamp = get_sys_time_msec();
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_TIMESTAMP(DefaultChannel, DefaultDevice, &timestamp);
 #endif
 }

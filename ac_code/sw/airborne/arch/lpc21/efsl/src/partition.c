@@ -47,7 +47,8 @@ void part_initPartition(Partition *part,Disc* refDisc)
 	part->disc=refDisc;
 	part->activePartition=-1; /* No partition selected */
 	part_setError(part,PART_NOERROR);
-	for(c=3;c>=0;c--){
+	for(c=3; c>=0; c--)
+	{
 		if(part_isFatPart(part->disc->partitions[c].type))
 			part->activePartition=c;
 	}
@@ -64,11 +65,11 @@ void part_initPartition(Partition *part,Disc* refDisc)
 eint16 part_isFatPart(euint8 type)
 {
 	if(type == PT_FAT12  ||
-	   type == PT_FAT16A ||
-	   type == PT_FAT16  ||
-	   type == PT_FAT32  ||
-	   type == PT_FAT32A ||
-	   type == PT_FAT16B   )
+			type == PT_FAT16A ||
+			type == PT_FAT16  ||
+			type == PT_FAT32  ||
+			type == PT_FAT32A ||
+			type == PT_FAT16B   )
 	{
 		return(1);
 	}
@@ -131,22 +132,22 @@ esint8 part_relSect(Partition *part, euint8* buf)
 esint8 part_flushPart(Partition *part,euint32 addr_l, euint32 addr_h)
 {
 	return(
-		ioman_flushRange(part->disc->ioman,part_getRealLBA(part,addr_l),part_getRealLBA(part,addr_h))
-	);
+					ioman_flushRange(part->disc->ioman,part_getRealLBA(part,addr_l),part_getRealLBA(part,addr_h))
+				);
 }
 
 esint8 part_directSectorRead(Partition *part,euint32 address, euint8* buf)
 {
 	return(
-		ioman_directSectorRead(part->disc->ioman,part_getRealLBA(part,address),buf)
-	);
+					ioman_directSectorRead(part->disc->ioman,part_getRealLBA(part,address),buf)
+				);
 }
 
 esint8 part_directSectorWrite(Partition *part,euint32 address, euint8* buf)
 {
 	return(
-		ioman_directSectorWrite(part->disc->ioman,part_getRealLBA(part,address),buf)
-	);
+					ioman_directSectorWrite(part->disc->ioman,part_getRealLBA(part,address),buf)
+				);
 }
 
 

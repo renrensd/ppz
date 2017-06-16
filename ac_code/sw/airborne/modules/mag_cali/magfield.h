@@ -51,7 +51,7 @@ double rad_to_deg( double rad );
 
 /* return variation (in radians) given geodetic latitude (radians), longitude
 (radians) ,height (km), (Julian) date and field model
-model=1 is IGRF90, 2 is WMM85, 3 is WMM90, 4 is WMM95, 5 is IGRF95, 
+model=1 is IGRF90, 2 is WMM85, 3 is WMM90, 4 is WMM95, 5 is IGRF95,
 6 is WMM2000, 7 is IGRF2000, 8 is WMM2005, 9 is IGRF2005
 N and E lat and long are positive, S and W negative
 */

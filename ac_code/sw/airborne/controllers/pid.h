@@ -40,7 +40,7 @@ struct _s_pid
 };
 
 static inline void pid_set_pid_coef(struct _s_pid *pid, float kp, float ki,
-		float kd)
+																		float kd)
 {
 	pid->Kp = kp;
 	pid->Ki = ki;
@@ -48,14 +48,14 @@ static inline void pid_set_pid_coef(struct _s_pid *pid, float kp, float ki,
 }
 
 static inline void pid_set_out_range(struct _s_pid *pid, float outmin,
-		float outmax)
+																		 float outmax)
 {
 	pid->outMin = outmin;
 	pid->outMax = outmax;
 }
 
 static inline void pid_set_Ui_range(struct _s_pid *pid, float uimin,
-		float uimax)
+																		float uimax)
 {
 	pid->UiMin = uimin;
 	pid->UiMax = uimax;
@@ -81,7 +81,7 @@ static inline float pid_simple_filter(float coef, float last_out, float in)
 }
 
 static inline void pid_set_filter_Fc(struct _s_pid *pid, float d_ref_Fc,
-		float d_fb_Fc)
+																		 float d_fb_Fc)
 {
 	pid->d_ref_Fc = d_ref_Fc;
 	pid->d_fb_Fc = d_fb_Fc;
@@ -194,7 +194,7 @@ static inline float pid_loop_calc_1(struct _s_pid *pid, float ref, float fb)
 
 // using user set derivative
 static inline float pid_loop_calc_2(struct _s_pid *pid, float ref, float fb,
-		float d_ref, float d_fb)
+																		float d_ref, float d_fb)
 {
 	float Usum;
 #ifdef DYNAMIC_INTEGRATOR_CLAMPING

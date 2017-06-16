@@ -4,18 +4,18 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 #include "mcu_periph/sys_time.h"
@@ -56,27 +56,27 @@ static void put_1byte(struct pta_transport *trans, struct link_device *dev, cons
 }
 
 static void put_bytes(struct pta_transport *trans, struct link_device *dev,
-                      enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
-                      uint8_t len, const void *bytes)
+											enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
+											uint8_t len, const void *bytes)
 {
-  	const uint8_t *b = (const uint8_t *) bytes;
-  	int i;
-  	for (i = 0; i < len; i++) 
-  	{
-    	put_1byte(trans, dev, b[i]);
-  	}
+	const uint8_t *b = (const uint8_t *) bytes;
+	int i;
+	for (i = 0; i < len; i++)
+	{
+		put_1byte(trans, dev, b[i]);
+	}
 }
 
 static void put_named_byte(struct pta_transport *trans, struct link_device *dev,
-                           enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
-                           uint8_t byte, const char *name __attribute__((unused)))
+													 enum TransportDataType type __attribute__((unused)), enum TransportDataFormat format __attribute__((unused)),
+													 uint8_t byte, const char *name __attribute__((unused)))
 {
-  	put_1byte(trans, dev, byte);
+	put_1byte(trans, dev, byte);
 }
 
 static uint8_t size_of(struct pta_transport *trans __attribute__((unused)), uint8_t len)
-{ 
-  	return len + 11;
+{
+	return len + 11;
 }
 
 static void start_message(struct pta_transport *trans, struct link_device *dev, uint8_t payload_len)
@@ -112,52 +112,55 @@ static void end_message(struct pta_transport *trans, struct link_device *dev)
 }
 
 static void overrun(struct pta_transport *trans __attribute__((unused)),
-                    struct link_device *dev __attribute__((unused)))
+										struct link_device *dev __attribute__((unused)))
 {
 	dev->nb_ovrn++;
 }
 
 static void count_bytes(struct pta_transport *trans __attribute__((unused)),
-                        struct link_device *dev __attribute__((unused)), uint8_t bytes)
+												struct link_device *dev __attribute__((unused)), uint8_t bytes)
 {
 	dev->nb_bytes += bytes;
 }
 
 static int check_available_space(struct pta_transport *trans __attribute__((unused)), struct link_device *dev,
-                                 uint8_t bytes)
+																 uint8_t bytes)
 {
 	return dev->check_free_space(dev->periph, bytes);
 }
 
 static uint8_t pta_text_reply_is_ok(struct link_device *dev)
 {
-  char c[2];
-  int count = 0;
+	char c[2];
+	int count = 0;
 
-  while (dev->char_available(dev->periph)) {
-    char cc = dev->get_byte(dev->periph);
-    if (count < 2) {
-      c[count] = cc;
-    }
-    count++;
-  }
+	while (dev->char_available(dev->periph))
+	{
+		char cc = dev->get_byte(dev->periph);
+		if (count < 2)
+		{
+			c[count] = cc;
+		}
+		count++;
+	}
 
-  if ((count > 2) && (c[0] == 'O') && (c[1] == 'K')) {
-    return TRUE;
-  }
+	if ((count > 2) && (c[0] == 'O') && (c[1] == 'K'))
+	{
+		return TRUE;
+	}
 
-  return FALSE;
+	return FALSE;
 }
 
 static uint8_t pta_try_to_enter_api(struct link_device *dev)
 {
-  /** Switching to AT mode (FIXME: busy waiting) */
-  print_string(dev, AT_COMMAND_SEQUENCE);
+	/** Switching to AT mode (FIXME: busy waiting) */
+	print_string(dev, AT_COMMAND_SEQUENCE);
 
-  /** - busy wait 1.25s */
-  sys_time_usleep(1250000);
+	/** - busy wait 1.25s */
+	sys_time_usleep(1250000);
 
-  return pta_text_reply_is_ok(dev);
+	return pta_text_reply_is_ok(dev);
 }
 
 void pta_set_tx_frame_addr(uint8_t ack __attribute__((unused)), uint8_t addr)
@@ -168,11 +171,11 @@ void pta_set_tx_frame_addr(uint8_t ack __attribute__((unused)), uint8_t addr)
 	}
 	else if(addr == COMM_ADDR_GCS)
 	{
-		#ifdef AC_MASTER_OPTION
+#ifdef AC_MASTER_OPTION
 		pta_tp.sn = pta_tp.gcs_sn;
-		#else
+#else
 		pta_tp.sn = pta_tp.ac_sn;
-		#endif	/* AC_MASTER_OPTION	*/
+#endif	/* AC_MASTER_OPTION	*/
 	}
 	else if(addr == COMM_ADDR_PC)  //pc pprz center
 	{
@@ -209,9 +212,9 @@ void pta_init(void)
 	struct link_device *dev = &((PTA_UART).device);
 
 	// Empty buffer before init process
-	while (dev->char_available(dev->periph)) 
+	while (dev->char_available(dev->periph))
 	{
-	     dev->get_byte(dev->periph);
+		dev->get_byte(dev->periph);
 	}
 
 	xbee_con_info.rc_con_available = FALSE;

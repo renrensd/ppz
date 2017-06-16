@@ -17,27 +17,27 @@
 // Timer & PWM Registers
 typedef struct
 {
-  REG32 ir;                             // Interrupt Register
-  REG32 tcr;                            // Timer Control Register
-  REG32 tc;                             // Timer Counter
-  REG32 pr;                             // Prescale Register
-  REG32 pc;                             // Prescale Counter Register
-  REG32 mcr;                            // Match Control Register
-  REG32 mr0;                            // Match Register 0
-  REG32 mr1;                            // Match Register 1
-  REG32 mr2;                            // Match Register 2
-  REG32 mr3;                            // Match Register 3
-  REG32 ccr;                            // Capture Control Register
-  REG32 cr0;                            // Capture Register 0
-  REG32 cr1;                            // Capture Register 1
-  REG32 cr2;                            // Capture Register 2
-  REG32 cr3;                            // Capture Register 3
-  REG32 emr;                            // External Match Register
-  REG32 mr4;                            // Match Register 4
-  REG32 mr5;                            // Match Register 5
-  REG32 mr6;                            // Match Register 6
-  REG32 pcr;                            // Control Register
-  REG32 ler;                            // Latch Enable Register
+	REG32 ir;                             // Interrupt Register
+	REG32 tcr;                            // Timer Control Register
+	REG32 tc;                             // Timer Counter
+	REG32 pr;                             // Prescale Register
+	REG32 pc;                             // Prescale Counter Register
+	REG32 mcr;                            // Match Control Register
+	REG32 mr0;                            // Match Register 0
+	REG32 mr1;                            // Match Register 1
+	REG32 mr2;                            // Match Register 2
+	REG32 mr3;                            // Match Register 3
+	REG32 ccr;                            // Capture Control Register
+	REG32 cr0;                            // Capture Register 0
+	REG32 cr1;                            // Capture Register 1
+	REG32 cr2;                            // Capture Register 2
+	REG32 cr3;                            // Capture Register 3
+	REG32 emr;                            // External Match Register
+	REG32 mr4;                            // Match Register 4
+	REG32 mr5;                            // Match Register 5
+	REG32 mr6;                            // Match Register 6
+	REG32 pcr;                            // Control Register
+	REG32 ler;                            // Latch Enable Register
 } pwmTmrRegs_t;
 
 // Timer Interrupt Register Bit Definitions

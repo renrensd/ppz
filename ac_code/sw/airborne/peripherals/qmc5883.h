@@ -36,42 +36,46 @@
 /* Address and register definitions */
 #include "peripherals/qmc5883_regs.h"
 
-struct Qmc5883Config {
-  uint8_t rate;  ///< Data Output Rate Bits,ODR)
-  uint8_t rng;   ///< magnetic field measurement range or sensitivity of the sensors
-  uint8_t osr;   ///< over sampling rate
-  uint8_t mode;	 //
-  uint8_t period;	//set/reset period register
+struct Qmc5883Config
+{
+	uint8_t rate;  ///< Data Output Rate Bits,ODR)
+	uint8_t rng;   ///< magnetic field measurement range or sensitivity of the sensors
+	uint8_t osr;   ///< over sampling rate
+	uint8_t mode;	 //
+	uint8_t period;	//set/reset period register
 };
 
 /** config status states */
-enum Qmc5883ConfStatus {
-  QMC_CONF_UNINIT,
-  QMC_CONF_FBR,
-  QMC_CONF_CTL,
-  QMC_CONF_DONE
+enum Qmc5883ConfStatus
+{
+	QMC_CONF_UNINIT,
+	QMC_CONF_FBR,
+	QMC_CONF_CTL,
+	QMC_CONF_DONE
 };
 
 /** read status states */
 enum Qmc5883ReadStatus
 {
-  QMC_READ_STATUS,
-  QMC_READ_DATA
+	QMC_READ_STATUS,
+	QMC_READ_DATA
 };
 
-struct Qmc5883 {
-  struct i2c_periph *i2c_p;
-  struct i2c_transaction i2c_trans;
-  bool_t initialized;                 ///< config done flag
-  enum Qmc5883ConfStatus init_status; ///< init status
-  enum Qmc5883ReadStatus read_status;
-  volatile bool_t data_available;     ///< data ready flag
-  union {
-    struct Int16Vect3 vect;           ///< data vector in mag coordinate system
-    int16_t value[3];                 ///< data values accessible by channel index
-  } data;
-  struct Qmc5883Config config;
-  uint16_t adc_overflow_cnt;          ///< counts number of ADC measurement under/overflows
+struct Qmc5883
+{
+	struct i2c_periph *i2c_p;
+	struct i2c_transaction i2c_trans;
+	bool_t initialized;                 ///< config done flag
+	enum Qmc5883ConfStatus init_status; ///< init status
+	enum Qmc5883ReadStatus read_status;
+	volatile bool_t data_available;     ///< data ready flag
+	union
+	{
+		struct Int16Vect3 vect;           ///< data vector in mag coordinate system
+		int16_t value[3];                 ///< data values accessible by channel index
+	} data;
+	struct Qmc5883Config config;
+	uint16_t adc_overflow_cnt;          ///< counts number of ADC measurement under/overflows
 };
 
 

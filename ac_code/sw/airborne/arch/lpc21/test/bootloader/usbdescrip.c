@@ -71,17 +71,22 @@ BOOL USBHandleDescriptor(U16 wTypeIndex, U16 wLangID, int *piLen, U8 **ppbData)
 	pab = (U8 *)pabDescrip;
 	iCurIndex = 0;
 
-	while (pab[0] != 0) {
-		if (pab[1] == bType) {
-			if (iCurIndex == bIndex) {
+	while (pab[0] != 0)
+	{
+		if (pab[1] == bType)
+		{
+			if (iCurIndex == bIndex)
+			{
 				// set data pointer
 				*ppbData = pab;
 				// get length from structure
-				if (bType == DESC_CONFIGURATION) {
+				if (bType == DESC_CONFIGURATION)
+				{
 					// interface descriptor is an exception, length is at offset 2 and 3
 					*piLen = (pab[3] << 8) | pab[2];
 				}
-				else {
+				else
+				{
 					// normally length is at offset 0
 					*piLen = pab[0];
 				}

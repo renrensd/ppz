@@ -36,22 +36,24 @@ static struct i2c_transaction trans;
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic_task();
-    }
-    main_event_task();
-  }
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic_task();
+		}
+		main_event_task();
+	}
 
-  return 0;
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
 }
 
 
@@ -59,16 +61,16 @@ static inline void main_init(void)
 static inline void main_periodic_task(void)
 {
 
-  trans.type = I2CTransTx;
-  trans.slave_addr = 0x02;
-  trans.len_w = 4;
-  trans.buf[0] = 100;
-  trans.buf[1] = 100;
-  trans.buf[2] = 100;
-  trans.buf[3] = 1;
-  i2c_submit(&i2c1, &trans);
+	trans.type = I2CTransTx;
+	trans.slave_addr = 0x02;
+	trans.len_w = 4;
+	trans.buf[0] = 100;
+	trans.buf[1] = 100;
+	trans.buf[2] = 100;
+	trans.buf[3] = 1;
+	i2c_submit(&i2c1, &trans);
 
-  LED_PERIODIC();
+	LED_PERIODIC();
 
 }
 

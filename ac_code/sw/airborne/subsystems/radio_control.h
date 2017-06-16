@@ -54,15 +54,16 @@ extern void radio_control_impl_init(void);
 #define RC_LINK_OK   0
 #define RC_LINK_LOST 5
 
-struct RadioControl {
-  uint8_t link_status;
-  uint8_t status;
-  uint8_t time_since_last_frame;
-  uint8_t radio_ok_cpt;
-  uint8_t frame_rate;
-  uint8_t frame_cpt;
-  uint16_t link_counter;
-  pprz_t  values[RADIO_CONTROL_NB_CHANNEL];
+struct RadioControl
+{
+	uint8_t link_status;
+	uint8_t status;
+	uint8_t time_since_last_frame;
+	uint8_t radio_ok_cpt;
+	uint8_t frame_rate;
+	uint8_t frame_cpt;
+	uint16_t link_counter;
+	pprz_t  values[RADIO_CONTROL_NB_CHANNEL];
 };
 
 extern struct RadioControl radio_control;

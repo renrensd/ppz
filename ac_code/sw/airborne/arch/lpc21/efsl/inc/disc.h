@@ -55,7 +55,8 @@
 This structure is a literal representation of a 16 byte
 partitionfield. Direct I/O is possible.
 \**********************************************************/
-struct PartitionField{
+struct PartitionField
+{
 	euint8 bootFlag;
 	euint8 CHS_begin[3];
 	euint8 type;
@@ -73,7 +74,8 @@ typedef struct  PartitionField  PartitionField;
 * CompactFlash*	sourcedisc		Pointer to the hardwareobject that this disc is on.
 * PartitionField* partitions	Array of PartitionFields, containing the partition info
 \***************************************************************************************/
-struct Disc{
+struct Disc
+{
 	IOManager *ioman;
 	DISC_ERR_EUINT8
 	PartitionField partitions[4];

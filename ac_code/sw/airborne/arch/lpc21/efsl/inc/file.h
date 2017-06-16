@@ -65,7 +65,8 @@
  									it is more up to date than DirEntry->FileSize,
 									which is only updated when flushing to disc.
 \*****************************************************************************/
-struct File{
+struct File
+{
 	FileRecord DirEntry;
 	FileLocation Location; /* Location in directory!! */
 	FileSystem *fs;

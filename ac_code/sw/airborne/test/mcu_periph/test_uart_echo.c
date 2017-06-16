@@ -44,42 +44,46 @@ static inline void main_event(void);
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic();
-    }
-    main_event();
-  }
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic();
+		}
+		main_event();
+	}
 
-  return 0;
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
 }
 
 static inline void main_periodic(void)
 {
-  const char *foo = "FooBarBaz";
-  static int i = 0;
+	const char *foo = "FooBarBaz";
+	static int i = 0;
 
-  if (i == strlen(foo)) {
-    i = 0;
-  }
+	if (i == strlen(foo))
+	{
+		i = 0;
+	}
 
-  uart_put_byte(&TEST_UART, foo[i]);
-  printf("%f, transmit: '%c'\n", get_sys_time_float(), foo[i]);
+	uart_put_byte(&TEST_UART, foo[i]);
+	printf("%f, transmit: '%c'\n", get_sys_time_float(), foo[i]);
 
-  if (uart_char_available(&TEST_UART)) {
-    char c =  uart_getch(&TEST_UART);
-    printf("%f, received: '%c'\n", get_sys_time_float(), c);
-  }
+	if (uart_char_available(&TEST_UART))
+	{
+		char c =  uart_getch(&TEST_UART);
+		printf("%f, received: '%c'\n", get_sys_time_float(), c);
+	}
 
-  i++;
+	i++;
 }
 
 static inline void main_event(void)

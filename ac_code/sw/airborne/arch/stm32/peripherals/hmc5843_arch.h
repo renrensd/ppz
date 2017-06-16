@@ -27,7 +27,7 @@
 /* returns true if conversion done */
 static inline int mag_eoc(void)
 {
-  return (gpio_get(GPIOB, GPIO5) != 0);
+	return (gpio_get(GPIOB, GPIO5) != 0);
 }
 
 #endif /* HMC5843_ARCH_H */

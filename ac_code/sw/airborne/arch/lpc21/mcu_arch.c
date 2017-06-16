@@ -40,42 +40,43 @@ extern void reset(void);
 void mcu_arch_init(void)
 {
 
-  /* set PLL multiplier & divisor. */
-  /* values computed from config.h */
-  PLLCFG = PLLCFG_MSEL | PLLCFG_PSEL;
-  /* enable PLL                    */
-  PLLCON = PLLCON_PLLE;
-  /* commit changes                */
-  PLLFEED = 0xAA;
-  PLLFEED = 0x55;
+	/* set PLL multiplier & divisor. */
+	/* values computed from config.h */
+	PLLCFG = PLLCFG_MSEL | PLLCFG_PSEL;
+	/* enable PLL                    */
+	PLLCON = PLLCON_PLLE;
+	/* commit changes                */
+	PLLFEED = 0xAA;
+	PLLFEED = 0x55;
 
-  /* wait for PLL lock */
-  while (!(PLLSTAT & PLLSTAT_LOCK)) {
-    continue;
-  }
+	/* wait for PLL lock */
+	while (!(PLLSTAT & PLLSTAT_LOCK))
+	{
+		continue;
+	}
 
-  /* enable & connect PLL */
-  PLLCON = PLLCON_PLLE | PLLCON_PLLC;
-  /* commit changes                */
-  PLLFEED = 0xAA;
-  PLLFEED = 0x55;
+	/* enable & connect PLL */
+	PLLCON = PLLCON_PLLE | PLLCON_PLLC;
+	/* commit changes                */
+	PLLFEED = 0xAA;
+	PLLFEED = 0x55;
 
-  /* setup & enable the MAM */
-  MAMTIM = MAMTIM_CYCLES;
-  MAMCR = MAMCR_FULL;
+	/* setup & enable the MAM */
+	MAMTIM = MAMTIM_CYCLES;
+	MAMCR = MAMCR_FULL;
 
-  /* set the peripheral bus speed */
-  /* value computed from config.h */
-  VPBDIV = VPBDIV_VALUE;
+	/* set the peripheral bus speed */
+	/* value computed from config.h */
+	VPBDIV = VPBDIV_VALUE;
 
-  /* set the interrupt controller to flash */
-  MEMMAP = MEMMAP_FLASH;
+	/* set the interrupt controller to flash */
+	MEMMAP = MEMMAP_FLASH;
 
-  /* clear all interrupts     */
-  VICIntEnClear = 0xFFFFFFFF;
-  /* clear all FIQ selections */
-  VICIntSelect = 0x00000000;
-  /* point unvectored IRQs to reset() */
-  VICDefVectAddr = (uint32_t)reset;
+	/* clear all interrupts     */
+	VICIntEnClear = 0xFFFFFFFF;
+	/* clear all FIQ selections */
+	VICIntSelect = 0x00000000;
+	/* point unvectored IRQs to reset() */
+	VICDefVectAddr = (uint32_t)reset;
 
 }

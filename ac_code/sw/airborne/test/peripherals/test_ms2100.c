@@ -34,56 +34,61 @@ static inline void main_event_task(void);
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic_task();
-    }
-    main_event_task();
-  }
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic_task();
+		}
+		main_event_task();
+	}
 
-  return 0;
+	return 0;
 }
 
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / 50), NULL);
+	mcu_init();
+	sys_time_register_timer((1. / 50), NULL);
 
-  ms2100_init(&ms2100, &(MS2100_SPI_DEV), MS2100_SLAVE_IDX);
-  downlink_init();
-  mcu_int_enable();
+	ms2100_init(&ms2100, &(MS2100_SPI_DEV), MS2100_SLAVE_IDX);
+	downlink_init();
+	mcu_int_enable();
 }
 
 static inline void main_periodic_task(void)
 {
-  RunOnceEvery(10, {
-    uint16_t foo = sys_time.nb_sec;
-    DOWNLINK_SEND_TAKEOFF(DefaultChannel, DefaultDevice, &foo);
-    LED_TOGGLE(2);
-    LED_PERIODIC();
-  });
+	RunOnceEvery(10,
+	{
+		uint16_t foo = sys_time.nb_sec;
+		DOWNLINK_SEND_TAKEOFF(DefaultChannel, DefaultDevice, &foo);
+		LED_TOGGLE(2);
+		LED_PERIODIC();
+	});
 
-  ms2100_periodic(&ms2100);
+	ms2100_periodic(&ms2100);
 
 }
 
 static inline void main_event_task(void)
 {
-  mcu_event();
+	mcu_event();
 
-  ms2100_event(&ms2100);
-  if (ms2100.status == MS2100_DATA_AVAILABLE) {
-    RunOnceEvery(10, {
-      int32_t mag_x = ms2100.data.vect.x;
-      int32_t mag_y = ms2100.data.vect.y;
-      int32_t mag_z = ms2100.data.vect.z;
-      DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice,
-      &mag_x, &mag_y, &mag_z);
-    });
-    ms2100.status = MS2100_IDLE;
-  }
+	ms2100_event(&ms2100);
+	if (ms2100.status == MS2100_DATA_AVAILABLE)
+	{
+		RunOnceEvery(10,
+		{
+			int32_t mag_x = ms2100.data.vect.x;
+			int32_t mag_y = ms2100.data.vect.y;
+			int32_t mag_z = ms2100.data.vect.z;
+			DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice,
+			&mag_x, &mag_y, &mag_z);
+		});
+		ms2100.status = MS2100_IDLE;
+	}
 }
 

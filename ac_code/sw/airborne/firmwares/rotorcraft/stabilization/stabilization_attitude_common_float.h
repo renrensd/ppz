@@ -34,23 +34,24 @@
 #include "generated/airframe.h"
 
 
-struct FloatAttitudeGains {
-  struct FloatVect3  p;
-  struct FloatVect3  d;
-  struct FloatVect3  dd;
-  struct FloatVect3  rates_d;
-  struct FloatVect3  i;
-  struct FloatVect3  surface_p;
-  struct FloatVect3  surface_d;
-  struct FloatVect3  surface_dd;
-  struct FloatVect3  surface_i;
-  //cpz------P+D
-  struct FloatVect3  p_rate;
-  struct FloatVect3  d_rate;
-  struct FloatVect3  i_rate;
-  struct FloatVect3  ff_rate;
-  //cpz------P+D
-  
+struct FloatAttitudeGains
+{
+	struct FloatVect3  p;
+	struct FloatVect3  d;
+	struct FloatVect3  dd;
+	struct FloatVect3  rates_d;
+	struct FloatVect3  i;
+	struct FloatVect3  surface_p;
+	struct FloatVect3  surface_d;
+	struct FloatVect3  surface_dd;
+	struct FloatVect3  surface_i;
+	//cpz------P+D
+	struct FloatVect3  p_rate;
+	struct FloatVect3  d_rate;
+	struct FloatVect3  i_rate;
+	struct FloatVect3  ff_rate;
+	//cpz------P+D
+
 };
 
 extern float stabilization_att_fb_cmd[COMMANDS_NB];

@@ -17,38 +17,38 @@
 // Universal Asynchronous Receiver Transmitter Registers
 typedef struct
 {
-  union
-    {
-    REG_8 rbr;                          // Receive Buffer Register
-    REG_8 thr;                          // Transmit Holding Register
-    REG_8 dll;                          // Divisor Latch Register (LSB)
-    REG_8 _pad0[4];
-    };
+	union
+	{
+		REG_8 rbr;                          // Receive Buffer Register
+		REG_8 thr;                          // Transmit Holding Register
+		REG_8 dll;                          // Divisor Latch Register (LSB)
+		REG_8 _pad0[4];
+	};
 
-  union
-    {
-    REG_8 ier;                          // Interrupt Enable Register
-    REG_8 dlm;                          // Divisor Latch Register (MSB)
-    REG_8 _pad1[4];
-    };
+	union
+	{
+		REG_8 ier;                          // Interrupt Enable Register
+		REG_8 dlm;                          // Divisor Latch Register (MSB)
+		REG_8 _pad1[4];
+	};
 
-  union
-    {
-    REG_8 iir;                          // Interrupt ID Register
-    REG_8 fcr;                          // FIFO Control Register
-    REG_8 _pad2[4];
-    };
+	union
+	{
+		REG_8 iir;                          // Interrupt ID Register
+		REG_8 fcr;                          // FIFO Control Register
+		REG_8 _pad2[4];
+	};
 
-  REG_8 lcr;                            // Line Control Registe
-  REG_8 _pad3[3];
-  REG_8 mcr;                            // MODEM Control Register
-  REG_8 _pad4[3];
-  REG_8 lsr;                            // Line Status Register
-  REG_8 _pad5[3];
-  REG_8 msr;                            // MODEM Status Register
-  REG_8 _pad6[3];
-  REG_8 scr;                            // Scratch Pad Register
-  REG_8 _pad7[3];
+	REG_8 lcr;                            // Line Control Registe
+	REG_8 _pad3[3];
+	REG_8 mcr;                            // MODEM Control Register
+	REG_8 _pad4[3];
+	REG_8 lsr;                            // Line Status Register
+	REG_8 _pad5[3];
+	REG_8 msr;                            // MODEM Status Register
+	REG_8 _pad6[3];
+	REG_8 scr;                            // Scratch Pad Register
+	REG_8 _pad7[3];
 } uartRegs_t;
 
 ///////////////////////////////////////////////////////////////////////////////

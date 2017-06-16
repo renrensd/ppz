@@ -4,25 +4,25 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 #include "subsystems/mission/task_process.h"
 #include "subsystems/mission/task_spray_misc.h"
 
 #include "subsystems/ops/ops_msg_if.h"
-#include "subsystems/ops/ops_app_if.h" 
+#include "subsystems/ops/ops_app_if.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 
 #include "subsystems/datalink/downlink.h"
@@ -30,7 +30,7 @@
 #include "firmwares/rotorcraft/guidance/guidance_h_ref.h"
 #include "uplink_ac.h"
 
-#include "subsystems/monitoring/monitoring.h"   
+#include "subsystems/monitoring/monitoring.h"
 
 #include "modules/system/timer_if.h"
 #include "modules/system/timer_class.h"
@@ -107,7 +107,7 @@ void task_process_init(void)
 	from_wp.wp_en.z = 0;  /*z not useful*/
 	next_wp.wp_en.z = 0;
 	release_stop_brake();
-	
+
 }
 
 /***********************************************************************
@@ -118,16 +118,16 @@ void task_process_init(void)
 ***********************************************************************/
 bool_t achieve_next_wp(void)
 {
-	if(nb_pending_wp < 1) 
+	if(nb_pending_wp < 1)
 	{
 		return FALSE;
 	}
-	
+
 	/*waypoint info move from next to from*/
 	VECT2_COPY(from_wp.wp_en, next_wp.wp_en);
 	from_wp.action = next_wp.action;
 	from_wp.wp_id = next_wp.wp_id;
-	
+
 	/*get waypoint info from task_wp*/
 	VECT2_COPY(next_wp.wp_en, task_wp[0].wp_en);
 	next_wp.action = task_wp[0].action;
@@ -139,7 +139,7 @@ bool_t achieve_next_wp(void)
 		TASK_WP_LEFT_SHIFT(i+1, 1);
 	}
 	nb_pending_wp--;
-	
+
 	return TRUE;
 }
 
@@ -170,10 +170,10 @@ bool_t get_start_line(void)
 ***********************************************************************/
 bool_t auto_task_ready_check(void)
 {
-	if( FALSE==wp_home_useful 
-		|| 2>nb_pending_wp 
-		|| SPRAY_CONVERT==task_wp[0].action
-		|| TERMINATION==task_wp[0].action   )
+	if( FALSE==wp_home_useful
+			|| 2>nb_pending_wp
+			|| SPRAY_CONVERT==task_wp[0].action
+			|| TERMINATION==task_wp[0].action   )
 	{
 		return FALSE;
 	}
@@ -195,118 +195,118 @@ Gcs_State gcs_task_run(void)
 	Gcs_State gcs_state = GCS_RUN_NORMAL;
 	switch(gcs_task_cmd)
 	{
-		case GCS_CMD_NONE:
-			gcs_state = GCS_RUN_NONE;
-			break;
-			
-		case GCS_CMD_START:
-			if(!from_wp_useful)
-			{
-				ops_info.sum_sprayed_distance = 0; //reset at start
-				if( !get_start_line() )
-				{
-					//waypoints is less than 2,error generate
-					gcs_state = GCS_RUN_ERROR;
-					task_error_state = TASK_RUN_OVER;
-				}
-			}
-			if( run_normal_task() )
-			{
-				gcs_state = GCS_RUN_LANDING;
-			}
-			break;
-			
-		case GCS_CMD_PAUSE:
-			gcs_state = GCS_RUN_PAUSE;
-			set_auto_stop_brake();
-			if( !gcs_hover_enter() )
-			{
-				spray_switch_flag = FALSE;
-				struct FloatVect2 target_wp;
-				target_wp.x = POS_FLOAT_OF_BFP(navigation_target.y);
-				target_wp.y = POS_FLOAT_OF_BFP(navigation_target.x);
-				release_stop_brake();
-				guidance_h_trajectory_tracking_set_hover(target_wp);
-			}
-			
-			break;
-			
-		case GCS_CMD_CONTI:
-			gcs_task_cmd = GCS_CMD_START;
-			release_stop_brake();
-			
-			break;
-			
-		case GCS_CMD_BHOME:
-			gcs_state = GCS_RUN_HOME;
-			if( gcs_hover_enter() )
-			{
-				set_stop_brake(SMOOTH_BRAKE);
-				spray_break_and_continual();
-				VECT2_COPY(home_wp_enu, wp_home);
-			}
-			else
-			{
-				if(task_nav_pre_path(interrupt_wp_scene, home_wp_enu, FLIGHT_PATH))
-				{
-					release_stop_brake();
-					if( !task_nav_path(interrupt_wp_scene, home_wp_enu) ) 
-					{
-						/*no more task_wp to run, do land motion*/
-						task_nav_hover(home_wp_enu);
-						gcs_state = GCS_RUN_LANDING;
-					}
-				}
-			}
-			break;
-			
-		case GCS_CMD_RELAND:
-			gcs_state = GCS_RUN_RELAND;
-			if( gcs_hover_enter() )
-			{
-				set_stop_brake(SMOOTH_BRAKE);
-				spray_break_and_continual();
-				get_shortest_reland_wp();
-			}
-			else
-			{   
-				if(task_nav_pre_path(interrupt_wp_scene, reland_wp_enu, FLIGHT_PATH))
-				{
-					release_stop_brake();
-					if( !task_nav_path(interrupt_wp_scene, reland_wp_enu) ) 
-					{
-						/*no more task_wp to run, do land motion*/
-						task_nav_hover(reland_wp_enu);
-						gcs_state = GCS_RUN_LANDING;
-					}
-				}
-			}
-			break;
-			
-		case GCS_CMD_DLAND:
-			if( gcs_hover_enter() )
-			{
-				set_stop_brake(PAUSE_BRAKE);
-				spray_break_and_continual();
-			}
-			else
-			{
-				gcs_state = GCS_RUN_LANDING;
-			}
-			break;
+	case GCS_CMD_NONE:
+		gcs_state = GCS_RUN_NONE;
+		break;
 
-		case GCS_CMD_LOCK:
-			gcs_state = GCS_RUN_LOCK;
-			if(!autopilot_rc) NavKillMode();		//add by lg
-			//NavKillThrottle();  //crash motion
-			break;
-			
-		default:
-			gcs_state = GCS_RUN_ERROR;
-			task_error_state = TASK_PARSE_ERROR;
-			break;
+	case GCS_CMD_START:
+		if(!from_wp_useful)
+		{
+			ops_info.sum_sprayed_distance = 0; //reset at start
+			if( !get_start_line() )
+			{
+				//waypoints is less than 2,error generate
+				gcs_state = GCS_RUN_ERROR;
+				task_error_state = TASK_RUN_OVER;
+			}
+		}
+		if( run_normal_task() )
+		{
+			gcs_state = GCS_RUN_LANDING;
+		}
+		break;
+
+	case GCS_CMD_PAUSE:
+		gcs_state = GCS_RUN_PAUSE;
+		set_auto_stop_brake();
+		if( !gcs_hover_enter() )
+		{
+			spray_switch_flag = FALSE;
+			struct FloatVect2 target_wp;
+			target_wp.x = POS_FLOAT_OF_BFP(navigation_target.y);
+			target_wp.y = POS_FLOAT_OF_BFP(navigation_target.x);
+			release_stop_brake();
+			guidance_h_trajectory_tracking_set_hover(target_wp);
+		}
+
+		break;
+
+	case GCS_CMD_CONTI:
+		gcs_task_cmd = GCS_CMD_START;
+		release_stop_brake();
+
+		break;
+
+	case GCS_CMD_BHOME:
+		gcs_state = GCS_RUN_HOME;
+		if( gcs_hover_enter() )
+		{
+			set_stop_brake(SMOOTH_BRAKE);
+			spray_break_and_continual();
+			VECT2_COPY(home_wp_enu, wp_home);
+		}
+		else
+		{
+			if(task_nav_pre_path(interrupt_wp_scene, home_wp_enu, FLIGHT_PATH))
+			{
+				release_stop_brake();
+				if( !task_nav_path(interrupt_wp_scene, home_wp_enu) )
+				{
+					/*no more task_wp to run, do land motion*/
+					task_nav_hover(home_wp_enu);
+					gcs_state = GCS_RUN_LANDING;
+				}
+			}
+		}
+		break;
+
+	case GCS_CMD_RELAND:
+		gcs_state = GCS_RUN_RELAND;
+		if( gcs_hover_enter() )
+		{
+			set_stop_brake(SMOOTH_BRAKE);
+			spray_break_and_continual();
+			get_shortest_reland_wp();
+		}
+		else
+		{
+			if(task_nav_pre_path(interrupt_wp_scene, reland_wp_enu, FLIGHT_PATH))
+			{
+				release_stop_brake();
+				if( !task_nav_path(interrupt_wp_scene, reland_wp_enu) )
+				{
+					/*no more task_wp to run, do land motion*/
+					task_nav_hover(reland_wp_enu);
+					gcs_state = GCS_RUN_LANDING;
+				}
+			}
+		}
+		break;
+
+	case GCS_CMD_DLAND:
+		if( gcs_hover_enter() )
+		{
+			set_stop_brake(PAUSE_BRAKE);
+			spray_break_and_continual();
+		}
+		else
+		{
+			gcs_state = GCS_RUN_LANDING;
+		}
+		break;
+
+	case GCS_CMD_LOCK:
+		gcs_state = GCS_RUN_LOCK;
+		if(!autopilot_rc) NavKillMode();		//add by lg
+		//NavKillThrottle();  //crash motion
+		break;
+
+	default:
+		gcs_state = GCS_RUN_ERROR;
+		task_error_state = TASK_PARSE_ERROR;
+		break;
 	}
-	
+
 	last_task_cmd = gcs_task_cmd;
 
 	return gcs_state;
@@ -323,10 +323,10 @@ struct EnuCoor_i save_task_scene(void)
 	current_wp_scene = *stateGetPositionEnu_i();
 
 	/*interrupt, need stop spray*/
-   #ifdef OPS_OPTION
-	ops_stop_spraying(); 
-   #endif
-	
+#ifdef OPS_OPTION
+	ops_stop_spraying();
+#endif
+
 	return current_wp_scene;
 }
 
@@ -341,12 +341,12 @@ bool_t gcs_hover_enter(void)
 	static uint8_t steady_counter = 0;
 
 	if( last_task_cmd != gcs_task_cmd)
-	{  
+	{
 		save_task_scene();
 		steady_counter = 0;
 		return TRUE;
 	}
-	
+
 	if( steady_counter <= 5 )
 	{
 		if( NavGetHoverSteady() )
@@ -368,7 +368,7 @@ bool_t gcs_hover_enter(void)
 
 /***********************************************************************
 * FUNCTION    : set_auto_stop_brake
-* DESCRIPTION : give brake accel grade according to the situation 
+* DESCRIPTION : give brake accel grade according to the situation
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -401,16 +401,16 @@ void get_shortest_reland_wp(void)
 {
 	float distance_cur_reland[NB_RESERVE_LAND];
 	struct EnuCoor_i wp_reland;
-	
+
 	for(uint8_t i=0; i<nb_pending_reland; i++)
 	{
 		VECT2_COPY(wp_reland, wp_reserve_land[i]);
 		distance_cur_reland[i] = get_dist2_to_point( &wp_reland );
 	}
-	
+
 	VECT2_COPY(reland_wp_enu, wp_reserve_land[0]);
 	for(uint8_t j=1; j<nb_pending_reland; j++)
-	{		
+	{
 		if( distance_cur_reland[j] < distance_cur_reland[j-1] )
 		{
 			VECT2_COPY(reland_wp_enu, wp_reserve_land[j]);
@@ -428,158 +428,158 @@ bool_t run_normal_task(void)
 {
 	uint8_t wp_state = 2; /*default:run over from_wp state*/
 	spray_work_run();
-	
+
 	switch(from_wp.action)
 	{
-		case FLIGHT_LINE:
+	case FLIGHT_LINE:
+	{
+		if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH))
 		{
-			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, FLIGHT_PATH))
+			spray_switch_flag = FALSE;
+			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) )
 			{
-				spray_switch_flag = FALSE;
-				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
+				if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
 				{
-					if(SPRAY_LINE==next_wp.action) /*if next action is spray line,make sure start point is exact*/
-					{
-						task_nav_hover(next_wp.wp_en);
-					}
-					if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
-					{
-						if( !achieve_next_wp() )  
-						{
-							task_wp_empty_handle();
-						}
-						else
-						{
-							wp_state = 1;  /*interrupt reaching next_wp msg to gcs*/
-						}
-					}
+					task_nav_hover(next_wp.wp_en);
 				}
-			}
-			break;
-		}
-			
-		case SPRAY_LINE:
-		{
-			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, SPRAY_PATH))
-			{
-				spray_switch_flag = TRUE;  //AC aligned in spray_line,begin spray
-				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) ) 
-				{	
-					if(spray_switch_flag)
-					{
-						current_sprayed_distance = 0.0f;  //reset
-						sprayed_lines_distance += sqrt(get_dist2_p2p(from_wp.wp_en, next_wp.wp_en));
-					}
-					spray_switch_flag = FALSE;  //AC end of spray_line, stop spray
-					
-					if( !achieve_next_wp() )  
-					{
-						task_wp_empty_handle();
-					}
-					else
-					{
-						wp_state = 1;
-						spray_caculate_flag = FALSE;   /*reset spray caculate flag for two continual spray line*/
-					}
-				}
-				else
-				{
-					current_sprayed_distance = sqrt(get_dist2_to_point(&(from_wp.wp_en)));   //caculate sprayed distance of curent line
-					ops_info.sum_sprayed_distance = current_sprayed_distance + sprayed_lines_distance;
-				}
-			}
-			break;
-		}
-			
-		case SPRAY_CONVERT:
-		{
-			if( ac_config_info.spray_convert_type == CIRCLE_CONVERT )
-			{
-				if(spray_convert_info.useful)
-				{
-					/*if finish convert,get next_wp*/
-					if( nav_spray_convert(spray_convert_info.center, 
-											 spray_convert_info.radius, 
-											 spray_convert_info.heading_sp) )
-					{
-						/*no more task_wp to run*/
-						if( !achieve_next_wp() )  
-						{
-							task_wp_empty_handle();
-						}
-						else
-						{
-							spray_convert_info.useful = FALSE;  /*reset caculate*/
-							wp_state = 1;
-						}					
-					}
-				}
-				else
-				{
-					//convert fail
-					task_error_state = TASK_PARSE_ERROR;
-				}
-			}
-			else  //ac_config_info.spray_convert_type==WAYPOINT_FORWARD/P2P
-			{
-				//task_nav_wp(struct EnuCoor_i first_wp)
-				/*if finish convert,get next_wp*/
-				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) )
-				{
-					/*no more task_wp to run*/
-					if( !achieve_next_wp() )  
-					{
-						task_wp_empty_handle();
-					}
-					else
-					{
-						wp_state = 1;
-					}					
-				}
-			}
-			break;
-		}
-			
-		case HOVERING:
-		{
-			//how to continual?
-			task_nav_hover(from_wp.wp_en);
-			break;
-		}
-			
-		case TERMINATION:
-		{
-			if( hover_flag )  
-			{
-				spray_switch_flag = FALSE;
-				task_nav_hover(from_wp.wp_en);
 				if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
 				{
-					hover_flag = FALSE;
-					VECT2_COPY(home_wp_enu, wp_home);	
+					if( !achieve_next_wp() )
+					{
+						task_wp_empty_handle();
+					}
+					else
+					{
+						wp_state = 1;  /*interrupt reaching next_wp msg to gcs*/
+					}
+				}
+			}
+		}
+		break;
+	}
+
+	case SPRAY_LINE:
+	{
+		if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, SPRAY_PATH))
+		{
+			spray_switch_flag = TRUE;  //AC aligned in spray_line,begin spray
+			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) )
+			{
+				if(spray_switch_flag)
+				{
+					current_sprayed_distance = 0.0f;  //reset
+					sprayed_lines_distance += sqrt(get_dist2_p2p(from_wp.wp_en, next_wp.wp_en));
+				}
+				spray_switch_flag = FALSE;  //AC end of spray_line, stop spray
+
+				if( !achieve_next_wp() )
+				{
+					task_wp_empty_handle();
+				}
+				else
+				{
+					wp_state = 1;
+					spray_caculate_flag = FALSE;   /*reset spray caculate flag for two continual spray line*/
 				}
 			}
 			else
 			{
-				if(task_nav_pre_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH))
+				current_sprayed_distance = sqrt(get_dist2_to_point(&(from_wp.wp_en)));   //caculate sprayed distance of curent line
+				ops_info.sum_sprayed_distance = current_sprayed_distance + sprayed_lines_distance;
+			}
+		}
+		break;
+	}
+
+	case SPRAY_CONVERT:
+	{
+		if( ac_config_info.spray_convert_type == CIRCLE_CONVERT )
+		{
+			if(spray_convert_info.useful)
+			{
+				/*if finish convert,get next_wp*/
+				if( nav_spray_convert(spray_convert_info.center,
+															spray_convert_info.radius,
+															spray_convert_info.heading_sp) )
 				{
-					if( !task_nav_path(from_wp.wp_en, home_wp_enu) ) 
+					/*no more task_wp to run*/
+					if( !achieve_next_wp() )
 					{
+						task_wp_empty_handle();
+					}
+					else
+					{
+						spray_convert_info.useful = FALSE;  /*reset caculate*/
 						wp_state = 1;
-						task_nav_hover(home_wp_enu);
-						return TRUE;  /*task is finished, next to do land*/
 					}
 				}
 			}
-			break;
+			else
+			{
+				//convert fail
+				task_error_state = TASK_PARSE_ERROR;
+			}
 		}
-			
-		default:
-			break;				
+		else  //ac_config_info.spray_convert_type==WAYPOINT_FORWARD/P2P
+		{
+			//task_nav_wp(struct EnuCoor_i first_wp)
+			/*if finish convert,get next_wp*/
+			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) )
+			{
+				/*no more task_wp to run*/
+				if( !achieve_next_wp() )
+				{
+					task_wp_empty_handle();
+				}
+				else
+				{
+					wp_state = 1;
+				}
+			}
+		}
+		break;
 	}
-	
+
+	case HOVERING:
+	{
+		//how to continual?
+		task_nav_hover(from_wp.wp_en);
+		break;
+	}
+
+	case TERMINATION:
+	{
+		if( hover_flag )
+		{
+			spray_switch_flag = FALSE;
+			task_nav_hover(from_wp.wp_en);
+			if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
+			{
+				hover_flag = FALSE;
+				VECT2_COPY(home_wp_enu, wp_home);
+			}
+		}
+		else
+		{
+			if(task_nav_pre_path(from_wp.wp_en, home_wp_enu, FLIGHT_PATH))
+			{
+				if( !task_nav_path(from_wp.wp_en, home_wp_enu) )
+				{
+					wp_state = 1;
+					task_nav_hover(home_wp_enu);
+					return TRUE;  /*task is finished, next to do land*/
+				}
+			}
+		}
+		break;
+	}
+
+	default:
+		break;
+	}
+
 	send_current_task(wp_state);
-	
+
 	return FALSE;  /*task is running*/
 }
 
@@ -593,27 +593,27 @@ void spray_work_run(void)
 {
 	/*spray switch control*/
 	/*if( ((SPRAY_LINE==from_wp.action)||(SPRAY_CONVERT== from_wp.action))
-	    && !get_spray_switch_state() 
-	    && get_nav_route_mediacy() 
+	    && !get_spray_switch_state()
+	    && get_nav_route_mediacy()
 	    && spray_switch_flag==TRUE ) */
-	if( !get_spray_switch_state() 
-	    && spray_switch_flag==TRUE )
+	if( !get_spray_switch_state()
+			&& spray_switch_flag==TRUE )
 	{
-	   #ifdef OPS_OPTION
-		ops_start_spraying(); 
-	   #endif 	
+#ifdef OPS_OPTION
+		ops_start_spraying();
+#endif
 	}
 	/*else if( (SPRAY_LINE!=from_wp.action || !get_nav_route_mediacy())
 		      && get_spray_switch_state() )*/
 	/*else if( (!get_nav_route_mediacy())
-		      || (get_spray_switch_state() 
+		      || (get_spray_switch_state()
 		      &&spray_switch_flag == FALSE))*/
-	else if( (get_spray_switch_state() 
-		      &&spray_switch_flag == FALSE))
+	else if( (get_spray_switch_state()
+						&&spray_switch_flag == FALSE))
 	{
-	   #ifdef OPS_OPTION
-		ops_stop_spraying(); 
-	   #endif 	
+#ifdef OPS_OPTION
+		ops_stop_spraying();
+#endif
 	}
 
 	/*convert info pre_caculate*/
@@ -624,45 +624,45 @@ void spray_work_run(void)
 			uint8_t spray_convert_state = spray_convert_caculate();
 			switch(spray_convert_state)
 			{
-				case SPRAY_CONVERT_SUCCESS:
-					spray_convert_info.useful = TRUE;
-					spray_caculate_flag = TRUE;
-					break;
-					
-				case SPRAY_CONVERT_CONTINUAL:
-					spray_convert_info.useful = FALSE;
-					break;
-					
-				case SPRAY_CONVERT_FAIL:
-					spray_convert_info.useful = FALSE;
-					spray_caculate_flag = TRUE;
-					break;
-				default:
-					break;
-			}		
-			#if 0//PERIODIC_TELEMETRY
-		    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	        DOWNLINK_SEND_SPRAY_CONVERT_INFO(DefaultChannel, DefaultDevice, 
-				                &spray_convert_info.center.x,
-				                &spray_convert_info.center.y,
-				                &spray_convert_info.radius,
-				                &spray_convert_info.heading_sp,
-				                &spray_convert_info.useful   );
-			#endif
+			case SPRAY_CONVERT_SUCCESS:
+				spray_convert_info.useful = TRUE;
+				spray_caculate_flag = TRUE;
+				break;
+
+			case SPRAY_CONVERT_CONTINUAL:
+				spray_convert_info.useful = FALSE;
+				break;
+
+			case SPRAY_CONVERT_FAIL:
+				spray_convert_info.useful = FALSE;
+				spray_caculate_flag = TRUE;
+				break;
+			default:
+				break;
+			}
+#if 0//PERIODIC_TELEMETRY
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+			DOWNLINK_SEND_SPRAY_CONVERT_INFO(DefaultChannel, DefaultDevice,
+																			 &spray_convert_info.center.x,
+																			 &spray_convert_info.center.y,
+																			 &spray_convert_info.radius,
+																			 &spray_convert_info.heading_sp,
+																			 &spray_convert_info.useful   );
+#endif
 		}
 		else if( SPRAY_LINE != from_wp.action && TRUE==spray_caculate_flag)
 		{
 			spray_caculate_flag = FALSE;   /*reset spray caculate flag for next spray convert*/
 		}
 	}
-	
+
 }
 
 /***********************************************************************
 * FUNCTION    : task_wp_empty_handle
 * DESCRIPTION : no task handle
 * INPUTS      : none
-* RETURN      : 
+* RETURN      :
 ***********************************************************************/
 bool_t task_wp_empty_handle(void)
 {
@@ -693,62 +693,62 @@ bool_t task_wp_empty_handle(void)
 ***********************************************************************/
 static float set_path_flight_info(uint8_t type)
 {
-  switch(type)
-  {
-  		case FLIGHT_PATH:
-			nav_set_flight_speed(ac_config_info.max_flight_speed);
-			return ac_config_info.max_flight_height;
-			
-		case SPRAY_PATH:
-			nav_set_flight_speed(ac_config_info.spray_speed);
-			return ac_config_info.spray_height;
-			
-		default:
-			return ac_config_info.max_flight_height;
-  }
+	switch(type)
+	{
+	case FLIGHT_PATH:
+		nav_set_flight_speed(ac_config_info.max_flight_speed);
+		return ac_config_info.max_flight_height;
+
+	case SPRAY_PATH:
+		nav_set_flight_speed(ac_config_info.spray_speed);
+		return ac_config_info.spray_height;
+
+	default:
+		return ac_config_info.max_flight_height;
+	}
 }
 
 /***********************************************************************
 * FUNCTION    : task_nav_update_target
 * DESCRIPTION : set current posion to navigation target
-* INPUTS      : 
-* RETURN      : 
+* INPUTS      :
+* RETURN      :
 ***********************************************************************/
 static inline bool_t task_nav_update_target(struct EnuCoor_i enu_wp)
 {
-   VECT3_COPY(navigation_target, enu_wp);
-   return FALSE;
+	VECT3_COPY(navigation_target, enu_wp);
+	return FALSE;
 }
 
 /** Navigation function hover flight
 */
 static inline bool_t task_nav_hover(struct EnuCoor_i hover_wp)
 {
-   horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
+	horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
 
-   VECT3_COPY(navigation_target, hover_wp);
-   NavVerticalAltitudeMode(ac_config_info.max_flight_height, 0.);
-   
-   return FALSE;
+	VECT3_COPY(navigation_target, hover_wp);
+	NavVerticalAltitudeMode(ac_config_info.max_flight_height, 0.);
+
+	return FALSE;
 }
 
 /** Navigation function to a single waypoint
 */
 static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 {
-  struct EnuCoor_i target_wp = first_wp;
+	struct EnuCoor_i target_wp = first_wp;
 
-  if (nav_approaching_target(&target_wp, NULL, 0.5)) 
-  {
-    return FALSE;
-  }
-  
-  //Go to Target Waypoint
-  horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
-  VECT3_COPY(navigation_target, target_wp);
+	if (nav_approaching_target(&target_wp, NULL, 0.5))
+	{
+		return FALSE;
+	}
 
-  
-  return TRUE;
+	//Go to Target Waypoint
+	horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
+	VECT3_COPY(navigation_target, target_wp);
+
+
+	return TRUE;
 }
 
 
@@ -756,86 +756,86 @@ static inline bool_t task_nav_wp(struct EnuCoor_i first_wp)
 */
 static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp, uint8_t flight_type)
 {
-  static float flight_height_last = 0.0f;  //use reord last time flight height,once changed it will adjust the height before forword flight
+	static float flight_height_last = 0.0f;  //use reord last time flight height,once changed it will adjust the height before forword flight
 
-  float flight_height = set_path_flight_info(flight_type); 
-  NavVerticalAltitudeMode(flight_height, 0.);  //set flight height setpoint
-  
-  if(flight_height_last != flight_height)
-  {
-  	  height_align = FALSE;
-  }
-  flight_height_last = flight_height;
+	float flight_height = set_path_flight_info(flight_type);
+	NavVerticalAltitudeMode(flight_height, 0.);  //set flight height setpoint
 
-  if( !height_align )
-  {
-  	  if( nav_check_height() )
-  	  {
-	  	  height_align = TRUE;
-  	  }
-  }
+	if(flight_height_last != flight_height)
+	{
+		height_align = FALSE;
+	}
+	flight_height_last = flight_height;
 
-  if( ac_config_info.spray_convert_type == WAYPOINT_P2P
-  	   && flight_type == SPRAY_PATH                      )
-  {
-  	nav_set_heading_parallel_line(&p_start_wp, &p_end_wp);
-  }
-  else
-  {
-  	nav_set_heading_forward_line(&p_start_wp, &p_end_wp); 
-  }
-  
-  heading_align = nav_check_heading();
-  if( height_align && heading_align )
-  {
-  	return TRUE;
-  }
-  return FALSE;
+	if( !height_align )
+	{
+		if( nav_check_height() )
+		{
+			height_align = TRUE;
+		}
+	}
+
+	if( ac_config_info.spray_convert_type == WAYPOINT_P2P
+			&& flight_type == SPRAY_PATH                      )
+	{
+		nav_set_heading_parallel_line(&p_start_wp, &p_end_wp);
+	}
+	else
+	{
+		nav_set_heading_forward_line(&p_start_wp, &p_end_wp);
+	}
+
+	heading_align = nav_check_heading();
+	if( height_align && heading_align )
+	{
+		return TRUE;
+	}
+	return FALSE;
 }
 
 /** path run,set horizontal_mode to ROUTE
 */
 static inline bool_t task_nav_path(struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp)
 {
-  //Check proximity and wait for 'duration' seconds in proximity circle if desired 
-  if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) ) 
-  {
-  	   return FALSE;
-  }
-  
-  horizontal_mode = HORIZONTAL_MODE_ROUTE;
-  nav_route(&p_start_wp, &p_end_wp);
-  //NavVerticalAltitudeMode(flight_height, 0.);  
-  return TRUE;
-  
+	//Check proximity and wait for 'duration' seconds in proximity circle if desired
+	if( nav_approaching_from(&p_end_wp, &p_start_wp, 0) )
+	{
+		return FALSE;
+	}
+
+	horizontal_mode = HORIZONTAL_MODE_ROUTE;
+	nav_route(&p_start_wp, &p_end_wp);
+	//NavVerticalAltitudeMode(flight_height, 0.);
+	return TRUE;
+
 }
 
 /** for debug
 */
-void send_task_info_pc(void) 
+void send_task_info_pc(void)
 {
-	#if PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 	static uint8_t i = 0;
 	if( nb_pending_wp==0 )
 	{
 		return;
 	}
 	i++;
-	if(i >= nb_pending_wp) 
+	if(i >= nb_pending_wp)
 	{
 		i=0;
 	}
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	DOWNLINK_SEND_TASK_INFO(DefaultChannel, DefaultDevice,
-	   	                              &nb_pending_wp,
-	   	                              &task_wp[i].wp_id,
-	   	                              &task_wp[i].action,
-	   	                              &task_wp[i].wp_en.x,
-	   	                              &task_wp[i].wp_en.y);
+													&nb_pending_wp,
+													&task_wp[i].wp_id,
+													&task_wp[i].action,
+													&task_wp[i].wp_en.x,
+													&task_wp[i].wp_en.y);
 
-#if 0	
-    static uint8_t j = 0;    
-    static uint8_t k = 2;
+#if 0
+	static uint8_t j = 0;
+	static uint8_t k = 2;
 	if(k!=2)
 	{
 		k=2;
@@ -845,7 +845,7 @@ void send_task_info_pc(void)
 	{
 		k=1;
 	}
-	if(j >= nb_pending_wp) 
+	if(j >= nb_pending_wp)
 	{
 		j=0;
 	}
@@ -854,22 +854,22 @@ void send_task_info_pc(void)
 	uint16_t system_time = sys_time.nb_sec;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_CURRENT_TASK_STATE(SecondChannel, SecondDevice,
-	   	                              &system_time,
-	   	                              &task_wp[j].wp_id,
-	   	                              &task_wp[j].action,	
-	   	                              &k,
-	   	                              &nb_unexecuted_wp);
+																	 &system_time,
+																	 &task_wp[j].wp_id,
+																	 &task_wp[j].action,
+																	 &k,
+																	 &nb_unexecuted_wp);
 #endif
-   #endif
+#endif
 }
 
 /***********************************************************************
 * FUNCTION    : send_current_task_state
 * DESCRIPTION : periodic send task state to gcs
 * INPUTS      : state express in line or out of line
-* RETURN      : 
+* RETURN      :
 ***********************************************************************/
-void send_current_task_state(uint8_t wp_state) 
+void send_current_task_state(uint8_t wp_state)
 {
 	uint16_t system_time = sys_time.nb_sec;
 	uint8_t nb_unexecuted_wp;
@@ -883,11 +883,11 @@ void send_current_task_state(uint8_t wp_state)
 	}
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_CURRENT_TASK_STATE(SecondChannel, SecondDevice,
-	   	                              &system_time,
-	   	                              &from_wp.wp_id,
-	   	                              &from_wp.action,
-	   	                              &wp_state,
-	   	                              &nb_unexecuted_wp);
+																	 &system_time,
+																	 &from_wp.wp_id,
+																	 &from_wp.action,
+																	 &wp_state,
+																	 &nb_unexecuted_wp);
 }
 
 void send_current_task(uint8_t wp_state)
@@ -898,15 +898,15 @@ void send_current_task(uint8_t wp_state)
 	}
 	else  /*send 2s periodic*/
 	{
-		RunOnceEvery(64, send_current_task_state(wp_state));  
+		RunOnceEvery(64, send_current_task_state(wp_state));
 		//RunOnceEvery(50, send_task_info_pc());
 	}
-	#if 0//PERIODIC_TELEMETRY
+#if 0//PERIODIC_TELEMETRY
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	DOWNLINK_SEND_DEBUG_TASK(DefaultChannel, DefaultDevice,
-	   	                              &heading_align,
-	   	                              &height_align        );
-	#endif
+													 &heading_align,
+													 &height_align        );
+#endif
 }
 
 

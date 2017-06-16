@@ -39,13 +39,13 @@
 #include "../debug.h"
 
 #ifdef HW_ENDPOINT_ATMEGA128_SD
-	#include "interfaces/atmega128.h"
+#include "interfaces/atmega128.h"
 #endif
 #ifdef HW_ENDPOINT_DSP_TI6713_SD
-	#include "interfaces/dsp67xx.h"
+#include "interfaces/dsp67xx.h"
 #endif
 #ifdef HW_ENDPOINT_LPC2000_SD
-	#include "interfaces/lpc2000_spi.h"
+#include "interfaces/lpc2000_spi.h"
 #endif
 
 #define	CMDREAD		17

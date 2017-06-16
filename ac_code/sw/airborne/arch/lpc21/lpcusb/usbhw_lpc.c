@@ -331,7 +331,8 @@ int USBHwEPWrite(U8 bEP, U8 *pbBuf, int iLen)
 	USBTxPLen = iLen;
 
 	// write data
-	while (USBCtrl & WR_EN) {
+	while (USBCtrl & WR_EN)
+	{
 		USBTxData = (pbBuf[3] << 24) | (pbBuf[2] << 16) | (pbBuf[1] << 8) | pbBuf[0];
 		pbBuf += 4;
 	}
@@ -365,12 +366,15 @@ int USBHwEPRead(U8 bEP, U8 *pbBuf, int iMaxLen)
 	USBCtrl = RD_EN | ((bEP & 0xF) << 2);
 
 	// wait for PKT_RDY
-	do {
+	do
+	{
 		dwLen = USBRxPLen;
-	} while ((dwLen & PKT_RDY) == 0);
+	}
+	while ((dwLen & PKT_RDY) == 0);
 
 	// packet valid?
-	if ((dwLen & DV) == 0) {
+	if ((dwLen & DV) == 0)
+	{
 		return -1;
 	}
 
@@ -378,11 +382,15 @@ int USBHwEPRead(U8 bEP, U8 *pbBuf, int iMaxLen)
 	dwLen &= PKT_LNGTH_MASK;
 
 	// get data
-	while (USBCtrl & RD_EN) {
+	while (USBCtrl & RD_EN)
+	{
 		dwData = USBRxData;
-		if (pbBuf != NULL) {
-			for (i = 0; i < 4; i++) {
-				if (iMaxLen-- != 0) {
+		if (pbBuf != NULL)
+		{
+			for (i = 0; i < 4; i++)
+			{
+				if (iMaxLen-- != 0)
+				{
 					*pbBuf++ = dwData & 0xFF;
 				}
 				dwData >>= 8;
@@ -432,73 +440,82 @@ void USBHwISR(void)
 	U16	wFrame;
 
 // LED9 monitors total time in interrupt routine
-DEBUG_LED_ON(9);
+	DEBUG_LED_ON(9);
 
 	// handle device interrupts
 	dwStatus = USBDevIntSt;
 
 	// frame interrupt
-	if (dwStatus & FRAME) {
+	if (dwStatus & FRAME)
+	{
 		// clear int
 		USBDevIntClr = FRAME;
 		// call handler
-		if (_pfnFrameHandler != NULL) {
+		if (_pfnFrameHandler != NULL)
+		{
 			wFrame = USBHwCmdRead(CMD_DEV_READ_CUR_FRAME_NR);
 			_pfnFrameHandler(wFrame);
 		}
 	}
 
 	// device status interrupt
-	if (dwStatus & DEV_STAT) {
+	if (dwStatus & DEV_STAT)
+	{
 		/*	Clear DEV_STAT interrupt before reading DEV_STAT register.
 			This prevents corrupted device status reads, see
 			LPC2148 User manual revision 2, 25 july 2006.
 		*/
 		USBDevIntClr = DEV_STAT;
 		bDevStat = USBHwCmdRead(CMD_DEV_STATUS);
-		if (bDevStat & (CON_CH | SUS_CH | RST)) {
+		if (bDevStat & (CON_CH | SUS_CH | RST))
+		{
 			// convert device status into something HW independent
 			bStat = ((bDevStat & CON) ? DEV_STATUS_CONNECT : 0) |
-					((bDevStat & SUS) ? DEV_STATUS_SUSPEND : 0) |
-					((bDevStat & RST) ? DEV_STATUS_RESET : 0);
+							((bDevStat & SUS) ? DEV_STATUS_SUSPEND : 0) |
+							((bDevStat & RST) ? DEV_STATUS_RESET : 0);
 			// call handler
-			if (_pfnDevIntHandler != NULL) {
-DEBUG_LED_ON(8);
+			if (_pfnDevIntHandler != NULL)
+			{
+				DEBUG_LED_ON(8);
 				_pfnDevIntHandler(bStat);
-DEBUG_LED_OFF(8);
+				DEBUG_LED_OFF(8);
 			}
 		}
 	}
 
 	// endpoint interrupt
-	if (dwStatus & EP_SLOW) {
+	if (dwStatus & EP_SLOW)
+	{
 		// clear EP_SLOW
 		USBDevIntClr = EP_SLOW;
 		// check all endpoints
-		for (i = 0; i < 32; i++) {
+		for (i = 0; i < 32; i++)
+		{
 			dwIntBit = (1 << i);
-			if (USBEpIntSt & dwIntBit) {
+			if (USBEpIntSt & dwIntBit)
+			{
 				// clear int (and retrieve status)
 				USBEpIntClr = dwIntBit;
 				Wait4DevInt(CDFULL);
 				bEPStat = USBCmdData;
 				// convert EP pipe stat into something HW independent
 				bStat = ((bEPStat & EPSTAT_FE) ? EP_STATUS_DATA : 0) |
-						((bEPStat & EPSTAT_ST) ? EP_STATUS_STALLED : 0) |
-						((bEPStat & EPSTAT_STP) ? EP_STATUS_SETUP : 0) |
-						((bEPStat & EPSTAT_EPN) ? EP_STATUS_NACKED : 0) |
-						((bEPStat & EPSTAT_PO) ? EP_STATUS_ERROR : 0);
+								((bEPStat & EPSTAT_ST) ? EP_STATUS_STALLED : 0) |
+								((bEPStat & EPSTAT_STP) ? EP_STATUS_SETUP : 0) |
+								((bEPStat & EPSTAT_EPN) ? EP_STATUS_NACKED : 0) |
+								((bEPStat & EPSTAT_PO) ? EP_STATUS_ERROR : 0);
 				// call handler
-				if (_apfnEPIntHandlers[i / 2] != NULL) {
-DEBUG_LED_ON(10);
+				if (_apfnEPIntHandlers[i / 2] != NULL)
+				{
+					DEBUG_LED_ON(10);
 					_apfnEPIntHandlers[i / 2](IDX2EP(i), bStat);
-DEBUG_LED_OFF(10);
+					DEBUG_LED_OFF(10);
 				}
 			}
 		}
 	}
 
-DEBUG_LED_OFF(9);
+	DEBUG_LED_OFF(9);
 }
 
 

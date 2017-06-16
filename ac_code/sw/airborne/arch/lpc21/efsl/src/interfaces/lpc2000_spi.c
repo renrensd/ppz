@@ -120,11 +120,13 @@ esint8 if_initInterface(hwInterface* file, eint8* opts)
 
 	if_spiInit(file); /* init at low speed */
 
-	if(sd_Init(file)<0)	{
+	if(sd_Init(file)<0)
+	{
 		DBG((TXT("Card failed to init, breaking up...\n")));
 		return(-1);
 	}
-	if(sd_State(file)<0){
+	if(sd_State(file)<0)
+	{
 		DBG((TXT("Card didn't return the ready state, breaking up...\n")));
 		return(-2);
 	}
@@ -133,12 +135,13 @@ esint8 if_initInterface(hwInterface* file, eint8* opts)
 
 	sd_getDriveSize(file, &sc);
 	file->sectorCount = sc/512;
-	if( (sc%512) != 0) {
+	if( (sc%512) != 0)
+	{
 		file->sectorCount--;
 	}
 	DBG((TXT("Drive Size is %lu Bytes (%lu Sectors)\n"), sc, file->sectorCount));
 
-	 /* increase speed after init */
+	/* increase speed after init */
 #if ( HW_ENDPOINT_LPC2000_SPINUM == 1 )
 	SSPCR0 = ((8-1)<<0) | (0<<CPOL);
 #endif
@@ -209,12 +212,12 @@ void if_spiInit(hwInterface *iface)
 
 	// reset Pin-Functions
 	SPI_PINSEL &= ~( (3<<SPI_SCK_FUNCBIT) | (3<<SPI_MISO_FUNCBIT) |
-		(3<<SPI_MOSI_FUNCBIT) | (3<<SPI_SS_FUNCBIT) );
+									 (3<<SPI_MOSI_FUNCBIT) | (3<<SPI_SS_FUNCBIT) );
 
 #if ( HW_ENDPOINT_LPC2000_SPINUM == 0 )
 	DBG((TXT("spiInit for SPI(0)\n")));
 	SPI_PINSEL |= ( (1<<SPI_SCK_FUNCBIT) | (1<<SPI_MISO_FUNCBIT) |
-		(1<<SPI_MOSI_FUNCBIT) );
+									(1<<SPI_MOSI_FUNCBIT) );
 	// enable SPI-Master
 	S0SPCR = (1<<MSTR)|(0<<CPOL); // TODO: check CPOL
 #endif
@@ -223,7 +226,7 @@ void if_spiInit(hwInterface *iface)
 	DBG((TXT("spiInit for SSP/SPI1\n")));
 	// setup Pin-Functions - keep automatic CS disabled during init
 	SPI_PINSEL |= ( (2<<SPI_SCK_FUNCBIT) | (2<<SPI_MISO_FUNCBIT) |
-		(2<<SPI_MOSI_FUNCBIT) | (0<<SPI_SS_FUNCBIT) );
+									(2<<SPI_MOSI_FUNCBIT) | (0<<SPI_SS_FUNCBIT) );
 	// enable SPI-Master - slowest speed
 	SSPCR0 = ((8-1)<<0) | (0<<CPOL) | (0x20<<SCR); //  (0xff<<SCR);
 	SSPCR1 = (1<<SSE);
@@ -233,7 +236,7 @@ void if_spiInit(hwInterface *iface)
 	if_spiSetSpeed(254);
 
 	/* Send 20 spi commands with card not selected */
-	for(i=0;i<21;i++)
+	for(i=0; i<21; i++)
 		my_if_spiSend(iface,0xff);
 
 #if ( HW_ENDPOINT_LPC2000_SPINUM == 0 )
@@ -246,7 +249,7 @@ void if_spiInit(hwInterface *iface)
 	// enable automatic slave CS for SSP
 	SSPCR1 &= ~(1<<SSE); // disable interface
 	SPI_PINSEL |= ( (2<<SPI_SCK_FUNCBIT) | (2<<SPI_MISO_FUNCBIT) |
-		(2<<SPI_MOSI_FUNCBIT) | (2<<SPI_SS_FUNCBIT) );
+									(2<<SPI_MOSI_FUNCBIT) | (2<<SPI_SS_FUNCBIT) );
 	SSPCR1 |= (1<<SSE); // enable interface
 #endif
 

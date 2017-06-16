@@ -50,17 +50,17 @@
 
 struct RADAR_NRA24
 {
-  volatile bool_t msg_received;           ///< message received flag
-  uint8_t payload[RADAR_NRA24_PAYLOAD_LEN]; ///< payload buffer
-  uint8_t status;
-  uint8_t ovrn, error;
-  uint8_t payload_idx;
+	volatile bool_t msg_received;           ///< message received flag
+	uint8_t payload[RADAR_NRA24_PAYLOAD_LEN]; ///< payload buffer
+	uint8_t status;
+	uint8_t ovrn, error;
+	uint8_t payload_idx;
 };
 
 struct RADAR_NRA24_DATA
 {
-  uint16_t dis;//distance mm.
-  float dis_m;
+	uint16_t dis;//distance mm.
+	float dis_m;
 };
 
 extern struct RADAR_NRA24  radar_nra24;
@@ -75,7 +75,7 @@ extern unsigned char FILTER_NUM;
 
 extern void Init_radar24(void);
 
- void  radar_nra24_get_data(void);
+void  radar_nra24_get_data(void);
 
 #endif
 

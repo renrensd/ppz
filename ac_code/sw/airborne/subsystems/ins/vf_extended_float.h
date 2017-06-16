@@ -35,25 +35,26 @@
 
 #define VFF_STATE_SIZE 4
 
-struct VffExtended {
-  /* state vector */
-  float z;           ///< z-position estimate in m (NED, z-down)
-  float zdot;        ///< z-velocity estimate in m/s (NED, z-down)
-  float bias;        ///< accel bias estimate in m/s^2
-  float offset;      ///< baro offset estimate
+struct VffExtended
+{
+	/* state vector */
+	float z;           ///< z-position estimate in m (NED, z-down)
+	float zdot;        ///< z-velocity estimate in m/s (NED, z-down)
+	float bias;        ///< accel bias estimate in m/s^2
+	float offset;      ///< baro offset estimate
 
-  float accel;
-  float zdotdot;     ///< z-acceleration in m/s^2 (NED, z-down)
-  float z_meas;      ///< last z measurement in m
-  float zdot_meas;   ///< last zdot measurement in m/s
-  float z_meas_baro; ///< last z measurement from baro in m
+	float accel;
+	float zdotdot;     ///< z-acceleration in m/s^2 (NED, z-down)
+	float z_meas;      ///< last z measurement in m
+	float zdot_meas;   ///< last zdot measurement in m/s
+	float z_meas_baro; ///< last z measurement from baro in m
 
-  float S;
-  float K2;
+	float S;
+	float K2;
 
-  float z_ltp_meas;  ///< accel z of ltp, after butterworth filter
+	float z_ltp_meas;  ///< accel z of ltp, after butterworth filter
 
-  float P[VFF_STATE_SIZE][VFF_STATE_SIZE];  ///< covariance matrix
+	float P[VFF_STATE_SIZE][VFF_STATE_SIZE];  ///< covariance matrix
 };
 
 extern struct VffExtended vff;

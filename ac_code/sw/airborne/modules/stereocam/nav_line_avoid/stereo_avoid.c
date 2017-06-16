@@ -41,8 +41,8 @@
 #include "modules/stereocam/stereocam.h"
 void stereo_avoid_init(void)
 {
-  // Navigation Code
-  init_avoid_navigation();
+	// Navigation Code
+	init_avoid_navigation();
 }
 
 

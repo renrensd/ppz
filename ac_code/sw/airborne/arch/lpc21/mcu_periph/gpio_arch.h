@@ -75,11 +75,14 @@
  */
 static inline void gpio_setup_output(uint32_t port, uint32_t gpios)
 {
-  if (port == 0) {
-    IO0DIR |= gpios;
-  } else if (port == 1) {
-    IO1DIR |= gpios;
-  }
+	if (port == 0)
+	{
+		IO0DIR |= gpios;
+	}
+	else if (port == 1)
+	{
+		IO1DIR |= gpios;
+	}
 }
 
 /**
@@ -89,11 +92,14 @@ static inline void gpio_setup_output(uint32_t port, uint32_t gpios)
  */
 static inline void gpio_setup_input(uint32_t port, uint32_t gpios)
 {
-  if (port == 0) {
-    IO0DIR &= ~gpios;
-  } else if (port == 1) {
-    IO1DIR &= ~gpios;
-  }
+	if (port == 0)
+	{
+		IO0DIR &= ~gpios;
+	}
+	else if (port == 1)
+	{
+		IO1DIR &= ~gpios;
+	}
 }
 
 /**
@@ -103,11 +109,14 @@ static inline void gpio_setup_input(uint32_t port, uint32_t gpios)
  */
 static inline void gpio_set(uint32_t port, uint32_t gpios)
 {
-  if (port == 0) {
-    IO0SET = gpios;
-  } else if (port == 1) {
-    IO1SET = gpios;
-  }
+	if (port == 0)
+	{
+		IO0SET = gpios;
+	}
+	else if (port == 1)
+	{
+		IO1SET = gpios;
+	}
 }
 
 /**
@@ -117,11 +126,14 @@ static inline void gpio_set(uint32_t port, uint32_t gpios)
  */
 static inline void gpio_clear(uint32_t port, uint32_t gpios)
 {
-  if (port == 0) {
-    IO0CLR = gpios;
-  } else if (port == 1) {
-    IO1CLR = gpios;
-  }
+	if (port == 0)
+	{
+		IO0CLR = gpios;
+	}
+	else if (port == 1)
+	{
+		IO1CLR = gpios;
+	}
 }
 
 /**
@@ -131,19 +143,22 @@ static inline void gpio_clear(uint32_t port, uint32_t gpios)
  */
 static inline void gpio_toggle(uint32_t port, uint32_t gpios)
 {
-  if (port == 0) {
-    uint32_t set_gpios = IO0PIN;
-    // clear selected gpio pins which are currently set
-    IO0CLR = set_gpios & gpios;
-    // set selected gpio pins which are currently cleared
-    IO0SET = ~set_gpios & gpios;
-  } else if (port == 1) {
-    uint32_t set_gpios = IO1PIN;
-    // clear selected gpio pins which are currently set
-    IO1CLR = set_gpios & gpios;
-    // set selected gpio pins which are currently cleared
-    IO1SET = ~set_gpios & gpios;
-  }
+	if (port == 0)
+	{
+		uint32_t set_gpios = IO0PIN;
+		// clear selected gpio pins which are currently set
+		IO0CLR = set_gpios & gpios;
+		// set selected gpio pins which are currently cleared
+		IO0SET = ~set_gpios & gpios;
+	}
+	else if (port == 1)
+	{
+		uint32_t set_gpios = IO1PIN;
+		// clear selected gpio pins which are currently set
+		IO1CLR = set_gpios & gpios;
+		// set selected gpio pins which are currently cleared
+		IO1SET = ~set_gpios & gpios;
+	}
 }
 
 /**
@@ -153,11 +168,14 @@ static inline void gpio_toggle(uint32_t port, uint32_t gpios)
  */
 static inline uint32_t gpio_get(uint32_t port, uint32_t gpios)
 {
-  if (port == 0) {
-    return IO0PIN & gpios;
-  } else if (port == 1) {
-    return IO1PIN & gpios;
-  }
+	if (port == 0)
+	{
+		return IO0PIN & gpios;
+	}
+	else if (port == 1)
+	{
+		return IO1PIN & gpios;
+	}
 }
 
 #endif /* GPIO_ARCH_H */

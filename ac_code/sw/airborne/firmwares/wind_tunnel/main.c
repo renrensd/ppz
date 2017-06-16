@@ -28,63 +28,66 @@ uint16_t datalink_time;
 
 int main(void)
 {
-  main_init();
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic_task();
-    }
-    main_event_task();
-  }
-  return 0;
+	main_init();
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic_task();
+		}
+		main_event_task();
+	}
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
-  led_init();
-  uart0_init();
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	led_init();
+	uart0_init();
 
-  motor_power = 0;
-  wt_servo_init();
-  wt_servo_set(500);
+	motor_power = 0;
+	wt_servo_init();
+	wt_servo_set(500);
 
-  spi_init();
-  wt_baro_init();
+	spi_init();
+	wt_baro_init();
 
-  mcu_int_enable();
+	mcu_int_enable();
 }
 
 static inline void main_periodic_task(void)
 {
-  LED_TOGGLE(1);
-  #if PERIODIC_TELEMETRY
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  DOWNLINK_SEND_TAKEOFF(&motor_power);
-  #endif
-  wt_baro_periodic();
-  #if PERIODIC_TELEMETRY
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  DOWNLINK_SEND_DEBUG(3, buf_input);
-  #endif
+	LED_TOGGLE(1);
+#if PERIODIC_TELEMETRY
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_TAKEOFF(&motor_power);
+#endif
+	wt_baro_periodic();
+#if PERIODIC_TELEMETRY
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_DEBUG(3, buf_input);
+#endif
 }
 
 static inline void main_event_task(void)
 {
-  DatalinkEvent();
+	DatalinkEvent();
 
-  // spi baro
-  if (spi_message_received) {
-    /* Got a message on SPI. */
-    spi_message_received = FALSE;
-    wt_baro_event();
-    uint16_t temp = 0;
-    float alt = 0.;
-	#if PERIODIC_TELEMETRY
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-    DOWNLINK_SEND_BARO_MS5534A(&wt_baro_pressure, &temp, &alt);
-	#endif
-  }
+	// spi baro
+	if (spi_message_received)
+	{
+		/* Got a message on SPI. */
+		spi_message_received = FALSE;
+		wt_baro_event();
+		uint16_t temp = 0;
+		float alt = 0.;
+#if PERIODIC_TELEMETRY
+		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+		DOWNLINK_SEND_BARO_MS5534A(&wt_baro_pressure, &temp, &alt);
+#endif
+	}
 
 }
 
@@ -94,27 +97,30 @@ static inline void main_event_task(void)
 void dl_parse_msg(void)
 {
 
-  LED_TOGGLE(1);
+	LED_TOGGLE(1);
 
-  uint8_t msg_id = IdOfMsg(dl_buffer);
-  switch (msg_id) {
+	uint8_t msg_id = IdOfMsg(dl_buffer);
+	switch (msg_id)
+	{
 
-    case  DL_PING: {
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-      DOWNLINK_SEND_PONG();
-      break;
-    }
+	case  DL_PING:
+	{
+		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+		DOWNLINK_SEND_PONG();
+		break;
+	}
 
-    case DL_SETTING : {
-      uint8_t i = DL_SETTING_index(dl_buffer);
-      float var = DL_SETTING_value(dl_buffer);
-      DlSetting(i, var);
-	  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-      DOWNLINK_SEND_DL_VALUE(&i, &var);
-      break;
-    }
+	case DL_SETTING :
+	{
+		uint8_t i = DL_SETTING_index(dl_buffer);
+		float var = DL_SETTING_value(dl_buffer);
+		DlSetting(i, var);
+		xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+		DOWNLINK_SEND_DL_VALUE(&i, &var);
+		break;
+	}
 
-  }
+	}
 }
 
 

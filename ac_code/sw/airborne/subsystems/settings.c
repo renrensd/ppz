@@ -30,7 +30,7 @@
 
 #ifndef NPS_SIMU
 #ifndef USE_PERSISTENT_SETTINGS
- #define USE_PERSISTENT_SETTINGS FALSE
+#define USE_PERSISTENT_SETTINGS FALSE
 #endif
 #endif
 
@@ -57,24 +57,24 @@ bool_t settings_clear_flag;
 void settings_init(void)
 {
 #if USE_PERSISTENT_SETTINGS
-  #ifdef FRAM_OPTION
-  if( fram_ac_param_read((void *)&pers_settings, sizeof(struct PersistentSettings)) != 0) 
-  {
-    return;  // return -1 ?
-  }
-  #else
-  if (persistent_read((void *)&pers_settings, sizeof(struct PersistentSettings))) 
-  {
-    return;  // return -1 ?
-  }
-  #endif	/* FRAM_OPTION */
-  
-  /* from generated/settings.h */
-  persistent_settings_load();
+#ifdef FRAM_OPTION
+	if( fram_ac_param_read((void *)&pers_settings, sizeof(struct PersistentSettings)) != 0)
+	{
+		return;  // return -1 ?
+	}
+#else
+	if (persistent_read((void *)&pers_settings, sizeof(struct PersistentSettings)))
+	{
+		return;  // return -1 ?
+	}
+#endif	/* FRAM_OPTION */
+
+	/* from generated/settings.h */
+	persistent_settings_load();
 #endif
 #ifdef FRAM_OPTION
-  fram_acc_cali_get();
-  fram_mag_cali_get();
+	fram_acc_cali_get();
+	fram_mag_cali_get();
 #endif
 }
 
@@ -84,39 +84,39 @@ void settings_init(void)
 int32_t settings_store(void)
 {
 #if USE_PERSISTENT_SETTINGS
-  if (settings_store_flag) 
-  {
-  	#ifdef WDG_OPTION
-	wdg_enable_systick_feed();
-	#endif
-    /* from generated/settings.h */
-    persistent_settings_store();
-
-	#ifdef FRAM_OPTION
-	if( fram_ac_param_write((void *)&pers_settings, sizeof(struct PersistentSettings)) == 0) 
+	if (settings_store_flag)
 	{
-      /* persistent write was successful */
-      settings_store_flag = TRUE;
-	  #ifdef WDG_OPTION
-	  wdg_disable_systick_feed();
-	  #endif
-      return 0;
-    }
-	#else
-    if (!persistent_write((void *)&pers_settings, sizeof(struct PersistentSettings))) 
-	{
-      /* persistent write was successful */
-      settings_store_flag = TRUE;
-	  #ifdef WDG_OPTION
-	  wdg_disable_systick_feed();
-	  #endif
-      return 0;
-    }
-	#endif	/* FRAM_OPTION */
-  }
+#ifdef WDG_OPTION
+		wdg_enable_systick_feed();
 #endif
-  settings_store_flag = FALSE;
-  return -1;
+		/* from generated/settings.h */
+		persistent_settings_store();
+
+#ifdef FRAM_OPTION
+		if( fram_ac_param_write((void *)&pers_settings, sizeof(struct PersistentSettings)) == 0)
+		{
+			/* persistent write was successful */
+			settings_store_flag = TRUE;
+#ifdef WDG_OPTION
+			wdg_disable_systick_feed();
+#endif
+			return 0;
+		}
+#else
+		if (!persistent_write((void *)&pers_settings, sizeof(struct PersistentSettings)))
+		{
+			/* persistent write was successful */
+			settings_store_flag = TRUE;
+#ifdef WDG_OPTION
+			wdg_disable_systick_feed();
+#endif
+			return 0;
+		}
+#endif	/* FRAM_OPTION */
+	}
+#endif
+	settings_store_flag = FALSE;
+	return -1;
 }
 
 /** clear all persistent settings from flash
@@ -125,27 +125,27 @@ int32_t settings_store(void)
 int32_t settings_clear(void)
 {
 #if USE_PERSISTENT_SETTINGS
-  if (settings_clear_flag) 
-  {
-  	#ifdef WDG_OPTION
-	wdg_enable_systick_feed();
-	#endif
-
-	#ifdef FRAM_OPTION
-	
-	#else
-    if (!persistent_clear()) 
+	if (settings_clear_flag)
 	{
-      /* clearing all persistent settings was successful */
-      settings_clear_flag = TRUE;
-	  #ifdef WDG_OPTION
-	  wdg_disable_systick_feed();
-	  #endif
-      return 0;
-    }
-	#endif	/* FRAM_OPTION */
-  }
+#ifdef WDG_OPTION
+		wdg_enable_systick_feed();
 #endif
-  settings_clear_flag = FALSE;
-  return -1;
+
+#ifdef FRAM_OPTION
+
+#else
+		if (!persistent_clear())
+		{
+			/* clearing all persistent settings was successful */
+			settings_clear_flag = TRUE;
+#ifdef WDG_OPTION
+			wdg_disable_systick_feed();
+#endif
+			return 0;
+		}
+#endif	/* FRAM_OPTION */
+	}
+#endif
+	settings_clear_flag = FALSE;
+	return -1;
 }

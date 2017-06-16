@@ -4,18 +4,18 @@
 *   Department : RN R&D SW2      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
 #include "subsystems/mission/task_manage.h"
@@ -23,7 +23,7 @@
 #include "subsystems/mission/task_process.h"
 
 #include "firmwares/rotorcraft/autopilot.h"
-#include "subsystems/monitoring/monitoring.h"  
+#include "subsystems/monitoring/monitoring.h"
 #include "subsystems/datalink/downlink.h"
 
 
@@ -51,7 +51,7 @@ void task_manage_init(void)
 	nb_pending_wp = 0;           //use to sign task clean
 	p_transfer_useful = FALSE;
 	nb_pending_reland = 0;
-	
+
 }
 
 /***********************************************************************
@@ -64,22 +64,22 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 {
 	uint8_t response = 0;
 	enum Gcs_Task_Cmd gcs_cmd = (enum Gcs_Task_Cmd)cmd;
-   #if PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-    DOWNLINK_SEND_DEBUG_CMD(DefaultChannel, DefaultDevice, &gcs_cmd, &gcs_task_cmd, &wp_home_useful);
-   #endif
+	DOWNLINK_SEND_DEBUG_CMD(DefaultChannel, DefaultDevice, &gcs_cmd, &gcs_task_cmd, &wp_home_useful);
+#endif
 
-  if(gcs_cmd == GCS_CMD_LOCK)
-  {
-  	gcs_task_cmd = GCS_CMD_LOCK;
+	if(gcs_cmd == GCS_CMD_LOCK)
+	{
+		gcs_task_cmd = GCS_CMD_LOCK;
 		NavKillMode();
 		gcs_cmd_interrupt = TRUE;
 		return 0;
-  }
+	}
 
 	/*request first gcs_cmd is GCS_CMD_START*/
 	if(GCS_CMD_NONE==gcs_task_cmd)
-	{	
+	{
 		if(GCS_CMD_START!=gcs_cmd)
 		{
 			response =2;
@@ -96,89 +96,89 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 		response =3;  /*not in flight, refuse command except start*/
 		return response;
 	}
-	
+
 	switch (gcs_cmd)
-	{	
-		case GCS_CMD_START:
-			//pause to start need add confirm
-			if( (GCS_CMD_PAUSE==gcs_task_cmd && FALSE==from_wp_useful)
-				 || GCS_CMD_NONE==gcs_task_cmd
-				 || GCS_CMD_START==gcs_task_cmd)
-			{
-				gcs_task_cmd = GCS_CMD_START;
-				Flag_AC_Flight_Ready=TRUE;	//add by lg
-				gcs_cmd_interrupt = TRUE;    //record command interrupt to get rid of emergency
-			}
-			else
-			{
-				response = 2;  /*conflict cmd*/
-			}
-			break;
-			
-		case GCS_CMD_PAUSE:
-			if(GCS_CMD_CONTI != gcs_task_cmd)
-			{
-				gcs_task_cmd = GCS_CMD_PAUSE;
-				gcs_cmd_interrupt = TRUE;
-				manual_pause_flag = TRUE;   //record brake signal
-			}
-			else
-			{
-				response = 2;
-			}
-			break;
-			
-		case GCS_CMD_CONTI:
-			if(GCS_CMD_CONTI==gcs_task_cmd || GCS_CMD_PAUSE==gcs_task_cmd)
-			{
-				gcs_task_cmd = GCS_CMD_CONTI;
-				gcs_cmd_interrupt = TRUE;
-			}
-			else
-			{
-				response = 2;
-			}
-			break;
-			
-		case GCS_CMD_BHOME:
-			spray_switch_flag = FALSE;
-			gcs_task_cmd = GCS_CMD_BHOME;
-			gcs_cmd_interrupt = TRUE;
-			break;
-			
-		case GCS_CMD_RELAND:
-			if( 0 >= nb_pending_reland )
-			{
-				response = 2;
-			}
-			else
-			{
-				gcs_task_cmd = GCS_CMD_RELAND;
-				gcs_cmd_interrupt = TRUE;
-			}
-			break;
+	{
+	case GCS_CMD_START:
+		//pause to start need add confirm
+		if( (GCS_CMD_PAUSE==gcs_task_cmd && FALSE==from_wp_useful)
+				|| GCS_CMD_NONE==gcs_task_cmd
+				|| GCS_CMD_START==gcs_task_cmd)
+		{
+			gcs_task_cmd = GCS_CMD_START;
+			Flag_AC_Flight_Ready=TRUE;	//add by lg
+			gcs_cmd_interrupt = TRUE;    //record command interrupt to get rid of emergency
+		}
+		else
+		{
+			response = 2;  /*conflict cmd*/
+		}
+		break;
 
-		case GCS_CMD_DLAND:
-			gcs_task_cmd = GCS_CMD_DLAND;
+	case GCS_CMD_PAUSE:
+		if(GCS_CMD_CONTI != gcs_task_cmd)
+		{
+			gcs_task_cmd = GCS_CMD_PAUSE;
 			gcs_cmd_interrupt = TRUE;
-			break;
+			manual_pause_flag = TRUE;   //record brake signal
+		}
+		else
+		{
+			response = 2;
+		}
+		break;
 
-		case GCS_CMD_LOCK:
-			gcs_task_cmd = GCS_CMD_LOCK;
-			NavKillMode();
+	case GCS_CMD_CONTI:
+		if(GCS_CMD_CONTI==gcs_task_cmd || GCS_CMD_PAUSE==gcs_task_cmd)
+		{
+			gcs_task_cmd = GCS_CMD_CONTI;
 			gcs_cmd_interrupt = TRUE;
-			break;
+		}
+		else
+		{
+			response = 2;
+		}
+		break;
 
-		default:
-			response = 1;  /*parse error*/
-			break;
+	case GCS_CMD_BHOME:
+		spray_switch_flag = FALSE;
+		gcs_task_cmd = GCS_CMD_BHOME;
+		gcs_cmd_interrupt = TRUE;
+		break;
+
+	case GCS_CMD_RELAND:
+		if( 0 >= nb_pending_reland )
+		{
+			response = 2;
+		}
+		else
+		{
+			gcs_task_cmd = GCS_CMD_RELAND;
+			gcs_cmd_interrupt = TRUE;
+		}
+		break;
+
+	case GCS_CMD_DLAND:
+		gcs_task_cmd = GCS_CMD_DLAND;
+		gcs_cmd_interrupt = TRUE;
+		break;
+
+	case GCS_CMD_LOCK:
+		gcs_task_cmd = GCS_CMD_LOCK;
+		NavKillMode();
+		gcs_cmd_interrupt = TRUE;
+		break;
+
+	default:
+		response = 1;  /*parse error*/
+		break;
 	}
 	return response;
 }
 
 /***********************************************************************
 * FUNCTION    : parse_add_task
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : new task
 * RETURN      : error code
 ***********************************************************************/
@@ -207,25 +207,25 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 		return response;
 	}
 
-   /* wp_type: coordinate   wgs84 = 1, relative_ENU = 2 */
+	/* wp_type: coordinate   wgs84 = 1, relative_ENU = 2 */
 	uint8_t nb_wp =m_task_info.wp_end_id - m_task_info.wp_start_id + 1;
 	uint8_t last_nb_pending_wp = nb_pending_wp;
-	
-   if( 1 == m_task_info.wp_type )
-   {
-   		struct LlaCoor_i lla;   /* rad, e8 */
+
+	if( 1 == m_task_info.wp_type )
+	{
+		struct LlaCoor_i lla;   /* rad, e8 */
 		struct EnuCoor_i temp1_enu;
 		for(uint8_t i=0; i < nb_wp; i++ )
 		{
 			lla.lon = *(m_task_info.waypoints_lon + i);
-			lla.lat = *(m_task_info.waypoints_lat + i);	
-	   		if( task_lla_to_enu_convert(&temp1_enu, &lla) )
-	   		{
+			lla.lat = *(m_task_info.waypoints_lat + i);
+			if( task_lla_to_enu_convert(&temp1_enu, &lla) )
+			{
 				VECT2_COPY(task_wp[nb_pending_wp].wp_en, temp1_enu);
 				task_wp[nb_pending_wp].action = (enum Task_Action)( *(m_task_info.wp_action + i) );
 				task_wp[nb_pending_wp].wp_id = m_task_info.wp_start_id + i;
 				nb_pending_wp++;
-	   		}
+			}
 			else
 			{
 				response =4;
@@ -233,17 +233,17 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 				break;   /* jump out the loop */
 			}
 		}
-   	}
-   
-   else if( 2 == m_task_info.wp_type )
-   {
-   		struct EnuCoor_i temp2_enu;
-   		for(uint8_t i=0; i < nb_wp; i++ )
+	}
+
+	else if( 2 == m_task_info.wp_type )
+	{
+		struct EnuCoor_i temp2_enu;
+		for(uint8_t i=0; i < nb_wp; i++ )
 		{
 			temp2_enu.x = POS_BFP_OF_REAL(*(m_task_info.waypoints_lon + i))/1000;
 			temp2_enu.y = POS_BFP_OF_REAL(*(m_task_info.waypoints_lat + i)) /1000;
 			if( temp2_enu.x < POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100)
-				 &&temp2_enu.y < POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100) )
+					&&temp2_enu.y < POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100) )
 			{
 				VECT2_COPY(task_wp[nb_pending_wp].wp_en, temp2_enu);
 				task_wp[nb_pending_wp].action = (enum Task_Action)( *(m_task_info.wp_action + i) );
@@ -254,17 +254,17 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 			{
 				response =4;
 				nb_pending_wp = last_nb_pending_wp;
-				break;   /* jump out the loop */				
+				break;   /* jump out the loop */
 			}
-   		}
-   	}
+		}
+	}
 
 	return response;
 }
 
 /***********************************************************************
 * FUNCTION    : parse_update_task
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : new task
 * RETURN      : error code
 ***********************************************************************/
@@ -276,25 +276,25 @@ int8_t parse_update_task(struct Task_Info m_task_info)
 
 	int8_t wp_offset_start = get_task_wp_offset(m_task_info.wp_start_id);
 	int8_t wp_offset_end = get_task_wp_offset(m_task_info.wp_end_id);
-	if( wp_offset_start < 0 
-		|| wp_offset_end < 0 
-		|| nb_wp !=(wp_offset_end - wp_offset_start + 1) 
-		|| nb_wp > 20 )
+	if( wp_offset_start < 0
+			|| wp_offset_end < 0
+			|| nb_wp !=(wp_offset_end - wp_offset_start + 1)
+			|| nb_wp > 20 )
 	{
 		response = 2;
 		return response;
 	}
-	
-   if( 1 == m_task_info.wp_type )
-   {
-   		struct LlaCoor_i lla;   /* rad, e8 */
-		
+
+	if( 1 == m_task_info.wp_type )
+	{
+		struct LlaCoor_i lla;   /* rad, e8 */
+
 		for(uint8_t i=0; i < nb_wp; i++ )
 		{
 			lla.lon = *(m_task_info.waypoints_lon + i);
-			lla.lat = *(m_task_info.waypoints_lat + i);	
-	   		if( !task_lla_to_enu_convert(&temp_enu[i], &lla) )
-	   		{
+			lla.lat = *(m_task_info.waypoints_lat + i);
+			if( !task_lla_to_enu_convert(&temp_enu[i], &lla) )
+			{
 				response =3;
 				break;   /* jump out the loop */
 			}
@@ -308,21 +308,21 @@ int8_t parse_update_task(struct Task_Info m_task_info)
 				task_wp[wp_offset_start+n].wp_id = m_task_info.wp_start_id + n;
 			}
 		}
-   	}
-   
-   else if( 2 == m_task_info.wp_type )
-   {
-   		for(uint8_t i=0; i < nb_wp; i++ )
+	}
+
+	else if( 2 == m_task_info.wp_type )
+	{
+		for(uint8_t i=0; i < nb_wp; i++ )
 		{
 			temp_enu[i].x = POS_BFP_OF_REAL(*(m_task_info.waypoints_lon + i))/1000;
 			temp_enu[i].y = POS_BFP_OF_REAL(*(m_task_info.waypoints_lat + i)) /1000;
 			if( temp_enu[i].x > POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100)
-				 ||temp_enu[i].y > POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100) )
+					||temp_enu[i].y > POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100) )
 			{
-				response =3;				
-				break;   /* jump out the loop */				
+				response =3;
+				break;   /* jump out the loop */
 			}
-   		}
+		}
 		if(!response)
 		{
 			for(uint8_t n=0; n <nb_wp; n++)
@@ -332,14 +332,14 @@ int8_t parse_update_task(struct Task_Info m_task_info)
 				//task_wp[wp_offset_start+n].wp_id = m_task_info.wp_start_id + n;
 			}
 		}
-   	}
+	}
 
 	return response;
 }
 
 /***********************************************************************
 * FUNCTION    : parse_delete_task
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : the sequence of task need delete
 * RETURN      : error code
 ***********************************************************************/
@@ -350,9 +350,9 @@ int8_t parse_delete_task(uint8_t wp_start_id, uint8_t wp_end_id)
 	int8_t wp_offset_end = get_task_wp_offset(wp_end_id);
 	uint8_t nb_wp = wp_end_id - wp_start_id + 1;
 	uint8_t nb_left_shift = (nb_pending_wp-1) - wp_offset_end;
-	if( wp_offset_start < 0 
-		|| wp_offset_end < 0 
-		|| nb_wp != wp_offset_end - wp_offset_start )
+	if( wp_offset_start < 0
+			|| wp_offset_end < 0
+			|| nb_wp != wp_offset_end - wp_offset_start )
 	{
 		response = 2;
 		return response;
@@ -361,7 +361,7 @@ int8_t parse_delete_task(uint8_t wp_start_id, uint8_t wp_end_id)
 	{
 		TASK_WP_LEFT_SHIFT(wp_offset_start+nb_wp+i, nb_wp);
 	}
-	
+
 	nb_pending_wp = nb_pending_wp - nb_wp;
 	return response;
 }
@@ -376,24 +376,24 @@ struct Task_Info parse_get_task(uint8_t wp_start_id, uint8_t wp_end_id)
 {
 	struct Task_Info m_task_info;
 	return m_task_info;
-	
+
 }
 
 /*
 operation_type: add=1, update=2, delete=3
-land_type: home=1, reserve_land=2     
-wp_type: coordinate   wgs84 = 1, relative_ENU = 2    
+land_type: home=1, reserve_land=2
+wp_type: coordinate   wgs84 = 1, relative_ENU = 2
 */
 int8_t parse_land_task(struct Land_Info dl_land_info)
 {
 	int8_t response =0;
 	/*only parse WGS84 coordinate*/
-	if(dl_land_info.wp_type != 1) 
+	if(dl_land_info.wp_type != 1)
 	{
 		response =2;
 		return response;
 	}
-	
+
 	//enum Land_Type m_land_type = (enum Land_Type)dl_land_info.land_type;
 
 	uint8_t home_offset = 0;
@@ -421,7 +421,7 @@ int8_t parse_land_task(struct Land_Info dl_land_info)
 		}
 		response = parse_land_task_reserve(dl_land_info, home_offset);
 	}
-	
+
 	return response;
 }
 
@@ -430,7 +430,7 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 	int8_t response = 0;
 	/*add/update home waypoint, add operation request wp_home_useful==FASLE, update is opposite*/
 	if( (LAND_TASK_ADD==dl_land_info.operation_type)
-		 || (LAND_TASK_UPDATE==dl_land_info.operation_type && wp_home_useful))  
+			|| (LAND_TASK_UPDATE==dl_land_info.operation_type && wp_home_useful))
 	{
 		if( 1 <= dl_land_info.waypoints_length )
 		{
@@ -439,9 +439,9 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 			lla_home.lon = *(dl_land_info.waypoints_lon);
 			lla_home.lat = *(dl_land_info.waypoints_lat);
 			if( task_lla_to_enu_convert(&enu_home, &lla_home) )
-	   		{
-				VECT2_COPY(wp_home, enu_home);	
-				
+			{
+				VECT2_COPY(wp_home, enu_home);
+
 				/*replace current pos with wp_home, if pos error <1m!!!*/
 				struct EnuCoor_i temp_pos = *stateGetPositionEnu_i();
 				struct EnuCoor_i diff_pos;
@@ -489,8 +489,8 @@ static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t off
 				lla_re.lon = *(dl_land_info.waypoints_lon+i+offset);
 				lla_re.lat = *(dl_land_info.waypoints_lat+i+offset);
 				if( task_lla_to_enu_convert(&enu_re, &lla_re) )
-		   		{
-					VECT2_COPY(wp_reserve_land[nb_pending_reland], enu_re);	
+				{
+					VECT2_COPY(wp_reserve_land[nb_pending_reland], enu_re);
 					nb_pending_reland++;
 				}
 				else
@@ -517,7 +517,7 @@ static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t off
 				lla_re.lon = *(dl_land_info.waypoints_lon+i+offset);
 				lla_re.lat = *(dl_land_info.waypoints_lat+i+offset);
 				if( !task_lla_to_enu_convert(&temp_enu[i], &lla_re) )
-		   		{
+				{
 					response =4;
 					break;   /* jump out the loop */
 				}
@@ -546,14 +546,14 @@ static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t off
 int8_t command_delete_all_task(void)
 {
 	int8_t response =0;
-	
+
 	if( (autopilot_in_flight && GCS_CMD_PAUSE!=gcs_task_cmd) )
-		 //||(!autopilot_in_flight && GCS_CMD_NONE!=gcs_task_cmd) )
+		//||(!autopilot_in_flight && GCS_CMD_NONE!=gcs_task_cmd) )
 	{
 		response = 1;
 		return response;
 	}
-	nb_pending_wp = 0;	 
+	nb_pending_wp = 0;
 	from_wp_useful = FALSE;
 	next_wp.wp_id = 0;      //reset current wp_id
 	return response;
@@ -564,7 +564,7 @@ add_task error code
 0 :success
 1 :parse error
 2 :space is not enought
-3 :waypoints add repeat 
+3 :waypoints add repeat
 4 :waypoints paser error
 5 :waypoints id is not in order
 */

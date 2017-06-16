@@ -38,18 +38,18 @@
 
 struct LASER_R2100
 {
-  volatile bool_t msg_received;           ///< message received flag
-  uint8_t payload[LASER_R2100_PAYLOAD_LEN]; ///< payload buffer
-  uint8_t status;
-  uint8_t ovrn, error;
-  uint8_t payload_idx;
-  uint8_t cs;
+	volatile bool_t msg_received;           ///< message received flag
+	uint8_t payload[LASER_R2100_PAYLOAD_LEN]; ///< payload buffer
+	uint8_t status;
+	uint8_t ovrn, error;
+	uint8_t payload_idx;
+	uint8_t cs;
 };
 
 struct LASER_R2100_DATA
 {
-  uint16_t dis[R2100_DIS_NUM];//distance mm.
-  uint16_t echo[R2100_DIS_NUM];
+	uint16_t dis[R2100_DIS_NUM];//distance mm.
+	uint16_t echo[R2100_DIS_NUM];
 };
 
 extern struct LASER_R2100_DATA laser_data;

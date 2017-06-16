@@ -61,7 +61,8 @@ void ConsoleInit(int iDivider)
 /* Write character to Serial Port    */
 int putchar(int ch)
 {
-	if (ch == '\n') {
+	if (ch == '\n')
+	{
 		while (!(U0LSR & 0x20));
 		U0THR = '\r';
 	}
@@ -72,17 +73,19 @@ int putchar(int ch)
 }
 
 
-int getchar (void)  {                    /* Read character from Serial Port   */
+int getchar (void)                       /* Read character from Serial Port   */
+{
 
-  while (!(U0LSR & 0x01));
+	while (!(U0LSR & 0x01));
 
-  return (U0RBR);
+	return (U0RBR);
 }
 
 
 int puts(const char *s)
 {
-	while (*s) {
+	while (*s)
+	{
 		putchar(*s++);
 	}
 	putchar('\n');

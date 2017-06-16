@@ -4,21 +4,21 @@
 *   Department 	: R&D SW      									       *
 *   AUTHOR	   	:            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
+* Object        :
+* Module        :
+* Instance      :
 * Description   : FM25V01 driver
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _FM25V_H_
-#define _FM25V_H_ 
+#define _FM25V_H_
 #include "mcu_periph/spi.h"
 
 /* Include address and register definition */

@@ -4,14 +4,14 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   : 										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
 * Version:  V0.01
 * Date:     2012/1/9
-* Author:   
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date       Name               Changes and comments
@@ -20,13 +20,13 @@
 
 #ifndef _TIMER_CLASS_H_
 #define _TIMER_CLASS_H_
-#include "types.h" 
+#include "types.h"
 #include "subsystems/datalink/datalink.h"
 
 /**** Definition of constants ****/
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 
 
@@ -49,34 +49,34 @@ typedef void (*timer)(void);
 
 /*define timer_array[TIMER_MAX] for y,z*/
 #ifdef TIMER_PASS_3
-    #undef  TIMER_PASS_3
-    #undef  BEGIN_TIMERS
-    #undef  END_TIMERS
-    #undef  TIMER
-    #define BEGIN_TIMERS        const TIMER_DESC_TYPE timer_array [TIMER_MAX] = {
-    #define END_TIMERS          };
-    #define TIMER(x,y,z)          {y,z},
+#undef  TIMER_PASS_3
+#undef  BEGIN_TIMERS
+#undef  END_TIMERS
+#undef  TIMER
+#define BEGIN_TIMERS        const TIMER_DESC_TYPE timer_array [TIMER_MAX] = {
+#define END_TIMERS          };
+#define TIMER(x,y,z)          {y,z},
 #endif
 
 /*declare callback function:y*/
 #ifdef TIMER_PASS_2
-    #undef  TIMER_PASS_2
-    #define TIMER_PASS_3
-    #undef  BEGIN_TIMERS
-    #undef  END_TIMERS
-    #undef  TIMER
-    #define BEGIN_TIMERS
-    #define END_TIMERS
-    #define TIMER(x,y,z)         extern void y(U16 param);
+#undef  TIMER_PASS_2
+#define TIMER_PASS_3
+#undef  BEGIN_TIMERS
+#undef  END_TIMERS
+#undef  TIMER
+#define BEGIN_TIMERS
+#define END_TIMERS
+#define TIMER(x,y,z)         extern void y(U16 param);
 #endif
 
 /*define enum of TIMERS_ENUM:x*/
 #ifdef TIMER_PASS_1
-    #undef TIMER_PASS_1
-    #define TIMER_PASS_2
-    #define BEGIN_TIMERS        enum TIMERS_ENUM {
-    #define END_TIMERS          TIMER_MAX };
-    #define TIMER(x,y,z)          x,
+#undef TIMER_PASS_1
+#define TIMER_PASS_2
+#define BEGIN_TIMERS        enum TIMERS_ENUM {
+#define END_TIMERS          TIMER_MAX };
+#define TIMER(x,y,z)          x,
 #endif
 
 

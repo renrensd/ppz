@@ -31,20 +31,21 @@ extern void logger_uart_periodic(void);
 #define PACKED __attribute__((__packed__))
 
 //union {
-  struct PACKED logger_uart_data_struct {
-    uint16_t start;
-    int16_t id;         // 1
-    int16_t gyro_p;     // 2
-    int16_t gyro_q;
-    int16_t gyro_r;
-    int16_t acc_x;      // 5
-    int16_t acc_y;
-    int16_t acc_z;
-    int16_t phi;        // 11
-    int16_t theta;
-    int16_t psi;
-    uint8_t crc;
-  };
+struct PACKED logger_uart_data_struct
+{
+	uint16_t start;
+	int16_t id;         // 1
+	int16_t gyro_p;     // 2
+	int16_t gyro_q;
+	int16_t gyro_r;
+	int16_t acc_x;      // 5
+	int16_t acc_y;
+	int16_t acc_z;
+	int16_t phi;        // 11
+	int16_t theta;
+	int16_t psi;
+	uint8_t crc;
+};
 //  uint8_t bytes[23];
 //} logger_uart_data_union;
 

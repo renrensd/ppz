@@ -69,7 +69,7 @@ enum selftest_state
 	FINISHED
 };
 
-struct Imu_Selftest  
+struct Imu_Selftest
 {
 	bool_t result;
 	enum selftest_state state;
@@ -91,21 +91,22 @@ struct Imu_Selftest
  */
 
 
-struct ImuMpu9250 {
-  struct Mpu9250_Spi mpu;
-  struct Imu_Selftest selftest;
+struct ImuMpu9250
+{
+	struct Mpu9250_Spi mpu;
+	struct Imu_Selftest selftest;
 
-  struct spi_transaction wait_slave4_trans;
-  volatile uint8_t wait_slave4_tx_buf[1];
-  volatile uint8_t wait_slave4_rx_buf[2];
-  volatile bool_t slave4_ready;
+	struct spi_transaction wait_slave4_trans;
+	volatile uint8_t wait_slave4_tx_buf[1];
+	volatile uint8_t wait_slave4_rx_buf[2];
+	volatile bool_t slave4_ready;
 #ifdef HMC5983_OPTION
-  struct Hmc58xx mag_hmc;
-  volatile uint8_t mag_valid;
+	struct Hmc58xx mag_hmc;
+	volatile uint8_t mag_valid;
 #endif
 #ifdef QMC5883_OPTION
-  struct Qmc5883 mag_qmc;
-  volatile uint8_t mag_valid;
+	struct Qmc5883 mag_qmc;
+	volatile uint8_t mag_valid;
 #endif
 };
 

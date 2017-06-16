@@ -34,22 +34,22 @@ bool_t mag_valid;
 
 void hmc5843_module_init(void)
 {
-  hmc5843_init();
+	hmc5843_init();
 }
 
 void hmc5843_module_periodic(void)
 {
-  hmc5843_periodic();
-  mag_x = hmc5843.data.value[0];
-  mag_y = hmc5843.data.value[1];
-  mag_z = hmc5843.data.value[2];
-  #if PERIODIC_TELEMETRY
-  xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-  RunOnceEvery(30, DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice, &mag_x, &mag_y, &mag_z));
-  #endif
+	hmc5843_periodic();
+	mag_x = hmc5843.data.value[0];
+	mag_y = hmc5843.data.value[1];
+	mag_z = hmc5843.data.value[2];
+#if PERIODIC_TELEMETRY
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	RunOnceEvery(30, DOWNLINK_SEND_IMU_MAG_RAW(DefaultChannel, DefaultDevice, &mag_x, &mag_y, &mag_z));
+#endif
 }
 
 void hmc5843_module_event(void)
 {
-  hmc5843_idle_task();
+	hmc5843_idle_task();
 }

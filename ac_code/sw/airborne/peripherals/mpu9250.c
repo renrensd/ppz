@@ -31,123 +31,129 @@
 
 void mpu9250_set_default_config(struct Mpu9250Config *c)
 {
-  c->clk_sel = MPU9250_DEFAULT_CLK_SEL;
-  c->smplrt_div = MPU9250_DEFAULT_SMPLRT_DIV;
-  c->dlpf_gyro_cfg = MPU9250_DEFAULT_DLPF_GYRO_CFG;
-  c->dlpf_accel_cfg = MPU9250_DEFAULT_DLPF_ACCEL_CFG;
-  c->gyro_range = MPU9250_DEFAULT_FS_SEL;
-  c->accel_range = MPU9250_DEFAULT_AFS_SEL;
-  c->drdy_int_enable = FALSE;
+	c->clk_sel = MPU9250_DEFAULT_CLK_SEL;
+	c->smplrt_div = MPU9250_DEFAULT_SMPLRT_DIV;
+	c->dlpf_gyro_cfg = MPU9250_DEFAULT_DLPF_GYRO_CFG;
+	c->dlpf_accel_cfg = MPU9250_DEFAULT_DLPF_ACCEL_CFG;
+	c->gyro_range = MPU9250_DEFAULT_FS_SEL;
+	c->accel_range = MPU9250_DEFAULT_AFS_SEL;
+	c->drdy_int_enable = FALSE;
 
-  /* Number of bytes to read starting with MPU9250_REG_INT_STATUS
-   * By default read only gyro and accel data -> 15 bytes.
-   * Increase to include slave data.
-   */
-  c->nb_bytes = 15;
-  c->nb_slaves = 0;
+	/* Number of bytes to read starting with MPU9250_REG_INT_STATUS
+	 * By default read only gyro and accel data -> 15 bytes.
+	 * Increase to include slave data.
+	 */
+	c->nb_bytes = 15;
+	c->nb_slaves = 0;
 
-  c->i2c_bypass = FALSE;
+	c->i2c_bypass = FALSE;
 }
 
 void mpu9250_send_config(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Config *config)
 {
-  switch (config->init_status) {
-    case MPU9250_CONF_RESET:
-      /* device reset, set register values to defaults */
-      mpu_set(mpu, MPU9250_REG_PWR_MGMT_1, (1 << 6));
-      config->init_status++;
-      break;
-    case MPU9250_CONF_USER_RESET:
-      /* trigger FIFO, I2C_MST and SIG_COND resets */
-      mpu_set(mpu, MPU9250_REG_USER_CTRL, ((1 << MPU9250_FIFO_RESET) |
-                                           (1 << MPU9250_I2C_MST_RESET) |
-                                           (1 << MPU9250_SIG_COND_RESET)));
-      config->init_status++;
-      break;
-    case MPU9250_CONF_PWR:
-      /* switch to gyroX clock by default */
-      mpu_set(mpu, MPU9250_REG_PWR_MGMT_1, ((config->clk_sel) | (0 << 6)));
-      config->init_status++;
-      break;
-    case MPU9250_CONF_SD:
-      /* configure sample rate divider */
-      mpu_set(mpu, MPU9250_REG_SMPLRT_DIV, config->smplrt_div);
-      config->init_status++;
-      break;
-    case MPU9250_CONF_DLPF_GYRO:
-      /* configure digital low pass filter for gyroscope */
-      mpu_set(mpu, MPU9250_REG_CONFIG, config->dlpf_gyro_cfg);
-      config->init_status++;
-      break;
-    case MPU9250_CONF_DLPF_ACCEL:
-      /* configure digital low pass filter fir accelerometer */
-      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG_2, config->dlpf_accel_cfg);
-      config->init_status++;
-      break;
-    case MPU9250_CONF_GYRO:
-      /* configure gyro range */
-      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, (config->gyro_range << 3));
-      config->init_status++;
-      break;
-    case MPU9250_CONF_ACCEL:
-      /* configure accelerometer range */
-      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, (config->accel_range << 3));
-      config->init_status++;
-      break;
-    case MPU9250_CONF_I2C_SLAVES:
-      /* if any, set MPU for I2C slaves and configure them*/
-      if (config->nb_slaves > 0) {
-        /* returns TRUE when all slaves are configured */
-        if (mpu9250_configure_i2c_slaves(mpu_set, mpu)) {
-          config->init_status++;
-        }
-      } else {
-        config->init_status++;
-      }
-      break;
-    case MPU9250_CONF_INT_ENABLE:
-      /* configure data ready interrupt */
-      mpu_set(mpu, MPU9250_REG_INT_ENABLE, (config->drdy_int_enable << 0));
-      config->init_status++;
-      break;
-    case MPU9250_CONF_DONE:
-      config->initialized = TRUE;
-      break;
-    default:
-      break;
-  }
+	switch (config->init_status)
+	{
+	case MPU9250_CONF_RESET:
+		/* device reset, set register values to defaults */
+		mpu_set(mpu, MPU9250_REG_PWR_MGMT_1, (1 << 6));
+		config->init_status++;
+		break;
+	case MPU9250_CONF_USER_RESET:
+		/* trigger FIFO, I2C_MST and SIG_COND resets */
+		mpu_set(mpu, MPU9250_REG_USER_CTRL, ((1 << MPU9250_FIFO_RESET) |
+																				 (1 << MPU9250_I2C_MST_RESET) |
+																				 (1 << MPU9250_SIG_COND_RESET)));
+		config->init_status++;
+		break;
+	case MPU9250_CONF_PWR:
+		/* switch to gyroX clock by default */
+		mpu_set(mpu, MPU9250_REG_PWR_MGMT_1, ((config->clk_sel) | (0 << 6)));
+		config->init_status++;
+		break;
+	case MPU9250_CONF_SD:
+		/* configure sample rate divider */
+		mpu_set(mpu, MPU9250_REG_SMPLRT_DIV, config->smplrt_div);
+		config->init_status++;
+		break;
+	case MPU9250_CONF_DLPF_GYRO:
+		/* configure digital low pass filter for gyroscope */
+		mpu_set(mpu, MPU9250_REG_CONFIG, config->dlpf_gyro_cfg);
+		config->init_status++;
+		break;
+	case MPU9250_CONF_DLPF_ACCEL:
+		/* configure digital low pass filter fir accelerometer */
+		mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG_2, config->dlpf_accel_cfg);
+		config->init_status++;
+		break;
+	case MPU9250_CONF_GYRO:
+		/* configure gyro range */
+		mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, (config->gyro_range << 3));
+		config->init_status++;
+		break;
+	case MPU9250_CONF_ACCEL:
+		/* configure accelerometer range */
+		mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, (config->accel_range << 3));
+		config->init_status++;
+		break;
+	case MPU9250_CONF_I2C_SLAVES:
+		/* if any, set MPU for I2C slaves and configure them*/
+		if (config->nb_slaves > 0)
+		{
+			/* returns TRUE when all slaves are configured */
+			if (mpu9250_configure_i2c_slaves(mpu_set, mpu))
+			{
+				config->init_status++;
+			}
+		}
+		else
+		{
+			config->init_status++;
+		}
+		break;
+	case MPU9250_CONF_INT_ENABLE:
+		/* configure data ready interrupt */
+		mpu_set(mpu, MPU9250_REG_INT_ENABLE, (config->drdy_int_enable << 0));
+		config->init_status++;
+		break;
+	case MPU9250_CONF_DONE:
+		config->initialized = TRUE;
+		break;
+	default:
+		break;
+	}
 }
 
 #define MPU9250_SELFTEST_EN 0x07
 bool_t mpu9250_start_self_test(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Config *config)
 {
 	static enum Mpu9250ConfStatus start_test_step = MPU9250_CONF_GYRO;
-	switch (start_test_step) {
+	switch (start_test_step)
+	{
 	case MPU9250_CONF_GYRO:
-      /* configure gyro range */
-      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, ((config->gyro_range << 3)|(MPU9250_SELFTEST_EN<<5)));
-      start_test_step++;
-      break;
-    case MPU9250_CONF_ACCEL:
-      /* configure accelerometer range */
-      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, ((config->accel_range << 3)|(MPU9250_SELFTEST_EN<<5)));
-      start_test_step++;
-	   break;
-	/*try more time make sure writed register*/
+		/* configure gyro range */
+		mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, ((config->gyro_range << 3)|(MPU9250_SELFTEST_EN<<5)));
+		start_test_step++;
+		break;
+	case MPU9250_CONF_ACCEL:
+		/* configure accelerometer range */
+		mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, ((config->accel_range << 3)|(MPU9250_SELFTEST_EN<<5)));
+		start_test_step++;
+		break;
+		/*try more time make sure writed register*/
 	case (MPU9250_CONF_GYRO+2):
-      /* configure gyro range */
-      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, ((config->gyro_range << 3)|(MPU9250_SELFTEST_EN<<5)));
-      start_test_step++;
-      break;
-    case (MPU9250_CONF_ACCEL+2):
-      /* configure accelerometer range */
-      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, ((config->accel_range << 3)|(MPU9250_SELFTEST_EN<<5)));
-      start_test_step++;
-	   break;
-	 default:
-	 	/*finish config and reset step*/
-	 	start_test_step = MPU9250_CONF_GYRO;
-	   return TRUE;
+		/* configure gyro range */
+		mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, ((config->gyro_range << 3)|(MPU9250_SELFTEST_EN<<5)));
+		start_test_step++;
+		break;
+	case (MPU9250_CONF_ACCEL+2):
+		/* configure accelerometer range */
+		mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, ((config->accel_range << 3)|(MPU9250_SELFTEST_EN<<5)));
+		start_test_step++;
+		break;
+	default:
+		/*finish config and reset step*/
+		start_test_step = MPU9250_CONF_GYRO;
+		return TRUE;
 	}
 	return FALSE;
 }
@@ -155,30 +161,31 @@ bool_t mpu9250_start_self_test(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu92
 bool_t mpu9250_end_self_test(Mpu9250ConfigSet mpu_set, void *mpu, struct Mpu9250Config *config)
 {
 	static enum Mpu9250ConfStatus end_test_step = MPU9250_CONF_GYRO;
-	switch (end_test_step) {
+	switch (end_test_step)
+	{
 	case MPU9250_CONF_GYRO:
-      /* configure gyro range */
-      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, (config->gyro_range << 3));
-      end_test_step++;
-      break;
-    case MPU9250_CONF_ACCEL:
-      /* configure accelerometer range */
-      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, (config->accel_range << 3));
-      end_test_step++;
-	 case (MPU9250_CONF_GYRO+2):
-      /* configure gyro range */
-      mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, (config->gyro_range << 3));
-      end_test_step++;
-      break;
-    case (MPU9250_CONF_ACCEL+2):
-      /* configure accelerometer range */
-      mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, (config->accel_range << 3));
-      end_test_step++;
-	   break;
-	 default:
-	 	/*finish config and reset step*/
-	 	end_test_step = MPU9250_CONF_GYRO;
-	   return TRUE;
+		/* configure gyro range */
+		mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, (config->gyro_range << 3));
+		end_test_step++;
+		break;
+	case MPU9250_CONF_ACCEL:
+		/* configure accelerometer range */
+		mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, (config->accel_range << 3));
+		end_test_step++;
+	case (MPU9250_CONF_GYRO+2):
+		/* configure gyro range */
+		mpu_set(mpu, MPU9250_REG_GYRO_CONFIG, (config->gyro_range << 3));
+		end_test_step++;
+		break;
+	case (MPU9250_CONF_ACCEL+2):
+		/* configure accelerometer range */
+		mpu_set(mpu, MPU9250_REG_ACCEL_CONFIG, (config->accel_range << 3));
+		end_test_step++;
+		break;
+	default:
+		/*finish config and reset step*/
+		end_test_step = MPU9250_CONF_GYRO;
+		return TRUE;
 	}
 	return FALSE;
 }

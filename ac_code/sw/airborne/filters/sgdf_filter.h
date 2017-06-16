@@ -15,7 +15,8 @@ static const float SGDF5_filter_coefs[5] = {0.2f,0.1f,0,-0.1f,-0.2f};
 static const float SGDF6_filter_coefs[6] = {0.14286f,0.08571f,0.02857f,-0.02857f,-0.08571f,-0.14286f};
 static const float SGDF7_filter_coefs[7] = {0.10714f, 0.07143f, 0.03571f, 0, -0.03571f, -0.07143f, -0.10714f};
 static const float SGDF13_filter_coefs[13] = {0.03297f, 0.02747f, 0.02198f, 0.01648f, 0.01099f, 0.00549f , 0,
-																 -0.00549f, -0.01099f, -0.01648f, -0.02198f, -0.02747f, -0.03297f};
+																							-0.00549f, -0.01099f, -0.01648f, -0.02198f, -0.02747f, -0.03297f
+																						 };
 
 struct _s_sgdf_filter
 {

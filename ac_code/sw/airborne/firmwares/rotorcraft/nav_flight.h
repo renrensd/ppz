@@ -17,19 +17,19 @@
 
 enum Flight_State
 {
-    preparing=0,
+	preparing=0,
 	ready=1,
 	taking_off=2,
 	cruising=3,
 	home=4,     //direct toward flight back
 	landing=5
-	//locked=5  landing->ready
+					//locked=5  landing->ready
 };
 
 enum Rc_Type
 {
 	REAL_RC = 0,
-	VIRTUAL_RC	
+	VIRTUAL_RC
 };
 
 enum Spray_Convert_Type
@@ -40,7 +40,7 @@ enum Spray_Convert_Type
 };
 
 struct config_info
-{   
+{
 	enum Spray_Convert_Type spray_convert_type;
 	uint8_t atomization_grade;      //grade 1/2/3...
 	uint16_t spray_concentration;   //unit=ml/m2

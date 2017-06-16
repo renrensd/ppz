@@ -39,38 +39,41 @@ static inline void main_event(void);
 
 int main(void)
 {
-  main_init();
+	main_init();
 
-  while (1) {
-    if (sys_time_check_and_ack_timer(0)) {
-      main_periodic();
-    }
-    main_event();
-  }
-  return 0;
+	while (1)
+	{
+		if (sys_time_check_and_ack_timer(0))
+		{
+			main_periodic();
+		}
+		main_event();
+	}
+	return 0;
 }
 
 static inline void main_init(void)
 {
-  mcu_init();
-  sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
-  mcu_int_enable();
+	mcu_init();
+	sys_time_register_timer((1. / PERIODIC_FREQUENCY), NULL);
+	mcu_int_enable();
 
-  downlink_init();
+	downlink_init();
 }
 
 static inline void main_periodic(void)
 {
-  RunOnceEvery(50, {
-      DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);
+	RunOnceEvery(50,
+	{
+		DOWNLINK_SEND_ALIVE(DefaultChannel, DefaultDevice, 16, MD5SUM);
 #ifdef UART_TX_LED
-      LED_TOGGLE(UART_TX_LED);
+		LED_TOGGLE(UART_TX_LED);
 #endif
-    });
-  LED_PERIODIC();
+	});
+	LED_PERIODIC();
 }
 
 static inline void main_event(void)
 {
-  mcu_event();
+	mcu_event();
 }

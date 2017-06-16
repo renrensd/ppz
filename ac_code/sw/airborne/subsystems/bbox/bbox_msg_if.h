@@ -4,23 +4,23 @@
 *   Department : R&D SW      									       *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _BBOX_MSG_IF_H_
-#define _BBOX_MSG_IF_H_ 
+#define _BBOX_MSG_IF_H_
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 
 /**** Definition of macros ****/
 

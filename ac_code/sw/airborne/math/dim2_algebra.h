@@ -12,8 +12,10 @@
 
 struct _s_matrix22
 {
-	float m11;float m12;
-	float m21;float m22;
+	float m11;
+	float m12;
+	float m21;
+	float m22;
 };
 
 static inline float point2_distance(struct FloatVect2 *p1, struct FloatVect2 *p2)
@@ -35,8 +37,10 @@ static inline void Rotate_vect2(struct FloatVect2 *vo, struct _s_matrix22 *R, st
 
 static inline void Matrix22_set_i(struct _s_matrix22 *mo)
 {
-	mo->m11 = 1; mo->m12 = 0;
-	mo->m21 = 0; mo->m22 = 1;
+	mo->m11 = 1;
+	mo->m12 = 0;
+	mo->m21 = 0;
+	mo->m22 = 1;
 }
 
 static inline void Matrix22_copy(struct _s_matrix22 *mo, struct _s_matrix22 *ma)
@@ -63,8 +67,10 @@ static inline void Matrix22_trans(struct _s_matrix22 *mo, struct _s_matrix22 *ma
 {
 	struct _s_matrix22 mt;
 
-	mt.m11 = ma->m11; mt.m12 = ma->m21;
-	mt.m21 = ma->m12; mt.m22 = ma->m22;
+	mt.m11 = ma->m11;
+	mt.m12 = ma->m21;
+	mt.m21 = ma->m12;
+	mt.m22 = ma->m22;
 
 	Matrix22_copy(mo, &mt);
 }

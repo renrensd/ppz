@@ -6,16 +6,16 @@
 ************************************************************************
 * Object        : peripherals/adxrs453_reg.h
 * Module        : peripherals
-* Instance      : 
+* Instance      :
 * Description   : ADI ADXRS453 1-axis gyroscope register definitions.
 *-----------------------------------------------------------------------
-* Version		: 
-* Date			: 
-* Author		: 
+* Version		:
+* Date			:
+* Author		:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef __ADXRS453_REGS_H_
 #define __ADXRS453_REGS_H_
@@ -42,7 +42,7 @@
 
 /* Check bits */
 #define ADXRS453_P				0x01	// Parity bit
-#define ADXRS453_CHK			0x02	
+#define ADXRS453_CHK			0x02
 #define ADXRS453_CST			0x04
 #define ADXRS453_PWR			0x08
 #define ADXRS453_POR			0x10

@@ -17,6 +17,6 @@ extern void imu_aspirin_arch_int_disable(void);
 // gyro eoc
 static inline int imu_aspirin_eoc(void)
 {
-  return bit_is_set(ASPIRIN_GYRO_EOC_IOPIN, ASPIRIN_GYRO_EOC_PIN);
+	return bit_is_set(ASPIRIN_GYRO_EOC_IOPIN, ASPIRIN_GYRO_EOC_PIN);
 }
 #endif /* IMU_ASPIRIN_ARCH_H */

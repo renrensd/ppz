@@ -102,9 +102,15 @@
 
 static U8 my_SPISend(U8 outgoing)
 {
-	while( !(SSPSR & (1<<TNF)) ) { ; }
+	while( !(SSPSR & (1<<TNF)) )
+	{
+		;
+	}
 	SSPDR = outgoing;
-	while( !(SSPSR & (1<<RNE)) ) { ; }
+	while( !(SSPSR & (1<<RNE)) )
+	{
+		;
+	}
 	return SSPDR;
 }
 
@@ -113,7 +119,8 @@ static U8 my_SPISend(U8 outgoing)
 void SPISetSpeed(U8 speed)
 {
 	speed &= 0xFE;
-	if (speed < SPI_PRESCALE_MIN) {
+	if (speed < SPI_PRESCALE_MIN)
+	{
 		speed = SPI_PRESCALE_MIN;
 	}
 	SPI_PRESCALE_REG = speed;
@@ -135,7 +142,7 @@ void SPIInit(void)
 
 	// setup Pin-Functions - keep automatic CS disabled during init
 	SPI_PINSEL |= ( (2<<SPI_SCK_FUNCBIT) | (2<<SPI_MISO_FUNCBIT) |
-		(2<<SPI_MOSI_FUNCBIT) | (0<<SPI_SS_FUNCBIT) );
+									(2<<SPI_MOSI_FUNCBIT) | (0<<SPI_SS_FUNCBIT) );
 	// enable SPI-Master - fastest speed
 	SSPCR0 = ((8-1)<<0) | (0<<CPOL) | (0x1<<SCR);
 	SSPCR1 = (1<<SSE);
@@ -144,14 +151,15 @@ void SPIInit(void)
 	SPISetSpeed(254);
 
 	/* Send 20 spi commands with card not selected */
-	for (i = 0; i < 21; i++) {
+	for (i = 0; i < 21; i++)
+	{
 		my_SPISend(0xff);
 	}
 
 	// enable automatic slave CS for SSP
 	SSPCR1 &= ~(1<<SSE); // disable interface
 	SPI_PINSEL |= ( (2<<SPI_SCK_FUNCBIT) | (2<<SPI_MISO_FUNCBIT) |
-		(2<<SPI_MOSI_FUNCBIT) | (2<<SPI_SS_FUNCBIT) );
+									(2<<SPI_MOSI_FUNCBIT) | (2<<SPI_SS_FUNCBIT) );
 	SSPCR1 |= (1<<SSE); // enable interface
 
 	// SPI clock 15MHz @60MHz PCLK
@@ -175,11 +183,12 @@ void SPISendN(U8 * pbBuf, int iLen)
 {
 	int i;
 	U8 temp;
-	for (i = 0; i < iLen; i++) {
-        while( !(SSPSR & (1<<TNF)) ) ;
-        SSPDR = pbBuf[i];
-        while( !(SSPSR & (1<<RNE)) ) ;
-        temp = SSPDR;
+	for (i = 0; i < iLen; i++)
+	{
+		while( !(SSPSR & (1<<TNF)) ) ;
+		SSPDR = pbBuf[i];
+		while( !(SSPSR & (1<<RNE)) ) ;
+		temp = SSPDR;
 	}
 }
 
@@ -188,10 +197,11 @@ void SPIRecvN(U8 * pbBuf, int iLen)
 {
 	int i;
 
-	for (i = 0; i < iLen; i++) {
-        while( !(SSPSR & (1<<TNF)) ) ;
-        SSPDR = 0xFF;
-        while( !(SSPSR & (1<<RNE)) ) ;
+	for (i = 0; i < iLen; i++)
+	{
+		while( !(SSPSR & (1<<TNF)) ) ;
+		SSPDR = 0xFF;
+		while( !(SSPSR & (1<<RNE)) ) ;
 		pbBuf[i] = SSPDR;
 	}
 }

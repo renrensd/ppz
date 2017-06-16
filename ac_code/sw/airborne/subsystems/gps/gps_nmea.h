@@ -56,36 +56,37 @@ enum Xyzmsg_Pos_Type
 	TIME_OUT = 2  //whp add, once update need check the value
 };
 
-struct GpsNmea {
-  bool_t msg_available;
-  bool_t pos_available;
- #if USE_XYZA
-  bool_t pos_xyz_available;
- #endif
- #ifdef USE_GPS_HEADING
-  bool_t heading_available;
- #endif
-  bool_t is_configured;       ///< flag set to TRUE if configuration is finished
-  bool_t have_gsv;            ///< flag set to TRUE if GPGSV message received
-  uint8_t gps_nb_ovrn;        ///< number if incomplete nmea-messages
-  char msg_buf[NMEA_MAXLEN];  ///< buffer for storing one nmea-line
-  
-  uint8_t status;             ///< line parser status
-  uint8_t gps_qual;           ///< RTK FIX(0x04) OR RTK FLOAT(0x05) OR SINGLE(0x01)
-  enum Xyzmsg_Pos_Type pos_type;
-  
-  uint8_t sol_tatus;          ///< gps heading status
-  uint8_t num_sta_use;        ///< number of sta in used
-  int32_t msg_len;
-  float heading;
-  float pitch;
+struct GpsNmea
+{
+	bool_t msg_available;
+	bool_t pos_available;
+#if USE_XYZA
+	bool_t pos_xyz_available;
+#endif
+#ifdef USE_GPS_HEADING
+	bool_t heading_available;
+#endif
+	bool_t is_configured;       ///< flag set to TRUE if configuration is finished
+	bool_t have_gsv;            ///< flag set to TRUE if GPGSV message received
+	uint8_t gps_nb_ovrn;        ///< number if incomplete nmea-messages
+	char msg_buf[NMEA_MAXLEN];  ///< buffer for storing one nmea-line
 
-  uint32_t last_xyzmsg_time; ///< last available msg cpu time(ms)
-  uint32_t last_tramsg_time; ///< last available msg cpu time(ms)
+	uint8_t status;             ///< line parser status
+	uint8_t gps_qual;           ///< RTK FIX(0x04) OR RTK FLOAT(0x05) OR SINGLE(0x01)
+	enum Xyzmsg_Pos_Type pos_type;
 
-  //median filter
-  struct MedianFilter3Int ecef_pos_filter;
-  struct MedianFilter3Int ecef_vel_filter;
+	uint8_t sol_tatus;          ///< gps heading status
+	uint8_t num_sta_use;        ///< number of sta in used
+	int32_t msg_len;
+	float heading;
+	float pitch;
+
+	uint32_t last_xyzmsg_time; ///< last available msg cpu time(ms)
+	uint32_t last_tramsg_time; ///< last available msg cpu time(ms)
+
+	//median filter
+	struct MedianFilter3Int ecef_pos_filter;
+	struct MedianFilter3Int ecef_vel_filter;
 };
 
 extern struct GpsNmea gps_nmea;
@@ -111,28 +112,33 @@ extern bool_t rtk_power_up_stable(void);
 
 static inline void GpsEvent(void)
 {
-  struct link_device *dev = &((GPS_LINK).device);
+	struct link_device *dev = &((GPS_LINK).device);
 
-  if (!gps_nmea.is_configured) {
-    nmea_configure();
-    return;
-  }
-  while (dev->char_available(dev->periph)) {
-    nmea_parse_char(dev->get_byte(dev->periph));
-    if (gps_nmea.msg_available) {
-      gps_nmea_msg();
-    }
-  }
+	if (!gps_nmea.is_configured)
+	{
+		nmea_configure();
+		return;
+	}
+	while (dev->char_available(dev->periph))
+	{
+		nmea_parse_char(dev->get_byte(dev->periph));
+		if (gps_nmea.msg_available)
+		{
+			gps_nmea_msg();
+		}
+	}
 }
 
 /** Read until a certain character, placed here for proprietary includes */
 static inline void nmea_read_until(int *i)
 {
-  while (gps_nmea.msg_buf[(*i)++] != ',') {
-    if (*i >= gps_nmea.msg_len) {
-      return;
-    }
-  }
+	while (gps_nmea.msg_buf[(*i)++] != ',')
+	{
+		if (*i >= gps_nmea.msg_len)
+		{
+			return;
+		}
+	}
 }
 
 #endif /* GPS_NMEA_H */

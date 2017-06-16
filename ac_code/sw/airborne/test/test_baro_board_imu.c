@@ -35,19 +35,20 @@
 
 void test_baro_board_imu_init(void)
 {
-  imu_init();
+	imu_init();
 }
 
 
 void test_baro_board_imu_periodic_task(void)
 {
-  if (sys_time.nb_sec > 1) {
-    imu_periodic();
-  }
+	if (sys_time.nb_sec > 1)
+	{
+		imu_periodic();
+	}
 }
 
 
 void test_baro_board_imu_event_task(void)
 {
-  ImuEvent();
+	ImuEvent();
 }

@@ -18,10 +18,10 @@ void imu_aspirin_arch_int_disable(void)
 
 void imu_aspirin_arch_init(void)
 {
-  /* set input pin for gyro eoc */
-  ClearBit(ASPIRIN_GYRO_EOC_IODIR, ASPIRIN_GYRO_EOC_PIN);
+	/* set input pin for gyro eoc */
+	ClearBit(ASPIRIN_GYRO_EOC_IODIR, ASPIRIN_GYRO_EOC_PIN);
 
-  //ASPIRIN_GYRO_EOC_PINSEL |= ASPIRIN_GYRO_EOC_PINSEL_VAL << ASPIRIN_GYRO_EOC_PINSEL_BIT;
+	//ASPIRIN_GYRO_EOC_PINSEL |= ASPIRIN_GYRO_EOC_PINSEL_VAL << ASPIRIN_GYRO_EOC_PINSEL_BIT;
 }
 
 
@@ -33,12 +33,12 @@ void imu_aspirin_arch_init(void)
 void exti15_10_irq_handler(void)
 {
 
-  /* clear EXTI */
+	/* clear EXTI */
 //  if(EXTI_GetITStatus(EXTI_Line14) != RESET)
 //    EXTI_ClearITPendingBit(EXTI_Line14);
 
-  //imu_aspirin.gyro_eoc = TRUE;
-  //imu_aspirin.status = AspirinStatusReadingGyro;
+	//imu_aspirin.gyro_eoc = TRUE;
+	//imu_aspirin.status = AspirinStatusReadingGyro;
 }
 
 /*
@@ -47,7 +47,7 @@ void exti15_10_irq_handler(void)
 void exti2_irq_handler(void)
 {
 
-  /* clear EXTI */
+	/* clear EXTI */
 //  if(EXTI_GetITStatus(EXTI_Line2) != RESET)
 //    EXTI_ClearITPendingBit(EXTI_Line2);
 
@@ -59,5 +59,5 @@ void exti2_irq_handler(void)
 void dma1_c4_irq_handler(void)
 {
 
-  //imu_aspirin.accel_available = TRUE;
+	//imu_aspirin.accel_available = TRUE;
 }

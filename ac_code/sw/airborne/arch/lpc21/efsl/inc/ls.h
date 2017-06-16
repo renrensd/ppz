@@ -40,14 +40,16 @@
 #include "fat.h"
 /*****************************************************************************/
 
-struct ListDirEntry{
+struct ListDirEntry
+{
 	euint8 FileName[LIST_MAXLENFILENAME];
 	euint32 FileSize;
 	euint8 Attribute;
 };
 typedef struct ListDirEntry ListDirEntry;
 
-struct DirList{
+struct DirList
+{
 	FileSystem *fs;
 	euint16 cEntry,rEntry;
 	/*FileRecord currentEntry;*/

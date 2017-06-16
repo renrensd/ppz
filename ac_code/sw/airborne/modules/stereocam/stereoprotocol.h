@@ -30,10 +30,11 @@
 #include <inttypes.h>
 #include "mcu_periph/link_device.h"
 
-struct MsgProperties {
-  uint16_t positionImageStart;
-  uint8_t width;
-  uint8_t height;
+struct MsgProperties
+{
+	uint16_t positionImageStart;
+	uint8_t width;
+	uint8_t height;
 } ;
 typedef struct MsgProperties MsgProperties;
 // function primitives
@@ -69,8 +70,8 @@ void stereoprot_sendArray(struct link_device *fd, uint8_t *b, uint8_t array_widt
  * Returns as soon as a complete message is found. Messages placed in msg_buf
  */
 uint8_t handleStereoPackage(uint8_t newByte, uint16_t buffer_size, uint16_t *insert_loc, uint16_t *extract_loc,
-                            uint16_t *msg_start, uint8_t *msg_buf, uint8_t *ser_read_buf, uint8_t *stereocam_datadata_new,
-                            uint8_t *stereocam_datalen, uint8_t *stereocam_data_matrix_width, uint8_t *stereocam_data_matrix_height);
+														uint16_t *msg_start, uint8_t *msg_buf, uint8_t *ser_read_buf, uint8_t *stereocam_datadata_new,
+														uint8_t *stereocam_datalen, uint8_t *stereocam_data_matrix_width, uint8_t *stereocam_data_matrix_height);
 
 /**
  * Retrieve size of image from message

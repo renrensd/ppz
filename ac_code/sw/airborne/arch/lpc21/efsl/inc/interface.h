@@ -39,15 +39,15 @@
 /*****************************************************************************/
 
 #if defined(HW_ENDPOINT_LINUX) || defined(HW_ENDPOINT_LINUX64)
-	#include "interfaces/linuxfile.h"
+#include "interfaces/linuxfile.h"
 #elif defined(HW_ENDPOINT_ATMEGA128_SD)
-	#include "interfaces/atmega128.h"
+#include "interfaces/atmega128.h"
 #elif defined(HW_ENDPOINT_DSP_TI6713_SD)
-	#include "interfaces/dsp67xx.h"
+#include "interfaces/dsp67xx.h"
 #elif defined(HW_ENDPOINT_LPC2000_SD)
-	#include "interfaces/lpc2000_spi.h"
+#include "interfaces/lpc2000_spi.h"
 #else
-	#error "NO INTERFACE DEFINED - see interface.h"
+#error "NO INTERFACE DEFINED - see interface.h"
 #endif
 
 #endif

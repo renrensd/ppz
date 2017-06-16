@@ -32,54 +32,57 @@
 
 #include BOARD_CONFIG
 
-enum adc1_channels {
+enum adc1_channels
+{
 #ifdef AD1_1_CHANNEL
-  AD1_1,
+	AD1_1,
 #endif
 #ifdef AD1_2_CHANNEL
-  AD1_2,
+	AD1_2,
 #endif
 #ifdef AD1_3_CHANNEL
-  AD1_3,
+	AD1_3,
 #endif
 #ifdef AD1_4_CHANNEL
-  AD1_4,
+	AD1_4,
 #endif
-  ADC1_END
+	ADC1_END
 };
 
-enum adc2_channels {
-  ADC2_BEGIN = ADC1_END-1,
+enum adc2_channels
+{
+	ADC2_BEGIN = ADC1_END-1,
 #ifdef AD2_1_CHANNEL
-  AD2_1,
+	AD2_1,
 #endif
 #ifdef AD2_2_CHANNEL
-  AD2_2,
+	AD2_2,
 #endif
 #ifdef AD2_3_CHANNEL
-  AD2_3,
+	AD2_3,
 #endif
 #ifdef AD2_4_CHANNEL
-  AD2_4,
+	AD2_4,
 #endif
-  ADC2_END
+	ADC2_END
 };
 
-enum adc3_channels {
-  ADC3_BEGIN = ADC2_END-1,
+enum adc3_channels
+{
+	ADC3_BEGIN = ADC2_END-1,
 #ifdef AD3_1_CHANNEL
-  AD3_1,
+	AD3_1,
 #endif
 #ifdef AD3_2_CHANNEL
-  AD3_2,
+	AD3_2,
 #endif
 #ifdef AD3_3_CHANNEL
-  AD3_3,
+	AD3_3,
 #endif
 #ifdef AD3_4_CHANNEL
-  AD3_4,
+	AD3_4,
 #endif
-  ADC3_END
+	ADC3_END
 };
 
 #if USE_ADC_WATCHDOG

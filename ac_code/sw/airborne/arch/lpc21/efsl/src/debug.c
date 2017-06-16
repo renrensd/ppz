@@ -56,21 +56,21 @@
 void debug(const eint8 *format, ...)
 {
 	va_list ap;
-	#ifdef DO_FUNC_DEBUG
+#ifdef DO_FUNC_DEBUG
 	euint8 c;
 	extern  FILE* debugfile;
 	extern volatile euint8 tw;
-	#endif
+#endif
 
 	va_start(ap, format);
 	vprintf(format,ap);
-	#ifdef DO_FUNC_DEBUG
-		for(c=0;c<tw+1;c++)
-		{
-			fprintf(debugfile,"  ");
-		}
-		vfprintf(debugfile,format,ap);
-	#endif
+#ifdef DO_FUNC_DEBUG
+	for(c=0; c<tw+1; c++)
+	{
+		fprintf(debugfile,"  ");
+	}
+	vfprintf(debugfile,format,ap);
+#endif
 	va_end(ap);
 }
 /*****************************************************************************/
@@ -85,7 +85,7 @@ void debug(const eint8 *format, ...)
 
 void debug_funcin(const eint8 *format, ...)
 {
-	#ifdef DO_FUNC_DEBUG
+#ifdef DO_FUNC_DEBUG
 	eint8 c;
 	va_list ap;
 	extern  FILE* debugfile;
@@ -93,7 +93,8 @@ void debug_funcin(const eint8 *format, ...)
 
 	if(debugfile==NULL)return;
 
-	for(c=0;c<tw;c++){
+	for(c=0; c<tw; c++)
+	{
 		fprintf(debugfile,"  ");
 	}
 
@@ -103,7 +104,7 @@ void debug_funcin(const eint8 *format, ...)
 	fprintf(debugfile,"\n");
 
 	tw++;
-	#endif
+#endif
 }
 /*****************************************************************************/
 
@@ -116,7 +117,7 @@ void debug_funcin(const eint8 *format, ...)
 
 void debug_funcout(const eint8 *format, ...)
 {
-	#ifdef DO_FUNC_DEBUG
+#ifdef DO_FUNC_DEBUG
 	eint8 c;
 	va_list ap;
 	extern  FILE* debugfile;
@@ -126,7 +127,8 @@ void debug_funcout(const eint8 *format, ...)
 
 	if(tw>0)tw--;
 
-	for(c=0;c<tw;c++){
+	for(c=0; c<tw; c++)
+	{
 		fprintf(debugfile,"  ");
 	}
 
@@ -134,7 +136,7 @@ void debug_funcout(const eint8 *format, ...)
 	vfprintf(debugfile,format,ap);
 	va_end(ap);
 	fprintf(debugfile,"\n");
-	#endif
+#endif
 }
 /*****************************************************************************/
 
@@ -146,7 +148,7 @@ void debug_funcout(const eint8 *format, ...)
 */
 void debug_init()
 {
-	#ifdef DO_FUNC_DEBUG
+#ifdef DO_FUNC_DEBUG
 	extern  FILE* debugfile;
 	extern volatile unsigned char tw;
 
@@ -154,7 +156,7 @@ void debug_init()
 	tw=0;
 
 	debugfile=fopen("DBG.OUT","w");
-	#endif
+#endif
 }
 /*****************************************************************************/
 
@@ -165,12 +167,12 @@ void debug_init()
 */
 void debug_end()
 {
-	#ifdef DO_FUNC_DEBUG
+#ifdef DO_FUNC_DEBUG
 	extern  FILE* debugfile;
 
 	fflush(debugfile);
 	fclose(debugfile);
-	#endif
+#endif
 }
 /*****************************************************************************/
 
@@ -211,20 +213,21 @@ void debug_init(void)
 
 	ubrr = ((unsigned short)DEBUG_UBRR);
 
-	switch(DEBUG_PORT){
-		case 0:
-			UBRR0H = (euint8) (ubrr>>8);
-			UBRR0L = (euint8) (ubrr);
-			UCSR0B = ( (1<<RXEN) | (1<<TXEN) );
-			break;
-		case 1:
-			UBRR1H = (euint8) (ubrr>>8);
-			UBRR1L = (euint8) (ubrr);
-			UCSR1B = ( (1<<RXEN) | (1<<TXEN) );
-			break;
-		default:
-			/* INVALID CONFIG FILE */
-			break;
+	switch(DEBUG_PORT)
+	{
+	case 0:
+		UBRR0H = (euint8) (ubrr>>8);
+		UBRR0L = (euint8) (ubrr);
+		UCSR0B = ( (1<<RXEN) | (1<<TXEN) );
+		break;
+	case 1:
+		UBRR1H = (euint8) (ubrr>>8);
+		UBRR1L = (euint8) (ubrr);
+		UCSR1B = ( (1<<RXEN) | (1<<TXEN) );
+		break;
+	default:
+		/* INVALID CONFIG FILE */
+		break;
 	}
 }
 /*****************************************************************************/
@@ -241,37 +244,39 @@ void debug_sendByte(euint8 data)
 	if(data=='\n')
 		debug_sendByte('\r');
 
-	switch(DEBUG_PORT){
-		case 0:
-			while ( !(UCSR0A & (1<<UDRE0)) )
-				_NOP(); 	/* Wait for empty transmit buffer */
-			UDR0 = data;    /* Start transmittion */
-			break;
-		case 1:
-			while ( !(UCSR1A & (1<<UDRE1)) )
-				_NOP(); 	/* Wait for empty transmit buffer */
-			UDR1 = data;	/* Start transmittion */
-			break;
-		default:
-			/* INVALID CONFIG FILE */
-			break;
+	switch(DEBUG_PORT)
+	{
+	case 0:
+		while ( !(UCSR0A & (1<<UDRE0)) )
+			_NOP(); 	/* Wait for empty transmit buffer */
+		UDR0 = data;    /* Start transmittion */
+		break;
+	case 1:
+		while ( !(UCSR1A & (1<<UDRE1)) )
+			_NOP(); 	/* Wait for empty transmit buffer */
+		UDR1 = data;	/* Start transmittion */
+		break;
+	default:
+		/* INVALID CONFIG FILE */
+		break;
 	}
 }
 /*****************************************************************************/
 
 unsigned char debug_getByte()
 {
-	switch(DEBUG_PORT){
-		case 0:
-			while ( !(UCSR0A & (1<<RXC0)) )
-				_NOP();
-			return(UDR0);
-			break;
-		case 1:
-			while ( !(UCSR1A & (1<<RXC1)) )
-				_NOP();
-			return(UDR1);
-			break;
+	switch(DEBUG_PORT)
+	{
+	case 0:
+		while ( !(UCSR0A & (1<<RXC0)) )
+			_NOP();
+		return(UDR0);
+		break;
+	case 1:
+		while ( !(UCSR1A & (1<<RXC1)) )
+			_NOP();
+		return(UDR1);
+		break;
 	}
 }
 /*****************************************************************************/

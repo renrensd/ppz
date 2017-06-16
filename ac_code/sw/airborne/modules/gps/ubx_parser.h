@@ -188,7 +188,7 @@ static inline uint8_t UBX_message_fetch(struct _s_ubx_parser *parser)
 		{
 			return UBX_PARSE_ERR_LEN;
 		}
-		for(i=0;i<len;++i)
+		for(i=0; i<len; ++i)
 		{
 			addr[i] = parser->buffer[i];
 		}
@@ -294,8 +294,10 @@ static inline void UBX_message_parse(struct _s_ubx_parser *parser, uint8_t c)
 	}
 	return;
 
-	_error: parser->err_count++;
-	_restart: parser->state = UBX_PARSE_SEARCH_SYNC_1;
+_error:
+	parser->err_count++;
+_restart:
+	parser->state = UBX_PARSE_SEARCH_SYNC_1;
 	return;
 }
 

@@ -113,21 +113,26 @@ BOOL USBGetDescriptor(U16 wTypeIndex, U16 wLangID __attribute__ ((unused)), int 
 	pab = pabDescrip;
 	iCurIndex = 0;
 
-	while (pab[DESC_bLength] != 0) {
-		if (pab[DESC_bDescriptorType] == bType) {
-			if (iCurIndex == bIndex) {
+	while (pab[DESC_bLength] != 0)
+	{
+		if (pab[DESC_bDescriptorType] == bType)
+		{
+			if (iCurIndex == bIndex)
+			{
 				// set data pointer
 #pragma GCC diagnostic push // require GCC 4.6
 #pragma GCC diagnostic ignored "-Wcast-qual"
-			  *ppbData = (U8*)pab;
+				*ppbData = (U8*)pab;
 #pragma GCC diagnostic pop // require GCC 4.6
 				// get length from structure
-				if (bType == DESC_CONFIGURATION) {
+				if (bType == DESC_CONFIGURATION)
+				{
 					// configuration descriptor is an exception, length is at offset 2 and 3
 					*piLen =	(pab[CONF_DESC_wTotalLength]) |
-								(pab[CONF_DESC_wTotalLength + 1] << 8);
+										(pab[CONF_DESC_wTotalLength + 1] << 8);
 				}
-				else {
+				else
+				{
 					// normally length is at offset 0
 					*piLen = pab[DESC_bLength];
 				}
@@ -165,19 +170,23 @@ static BOOL USBSetConfiguration(U8 bConfigIndex, U8 bAltSetting)
 
 	ASSERT(pabDescrip != NULL);
 
-	if (bConfigIndex == 0) {
+	if (bConfigIndex == 0)
+	{
 		// unconfigure device
 		USBHwConfigDevice(FALSE);
 	}
-	else {
+	else
+	{
 		// configure endpoints for this configuration/altsetting
 		pab = (const U8 *)pabDescrip;
 		bCurConfig = 0xFF;
 		bCurAltSetting = 0xFF;
 
-		while (pab[DESC_bLength] != 0) {
+		while (pab[DESC_bLength] != 0)
+		{
 
-			switch (pab[DESC_bDescriptorType]) {
+			switch (pab[DESC_bDescriptorType])
+			{
 
 			case DESC_CONFIGURATION:
 				// remember current configuration index
@@ -191,11 +200,12 @@ static BOOL USBSetConfiguration(U8 bConfigIndex, U8 bAltSetting)
 
 			case DESC_ENDPOINT:
 				if ((bCurConfig == bConfigIndex) &&
-					(bCurAltSetting == bAltSetting)) {
+						(bCurAltSetting == bAltSetting))
+				{
 					// endpoint found for desired config and alternate setting
 					bEP = pab[ENDP_DESC_bEndpointAddress];
 					wMaxPktSize = 	(pab[ENDP_DESC_wMaxPacketSize]) |
-									(pab[ENDP_DESC_wMaxPacketSize + 1] << 8);
+													(pab[ENDP_DESC_wMaxPacketSize + 1] << 8);
 					// configure endpoint
 					USBHwEPConfig(bEP, wMaxPktSize);
 				}
@@ -229,7 +239,8 @@ static BOOL HandleStdDeviceReq(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
 {
 	U8	*pbData = *ppbData;
 
-	switch (pSetup->bRequest) {
+	switch (pSetup->bRequest)
+	{
 
 	case REQ_GET_STATUS:
 		// bit 0: self-powered
@@ -254,7 +265,8 @@ static BOOL HandleStdDeviceReq(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
 		break;
 
 	case REQ_SET_CONFIGURATION:
-		if (!USBSetConfiguration(pSetup->wValue & 0xFF, 0)) {
+		if (!USBSetConfiguration(pSetup->wValue & 0xFF, 0))
+		{
 			DBG("USBSetConfiguration failed!\n");
 			return FALSE;
 		}
@@ -264,10 +276,12 @@ static BOOL HandleStdDeviceReq(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
 
 	case REQ_CLEAR_FEATURE:
 	case REQ_SET_FEATURE:
-		if (pSetup->wValue == FEA_REMOTE_WAKEUP) {
+		if (pSetup->wValue == FEA_REMOTE_WAKEUP)
+		{
 			// put DEVICE_REMOTE_WAKEUP code here
 		}
-		if (pSetup->wValue == FEA_TEST_MODE) {
+		if (pSetup->wValue == FEA_TEST_MODE)
+		{
 			// put TEST_MODE code here
 		}
 		return FALSE;
@@ -298,7 +312,8 @@ static BOOL HandleStdInterfaceReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData
 {
 	U8	*pbData = *ppbData;
 
-	switch (pSetup->bRequest) {
+	switch (pSetup->bRequest)
+	{
 
 	case REQ_GET_STATUS:
 		// no bits specified
@@ -313,14 +328,15 @@ static BOOL HandleStdInterfaceReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData
 		return FALSE;
 
 	case REQ_GET_INTERFACE:	// TODO use bNumInterfaces
-        // there is only one interface, return n-1 (= 0)
+		// there is only one interface, return n-1 (= 0)
 		pbData[0] = 0;
 		*piLen = 1;
 		break;
 
 	case REQ_SET_INTERFACE:	// TODO use bNumInterfaces
 		// there is only one interface (= 0)
-		if (pSetup->wValue != 0) {
+		if (pSetup->wValue != 0)
+		{
 			return FALSE;
 		}
 		*piLen = 0;
@@ -348,7 +364,8 @@ static BOOL HandleStdEndPointReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 {
 	U8	*pbData = *ppbData;
 
-	switch (pSetup->bRequest) {
+	switch (pSetup->bRequest)
+	{
 	case REQ_GET_STATUS:
 		// bit 0 = endpointed halted or not
 		pbData[0] = (USBHwEPGetStatus(pSetup->wIndex) & EP_STATUS_STALLED) ? 1 : 0;
@@ -357,7 +374,8 @@ static BOOL HandleStdEndPointReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 		break;
 
 	case REQ_CLEAR_FEATURE:
-		if (pSetup->wValue == FEA_ENDPOINT_HALT) {
+		if (pSetup->wValue == FEA_ENDPOINT_HALT)
+		{
 			// clear HALT by unstalling
 			USBHwEPStall(pSetup->wIndex, FALSE);
 			break;
@@ -366,7 +384,8 @@ static BOOL HandleStdEndPointReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 		return FALSE;
 
 	case REQ_SET_FEATURE:
-		if (pSetup->wValue == FEA_ENDPOINT_HALT) {
+		if (pSetup->wValue == FEA_ENDPOINT_HALT)
+		{
 			// set HALT by stalling
 			USBHwEPStall(pSetup->wIndex, TRUE);
 			break;
@@ -401,15 +420,21 @@ static BOOL HandleStdEndPointReq(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 BOOL USBHandleStandardRequest(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
 {
 	// try the custom request handler first
-	if ((pfnHandleCustomReq != NULL) && pfnHandleCustomReq(pSetup, piLen, ppbData)) {
+	if ((pfnHandleCustomReq != NULL) && pfnHandleCustomReq(pSetup, piLen, ppbData))
+	{
 		return TRUE;
 	}
 
-	switch (REQTYPE_GET_RECIP(pSetup->bmRequestType)) {
-	case REQTYPE_RECIP_DEVICE:		return HandleStdDeviceReq(pSetup, piLen, ppbData);
-	case REQTYPE_RECIP_INTERFACE:	return HandleStdInterfaceReq(pSetup, piLen, ppbData);
-	case REQTYPE_RECIP_ENDPOINT: 	return HandleStdEndPointReq(pSetup, piLen, ppbData);
-	default: 						return FALSE;
+	switch (REQTYPE_GET_RECIP(pSetup->bmRequestType))
+	{
+	case REQTYPE_RECIP_DEVICE:
+		return HandleStdDeviceReq(pSetup, piLen, ppbData);
+	case REQTYPE_RECIP_INTERFACE:
+		return HandleStdInterfaceReq(pSetup, piLen, ppbData);
+	case REQTYPE_RECIP_ENDPOINT:
+		return HandleStdEndPointReq(pSetup, piLen, ppbData);
+	default:
+		return FALSE;
 	}
 }
 

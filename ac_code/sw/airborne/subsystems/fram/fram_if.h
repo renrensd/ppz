@@ -4,18 +4,18 @@
 *   Department 	: R&D SW      									       *
 *   AUTHOR	   	:            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _FRAM_IF_H_
 #define _FRAM_IF_H_
@@ -24,11 +24,11 @@
 /**** Definition of constants ****/
 extern const uint8_t fram_init_flags[4];
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 struct FRAM_INFO
 {
 	struct FM25V_SPI fm25v;                  /* The fram chip */
-	
+
 };
 
 struct FRAM_ERROR_INFO

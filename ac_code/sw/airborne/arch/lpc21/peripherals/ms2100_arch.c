@@ -38,45 +38,45 @@ static void EXTINT_ISR(void) __attribute__((naked));
 void ms2100_arch_init(void)
 {
 
-  /* configure RESET pin */
-  Ms2100Reset();                                /* pin idles low  */
-  SetBit(MS2100_RESET_IODIR, MS2100_RESET_PIN); /* pin is output  */
+	/* configure RESET pin */
+	Ms2100Reset();                                /* pin idles low  */
+	SetBit(MS2100_RESET_IODIR, MS2100_RESET_PIN); /* pin is output  */
 
-  /* configure DRDY pin */
-  /* connected pin to EXINT */
-  MS2100_DRDY_PINSEL |= MS2100_DRDY_PINSEL_VAL << MS2100_DRDY_PINSEL_BIT;
-  SetBit(EXTMODE, MS2100_DRDY_EINT);  /* EINT is edge trigered */
-  SetBit(EXTPOLAR, MS2100_DRDY_EINT); /* EINT is trigered on rising edge */
-  SetBit(EXTINT, MS2100_DRDY_EINT);   /* clear pending EINT */
+	/* configure DRDY pin */
+	/* connected pin to EXINT */
+	MS2100_DRDY_PINSEL |= MS2100_DRDY_PINSEL_VAL << MS2100_DRDY_PINSEL_BIT;
+	SetBit(EXTMODE, MS2100_DRDY_EINT);  /* EINT is edge trigered */
+	SetBit(EXTPOLAR, MS2100_DRDY_EINT); /* EINT is trigered on rising edge */
+	SetBit(EXTINT, MS2100_DRDY_EINT);   /* clear pending EINT */
 
-  /* initialize interrupt vector */
-  VICIntSelect &= ~VIC_BIT(MS2100_DRDY_VIC_IT);   /* select EINT as IRQ source */
-  VICIntEnable = VIC_BIT(MS2100_DRDY_VIC_IT);     /* enable it                 */
-  _VIC_CNTL(MS2100_DRDY_VIC_SLOT) = VIC_ENABLE | MS2100_DRDY_VIC_IT;
-  _VIC_ADDR(MS2100_DRDY_VIC_SLOT) = (uint32_t)EXTINT_ISR;         // address of the ISR
+	/* initialize interrupt vector */
+	VICIntSelect &= ~VIC_BIT(MS2100_DRDY_VIC_IT);   /* select EINT as IRQ source */
+	VICIntEnable = VIC_BIT(MS2100_DRDY_VIC_IT);     /* enable it                 */
+	_VIC_CNTL(MS2100_DRDY_VIC_SLOT) = VIC_ENABLE | MS2100_DRDY_VIC_IT;
+	_VIC_ADDR(MS2100_DRDY_VIC_SLOT) = (uint32_t)EXTINT_ISR;         // address of the ISR
 
 }
 
 void EXTINT_ISR(void)
 {
-  ISR_ENTRY();
-  /* no, we won't do anything asynchronously, so just notify */
-  ms2100.status = MS2100_GOT_EOC;
-  /* clear EINT */
-  EXTINT = (1 << MS2100_DRDY_EINT);
-  VICVectAddr = 0x00000000;    /* clear this interrupt from the VIC */
-  ISR_EXIT();
+	ISR_ENTRY();
+	/* no, we won't do anything asynchronously, so just notify */
+	ms2100.status = MS2100_GOT_EOC;
+	/* clear EINT */
+	EXTINT = (1 << MS2100_DRDY_EINT);
+	VICVectAddr = 0x00000000;    /* clear this interrupt from the VIC */
+	ISR_EXIT();
 }
 
 void ms2100_reset_cb(struct spi_transaction *t __attribute__((unused)))
 {
-  // set RESET pin high for at least 100 nsec
-  // busy wait should not harm
-  // storing start and dt is probably long enough...
-  Ms2100Set();
-  uint32_t start = T0TC;
-  uint32_t dt = cpu_ticks_of_nsec(110);
-  while ((uint32_t)(T0TC - start) < dt);
-  Ms2100Reset();
+	// set RESET pin high for at least 100 nsec
+	// busy wait should not harm
+	// storing start and dt is probably long enough...
+	Ms2100Set();
+	uint32_t start = T0TC;
+	uint32_t dt = cpu_ticks_of_nsec(110);
+	while ((uint32_t)(T0TC - start) < dt);
+	Ms2100Reset();
 }
 

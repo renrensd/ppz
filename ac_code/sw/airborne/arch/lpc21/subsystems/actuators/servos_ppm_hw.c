@@ -40,28 +40,29 @@ uint32_t servos_delay;
 
 void actuators_ppm_init(void)
 {
-  /* select ppm output pin as MAT0.1 output */
-  SERVO_CLOCK_PINSEL |= SERVO_CLOCK_PINSEL_VAL << SERVO_CLOCK_PINSEL_BIT;
+	/* select ppm output pin as MAT0.1 output */
+	SERVO_CLOCK_PINSEL |= SERVO_CLOCK_PINSEL_VAL << SERVO_CLOCK_PINSEL_BIT;
 
-  /* enable match 1 interrupt */
-  T0MCR |= TMCR_MR1_I;
+	/* enable match 1 interrupt */
+	T0MCR |= TMCR_MR1_I;
 
-  /* lower clock         */
-  T0EMR &= ~TEMR_EM1;
-  /* set high on match 1 */
-  T0EMR |= TEMR_EMC1_2;
+	/* lower clock         */
+	T0EMR &= ~TEMR_EM1;
+	/* set high on match 1 */
+	T0EMR |= TEMR_EMC1_2;
 
-  /* set first pulse in a while */
-  T0MR1 = START_TIMEOUT;
-  servos_PPM_idx = _PPM_NB_CHANNELS;
-  /* Set all servos to their midpoints */
-  /* compulsory for unused servos  */
-  uint8_t i;
-  for (i = 0 ; i < _PPM_NB_CHANNELS ; i++) {
-    servos_values[i] = SERVOS_TICS_OF_USEC(1500);
-  }
+	/* set first pulse in a while */
+	T0MR1 = START_TIMEOUT;
+	servos_PPM_idx = _PPM_NB_CHANNELS;
+	/* Set all servos to their midpoints */
+	/* compulsory for unused servos  */
+	uint8_t i;
+	for (i = 0 ; i < _PPM_NB_CHANNELS ; i++)
+	{
+		servos_values[i] = SERVOS_TICS_OF_USEC(1500);
+	}
 
-  servos_delay = SERVO_REFRESH_TICS;
+	servos_delay = SERVO_REFRESH_TICS;
 }
 uint16_t servos_values[_PPM_NB_CHANNELS];
 

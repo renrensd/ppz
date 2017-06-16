@@ -31,32 +31,33 @@
 #include "generated/airframe.h"
 
 enum actuators_asctec_cmd { NONE,
-                            TEST,
-                            REVERSE,
-                            SET_ADDR
-                          };
+														TEST,
+														REVERSE,
+														SET_ADDR
+													};
 
 enum actuators_asctec_addr { FRONT,
-                             BACK,
-                             LEFT,
-                             RIGHT
-                           };
+														 BACK,
+														 LEFT,
+														 RIGHT
+													 };
 
 /* this is for the v1 protocol which does its own mixing */
 enum actuators_asctec_cmds { PITCH,
-                             ROLL,
-                             YAW,
-                             THRUST,
-                             CMD_NB
-                           };
+														 ROLL,
+														 YAW,
+														 THRUST,
+														 CMD_NB
+													 };
 
-struct ActuatorsAsctec {
-  enum actuators_asctec_cmd cmd;
-  enum actuators_asctec_addr cur_addr;
-  enum actuators_asctec_addr new_addr;
-  int32_t cmds[CMD_NB];
-  struct i2c_transaction i2c_trans;
-  volatile uint32_t nb_err;
+struct ActuatorsAsctec
+{
+	enum actuators_asctec_cmd cmd;
+	enum actuators_asctec_addr cur_addr;
+	enum actuators_asctec_addr new_addr;
+	int32_t cmds[CMD_NB];
+	struct i2c_transaction i2c_trans;
+	volatile uint32_t nb_err;
 };
 
 

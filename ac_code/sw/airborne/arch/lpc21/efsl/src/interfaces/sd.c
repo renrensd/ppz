@@ -43,17 +43,21 @@ esint8 sd_Init(hwInterface *iface)
 
 	/* Try to send reset command up to 100 times */
 	i=100;
-	do{
+	do
+	{
 		sd_Command(iface,0, 0, 0);
 		resp=sd_Resp8b(iface);
 	}
 	while(resp!=1 && i--);
 
-	if(resp!=1){
-		if(resp==0xff){
+	if(resp!=1)
+	{
+		if(resp==0xff)
+		{
 			return(-1);
 		}
-		else{
+		else
+		{
 			sd_Resp8bError(iface,resp);
 			return(-2);
 		}
@@ -62,7 +66,8 @@ esint8 sd_Init(hwInterface *iface)
 	/* Wait till card is ready initialising (returns 0 on CMD1) */
 	/* Try up to 32000 times. */
 	i=32000;
-	do{
+	do
+	{
 		sd_Command(iface,1, 0, 0);
 
 		resp=sd_Resp8b(iface);
@@ -71,7 +76,8 @@ esint8 sd_Init(hwInterface *iface)
 	}
 	while(resp==1 && i--);
 
-	if(resp!=0){
+	if(resp!=0)
+	{
 		sd_Resp8bError(iface,resp);
 		return(-3);
 	}
@@ -102,7 +108,8 @@ euint8 sd_Resp8b(hwInterface *iface)
 	euint8 resp;
 
 	/* Respone will come after 1 - 8 pings */
-	for(i=0;i<8;i++){
+	for(i=0; i<8; i++)
+	{
 		resp = if_spiSend(iface,0xff);
 		if(resp != 0xff)
 			return(resp);
@@ -127,30 +134,30 @@ void sd_Resp8bError(hwInterface *iface,euint8 value)
 {
 	switch(value)
 	{
-		case 0x40:
-			DBG((TXT("Argument out of bounds.\n")));
-			break;
-		case 0x20:
-			DBG((TXT("Address out of bounds.\n")));
-			break;
-		case 0x10:
-			DBG((TXT("Error during erase sequence.\n")));
-			break;
-		case 0x08:
-			DBG((TXT("CRC failed.\n")));
-			break;
-		case 0x04:
-			DBG((TXT("Illegal command.\n")));
-			break;
-		case 0x02:
-			DBG((TXT("Erase reset (see SanDisk docs p5-13).\n")));
-			break;
-		case 0x01:
-			DBG((TXT("Card is initialising.\n")));
-			break;
-		default:
-			DBG((TXT("Unknown error 0x%x (see SanDisk docs p5-13).\n"),value));
-			break;
+	case 0x40:
+		DBG((TXT("Argument out of bounds.\n")));
+		break;
+	case 0x20:
+		DBG((TXT("Address out of bounds.\n")));
+		break;
+	case 0x10:
+		DBG((TXT("Error during erase sequence.\n")));
+		break;
+	case 0x08:
+		DBG((TXT("CRC failed.\n")));
+		break;
+	case 0x04:
+		DBG((TXT("Illegal command.\n")));
+		break;
+	case 0x02:
+		DBG((TXT("Erase reset (see SanDisk docs p5-13).\n")));
+		break;
+	case 0x01:
+		DBG((TXT("Card is initialising.\n")));
+		break;
+	default:
+		DBG((TXT("Unknown error 0x%x (see SanDisk docs p5-13).\n"),value));
+		break;
 	}
 }
 /*****************************************************************************/
@@ -164,39 +171,39 @@ esint8 sd_State(hwInterface *iface)
 
 	switch(value)
 	{
-		case 0x000:
-			return(1);
-			break;
-		case 0x0001:
-			DBG((TXT("Card is Locked.\n")));
-			break;
-		case 0x0002:
-			DBG((TXT("WP Erase Skip, Lock/Unlock Cmd Failed.\n")));
-			break;
-		case 0x0004:
-			DBG((TXT("General / Unknown error -- card broken?.\n")));
-			break;
-		case 0x0008:
-			DBG((TXT("Internal card controller error.\n")));
-			break;
-		case 0x0010:
-			DBG((TXT("Card internal ECC was applied, but failed to correct the data.\n")));
-			break;
-		case 0x0020:
-			DBG((TXT("Write protect violation.\n")));
-			break;
-		case 0x0040:
-			DBG((TXT("An invalid selection, sectors for erase.\n")));
-			break;
-		case 0x0080:
-			DBG((TXT("Out of Range, CSD_Overwrite.\n")));
-			break;
-		default:
-			if(value>0x00FF)
-				sd_Resp8bError(iface,(euint8) (value>>8));
-			else
-				DBG((TXT("Unknown error: 0x%x (see SanDisk docs p5-14).\n"),value));
-			break;
+	case 0x000:
+		return(1);
+		break;
+	case 0x0001:
+		DBG((TXT("Card is Locked.\n")));
+		break;
+	case 0x0002:
+		DBG((TXT("WP Erase Skip, Lock/Unlock Cmd Failed.\n")));
+		break;
+	case 0x0004:
+		DBG((TXT("General / Unknown error -- card broken?.\n")));
+		break;
+	case 0x0008:
+		DBG((TXT("Internal card controller error.\n")));
+		break;
+	case 0x0010:
+		DBG((TXT("Card internal ECC was applied, but failed to correct the data.\n")));
+		break;
+	case 0x0020:
+		DBG((TXT("Write protect violation.\n")));
+		break;
+	case 0x0040:
+		DBG((TXT("An invalid selection, sectors for erase.\n")));
+		break;
+	case 0x0080:
+		DBG((TXT("Out of Range, CSD_Overwrite.\n")));
+		break;
+	default:
+		if(value>0x00FF)
+			sd_Resp8bError(iface,(euint8) (value>>8));
+		else
+			DBG((TXT("Unknown error: 0x%x (see SanDisk docs p5-14).\n"),value));
+		break;
 	}
 	return(-1);
 }
@@ -228,14 +235,15 @@ esint8 sd_writeSector(hwInterface *iface,euint32 address, euint8* buf)
 	sd_Resp8b(iface); /* Card response */
 
 	if_spiSend(iface,0xfe); /* Start block */
-	for(i=0;i<512;i++)
+	for(i=0; i<512; i++)
 		if_spiSend(iface,buf[i]); /* Send data */
 	if_spiSend(iface,0xff); /* Checksum part 1 */
 	if_spiSend(iface,0xff); /* Checksum part 2 */
 
 	if_spiSend(iface,0xff);
 
-	while(if_spiSend(iface,0xff)!=0xff){
+	while(if_spiSend(iface,0xff)!=0xff)
+	{
 		t++;
 		/* Removed NOP */
 	}
@@ -277,12 +285,14 @@ esint8 sd_readSector(hwInterface *iface,euint32 address, euint8* buf, euint16 le
 		firstblock=sd_Resp8b(iface);
 	while(firstblock==0xff && fb_timeout--);
 
-	if(cardresp!=0x00 || firstblock!=0xfe){
+	if(cardresp!=0x00 || firstblock!=0xfe)
+	{
 		sd_Resp8bError(iface,firstblock);
 		return(-1);
 	}
 
-	for(i=0;i<512;i++){
+	for(i=0; i<512; i++)
+	{
 		c = if_spiSend(iface,0xff);
 		if(i<len)
 			buf[i] = c;
@@ -308,12 +318,15 @@ esint8 sd_getDriveSize(hwInterface *iface, euint32* drive_size )
 
 	sd_Command(iface, CMDREADCSD, 0, 0);
 
-	do {
+	do
+	{
 		cardresp = sd_Resp8b(iface);
-	} while ( cardresp != 0xFE );
+	}
+	while ( cardresp != 0xFE );
 
 	DBG((TXT("CSD:")));
-	for( i=0; i<16; i++) {
+	for( i=0; i<16; i++)
+	{
 		iob[i] = sd_Resp8b(iface);
 		DBG((TXT(" %02x"), iob[i]));
 	}
@@ -327,24 +340,24 @@ esint8 sd_getDriveSize(hwInterface *iface, euint32* drive_size )
 	c_size += (euint16)iob[7]<<2;
 	c_size += iob[8]>>6;
 
-DBG((TXT(" c_size %d"), c_size));
+	DBG((TXT(" c_size %d"), c_size));
 
 	by= iob[5] & 0x0F;
 	read_bl_len = 1;
 	read_bl_len <<= by;
 
-DBG((TXT(" read_bl_len %d"), read_bl_len));
+	DBG((TXT(" read_bl_len %d"), read_bl_len));
 
 	by=iob[9] & 0x03;
 	by <<= 1;
 	by += iob[10] >> 7;
 
-DBG((TXT(" by %d"), by));
+	DBG((TXT(" by %d"), by));
 
 	c_size_mult = 1;
 	c_size_mult <<= (2+by);
 
-DBG((TXT(" c_size_mult %d"), c_size_mult));
+	DBG((TXT(" c_size_mult %d"), c_size_mult));
 
 	*drive_size = (euint32)(c_size+1) * (euint32)c_size_mult * (euint32)read_bl_len;
 

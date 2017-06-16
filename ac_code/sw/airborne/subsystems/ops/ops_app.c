@@ -4,21 +4,21 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :             										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 
-/**** System include files ****/  
+/**** System include files ****/
 
 /*---Public include files---------------------------------------------*/
 #include "modules/system/types.h"
@@ -37,11 +37,11 @@
 
 
 /*---Private include files--------------------------------------------*/
-#include "ops_app.h"   
-#include "ops_app_if.h" 
+#include "ops_app.h"
+#include "ops_app_if.h"
 #include "ops_comm_if.h"
-#include "ops_msg_uart_def.h"   
-#include "ops_msg_if.h"   
+#include "ops_msg_uart_def.h"
+#include "ops_msg_if.h"
 
 
 #if PERIODIC_TELEMETRY
@@ -54,10 +54,10 @@ struct OPS_CONFIG_PARAM ops_param;
 
 /*---Global-----------------------------------------------------------*/
 void ops_task(void)
-{ 
-    #ifdef WDG_OPTION
+{
+#ifdef WDG_OPTION
 	mcu_set_task_wdg_flag(WDG_TASK_OPS);
-	#endif	/* WDG_OPTION */
+#endif	/* WDG_OPTION */
 	ops_comm_read_polling();
 	ops_comm_send_polling();
 
@@ -84,7 +84,7 @@ void ops_task(void)
 
 /***********************************************************************
 * FUNCTION    : ops_spray_msg_handler
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -112,7 +112,7 @@ void ops_spray_msg_handler(void)
 
 /***********************************************************************
 * FUNCTION    : ops_msg_start_selfclean
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -127,7 +127,7 @@ void ops_msg_start_selfclean(void)
 
 /***********************************************************************
 * FUNCTION    : ops_msg_stop_selfclean
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -151,7 +151,7 @@ void ops_msg_direct_stop_spray(void)
 }
 /***********************************************************************
 * FUNCTION    : ops_msg_start_spraying
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -165,7 +165,7 @@ void ops_start_spraying(void)
 
 /***********************************************************************
 * FUNCTION    : ops_msg_start_spraying
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -179,7 +179,7 @@ void ops_stop_spraying(void)
 
 /***********************************************************************
 * FUNCTION    : ops_init
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -202,7 +202,7 @@ void ops_init(void)
 
 /***********************************************************************
 * FUNCTION    : ops_heart_beat_handler
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -215,8 +215,8 @@ void ops_heart_beat_handler(uint8_t *param)
 	ops_info.res_cap = (*(param+1) << 8 | *param);
 	ops_info.work_state = *(param+2);
 	ops_info.spray_state = *(param+3);
-	
-	#ifdef OPS_BAT_OPTION
+
+#ifdef OPS_BAT_OPTION
 	ops_info.o_bat_mv = (*(param+5) << 8 | *(param+4));
 	ops_info.o_bat_ma = (*(param+7) << 8 | *(param+6));
 	ops_info.o_bat_cap = (*(param+9) << 8 | *(param+8));
@@ -229,9 +229,9 @@ void ops_heart_beat_handler(uint8_t *param)
 		ops_info.o_bat_cap = 1;
 	}
 	ops_info.o_bat_rep_percent = ops_info.o_bat_rep*100/ops_info.o_bat_cap;
-	#endif
+#endif
 	ops_info.con_flag = OPS_CONNECTED;
-   
+
 	if(ops_info.init_status == OPS_CONF_NOT_CONNECT)
 	{
 		ops_info.init_status = OPS_CONF_PARAM;
@@ -240,23 +240,23 @@ void ops_heart_beat_handler(uint8_t *param)
 
 	tm_create_timer(TIMER_OPS_HB_POLL, (3000 MSECONDS), TIMER_ONE_SHOT,0);
 
-	#if defined (PERIODIC_TELEMETRY) && defined (BBOX_OPTION)
-    xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-    DOWNLINK_SEND_OPS_INFO_BBOX(DefaultChannel, DefaultDevice, 
-		                         &ops_info.o_bat_mv,
-		                         &ops_info.o_bat_ma,
-		                         &ops_info.o_bat_cap,
-		                         &ops_info.o_bat_rep,
-		                         &ops_info.o_bat_tem,
-		                         &ops_info.sys_error,
-		                         &ops_info.mcu_info             );
-		                         
-	#endif
+#if defined (PERIODIC_TELEMETRY) && defined (BBOX_OPTION)
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_OPS_INFO_BBOX(DefaultChannel, DefaultDevice,
+															&ops_info.o_bat_mv,
+															&ops_info.o_bat_ma,
+															&ops_info.o_bat_cap,
+															&ops_info.o_bat_rep,
+															&ops_info.o_bat_tem,
+															&ops_info.sys_error,
+															&ops_info.mcu_info             );
+
+#endif
 }
 
 /***********************************************************************
 * FUNCTION    : ops_update_aircraft_vel
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -274,12 +274,12 @@ void ops_update_aircraft_vel(void)
 void ops_update_aircraft_area(void)
 {
 	ops_info.treated_area = (uint16_t) ((ops_param.spray_wide/100) * (ops_info.sum_sprayed_distance)); //m*m
-	ops_info.total_area = 0;		
+	ops_info.total_area = 0;
 }
 
 /***********************************************************************
 * FUNCTION    : ops_heart_beat_lose_handler
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -291,7 +291,7 @@ void ops_heart_beat_lose_handler(void)
 
 /***********************************************************************
 * FUNCTION    : ops_update_config_param
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -299,25 +299,25 @@ void ops_set_config_param(uint16_t param, uint8_t param_type)
 {
 	switch(param_type)
 	{
-		case  PARAM_FLOW_SPEED:
-			ops_param.flow_min = param;
-			break;
-		case  PARAM_FLOW_DENSITY:
-			ops_param.flow_m2 = param;
-			break;
-		case  PARAM_DROP_CAPCITY:
-			ops_param.drop_cm2 = param;
-			break;
-		case  PARAM_SPRAY_ATOM:
-			ops_param.atom = param;
-			break;
-		case  PARAM_SPRAY_CHANNEL:
-			ops_param.spray_chal = (uint8_t)(param&0xFF);
-			break;
-		case  PARAM_SPRAY_WIDE:
-			ops_param.spray_wide = param;
-		default:
-			break;
+	case  PARAM_FLOW_SPEED:
+		ops_param.flow_min = param;
+		break;
+	case  PARAM_FLOW_DENSITY:
+		ops_param.flow_m2 = param;
+		break;
+	case  PARAM_DROP_CAPCITY:
+		ops_param.drop_cm2 = param;
+		break;
+	case  PARAM_SPRAY_ATOM:
+		ops_param.atom = param;
+		break;
+	case  PARAM_SPRAY_CHANNEL:
+		ops_param.spray_chal = (uint8_t)(param&0xFF);
+		break;
+	case  PARAM_SPRAY_WIDE:
+		ops_param.spray_wide = param;
+	default:
+		break;
 	}
 }
 
@@ -329,7 +329,7 @@ void ops_update_config_param(void)
 
 /***********************************************************************
 * FUNCTION    : rc_update_ops_config_param
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -354,7 +354,7 @@ uint8_t get_spray_switch_state(void)
 
 /***********************************************************************
 * FUNCTION    : ops_software_version_handler
-* DESCRIPTION : 
+* DESCRIPTION :
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
@@ -362,10 +362,10 @@ void ops_software_version_handler(uint8_t *param, uint8_t len)
 {
 	if(len < MAX_OPS_SV_VERSION_LEN)
 	{
-	    for(uint8_t i=0; i<len; i++)
-	    {
+		for(uint8_t i=0; i<len; i++)
+		{
 			ops_info.version[i] = *(param+i);
-	    }
+		}
 		ops_info.sv_update = TRUE;
 		ops_info.sv_len = len;
 	}
@@ -377,97 +377,97 @@ void ops_request_update_response(uint8_t *param)
 	uint8_t data2=*(param+1);
 	switch (data1)
 	{
-		case OPS_UPDATE_REQ_RES_DATA:
+	case OPS_UPDATE_REQ_RES_DATA:
+	{
+		switch(data2)
 		{
-			switch(data2)
-			{
-				case OPS_STATE_OK:
-				{
-					uint8_t type = UPGRADE_TYPE_OPS;
-					uint8_t ug_state = UPGRADE_RES_OK;
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
-					break;
-				}
-				case OPS_STATE_FAIL://send again
-				{
-					uint8_t type = UPGRADE_TYPE_OPS;
-					uint8_t ug_state = UPGRADE_RES_FAIL;
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
-					break;
-				}
-			}
+		case OPS_STATE_OK:
+		{
+			uint8_t type = UPGRADE_TYPE_OPS;
+			uint8_t ug_state = UPGRADE_RES_OK;
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
 			break;
 		}
-		case OPS_UPDATE_ASK_READY_RES_DATA:
+		case OPS_STATE_FAIL://send again
 		{
-			switch (data2)
-			{
-				case OPS_STATE_OK:
-				{
-					uint8_t type = UPGRADE_TYPE_OPS;
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_UPGRADE_STATUS(SecondChannel, SecondDevice, &type);
-					break;
-				}
-				case OPS_STATE_FAIL:
-				{
-					/*uint8_t type = UPGRADE_TYPE_OPS;
-					uint8_t ug_state = UPGRADE_RES_FAIL;
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_UPGRADE_STATUS(SecondChannel, SecondDevice, &type, &ug_state);*/
-					break;
-				}
-			}
+			uint8_t type = UPGRADE_TYPE_OPS;
+			uint8_t ug_state = UPGRADE_RES_FAIL;
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_UPGRADE_RESPONSE(SecondChannel, SecondDevice, &type, &ug_state);
 			break;
 		}
-		case OPS_UPDATE_RES_DATA:
+		}
+		break;
+	}
+	case OPS_UPDATE_ASK_READY_RES_DATA:
+	{
+		switch (data2)
 		{
-			switch (data2)
-			{
-				case OPS_STATE_OK:
-				{
-					uint8_t type = UPGRADE_TYPE_OPS;
-					uint8_t ug_state = UPGRADE_RES_PASS;   //next frame
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_REQUESET_FIRMWARE(SecondChannel, SecondDevice, &type, &ug_state);
-					break;
-				}
-				case OPS_STATE_FAIL:
-				{
-					uint8_t type = UPGRADE_TYPE_OPS;
-					uint8_t ug_state = UPGRADE_RES_FAIL;    //current frame
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_REQUESET_FIRMWARE(SecondChannel, SecondDevice, &type, &ug_state);
-					break;
-				}
-			}
+		case OPS_STATE_OK:
+		{
+			uint8_t type = UPGRADE_TYPE_OPS;
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_UPGRADE_STATUS(SecondChannel, SecondDevice, &type);
 			break;
 		}
-		case OPS_UPDATE_OVER_RES_DATA:
+		case OPS_STATE_FAIL:
 		{
-			switch (data2)
-			{
-				case OPS_STATE_OK:
-				{
-					uint8_t type = UPGRADE_TYPE_OPS;
-					uint8_t ug_state = UPGRADE_RES_OK;
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_UPGRADE_RESULT(SecondChannel, SecondDevice, &type, &ug_state);
-					break;
-				}
-				case OPS_STATE_FAIL:
-				{
-					uint8_t type = UPGRADE_TYPE_OPS;
-					uint8_t ug_state = UPGRADE_RES_FAIL;
-					xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
-					DOWNLINK_SEND_UPGRADE_RESULT(SecondChannel, SecondDevice, &type, &ug_state);
-					break;
-				}
-			}
+			/*uint8_t type = UPGRADE_TYPE_OPS;
+			uint8_t ug_state = UPGRADE_RES_FAIL;
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_UPGRADE_STATUS(SecondChannel, SecondDevice, &type, &ug_state);*/
 			break;
 		}
+		}
+		break;
+	}
+	case OPS_UPDATE_RES_DATA:
+	{
+		switch (data2)
+		{
+		case OPS_STATE_OK:
+		{
+			uint8_t type = UPGRADE_TYPE_OPS;
+			uint8_t ug_state = UPGRADE_RES_PASS;   //next frame
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_REQUESET_FIRMWARE(SecondChannel, SecondDevice, &type, &ug_state);
+			break;
+		}
+		case OPS_STATE_FAIL:
+		{
+			uint8_t type = UPGRADE_TYPE_OPS;
+			uint8_t ug_state = UPGRADE_RES_FAIL;    //current frame
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_REQUESET_FIRMWARE(SecondChannel, SecondDevice, &type, &ug_state);
+			break;
+		}
+		}
+		break;
+	}
+	case OPS_UPDATE_OVER_RES_DATA:
+	{
+		switch (data2)
+		{
+		case OPS_STATE_OK:
+		{
+			uint8_t type = UPGRADE_TYPE_OPS;
+			uint8_t ug_state = UPGRADE_RES_OK;
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_UPGRADE_RESULT(SecondChannel, SecondDevice, &type, &ug_state);
+			break;
+		}
+		case OPS_STATE_FAIL:
+		{
+			uint8_t type = UPGRADE_TYPE_OPS;
+			uint8_t ug_state = UPGRADE_RES_FAIL;
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_UPGRADE_RESULT(SecondChannel, SecondDevice, &type, &ug_state);
+			break;
+		}
+		}
+		break;
+	}
 	}
 }
 #endif

@@ -4,26 +4,26 @@
 *   Department : R&D SW      									   *
 *   AUTHOR	   :            										   *
 ************************************************************************
-* Object        : 
-* Module        : 
-* Instance      : 
-* Description   : 
+* Object        :
+* Module        :
+* Instance      :
+* Description   :
 *-----------------------------------------------------------------------
-* Version: 
-* Date: 
-* Author: 
+* Version:
+* Date:
+* Author:
 ***********************************************************************/
 /*-History--------------------------------------------------------------
 * Version       Date    Name    Changes and comments
-* 
+*
 *=====================================================================*/
 #ifndef _TIMER_IF_H_
-#define _TIMER_IF_H_ 
-#include "types.h" 
+#define _TIMER_IF_H_
+#include "types.h"
 /**** Definition of constants ****/
 
 
-/**** Definition of types ****/ 
+/**** Definition of types ****/
 typedef enum
 {
 	TIMER_TASK_OPS,
@@ -34,32 +34,32 @@ typedef enum
 	TIMER_TASK_IMU,
 	TIMER_TASK_EVENT,
 	TIMER_TASK_ENG,
-	TIMER_TASK_MAX    
-}TIMER_TASK_IDS;
+	TIMER_TASK_MAX
+} TIMER_TASK_IDS;
 
 typedef enum
 {
-    TIMER_PERIODIC,    
-    TIMER_ONE_SHOT,
-    TIMER_TWO_SHOT,
-    TIMER_THREE_SHOT    
-}TIMER_TYPES;
+	TIMER_PERIODIC,
+	TIMER_ONE_SHOT,
+	TIMER_TWO_SHOT,
+	TIMER_THREE_SHOT
+} TIMER_TYPES;
 
 typedef struct
 {
-    U16 counter;
-    U16 backupCounter;
-    U16 param;
+	U16 counter;
+	U16 backupCounter;
+	U16 param;
 	U8 type;
 	U8 rep_cnt;
-}TIMER_CLASS;
+} TIMER_CLASS;
 
 
 typedef struct
 {
-    TIMER_FUNC action_func;
-    U8 task_id; 
-}TIMER_DESC_TYPE;
+	TIMER_FUNC action_func;
+	U8 task_id;
+} TIMER_DESC_TYPE;
 
 /**** Definition of macros ****/
 #define TIMER_TIMEOUT               0x0000
