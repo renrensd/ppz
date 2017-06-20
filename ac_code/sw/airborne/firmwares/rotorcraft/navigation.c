@@ -65,6 +65,7 @@ FLIGHT_DIRECT flight_direct;
 #define FAILSAFE_MODE_DISTANCE (1.5*MAX_DIST_FROM_HOME)
 #endif
 
+float arrival_range = 0.8;
 const float max_dist_from_home = MAX_DIST_FROM_HOME;
 const float max_dist2_from_home = MAX_DIST_FROM_HOME * MAX_DIST_FROM_HOME;
 float failsafe_mode_dist2 = FAILSAFE_MODE_DISTANCE * FAILSAFE_MODE_DISTANCE;
@@ -582,7 +583,7 @@ bool_t nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_
 	dist_to_point = int32_vect2_norm(&diff);
 
 	/* return TRUE if we have arrived */
-	if (dist_to_point < BFP_OF_REAL(ARRIVED_AT_WAYPOINT, INT32_POS_FRAC / 2))
+	if (dist_to_point < BFP_OF_REAL(arrival_range, INT32_POS_FRAC / 2))
 	{
 		arrive_flag = TRUE;
 	}

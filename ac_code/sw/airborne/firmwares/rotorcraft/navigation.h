@@ -81,6 +81,7 @@ extern float nav_climb_vspeed, nav_descend_vspeed;
 
 extern int32_t nav_leg_progress;
 extern int32_t nav_leg_length;
+extern float arrival_range;
 
 extern bool_t nav_survey_active;
 
