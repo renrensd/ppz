@@ -84,12 +84,12 @@
   </modules>
 
   <servos driver="Pwm">
-    <servo name="FRONT_LEFT" no="0" min="1000" neutral="1100" max="2000"/>
-    <servo name="FRONT_RIGHT" no="1" min="1000" neutral="1100" max="2000"/>
-    <servo name="RIGHT" no="2" min="1000" neutral="1100" max="2000"/>
-    <servo name="BACK_RIGHT" no="3" min="1000" neutral="1100" max="2000"/>
-    <servo name="BACK_LEFT" no="4" min="1000" neutral="1100" max="2000"/>
-    <servo name="LEFT" no="5" min="1000" neutral="1100" max="2000"/>
+    <servo name="FRONT_LEFT" no="0" min="1000" neutral="1200" max="2000"/>
+    <servo name="FRONT_RIGHT" no="1" min="1000" neutral="1200" max="2000"/>
+    <servo name="RIGHT" no="2" min="1000" neutral="1200" max="2000"/>
+    <servo name="BACK_RIGHT" no="3" min="1000" neutral="1200" max="2000"/>
+    <servo name="BACK_LEFT" no="4" min="1000" neutral="1200" max="2000"/>
+    <servo name="LEFT" no="5" min="1000" neutral="1200" max="2000"/>
   </servos>
   
   <commands>
