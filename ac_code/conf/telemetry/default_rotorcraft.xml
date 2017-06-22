@@ -3,16 +3,28 @@
 <telemetry>
   <process name="Main">
 
+		<mode name="traj_test">
+      <message name="DL_VALUE"               period="0.5"/>
+      <message name="ALIVE"                  period="2.1"/>
+      <message name="GPS_INT"                period="1.0"/>
+      <message name="ROTORCRAFT_FP"          period="1.0"/>
+      <message name="ROTORCRAFT_STATUS"      period="2.0"/>
+      <message name="DEBUG_GPS"  	     			 period="0.2"/>
+      <message name="ROTORCRAFT_TUNE_HOVER"  period="0.05"/>
+		  <message name="WP_MOVED"               period="0.05"/>
+      <message name="ROTORCRAFT_NAV_STATUS"  period="2.0"/>
+      <message name="INS"                    period="0.2"/>
+      <message name="INS_REF"                period="5.0"/>
+    </mode>
+
     <mode name="obstacle_avoidance" >
-      <message name="GPS_INT"                period="2.0"/>
-      <message name="DEBUG_GPS"  	     period="1.0"/>
+      <message name="DEBUG_GPS"  	           period="1.0"/>
       <message name="INS"                    period="2.0"/>
-      <message name="INS_REF"                period="2.0"/>
+      <message name="INS_REF"                period="1.0"/>
       <message name="ROTORCRAFT_NAV_STATUS"  period="2.0"/>
       <message name="ROTORCRAFT_STATUS"      period="2.0"/>
       <message name="ROTORCRAFT_FP"          period="1.0"/>
       <message name="ALIVE"                  period="5"/>
-      <message name="SUPERBITRF"             period="5"/>
       <message name="WP_MOVED"               period="0.05"/>
       <message name="MONI_MSG"               period="0.5"/>
     </mode>
@@ -47,19 +59,6 @@
       <message name="IMU_ACCEL_SCALED"       period=".1"/>
       <!--message name="INS_Z"               period="1.0"/-->
       <message name="MCU_FAULT"              period="1.0"/>
-    </mode>
-
-    <mode name="traj_test">
-      <message name="DL_VALUE"               period="0.5"/>
-      <message name="ALIVE"                  period="2.1"/>
-      <message name="GPS_INT"                period="1.0"/>
-      <message name="ROTORCRAFT_FP"          period="1.0"/>
-      <message name="ROTORCRAFT_STATUS"      period="2.0"/>
-      <message name="DEBUG_GPS"  	     			 period="0.2"/>
-      <message name="ROTORCRAFT_TUNE_HOVER"  period="0.05"/>
-      <message name="ROTORCRAFT_NAV_STATUS"  period="2.0"/>
-      <message name="INS"                    period="0.2"/>
-      <message name="INS_REF"                period="5.0"/>
     </mode>
 
     <!--mode name="gps2">
