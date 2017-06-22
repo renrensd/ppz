@@ -209,6 +209,9 @@ extern void guidance_h_SetEmBrakeAcc(float acc);
 extern void guidance_h_SetNedAccFc(float Fc);
 extern void guidance_h_SetNedVelFc(float Fc);
 
+extern void guidance_h_SetPosAlongKp(float Kp);
+extern void guidance_h_SetPosAlongKd(float Kd);
+
 extern void guidance_h_rc_pos_sp_need_reset(void);
 extern void guidance_h_set_rc_pos_sp_i(float x, float y);
 

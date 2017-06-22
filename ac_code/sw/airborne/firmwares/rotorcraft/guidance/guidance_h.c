@@ -156,6 +156,19 @@ void guidance_h_SetNedVelFc(float Fc)
 															1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter));
 }
 
+void guidance_h_SetPosAlongKp(float Kp)
+{
+	traj.pos_along_pid.Kp = Kp;
+	traj.pos_along_Kp = Kp;
+}
+
+void guidance_h_SetPosAlongKd(float Kd)
+{
+	traj.pos_along_pid.Kd = Kd;
+	traj.pos_along_Kd = Kd;
+}
+
+
 void guidance_h_set_vrc_vel_sp_body(float x, float y)
 {
 	Bound(x, -3, +3);
@@ -612,21 +625,21 @@ static void guidance_h_trajectory_tracking_ini(void)
 	pid_set_out_range(&traj.pos_cross_pid, -5, +5);
 	pid_set_Ui_range(&traj.pos_cross_pid, -0.5, +0.5);
 
-	traj.vel_along_pid.Kp = 0.15f;
-	traj.vel_along_pid.Ki = 0.02f;
-	traj.vel_along_pid.Kd = 0.05f;
+	traj.vel_along_pid.Kp = 0.2f;
+	traj.vel_along_pid.Ki = 0.01f;
+	traj.vel_along_pid.Kd = 0.06f;
 
-	traj.vel_cross_pid.Kp = 0.15f;
+	traj.vel_cross_pid.Kp = 0.2f;
 	traj.vel_cross_pid.Ki = 0.04f;
-	traj.vel_cross_pid.Kd = 0.05f;
+	traj.vel_cross_pid.Kd = 0.06f;
 
-	traj.pos_along_pid.Kp = 0.4f;
+	traj.pos_along_pid.Kp = 1.2f;
 	traj.pos_along_pid.Ki = 0.0f;
-	traj.pos_along_pid.Kd = 0.2f;
+	traj.pos_along_pid.Kd = 0.3f;
 
-	traj.pos_cross_pid.Kp = 0.6f;
+	traj.pos_cross_pid.Kp = 1.2f;
 	traj.pos_cross_pid.Ki = 0.0f;
-	traj.pos_cross_pid.Kd = 0.25f;
+	traj.pos_cross_pid.Kd = 0.3f;
 
 	traj.pos_along_Kp = traj.pos_along_pid.Kp;
 	traj.pos_along_Kd = traj.pos_along_pid.Kd;

@@ -44,9 +44,9 @@
    		<dl_setting var="traj.vel_along_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Kp"/>
    		<dl_setting var="traj.vel_along_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Ki"/>
    		<dl_setting var="traj.vel_along_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Kd"/>
-   		<dl_setting var="traj.pos_along_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Kp"/>
+   		<dl_setting var="traj.pos_along_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Kp" handler="SetPosAlongKp"/>
    		<dl_setting var="traj.pos_along_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Ki"/>
-   		<dl_setting var="traj.pos_along_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Kd"/>  		
+   		<dl_setting var="traj.pos_along_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Kd" handler="SetPosAlongKd"/>  		
    		<dl_setting var="traj.vel_cross_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_cross_Kp"/>
    		<dl_setting var="traj.vel_cross_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_cross_Ki"/>
    		<dl_setting var="traj.vel_cross_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_cross_Kd"/>
