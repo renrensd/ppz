@@ -614,19 +614,19 @@ static void guidance_h_trajectory_tracking_ini(void)
 
 	traj.vel_along_pid.Kp = 0.15f;
 	traj.vel_along_pid.Ki = 0.02f;
-	traj.vel_along_pid.Kd = 0.05f;
+	traj.vel_along_pid.Kd = 0.02f;
 
 	traj.vel_cross_pid.Kp = 0.15f;
 	traj.vel_cross_pid.Ki = 0.04f;
-	traj.vel_cross_pid.Kd = 0.05f;
+	traj.vel_cross_pid.Kd = 0.02f;
 
-	traj.pos_along_pid.Kp = 0.4f;
+	traj.pos_along_pid.Kp = 0.9f;
 	traj.pos_along_pid.Ki = 0.0f;
-	traj.pos_along_pid.Kd = 0.2f;
+	traj.pos_along_pid.Kd = 0.5f;
 
-	traj.pos_cross_pid.Kp = 0.6f;
+	traj.pos_cross_pid.Kp = 0.9f;
 	traj.pos_cross_pid.Ki = 0.0f;
-	traj.pos_cross_pid.Kd = 0.25f;
+	traj.pos_cross_pid.Kd = 0.5f;
 
 	traj.pos_along_Kp = traj.pos_along_pid.Kp;
 	traj.pos_along_Kd = traj.pos_along_pid.Kd;
