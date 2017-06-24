@@ -52,8 +52,7 @@ bool_t flight_prepare(bool_t reset)
 		step_p++;
 		break;
 	case 4:
-		NavAttitude(RadOfDeg(0))
-		;
+		NavAttitude(RadOfDeg(0), RadOfDeg(0));
 		NavVerticalThrottleMode(9600 * (0))
 		;
 		step_p = 0;      //reset step_p,make it can rerun
@@ -77,8 +76,7 @@ bool_t take_off_motion(bool_t reset)
 	{
 	case 0:  //reset output cmd
 		/*horizontal set attitude 0 */
-		NavAttitude(RadOfDeg(0))
-		;
+		NavAttitude(RadOfDeg(0), RadOfDeg(0));
 		/*vertical set throttle 0 */
 		NavVerticalThrottleMode(9600 * (0))
 		;
@@ -168,7 +166,7 @@ bool_t land_motion(bool_t reset)
 			thrust_counter++;
 			if (thrust_counter > 32)   //32hz periodic,8:0.33s
 			{
-				NavAttitude(RadOfDeg(0));
+				NavAttitude(RadOfDeg(0), RadOfDeg(0));
 				NavVerticalThrottleMode(9600 * (0));
 				step_l++;
 			}
@@ -204,8 +202,7 @@ bool_t lock_motion(bool_t reset)
 	switch (step_o)
 	{
 	case 0:
-		NavAttitude(RadOfDeg(0))
-		;
+		NavAttitude(RadOfDeg(0), RadOfDeg(0));
 		NavVerticalThrottleMode(9600 * (0))
 		;
 		step_o++;
