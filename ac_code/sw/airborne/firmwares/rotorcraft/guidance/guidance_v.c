@@ -123,11 +123,11 @@ static void guidance_v_controller_ini(void)
 	pid_set_Ui_range(&guid_v.pos_z_pid, -1, 1);
 
 	guid_v.acc_z_pid.Kp = 0.01f;
-	guid_v.acc_z_pid.Ki = 0.3f;
-	guid_v.speed_z_pid.Kp = 3.0f;
-	guid_v.speed_z_pid.Kd = 0.05f;
-	guid_v.pos_z_pid.Kp = 1.5f;
-	guid_v.pos_z_pid.Kd = 0.0f;
+	guid_v.acc_z_pid.Ki = 0.4f;
+	guid_v.speed_z_pid.Kp = 2.0f;
+	guid_v.speed_z_pid.Kd = 0.01f;
+	guid_v.pos_z_pid.Kp = 1.0f;
+	guid_v.pos_z_pid.Kd = 0.3f;
 
 	guid_v.acc_filter_fc = 1;
 	init_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc),
