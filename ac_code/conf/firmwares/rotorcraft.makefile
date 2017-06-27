@@ -248,7 +248,7 @@ endif
 # telemetry
 
 # add debug port datalink for manufacture
-# include $(CFG_ROTORCRAFT)/telemetry_manu_debug.makefile 
+ include $(CFG_ROTORCRAFT)/telemetry_manu_debug.makefile 
 
 
  include $(CFG_ROTORCRAFT)/telemetry_bbox.makefile

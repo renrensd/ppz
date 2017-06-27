@@ -119,6 +119,11 @@ enum Ops_Check
 	OPS_ERROR
 };
 
+enum XBEE_CHECK
+{
+	XBEE_RUNNING,
+	XBEE_ERROR
+};
 enum Bbox_Check
 {
 	BBOX_RUNNING,
@@ -282,7 +287,7 @@ static inline void monitoring_msg_handle(void)
 		monitoring_led_update();
 
 #if USE_MANU_DEBUG
-		DOWNLINK_SEND_MONITORING(MdebugChannel, MdebugDevice, &ground_check_step, &monitoring_fail_code);
+		//DOWNLINK_SEND_MONITORING(MdebugChannel, MdebugDevice, &ground_check_step, &monitoring_fail_code);
 #endif
 #if PERIODIC_TELEMETRY
 		xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
@@ -326,9 +331,12 @@ void monitoring_periodic(void)
 	if (run_monitoring_flag)
 	{
 		if (monitoring_state == GROUND_MONITORING)
-		{
-			//want to return ground_monitoring(),need reset sensor ground check flag
+		{  //want to return ground_monitoring(),need reset sensor ground check flag
+			#ifndef USE_MANU_DEBUG
 			ground_monitoring();
+			#else 
+			manufacure_monitoring();
+			#endif
 		}
 		else
 		{
@@ -370,8 +378,9 @@ void ground_monitoring_init(void)
 void ground_monitoring(void)
 {
 	static uint32_t time_record;
+	static uint8_t run_times=0;
 	uint8_t check_state;
-
+	run_times++;
 	if (get_sys_time_msec() < 5000)
 		return;
 
@@ -456,6 +465,52 @@ void ground_monitoring(void)
 			monitoring_fail_code = OPS_NO_LINK;
 		}
 		break;
+	#ifdef USE_MANU_DEBUG
+	case XBEE_CHECK:
+		{
+			if(run_times>10)
+			{
+				xbee_enter_ATmode(); // 1s frequency
+				run_times = 0;
+			}
+			if(xbee_normal_check())
+			{
+				ground_check_step++;
+			}
+			else 
+			{
+				monitoring_fail_code = XBEE_RUNNING;
+			}
+			if ((get_sys_time_msec() - time_record) > 10000)
+			{
+				monitoring_fail_code = XBEE_ERROR;
+			}
+			break;
+		}
+	
+	#ifdef BBOX_OPTION
+		case BBOX_CHECK:
+			ground_check_step++;
+	/*	if(bbox_info.con_flag)
+		{
+			
+			if(bbox_info.status == BBOX_IS_ERROR)
+			{
+				monitoring_fail_code = BBOX_ERROR;
+			}
+			else if(bbox_info.status == BBOX_IS_NORMAL)
+			{
+				monitoring_fail_code = BBOX_PASS;
+				ground_check_step++;
+			}
+		}
+		else
+		{
+			monitoring_fail_code = BBOX_NO_LINK;
+		}*/
+		break;
+#endif /*BBOX_OPTION*/
+#endif /*USE_MANU_DEBUG*/
 	case UBLOX_CHECK:
 #ifdef USE_GPS2_UBLOX
 		if (ins_int_is_ublox_pos_valid())
@@ -537,6 +592,7 @@ void ground_monitoring(void)
 
 		}
 		break;
+#ifndef USE_MANU_DEBUG
 #ifdef BBOX_OPTION
 	case BBOX_CHECK:
 		if(bbox_info.con_flag)
@@ -555,6 +611,7 @@ void ground_monitoring(void)
 		ground_check_pass = TRUE;
 		break;
 #endif /*BBOX_OPTION*/
+#endif /*USE_MANU_DEBUG*/
 	default:
 		break;
 	}
@@ -826,5 +883,280 @@ void set_mdebug_att_flag(uint8_t value)
 	mdebug_att_flag = value;
 }
 
+
+#ifdef USE_MANU_DEBUG
+void g_moni_next_step(void)
+{
+	DOWNLINK_SEND_MONITORING(MdebugChannel, MdebugDevice, &ground_check_step, &monitoring_fail_code);
+	ground_check_step ++;
+	monitoring_fail_code = 0;
+}
+/***********************************************************************
+ * FUNCTION    : ground_monitoring
+ * DESCRIPTION : poweron self test
+ * INPUTS      : none
+ * RETURN      : none
+ ***********************************************************************/
+void manufacure_monitoring(void)
+{
+	static uint32_t time_record;
+	static uint8_t run_times=0;
+	uint8_t check_state;
+	run_times++;
+	if (get_sys_time_msec() < 5000)
+		return;
+
+	switch (ground_check_step)
+	{
+	case BATTERY_CHECK:
+		if (0 == battery_ground_check())   //battery manger module no run may go pass
+		{
+			ground_check_step++;  //next step
+			time_record = get_sys_time_msec();
+		}
+		else
+		{
+			monitoring_fail_code = BATTERY_FAIL_GET_INFO;
+		}
+		break;
+
+	case BOARD_CHECK:
+		if (!board_ground_check())
+		{
+			g_moni_next_step();     //direct next step
+			time_record = get_sys_time_msec();
+		}
+		else
+		{
+			monitoring_fail_code = BOARD_FRAM_ERROR;
+			g_moni_next_step();
+		}
+		break;
+
+	case IMU_CHECK:
+		check_state = imu_ground_check();
+
+		if (check_state == FAILED)
+		{
+			monitoring_fail_code = imu_ground_check_code();
+		}
+		else if (check_state == PASS_C)
+		{
+			
+		}
+
+		if ((get_sys_time_msec() - time_record) > 20000)
+		{
+			monitoring_fail_code = imu_ground_check_code();
+		}
+		if(check_state != 0)
+		{
+			g_moni_next_step();
+			time_record = get_sys_time_msec();
+		}
+		break;
+
+	case HEIGHT_CHECK:
+		check_state = height_ground_check();
+
+		if (check_state == FAILED)
+		{
+			monitoring_fail_code = height_ground_check_code();
+		}
+		else if (check_state == PASS_C)
+		{
+			
+		}
+		if ((get_sys_time_msec() - time_record) > 20000)
+		{
+			monitoring_fail_code = BARO_UPDATE_ERROR;
+			g_moni_next_step();
+		}
+		if(check_state != 0)
+		{
+			DOWNLINK_SEND_MONITORING(MdebugChannel, MdebugDevice, &ground_check_step, &monitoring_fail_code);
+			ground_check_step++;  //next step
+			time_record = get_sys_time_msec();
+		}
+		break;
+
+	case OPS_CHECK:
+		if (ops_ground_check())
+		{
+			g_moni_next_step();
+			time_record = get_sys_time_msec();
+		}
+		else
+		{
+			
+			monitoring_fail_code = OPS_NO_LINK;
+			g_moni_next_step();
+			time_record = get_sys_time_msec();
+		}
+		break;
+	#ifdef USE_MANU_DEBUG
+	case XBEE_CHECK:
+		if(run_times>10)
+		{
+			xbee_enter_ATmode(); // 1s frequency
+			run_times = 0;
+		}
+		if(xbee_normal_check())
+		{
+			g_moni_next_step();
+		}
+		else 
+		{
+			monitoring_fail_code = XBEE_RUNNING;
+		}
+		if ((get_sys_time_msec() - time_record) > 10000)
+		{
+			monitoring_fail_code = XBEE_ERROR;
+			g_moni_next_step();
+		}
+		break;
+	#ifdef BBOX_OPTION
+		case BBOX_CHECK:
+		if(bbox_info.con_flag)
+		{
+			if(bbox_info.status == BBOX_IS_ERROR)
+			{
+				monitoring_fail_code = BBOX_ERROR;
+			}
+			else if(bbox_info.status == BBOX_IS_NORMAL)
+			{
+				monitoring_fail_code = BBOX_PASS;
+			}
+		}
+		else
+		{
+			monitoring_fail_code = BBOX_NO_LINK;
+		}
+		g_moni_next_step();
+		break;
+#endif /*BBOX_OPTION*/
+#endif /*USE_MANU_DEBUG*/
+	case UBLOX_CHECK:
+#ifdef USE_GPS2_UBLOX
+		if( gps2.p_stable)
+#else
+		if (1)
+#endif
+		{
+			monitoring_fail_code = PASS;
+			g_moni_next_step();  //next step
+		}
+		else
+		{
+			monitoring_fail_code = GPS_WAITING_FIX;
+			g_moni_next_step();  //next step
+		}
+
+		if ((!gps2.alive) && ((get_sys_time_msec() - time_record) > 5000))
+		{
+			monitoring_fail_code = GPS_HW_ERROR;  //no gps msg received
+			g_moni_next_step();  //next step
+		}
+		break;
+	case RTK_CHECK:
+		run_times++;
+		if ( GpsFixValid() && gps.p_stable
+#ifdef USE_GPS_HEADING
+				&& gps.h_stable
+				&& (gps.num_sv>15)   //default use zhonghaida RTK
+#endif
+#ifdef USE_GPS2_UBLOX
+				&& gps2.p_stable
+#endif
+				)
+		{
+			monitoring_fail_code = PASS;
+			ground_check_step++;  //next step
+		}
+		else if (gps_nmea.pos_type < 16)
+		{
+			monitoring_fail_code = GPS_WAITING_FIX;
+		}
+		else if (gps_nmea.pos_type == 16)
+		{
+			monitoring_fail_code = GPS_SINGLE_STATUS;
+		}
+		else if (gps_nmea.pos_type < 49)
+		{
+			monitoring_fail_code = GPS_FLOAT_STATUS;
+		}
+		else
+		{
+			monitoring_fail_code = GPS_WAITING_HEADING;
+		}
+
+		if ((!gps.alive) && ((get_sys_time_msec() - time_record) > 40000))
+		{
+			monitoring_fail_code = GPS_HW_ERROR;  //no gps msg received
+		}
+		if(run_times > 10)
+		{
+			DOWNLINK_SEND_MONITORING(MdebugChannel, MdebugDevice, &ground_check_step, &monitoring_fail_code);
+			run_times = 0;
+		}
+		
+		break;
+	case CALIBRATION_CHECK:
+		time_record = get_sys_time_msec();
+		ground_check_step++;  //next step
+		break;
+
+	case AUTOPILOT_CHECK:
+		if (autopilot_ground_check())
+		{
+			ground_check_step++;  //next step
+		}
+		else
+		{
+			if ((get_sys_time_msec() - time_record) > 10000)
+			{
+				monitoring_fail_code = 1; //fail
+			}
+		}
+		break;
+
+	case RC_CONNECT:
+		if (!rc_lost || !gcs_lost)
+		{
+			//ground_check_step = 0;        //reset step
+			ground_check_step++;
+
+		}
+		break;
+	default:
+		break;
+	}
+
+	if ( PASS != monitoring_fail_code)
+	{
+		bool_t fail = FALSE;
+
+		if ((ground_check_step != UBLOX_CHECK) && (ground_check_step != RTK_CHECK) && (ground_check_step != BBOX_CHECK))
+		{
+			fail = TRUE;
+		}
+		if ((ground_check_step == UBLOX_CHECK) && (monitoring_fail_code == GPS_HW_ERROR))
+		{
+			fail = TRUE;
+		}
+		if ((ground_check_step == RTK_CHECK) && (monitoring_fail_code == GPS_HW_ERROR))
+		{
+			fail = TRUE;
+		}
+
+		/*if (fail)
+		{
+			run_monitoring_flag = FALSE;    //ground check fail,stop running monitoring
+			monitoring_state = FLIGHT_MONITORING;
+			ground_check_pass = FALSE;
+		}*/
+	}
+}
+#endif
 /**************** END OF FILE *****************************************/
 

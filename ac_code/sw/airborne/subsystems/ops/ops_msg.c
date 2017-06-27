@@ -324,12 +324,14 @@ void ops_msg_device_manage_handler(OPS_UART_FRAME *ops_msg)
 		}
 		break;
 #ifdef UPGRADE_OPTION
+#if PERIODIC_TELEMETRY
 	case OPS_UPGRADE_ID:
 	{
 		ops_request_update_response(ops_msg->param + 1);
 	}
 	break;
-#endif
+#endif/*PERIODIC_TELEMETRY*/
+#endif/*UPGRADE_OPTION*/
 	default:
 		break;
 

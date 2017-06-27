@@ -41,8 +41,8 @@ struct AccCali
 	float acc_6point[6][3];
 	uint32_t acc_cali_tick;
 	uint32_t check_body_static_tick;
-	//float acc_NEUTRAL[3];
-	//float acc_SENS[3];
+	float acc_NEUTRAL[3];
+	float acc_SENS[3];
 };
 
 extern struct AccCali acc_cali;

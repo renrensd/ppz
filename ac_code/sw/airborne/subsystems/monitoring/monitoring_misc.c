@@ -614,6 +614,44 @@ static bool_t thrust_command_monitor(void)
 		return FALSE;
 	}
 }
+void xbee_enter_ATmode(void)
+{
+	uint8_t enter_at_mode[3]={"+++"};
+	uint8_t i=0;
+	for(i=0;i<3;i++)
+	{
+		uart_put_byte(&uart2,enter_at_mode[i]);
+	}
+}
+uint8_t  xbee_normal_check(void)
+{
+	uint8_t at_response=0;
+	static uint8_t response_cnt=0;
+	while(uart_char_available(&uart2))
+	{
+		at_response	= uart2.device.get_byte(uart2.device.periph);
+		if(response_cnt>0)
+		{
+			if(at_response == 0x4b)
+			{
+				response_cnt++;  //K
+			}
+			else response_cnt = 0;
+		}
+		if(at_response == 0x4f) 
+		{
+			response_cnt++;    //O
+		}
+		
+		if(response_cnt >= 2)
+		{
+			response_cnt = 0;
+			return 1; //xbee normal
+		}
+	}
+	return 0; //ing
+	
+}
 /**************** END OF FILE *****************************************/
 
 

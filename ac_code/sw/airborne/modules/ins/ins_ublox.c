@@ -14,9 +14,9 @@ struct _s_ins_ublox ins_ublox;
 //abi_event ublox_ev;
 //abi_event accel_ev;
 
-#if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
+#if PERIODIC_TELEMETRY
 static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);

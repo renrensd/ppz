@@ -246,7 +246,7 @@ void ops_heart_beat_handler(uint8_t *param)
 
 	tm_create_timer(TIMER_OPS_HB_POLL, (3000 MSECONDS), TIMER_ONE_SHOT,0);
 
-#if defined (PERIODIC_TELEMETRY) && defined (BBOX_OPTION)
+#if(PERIODIC_TELEMETRY) && defined (BBOX_OPTION)
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	DOWNLINK_SEND_OPS_INFO_BBOX(DefaultChannel, DefaultDevice,
 															&ops_info.o_bat_mv,
@@ -377,6 +377,7 @@ void ops_software_version_handler(uint8_t *param, uint8_t len)
 	}
 }
 #ifdef UPGRADE_OPTION
+#if PERIODIC_TELEMETRY
 void ops_request_update_response(uint8_t *param)
 {
 	uint8_t data1= *(param);
@@ -476,7 +477,7 @@ void ops_request_update_response(uint8_t *param)
 	}
 	}
 }
-#endif
-
+#endif  /* PERIODIC_TELEMETRY */
+#endif /* UPGRADE_OPTION */
 /**************** END OF FILE *****************************************/
 

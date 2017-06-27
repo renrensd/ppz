@@ -83,7 +83,23 @@ struct except_mission
 	uint8_t alert_grade;  //0--->3:none  low  middle  high
 	//int8_t error_code;
 };
-
+#ifdef USE_MANU_DEBUG
+enum Ground_Check_Step
+{
+	BATTERY_CHECK = 0,
+	BOARD_CHECK,
+	IMU_CHECK,
+	HEIGHT_CHECK,
+	OPS_CHECK,
+	XBEE_CHECK,
+	BBOX_CHECK,
+	UBLOX_CHECK,
+	RTK_CHECK,
+	CALIBRATION_CHECK,
+	AUTOPILOT_CHECK,
+	RC_CONNECT
+};
+#else
 enum Ground_Check_Step
 {
 	BATTERY_CHECK = 0,
@@ -98,6 +114,8 @@ enum Ground_Check_Step
 	RC_CONNECT,
 	BBOX_CHECK
 };
+#endif/*USE_MANU_DEBUG*/
+
 extern enum Ground_Check_Step ground_check_step;  //use to sign step in ground check;
 extern uint16_t monitoring_fail_code;
 
@@ -138,6 +156,7 @@ extern uint8_t data_fix_check(int32_t data, int32_t last_data, uint8_t *counter,
 extern void set_except_mission(uint8_t em_nb,bool_t em_active,bool_t em_finished,bool_t em_hover,uint8_t em_keep_time,bool_t em_home,bool_t em_land,uint8_t alert_grade);
 extern void ground_monitoring_init(void);
 extern void flight_monitoring_init(void);
+extern void manufacure_monitoring(void);
 extern void ground_monitoring(void);
 extern void flight_monitoring(void);
 extern int8_t monitoring_reset_emer(void);

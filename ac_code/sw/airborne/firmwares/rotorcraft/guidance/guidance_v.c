@@ -56,8 +56,9 @@ static void run_hover_loop(bool_t in_flight);
 static void guidance_v_controller_ini(void);
 static void state_update_loop(void);
 
-#if PERIODIC_TELEMETRY
+
 #include "subsystems/datalink/telemetry.h"
+#if PERIODIC_TELEMETRY
 
 //extern uint8_t vertical_mode;
 static void send_vert_loop(struct transport_tx *trans, struct link_device *dev)

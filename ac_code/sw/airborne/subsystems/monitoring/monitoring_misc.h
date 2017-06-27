@@ -51,8 +51,8 @@ extern void lift_flight_check(void);
 extern void task_running_check(void);
 extern void mode_convert_check(void);
 extern uint8_t autopilot_ground_check(void);
-
-
+extern void xbee_enter_ATmode(void);
+extern uint8_t  xbee_normal_check(void);
 #endif /*_MONITORING_MISC_H_ */
 
 /****************************** END OF FILE ***************************/

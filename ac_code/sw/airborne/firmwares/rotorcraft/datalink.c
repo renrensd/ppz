@@ -655,7 +655,7 @@ void dl_parse_msg(void)
 #endif
 
 	//process ubuntu GCS uplink message
-#if PERIODIC_TELEMETRY
+//#if PERIODIC_TELEMETRY
 	if( msg_type == XBEE_TYPE_DEFAULT )   //process ubuntu GCS
 	{
 		switch (msg_id)
@@ -874,7 +874,7 @@ void dl_parse_msg(void)
 			break;
 		}
 	}
-#endif
+//#endif
 	/* Parse modules datalink */
 	//modules_parse_datalink(msg_id); //TODOM:
 }
