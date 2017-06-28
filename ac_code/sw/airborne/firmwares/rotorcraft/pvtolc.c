@@ -68,6 +68,7 @@ bool_t flight_prepare(bool_t reset)
 bool_t take_off_motion(bool_t reset)
 {
 	static uint8_t step_t = 0;
+	static uint32_t tick = 0;
 	if (reset)
 	{
 		step_t = 0;
@@ -83,13 +84,20 @@ bool_t take_off_motion(bool_t reset)
 		NavVerticalThrottleMode(9600 * (0))
 		;
 		step_t++;
+		tick = 0;
 		break;
 	case 1:
 		if ((NavResurrect()))
 			return TRUE;  //auto unlocked
 		step_t++;
 		break;
-	case 2:  //set dynamic wp_takeoff when z <DISTANCE_ABOVE_GROUNG,avoid AC dump
+	case 2:
+		if(++tick > 32)
+		{
+			step_t++;
+		}
+		break;
+	case 3:  //set dynamic wp_takeoff when z <DISTANCE_ABOVE_GROUNG,avoid AC dump
 		if (stateGetPositionEnu_f()->z < DISTANCE_ABOVE_GROUNG)   //!above_ground )
 		{
 			wp_ToL = *stateGetPositionEnu_i();
@@ -100,7 +108,7 @@ bool_t take_off_motion(bool_t reset)
 		}
 		step_t++;
 		break;
-	case 3:
+	case 4:
 		/*stay takeoff waypoint*/
 		NavGotoWaypoint_wp(wp_ToL)
 		;
