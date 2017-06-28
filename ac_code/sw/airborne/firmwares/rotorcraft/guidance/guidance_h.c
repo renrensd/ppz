@@ -46,7 +46,9 @@
 
 #include "state.h"
 
-#define PID_LOOP_MAX_TILT		(my_math_deg_to_rad * 10.0f)
+#define PID_LOOP_MAX_OUT_TILT		(my_math_deg_to_rad * 20.0f)
+#define PID_LOOP_MAX_UI_TILT		(my_math_deg_to_rad * 10.0f)
+#define PID_LOOP_MAX_UPD_TILT		(my_math_deg_to_rad * 10.0f)
 
 struct HorizontalGuidance guidance_h;
 struct _s_trajectory_tracking traj;
@@ -156,6 +158,19 @@ void guidance_h_SetNedVelFc(float Fc)
 															1.0f / (float) PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&guidance_h.ned_vel_y_filter));
 }
 
+void guidance_h_SetPosAlongKp(float Kp)
+{
+	traj.pos_along_pid.Kp = Kp;
+	traj.pos_along_Kp = Kp;
+}
+
+void guidance_h_SetPosAlongKd(float Kd)
+{
+	traj.pos_along_pid.Kd = Kd;
+	traj.pos_along_Kd = Kd;
+}
+
+
 void guidance_h_set_vrc_vel_sp_body(float x, float y)
 {
 	Bound(x, -3, +3);
@@ -167,8 +182,8 @@ void guidance_h_set_vrc_vel_sp_body(float x, float y)
 
 static void guidance_h_set_src_vel_sp_body(float x, float y)
 {
-	Bound(x, -3, +3);
-	Bound(y, -3, +3);
+	Bound(x, -6, +6);
+	Bound(y, -6, +6);
 
 	guidance_h.src_vel_sp_b.x = x;
 	guidance_h.src_vel_sp_b.y = y;
@@ -481,7 +496,7 @@ void guidance_h_trajectory_tracking_set_max_acc(float acc)
 void guidance_h_trajectory_tracking_set_min_brake_len(float len)
 {
 	traj.min_brake_len = len;
-	Bound(traj.min_brake_len, 1.0f, 5.0f);
+	Bound(traj.min_brake_len, 1.0f, 20.0f);
 }
 
 void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake)
@@ -603,30 +618,32 @@ static void guidance_h_trajectory_tracking_ini(void)
 	pid_ini(&traj.vel_cross_pid, PERIODIC_FREQUENCY);
 	pid_ini(&traj.pos_along_pid, PERIODIC_FREQUENCY);
 	pid_ini(&traj.pos_cross_pid, PERIODIC_FREQUENCY);
-	pid_set_out_range(&traj.vel_along_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
-	pid_set_Ui_range(&traj.vel_along_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
-	pid_set_out_range(&traj.vel_cross_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
-	pid_set_Ui_range(&traj.vel_cross_pid, -PID_LOOP_MAX_TILT, +PID_LOOP_MAX_TILT);
+	pid_set_out_range(&traj.vel_along_pid, -PID_LOOP_MAX_OUT_TILT, +PID_LOOP_MAX_OUT_TILT);
+	pid_set_Upd_range(&traj.vel_along_pid, -PID_LOOP_MAX_UPD_TILT, +PID_LOOP_MAX_UPD_TILT);
+	pid_set_Ui_range(&traj.vel_along_pid, -PID_LOOP_MAX_UI_TILT, +PID_LOOP_MAX_UI_TILT);
+	pid_set_out_range(&traj.vel_cross_pid, -PID_LOOP_MAX_OUT_TILT, +PID_LOOP_MAX_OUT_TILT);
+	pid_set_Upd_range(&traj.vel_cross_pid, -PID_LOOP_MAX_UPD_TILT, +PID_LOOP_MAX_UPD_TILT);
+	pid_set_Ui_range(&traj.vel_cross_pid, -PID_LOOP_MAX_UI_TILT, +PID_LOOP_MAX_UI_TILT);
 	pid_set_out_range(&traj.pos_along_pid, -10, +10);
 	pid_set_Ui_range(&traj.pos_along_pid, -0.5, +0.5);
 	pid_set_out_range(&traj.pos_cross_pid, -5, +5);
 	pid_set_Ui_range(&traj.pos_cross_pid, -0.5, +0.5);
 
-	traj.vel_along_pid.Kp = 0.15f;
+	traj.vel_along_pid.Kp = 0.28f;
 	traj.vel_along_pid.Ki = 0.02f;
-	traj.vel_along_pid.Kd = 0.02f;
+	traj.vel_along_pid.Kd = 0.04f;
 
-	traj.vel_cross_pid.Kp = 0.15f;
-	traj.vel_cross_pid.Ki = 0.04f;
-	traj.vel_cross_pid.Kd = 0.02f;
+	traj.vel_cross_pid.Kp = 0.28f;
+	traj.vel_cross_pid.Ki = 0.02f;
+	traj.vel_cross_pid.Kd = 0.04f;
 
-	traj.pos_along_pid.Kp = 0.9f;
+	traj.pos_along_pid.Kp = 0.6f;
 	traj.pos_along_pid.Ki = 0.0f;
-	traj.pos_along_pid.Kd = 0.5f;
+	traj.pos_along_pid.Kd = 0.25f;
 
-	traj.pos_cross_pid.Kp = 0.9f;
+	traj.pos_cross_pid.Kp = 0.6f;
 	traj.pos_cross_pid.Ki = 0.0f;
-	traj.pos_cross_pid.Kd = 0.5f;
+	traj.pos_cross_pid.Kd = 0.25f;
 
 	traj.pos_along_Kp = traj.pos_along_pid.Kp;
 	traj.pos_along_Kd = traj.pos_along_pid.Kd;
@@ -820,14 +837,14 @@ static void guidance_h_trajectory_tracking_loop(bool_t in_flight)
 		traj.cmd_t_comp.y = atan2f((traj.cmd_t.y / (my_math_pi/2.0f)), thrust);
 	}
 
-	traj_vect_t2b(&traj.cmd_b, &traj.cmd_t_comp);
+	traj_vect_t2b(&traj.cmd_b, &traj.cmd_t);
 
 	if ((stateGetPositionEnu_f()->z < (DISTANCE_ABOVE_GROUNG)) || stateGetHorizontalSpeedNorm_f() > 30.0)
 	{
-		VECT2_STRIM(traj.cmd_b, (-PID_LOOP_MAX_TILT/4.0f), (PID_LOOP_MAX_TILT/4.0f));
+		VECT2_STRIM(traj.cmd_b, (-PID_LOOP_MAX_OUT_TILT/4.0f), (PID_LOOP_MAX_OUT_TILT/4.0f));
 	}
 
-	VECT2_STRIM(traj.cmd_b, -PID_LOOP_MAX_TILT, PID_LOOP_MAX_TILT);
+	VECT2_STRIM(traj.cmd_b, -PID_LOOP_MAX_OUT_TILT, PID_LOOP_MAX_OUT_TILT);
 }
 
 void guidance_h_mode_changed(uint8_t new_mode)

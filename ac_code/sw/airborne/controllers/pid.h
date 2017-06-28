@@ -35,6 +35,8 @@ struct _s_pid
 
 	float UiMin;
 	float UiMax;
+	float UpdMin;
+	float UpdMax;
 	float outMin;
 	float outMax;
 };
@@ -52,6 +54,15 @@ static inline void pid_set_out_range(struct _s_pid *pid, float outmin,
 {
 	pid->outMin = outmin;
 	pid->outMax = outmax;
+	pid->UpdMin = outmin;
+	pid->UpdMax = outmax;
+}
+
+static inline void pid_set_Upd_range(struct _s_pid *pid, float updmin,
+																		 float updmax)
+{
+	pid->UpdMin = updmin;
+	pid->UpdMax = updmax;
 }
 
 static inline void pid_set_Ui_range(struct _s_pid *pid, float uimin,
@@ -95,6 +106,8 @@ static inline void pid_ini(struct _s_pid *pid, float Fs)
 
 	pid->UiMin = 0;
 	pid->UiMax = 0;
+	pid->UpdMin = 0;
+	pid->UpdMax = 0;
 	pid->outMin = 0;
 	pid->outMax = 0;
 
@@ -233,14 +246,7 @@ static inline float pid_loop_calc_2(struct _s_pid *pid, float ref, float fb,
 	}
 #endif
 
-	if (pid->Ui > pid->UiMax)
-	{
-		pid->Ui = pid->UiMax;
-	}
-	else if (pid->Ui < pid->UiMin)
-	{
-		pid->Ui = pid->UiMin;
-	}
+	Bound(pid->Ui, pid->UiMin, pid->UiMax);
 
 	// calc D
 	pid->df_ref = d_ref;
@@ -248,19 +254,12 @@ static inline float pid_loop_calc_2(struct _s_pid *pid, float ref, float fb,
 	pid->Ud = (pid->df_ref - pid->df_fb) * pid->Kd;
 
 	// calc out
-	Usum = pid->Up + pid->Ui + pid->Ud;
-	if (Usum > pid->outMax)
-	{
-		pid->out = pid->outMax;
-	}
-	else if (Usum < pid->outMin)
-	{
-		pid->out = pid->outMin;
-	}
-	else
-	{
-		pid->out = Usum;
-	}
+	float Updsum = pid->Up + pid->Ud;
+	Bound(Updsum, pid->UpdMin, pid->UpdMax);
+
+	Usum = pid->Ui + Updsum;
+	Bound(Usum, pid->outMin, pid->outMax);
+	pid->out = Usum;
 
 	return pid->out;
 }
