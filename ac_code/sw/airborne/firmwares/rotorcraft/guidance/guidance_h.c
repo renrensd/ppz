@@ -163,13 +163,11 @@ void guidance_h_SetNedVelFc(float Fc)
 void guidance_h_SetPosAlongKp(float Kp)
 {
 	traj.pos_along_pid.Kp = Kp;
-	traj.pos_along_Kp = Kp;
 }
 
 void guidance_h_SetPosAlongKd(float Kd)
 {
 	traj.pos_along_pid.Kd = Kd;
-	traj.pos_along_Kd = Kd;
 }
 
 
@@ -494,26 +492,24 @@ void guidance_h_trajectory_tracking_set_ref_speed(float speed)
 {
 	traj.ref_speed = speed;
 	Bound(traj.ref_speed, 0.5f, 10.0f);
-	traj.pos_along_brake_len = traj.ref_speed * (1.0f + traj.pos_along_pid.Kd) / traj.pos_along_pid.Kp;
-	Bound(traj.pos_along_brake_len, traj.min_brake_len, 20.0f);
 }
 
 void guidance_h_trajectory_tracking_set_emergency_brake_acc(float acc)
 {
 	traj.emergency_brake_acc = acc;
-	Bound(traj.emergency_brake_acc, 0.1f, 3.0f);
+	Bound(traj.emergency_brake_acc, 1.0f, 5.0f);
 }
 
 void guidance_h_trajectory_tracking_set_max_acc(float acc)
 {
 	traj.max_acc = acc;
-	Bound(traj.max_acc, 0.1f, 3.0f);
+	Bound(traj.max_acc, 0.5f, 5.0f);
 }
 
 void guidance_h_trajectory_tracking_set_max_dec(float dec)
 {
 	traj.max_dec = dec;
-	Bound(traj.max_dec, 0.1f, 3.0f);
+	Bound(traj.max_dec, 0.5f, 5.0f);
 }
 
 void guidance_h_trajectory_tracking_set_min_brake_len(float len)
@@ -531,7 +527,7 @@ void guidance_h_trajectory_tracking_set_pre_brake_len(float len)
 void guidance_h_trajectory_tracking_set_pre_brake_speed(float speed)
 {
 	traj.pre_brake_speed = speed;
-	Bound(traj.pre_brake_speed, 1.0f, 3.0f);
+	Bound(traj.pre_brake_speed, 1.0f, 4.0f);
 }
 
 void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake)
@@ -680,18 +676,16 @@ static void guidance_h_trajectory_tracking_ini(void)
 	traj.pos_cross_pid.Ki = 0.0f;
 	traj.pos_cross_pid.Kd = 0.25f;
 
-	traj.pos_along_Kp = traj.pos_along_pid.Kp;
-	traj.pos_along_Kd = traj.pos_along_pid.Kd;
-	traj.brake_margin = 1.8f;
+	traj.brake_margin = 2.0f;
 
 	init_first_order_low_pass(&traj.thrust_cmd_filter, low_pass_filter_get_tau(1.0f), PERIODIC_FREQUENCY, 0);
 
 	guidance_h_trajectory_tracking_set_ref_speed(3.0f);
-	guidance_h_trajectory_tracking_set_max_acc(2.0f);
-	guidance_h_trajectory_tracking_set_max_dec(2.0f);
-	guidance_h_trajectory_tracking_set_min_brake_len(2.0f);
-	guidance_h_trajectory_tracking_set_pre_brake_len(10.0f);
-	guidance_h_trajectory_tracking_set_pre_brake_speed(2.0f);
+	guidance_h_trajectory_tracking_set_max_acc(1.5f);
+	guidance_h_trajectory_tracking_set_max_dec(1.0f);
+	guidance_h_trajectory_tracking_set_min_brake_len(5.0f);
+	guidance_h_trajectory_tracking_set_pre_brake_len(15.0f);
+	guidance_h_trajectory_tracking_set_pre_brake_speed(3.0f);
 	guidance_h_trajectory_tracking_set_emergency_brake_acc(3.0f);
 	traj.test_length = 20.0f;
 	traj.max_acc_backup = traj.max_acc;
@@ -699,17 +693,33 @@ static void guidance_h_trajectory_tracking_ini(void)
 
 static void guidance_h_trajectory_tracking_state_machine(void)
 {
-	traj.pos_along_pid.Kp = traj.pos_along_Kp;
-	traj.pos_along_pid.Kd = traj.pos_along_Kd;
-
 	if (traj.mode == TRAJ_MODE_HOVER)
 	{
 		traj.state = TRAJ_STATUS_POS;
 	}
 	else if (traj.mode == TRAJ_MODE_SEGMENT)
 	{
-		float left_len = traj.segment.length - traj.pos_t.x;
+		float left_len;
 		float vel_inc, vel_dec;
+		float pre_brake_speed;
+		float pre_brake_len;
+		float t;
+
+		left_len = traj.segment.length - traj.pos_t.x;
+
+		if(traj.ref_speed < traj.pre_brake_speed)
+		{
+			pre_brake_speed = traj.ref_speed;
+		}
+		else
+		{
+			pre_brake_speed = traj.pre_brake_speed;
+		}
+
+		t = (traj.ref_speed - pre_brake_speed) / traj.max_dec;
+		pre_brake_len = traj.ref_speed * t - (0.5f * traj.max_dec * t * t);
+		pre_brake_len = pre_brake_len * traj.brake_margin;
+		guidance_h_trajectory_tracking_set_pre_brake_len(pre_brake_len);
 
 		if(traj.emergency_brake)
 		{
@@ -734,42 +744,12 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 		{
 			if( left_len < (traj.pre_brake_len + traj.min_brake_len) )
 			{
-				traj.guid_speed_1 = traj.pre_brake_speed;
+				traj.guid_speed_1 = pre_brake_speed;
 			}
 			else
 			{
 				traj.guid_speed_1 = traj.ref_speed;
 			}
-
-			/*
-			float ref_speed = traj.pos_along_pid.out;
-			Bound(ref_speed, traj.pos_along_pid.outMin, traj.ref_speed);
-			if(traj.guid_speed < ref_speed)
-			{
-				traj.guid_speed += vel_inc;
-			}
-			else
-			{
-				traj.guid_speed -= vel_inc;
-			}
-			*/
-
-			/*
-			if (left_len > (traj.pos_along_brake_len * traj.brake_margin))
-			{
-				traj.pos_along_pid.Kp = traj.pos_along_Kp;
-				traj.pos_along_pid.Kd = traj.pos_along_Kd;
-			}
-			else
-			{
-				traj.pos_along_pid.Kp = (1.0f - ((left_len / (traj.pos_along_brake_len * traj.brake_margin)) * 0.5f))
-																* traj.pos_along_Kp;
-				traj.pos_along_pid.Kd = (1.0f - ((left_len / (traj.pos_along_brake_len * traj.brake_margin)) * 0.5f))
-																* traj.pos_along_Kd;
-			}
-			Bound(traj.pos_along_pid.Kp, (traj.pos_along_Kp*0.5f), traj.pos_along_Kp);
-			Bound(traj.pos_along_pid.Kd, (traj.pos_along_Kd*0.5f), traj.pos_along_Kd);
-			*/
 		}
 		else if (traj.state == TRAJ_STATUS_BRAKE)
 		{
@@ -1186,6 +1166,7 @@ void guidance_h_nav_rc_enter(void)
 /// read speed setpoint from RC
 static void read_src_vel_sp_b(bool_t in_flight)
 {
+#define SRC_MAX_REF_SPEED	(6.0f)
 	// negative pitch is forward
 	int64_t rc_x = -radio_control.values[RADIO_PITCH];
 	int64_t rc_y = radio_control.values[RADIO_ROLL];
@@ -1195,7 +1176,7 @@ static void read_src_vel_sp_b(bool_t in_flight)
 
 	if (in_flight)
 	{
-		guidance_h_set_src_vel_sp_body((float) rc_x * 3.0f / (float) MAX_PPRZ, (float) rc_y * 3.0f / (float) MAX_PPRZ);
+		guidance_h_set_src_vel_sp_body((float) rc_x * SRC_MAX_REF_SPEED / (float) MAX_PPRZ, (float) rc_y * SRC_MAX_REF_SPEED / (float) MAX_PPRZ);
 	}
 	else
 	{

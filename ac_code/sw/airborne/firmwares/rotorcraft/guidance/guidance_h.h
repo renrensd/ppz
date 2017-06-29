@@ -104,7 +104,6 @@ struct _s_trajectory_tracking
 	uint16_t emergency_brake_cnt;
 	float emergency_brake_x;
 	float ref_speed;
-	float pos_along_brake_len;
 	float max_acc;
 	float max_acc_backup;
 	float max_dec;
@@ -115,8 +114,6 @@ struct _s_trajectory_tracking
 	float brake_margin;
 	float guid_speed_1;
 	float guid_speed_2;
-	float pos_along_Kp;
-	float pos_along_Kd;
 
 	struct FloatVect2 hover_point;
 
@@ -198,7 +195,10 @@ extern void guidance_h_trajectory_tracking_set_hover(struct FloatVect2 point);
 extern void guidance_h_trajectory_tracking_set_segment(struct FloatVect2 start, struct FloatVect2 end);
 extern void guidance_h_trajectory_tracking_set_ref_speed(float speed);
 extern void guidance_h_trajectory_tracking_set_max_acc(float acc);
+extern void guidance_h_trajectory_tracking_set_max_dec(float dec);
 extern void guidance_h_trajectory_tracking_set_min_brake_len(float len);
+extern void guidance_h_trajectory_tracking_set_pre_brake_len(float len);
+extern void guidance_h_trajectory_tracking_set_pre_brake_speed(float speed);
 extern void guidance_h_trajectory_tracking_set_emergency_brake_acc(float acc);
 extern void guidance_h_trajectory_tracking_set_emergency_brake(bool_t brake);
 extern bool_t guidance_h_trajectory_tracking_emergency_braking(void);
@@ -207,7 +207,10 @@ extern void guidance_h_SetTrajTest(uint8_t mode);
 extern void guidance_h_SetTrajRefSpeed(float speed);
 extern void guidance_h_SetEmBrake(bool_t on);
 extern void guidance_h_SetMinBrakeLen(float len);
+extern void guidance_h_SetPreBrakeLen(float len);
+extern void guidance_h_SetPreBrakeSpeed(float speed);
 extern void guidance_h_SetMaxAcc(float acc);
+extern void guidance_h_SetMaxDec(float dec);
 extern void guidance_h_SetEmBrakeAcc(float acc);
 
 extern void guidance_h_SetNedAccFc(float Fc);
