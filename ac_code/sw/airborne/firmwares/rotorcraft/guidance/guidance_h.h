@@ -106,10 +106,14 @@ struct _s_trajectory_tracking
 	float ref_speed;
 	float pos_along_brake_len;
 	float max_acc;
+	float max_dec;
 	float emergency_brake_acc;
 	float min_brake_len;
+	float pre_brake_len;
+	float pre_brake_speed;
 	float brake_margin;
-	float guid_speed;
+	float guid_speed_1;
+	float guid_speed_2;
 	float pos_along_Kp;
 	float pos_along_Kd;
 
