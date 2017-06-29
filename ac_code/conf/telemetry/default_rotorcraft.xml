@@ -51,7 +51,6 @@
       <message name="INS"                    period="1.0"/>
       <message name="RC"                     period="0.1"/>
       <message name="DEBUG_GPS"  	     period="0.2"/>
-      <!--message name="GPS2_UBLOX"             period="0.2"/-->
       <message name="ROTORCRAFT_TUNE_HOVER"  period="0.05"/>
       <message name="INS_Z"                  period="0.2"/>
       <message name="VERT_LOOP"              period="0.05"/>
@@ -60,7 +59,6 @@
       <message name="ACTUATORS_PWM"          period="0.25"/>
       <message name="STAB_ATTITUDE_FLOAT"    period="0.3"/>
       <message name="IMU_ACCEL_SCALED"       period=".1"/>
-      <!--message name="INS_Z"               period="1.0"/-->
       <message name="MCU_FAULT"              period="1.0"/>
     </mode>
 
@@ -109,7 +107,7 @@
       <message name="BEBOP_ACTUATORS"          period="0.2"/>
     </mode-->
 
-    <mode name="raw_sensors">
+    <!--mode name="raw_sensors">
       <message name="ROTORCRAFT_STATUS" period="1.2"/>
       <message name="DL_VALUE"          period="0.5"/>
       <message name="ALIVE"             period="2.1"/>
@@ -118,7 +116,7 @@
       <message name="IMU_MAG_RAW"       period=".05"/>
       <message name="BARO_RAW"          period=".1"/>
       <message name="ARDRONE_NAVDATA" period=".05"/>
-    </mode>
+    </mode-->
 
     <!--mode name="scaled_sensors">
       <message name="ROTORCRAFT_STATUS"      period="1.2"/>
