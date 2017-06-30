@@ -52,8 +52,7 @@ bool_t flight_prepare(bool_t reset)
 		step_p++;
 		break;
 	case 4:
-		NavAttitude(RadOfDeg(0))
-		;
+		NavAttitude(RadOfDeg(0), RadOfDeg(0));
 		NavVerticalThrottleMode(9600 * (0))
 		;
 		step_p = 0;      //reset step_p,make it can rerun
@@ -68,6 +67,7 @@ bool_t flight_prepare(bool_t reset)
 bool_t take_off_motion(bool_t reset)
 {
 	static uint8_t step_t = 0;
+	static uint32_t tick = 0;
 	if (reset)
 	{
 		step_t = 0;
@@ -77,19 +77,25 @@ bool_t take_off_motion(bool_t reset)
 	{
 	case 0:  //reset output cmd
 		/*horizontal set attitude 0 */
-		NavAttitude(RadOfDeg(0))
-		;
+		NavAttitude(RadOfDeg(0), RadOfDeg(0));
 		/*vertical set throttle 0 */
 		NavVerticalThrottleMode(9600 * (0))
 		;
 		step_t++;
+		tick = 0;
 		break;
 	case 1:
 		if ((NavResurrect()))
 			return TRUE;  //auto unlocked
 		step_t++;
 		break;
-	case 2:  //set dynamic wp_takeoff when z <DISTANCE_ABOVE_GROUNG,avoid AC dump
+	case 2:
+		if(++tick > 32)
+		{
+			step_t++;
+		}
+		break;
+	case 3:  //set dynamic wp_takeoff when z <DISTANCE_ABOVE_GROUNG,avoid AC dump
 		if (stateGetPositionEnu_f()->z < DISTANCE_ABOVE_GROUNG)   //!above_ground )
 		{
 			wp_ToL = *stateGetPositionEnu_i();
@@ -100,7 +106,7 @@ bool_t take_off_motion(bool_t reset)
 		}
 		step_t++;
 		break;
-	case 3:
+	case 4:
 		/*stay takeoff waypoint*/
 		NavGotoWaypoint_wp(wp_ToL)
 		;
@@ -163,12 +169,12 @@ bool_t land_motion(bool_t reset)
 		break;
 	case 3:
 		//not use agl_sonar detect touching ground,once on_ground,thrust will deline
-		if (stabilization_cmd[COMMAND_THRUST] < 3500)
+		if (stabilization_cmd[COMMAND_THRUST] < 1000)
 		{
 			thrust_counter++;
-			if (thrust_counter > 8)   //32hz periodic,8:0.33s
+			if (thrust_counter > 32)   //32hz periodic,8:0.33s
 			{
-				NavAttitude(RadOfDeg(0));
+				NavAttitude(RadOfDeg(0), RadOfDeg(0));
 				NavVerticalThrottleMode(9600 * (0));
 				step_l++;
 			}
@@ -204,8 +210,7 @@ bool_t lock_motion(bool_t reset)
 	switch (step_o)
 	{
 	case 0:
-		NavAttitude(RadOfDeg(0))
-		;
+		NavAttitude(RadOfDeg(0), RadOfDeg(0));
 		NavVerticalThrottleMode(9600 * (0))
 		;
 		step_o++;

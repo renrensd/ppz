@@ -392,7 +392,7 @@ let rec print_stage = fun index_of_waypoints x ->
             lprintf "{\n"
         end;
         right ();
-        lprintf "NavAttitude(RadOfDeg(%s));\n" (parsed_attrib x "roll");
+        lprintf "NavAttitude(RadOfDeg(%s), RadOfDeg(%s));\n" (parsed_attrib x "roll");
         ignore (output_vmode x "" "");
         left (); lprintf "}\n";
         lprintf "break;\n"

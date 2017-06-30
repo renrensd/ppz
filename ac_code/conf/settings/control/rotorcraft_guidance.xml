@@ -38,15 +38,18 @@
    		<dl_setting var="traj.brake_margin"    min="1.0" step="0.1" max="3.0" module="guidance/guidance_h" shortname="brake_margin"/>
    		<dl_setting var="traj.emergency_brake" min="0" step="1" max="1" module="guidance/guidance_h" shortname="em_brake" values="OFF|ON" handler="SetEmBrake"/>
    		<dl_setting var="traj.ref_speed"    min="0.5" step="0.1" max="10" module="guidance/guidance_h" shortname="ref_speed" handler="SetTrajRefSpeed"/>
-   		<dl_setting var="traj.min_brake_len"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="min_brake_len" handler="SetMinBrakeLen"/>
-   		<dl_setting var="traj.max_acc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="max_acc" handler="SetMaxAcc"/>
-   		<dl_setting var="traj.emergency_brake_acc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="em_brake_acc" handler="SetEmBrakeAcc"/>
+   		<dl_setting var="traj.min_brake_len"    min="1" step="1" max="20" module="guidance/guidance_h" shortname="min_brake_len" handler="SetMinBrakeLen"/>
+   		<dl_setting var="traj.pre_brake_len"    min="5" step="1" max="30" module="guidance/guidance_h" shortname="pre_brake_len" handler="SetPreBrakeLen"/>
+   		<dl_setting var="traj.pre_brake_speed"  min="1" step="0.5" max="4" module="guidance/guidance_h" shortname="pre_brake_speed" handler="SetPreBrakeSpeed"/>
+   		<dl_setting var="traj.max_acc"    min="0.5" step="0.1" max="5" module="guidance/guidance_h" shortname="max_acc" handler="SetMaxAcc"/>
+   		<dl_setting var="traj.max_dec"    min="0.5" step="0.1" max="5" module="guidance/guidance_h" shortname="max_dec" handler="SetMaxDec"/>
+   		<dl_setting var="traj.emergency_brake_acc"    min="1" step="0.1" max="5" module="guidance/guidance_h" shortname="em_brake_acc" handler="SetEmBrakeAcc"/>
    		<dl_setting var="traj.vel_along_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Kp"/>
    		<dl_setting var="traj.vel_along_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Ki"/>
    		<dl_setting var="traj.vel_along_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_along_Kd"/>
-   		<dl_setting var="traj.pos_along_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Kp"/>
+   		<dl_setting var="traj.pos_along_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Kp" handler="SetPosAlongKp"/>
    		<dl_setting var="traj.pos_along_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Ki"/>
-   		<dl_setting var="traj.pos_along_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Kd"/>  		
+   		<dl_setting var="traj.pos_along_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="pos_along_Kd" handler="SetPosAlongKd"/>  		
    		<dl_setting var="traj.vel_cross_pid.Kp"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_cross_Kp"/>
    		<dl_setting var="traj.vel_cross_pid.Ki"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_cross_Ki"/>
    		<dl_setting var="traj.vel_cross_pid.Kd"    min="0" step="0.01" max="5" module="guidance/guidance_h" shortname="vel_cross_Kd"/>
@@ -61,7 +64,8 @@
       <dl_setting var="guidance_h.ned_vel_filter_fc"    min="1" step="0.5" max="20" module="guidance/guidance_h" shortname="ned_vel_fc" handler="SetNedVelFc"/>
     </dl_settings>
 
-    <dl_settings NAME="NAV">
+    <dl_settings NAME="NAV"> 
+    	<dl_setting var="arrival_range" MIN="0" STEP="0.1" MAX="2" module="navigation" unit="m"/>
       <dl_setting var="flight_altitude" MIN="0" STEP="0.1" MAX="400" module="navigation" unit="m" handler="SetFlightAltitude"/>
       <dl_setting var="nav_heading" MIN="0" STEP="1" MAX="360" module="navigation" unit="1/2^12r" alt_unit="deg" alt_unit_coef="0.0139882"/>
       <dl_setting var="nav_radius" MIN="-50" STEP="0.1" MAX="50" module="navigation" unit="m"/>

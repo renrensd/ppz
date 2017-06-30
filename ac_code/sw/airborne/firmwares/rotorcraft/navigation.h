@@ -81,6 +81,7 @@ extern float nav_climb_vspeed, nav_descend_vspeed;
 
 extern int32_t nav_leg_progress;
 extern int32_t nav_leg_length;
+extern float arrival_range;
 
 extern bool_t nav_survey_active;
 
@@ -268,9 +269,10 @@ bool_t nav_check_wp_time(struct EnuCoor_i *wp, uint16_t stay_time);
 /** Set the heading of the rotorcraft, nothing else */
 #define NavHeading nav_set_heading_rad
 
-#define NavAttitude(_roll) { \
+#define NavAttitude(_roll,_pitch) { \
     horizontal_mode = HORIZONTAL_MODE_ATTITUDE; \
     nav_roll = ANGLE_BFP_OF_REAL(_roll); \
+    nav_pitch = ANGLE_BFP_OF_REAL(_pitch); \
   }
 
 #define NavStartDetectGround() ({ autopilot_detect_ground_once = TRUE; FALSE; })

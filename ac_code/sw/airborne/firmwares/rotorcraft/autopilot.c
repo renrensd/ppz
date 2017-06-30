@@ -114,7 +114,14 @@ bool_t   autopilot_detect_ground_once;
 #ifndef AUTOPILOT_DISABLE_AHRS_KILL
 static inline int ahrs_is_aligned(void)
 {
-	return stateIsAttitudeValid();
+	if( eng_app_check_debug_sn() )
+	{
+		return TRUE;
+	}
+	else
+	{
+		return stateIsAttitudeValid();
+	}
 }
 #else
 PRINT_CONFIG_MSG("Using AUTOPILOT_DISABLE_AHRS_KILL")
