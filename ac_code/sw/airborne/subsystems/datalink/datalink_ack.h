@@ -85,6 +85,8 @@ extern void send_gcs_components_info(void);
 extern uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value);
 #if USE_MANU_DEBUG
 extern bool_t DlSetMCCommand(uint8_t id, uint8_t pt_value);
+extern void send_flowmeter_information(void);
+extern void send_flowmeter_cali_info(void);
 #endif
 
 #endif /* DATALINK_H */

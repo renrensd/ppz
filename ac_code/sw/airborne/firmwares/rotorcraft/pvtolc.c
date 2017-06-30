@@ -32,7 +32,7 @@ bool_t flight_prepare(bool_t reset)
 		step_p++;
 		break;
 	case 1:
-#if 0
+#ifdef DEBUG_VRC
 #else
 		if (!rtk_power_up_stable())
 		{

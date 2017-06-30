@@ -1521,7 +1521,9 @@ static void send_point_to_pprz(void)
 		temp.y = POS_FLOAT_OF_BFP(vertipad.y);
 		waypoint_set_vect2(WP_TP, &temp);
 	}
-
+		temp.x = POS_FLOAT_OF_BFP(wp_home.x);
+		temp.y = POS_FLOAT_OF_BFP(wp_home.y);
+		waypoint_set_vect2(WP_HOME, &temp);
 	for (i = 0; i < OA_MAX_BOUNDARY_VERTICES_NUM; ++i)
 	{
 		if (i < planed_oa.spray_area.n)
@@ -1584,6 +1586,13 @@ void planed_oa_prepare(void)
 	planed_oa.planed_oa_ready = TRUE;
 }
 
+void test_send_to_pprz(void)
+{
+	planed_oa_data_reset();
+	planed_oa_geometry_prepare();
+	update_vaild_spray_edge();
+	send_point_to_pprz();
+}
 /*
  * periodic func
  */

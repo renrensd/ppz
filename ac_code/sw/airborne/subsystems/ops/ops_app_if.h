@@ -58,6 +58,9 @@ struct OPS_INFO
 	uint16_t fw_version;
 	uint16_t cycle_count;
 	uint8_t spraying_flow[4];
+	uint8_t flag_flowmeter_cali;
+	uint8_t num_cali_flowmeter;
+	uint8_t flowmeter1_cali_info[32];
 	uint8_t  sys_error;
 	uint8_t  mcu_info;
 
