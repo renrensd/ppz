@@ -98,8 +98,8 @@
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
     <field name="link_gcs_quality" type="uint8" unit="percent"/>  <!--reserve-->
-    <field name="link_rc_quality" type="uint8" unit="percent"/>   <!--reserve-->
-    <field name="link_ac_quality" type="uint8" unit="percent"/>   <!--reserve-->
+    <field name="heading_num" type="uint8"/>   <!--reserve-->
+    <field name="pos_num" type="uint8"/>   <!--reserve-->
     <field name="command_status" type="uint8"/>  <!--gcs_cmd  value: none=0; start=1; pause=2; continual=3; back_home=4; reserve_land=5; direct_land=6-->     
     <field name="flight_status" type="uint16"/>              
     <field name="heading" type="float" unit="deg"/>
