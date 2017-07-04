@@ -307,7 +307,8 @@ static inline void monitoring_msg_handle(void)
 													 &gps_flight,
 													 &monitor_cmd,
 													 &em_alert_grade,
-													 &em_code);
+													 &em_code,
+													 &h_moni.baro_aver);
 #endif
 #endif
 	}
@@ -511,7 +512,7 @@ void ground_monitoring(void)
 		break;
 
 	case AUTOPILOT_CHECK:
-		if (autopilot_ground_check())
+		if (!autopilot_ground_check())
 		{
 			ground_check_step++;  //next step
 		}

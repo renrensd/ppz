@@ -304,6 +304,31 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 			//h_moni.baro_code &=0xEF;  //reset normal
 		}
 	}
+	else  //on ground
+	{
+		if(h_moni.baro_ground_check == TRUE)
+		{
+			if( !CHECK_INTERVAL(pressure, ground_pressure_aver, DETA_BARO) )
+			{
+				h_moni.baro_ground_counter++;
+				if(h_moni.baro_ground_counter > 10)
+				{
+						h_moni.baro_code |=0x10;
+						h_moni.baro_status = 1;
+						baro_flight_range = 1;
+				}
+				else
+				{
+					
+				}
+			}
+			else 
+			{
+				h_moni.baro_ground_counter = 0;
+			}	
+		}
+		
+	}
 
 }
 
