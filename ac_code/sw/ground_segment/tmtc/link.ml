@@ -310,7 +310,8 @@ module XB = struct (** XBee module *)
     let frame_id = gen_frame_id () in
     let frame_data =
       if !Xbee.mode868 then
-        Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414F1F90) rf_data (*no10*)
+        (*Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414F1F90) rf_data*) (*no10*)
+        Xbee.api_tx64 ~frame_id (Int64.of_int 0x0013A200414F1F8e) rf_data (*no10*)
       else
         Xbee.api_tx16 ~frame_id ac_id rf_data in
     let packet = Xbee.Protocol.packet (Serial.payload_of_string frame_data) in
