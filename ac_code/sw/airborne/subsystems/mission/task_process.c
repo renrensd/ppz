@@ -233,7 +233,6 @@ bool_t auto_task_ready_check(void)
 {
 	if( FALSE==wp_home_useful
 			|| 2>nb_pending_wp
-			|| SPRAY_CONVERT==task_wp[0].action
 			|| TERMINATION==task_wp[0].action   )
 	{
 		return FALSE;
