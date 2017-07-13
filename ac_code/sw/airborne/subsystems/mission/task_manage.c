@@ -138,6 +138,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			}
 		}
 #endif
+		test_send_to_pprz();
 		//pause to start need add confirm
 		if ((GCS_CMD_PAUSE == gcs_task_cmd && FALSE == from_wp_useful)
 				|| GCS_CMD_NONE == gcs_task_cmd
@@ -237,41 +238,49 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 		response = 2;  /*space is not enought*/
 		return response;
 	}
-
-	/* waypoint id check(pending id < add wp_start_id) */
+	
+/*
+	// waypoint id check(pending id < add wp_start_id) 
 	uint16_t max_pending_id = get_max_pending_id();
 	if( m_task_info.wp_start_id < max_pending_id )
 	{
 		if(m_task_info.wp_end_id==max_pending_id && check_task_wp_id(m_task_info.wp_start_id) )
 		{
-			response = 3;  /*add repeat*/
+			response = 3;  //add repeat
 		}
 		else
 		{
-			response = 5;  /*wp id not in order*/
+			response = 5;  //wp id not in order
 		}
 		return response;
 	}
+*/
 
-	/* wp_type: coordinate   wgs84 = 1, relative_ENU = 2 */
+	uint16_t max_pending_id = get_max_pending_id();
+	if(m_task_info.wp_end_id <= max_pending_id)
+	{
+		response = 3;
+	}
+		
+   /* wp_type: coordinate   wgs84 = 1, relative_ENU = 2 */
 	uint8_t nb_wp =m_task_info.wp_end_id - m_task_info.wp_start_id + 1;
 	uint8_t last_nb_pending_wp = nb_pending_wp;
-
-	if( 1 == m_task_info.wp_type )
-	{
-		struct LlaCoor_i lla;   /* rad, e8 */
+	
+   if( 1 == m_task_info.wp_type )
+   {
+   		struct LlaCoor_i lla;   /* rad, e8 */
 		struct EnuCoor_i temp1_enu;
 		for(uint8_t i=0; i < nb_wp; i++ )
 		{
 			lla.lon = *(m_task_info.waypoints_lon + i);
-			lla.lat = *(m_task_info.waypoints_lat + i);
-			if( task_lla_to_enu_convert(&temp1_enu, &lla) )
-			{
+			lla.lat = *(m_task_info.waypoints_lat + i);	
+	   		if(( task_lla_to_enu_convert(&temp1_enu, &lla) )&&((m_task_info.wp_start_id + i)>max_pending_id))
+	   		{
 				VECT2_COPY(task_wp[nb_pending_wp].wp_en, temp1_enu);
 				task_wp[nb_pending_wp].action = (enum Task_Action)( *(m_task_info.wp_action + i) );
 				task_wp[nb_pending_wp].wp_id = m_task_info.wp_start_id + i;
 				nb_pending_wp++;
-			}
+	   		}
 			else
 			{
 				response =4;
