@@ -2154,6 +2154,7 @@
     <field name="em_cmd" type="uint8" values="none|hover|home|land"/>
     <field name="alert_grade" type="uint8" values="ok|low|middle|high"/>
     <field name="em_code" type="uint32"/>
+    <field name="baro_aver" type="float"/>
   </message>
 
   <!--message name="VIDEO_SYNC" id="225">
@@ -2429,8 +2430,14 @@
   </message>
   <!-- 252 is free -->
   <message name="DEBUG_TASK" id="252">
-      <field name="heading_align"   type="uint8" values="FALSE|TRUE" />
-      <field name="height_align"   type="uint8" values="FALSE|TRUE" />
+		<field name="task0_enu_i_x"   type="int32"/>
+		<field name="task0_enu_i_y"   type="int32"/>
+		<field name="task0_enu_f_x"   type="float"/>
+		<field name="task0_enu_f_y"   type="float"/>
+		<field name="breakpoint_enu_i_x"   type="int32"/>
+		<field name="breakpoint_enu_i_y"   type="int32"/>
+		<field name="breakpoint_enu_f_x"   type="float"/>
+		<field name="breakpoint_enu_f_y"   type="float"/>
   </message>
 
   <message name="I2C_ERRORS" id="253">

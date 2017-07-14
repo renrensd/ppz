@@ -286,7 +286,7 @@ void stabilization_attitude_run(bool_t  in_flight)
 	/*caculate intergrate*/
 	if(in_flight)
 	{
-		if( stabilization_cmd[COMMAND_THRUST] > 4500 )
+		if( stabilization_cmd[COMMAND_THRUST] > 2500 )
 		{
 			stab_sum_flag = TRUE;
 		}

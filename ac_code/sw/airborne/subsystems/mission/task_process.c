@@ -67,6 +67,7 @@ float current_sprayed_distance = 0.0f;
 //from_wp and next_wp are request can't be changed before recover
 struct EnuCoor_i current_wp_scene;    /*use to save pos for exceptional interrupt, no use now*/
 struct EnuCoor_i interrupt_wp_scene;    /*use to save pos of ac exceptional interrupt hover */
+struct EnuCoor_i first_task_wp;
 
 struct EnuCoor_i home_wp_enu;
 struct EnuCoor_i vertipad_enu;
@@ -94,7 +95,7 @@ static float set_path_flight_info(uint8_t type);
 
 void send_current_task_state(uint8_t wp_state);
 void send_current_task(uint8_t wp_state);
-
+void send_breakpoint_info(struct EnuCoor_i task_wp_0,struct EnuCoor_i temp_breakpoint);
 
 void avoid_obstacle_init()
 {
@@ -198,6 +199,7 @@ bool_t get_start_line(void)
 		}
 		else                         //vertipad=wp_home  (direct to first task point)
 		{
+			VECT2_COPY(first_task_wp, task_wp[0].wp_en);
 			achieve_next_wp();
 			VECT2_COPY(from_wp.wp_en, vertipad);
 			from_wp.action = FLIGHT_LINE;
@@ -307,6 +309,7 @@ Gcs_State gcs_task_run(void)
 	case GCS_CMD_BHOME:
 		gcs_state = GCS_RUN_HOME;
 		AC_action = TERMINATION;
+		RunOnceEvery(16, send_breakpoint_info(first_task_wp,current_wp_scene));
 		if( gcs_hover_enter() )
 		{
 			transfer_step = 0;
@@ -1061,6 +1064,19 @@ void send_current_task_state(uint8_t wp_state)
 																	 &nb_unexecuted_wp);
 }
 
+void send_breakpoint_info(struct EnuCoor_i task_wp_0,struct EnuCoor_i temp_breakpoint)
+{
+	struct FloatVect2 break_p_f,start_p_f;
+	start_p_f.x=POS_FLOAT_OF_BFP(task_wp_0.x);
+	start_p_f.y=POS_FLOAT_OF_BFP(task_wp_0.y);
+	break_p_f.x=POS_FLOAT_OF_BFP(temp_breakpoint.x);
+	break_p_f.y=POS_FLOAT_OF_BFP(temp_breakpoint.y);
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_DEBUG_TASK(SecondChannel, SecondDevice, &task_wp_0.x,&task_wp_0.y,&start_p_f.x,&start_p_f.y,
+														  &temp_breakpoint.x,&temp_breakpoint.y,&break_p_f.x,&break_p_f.y);
+}
+
+
 void send_current_task(uint8_t wp_state)
 {
 	if(1 == wp_state)/*reach from_wp,interrupt send*/
@@ -1070,14 +1086,7 @@ void send_current_task(uint8_t wp_state)
 	else  /*send 2s periodic*/
 	{
 		RunOnceEvery(64, send_current_task_state(wp_state));
-		//RunOnceEvery(50, send_task_info_pc());
 	}
-#if 0//PERIODIC_TELEMETRY
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	DOWNLINK_SEND_DEBUG_TASK(DefaultChannel, DefaultDevice,
-													 &heading_align,
-													 &height_align        );
-#endif
 }
 
 
