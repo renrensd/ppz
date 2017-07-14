@@ -1576,13 +1576,13 @@ void planed_oa_prepare(void)
 {
 	if(eng_app_check_debug_sn())
 	{
-		planed_oa_debug_prepare();
+		//planed_oa_debug_prepare();
 	}
 	planed_oa_data_reset();
 	planed_oa_geometry_prepare();
 	update_obstacles_info();
 	update_vaild_spray_edge();
-	//send_point_to_pprz();
+	send_point_to_pprz();
 	planed_oa.planed_oa_ready = TRUE;
 }
 
@@ -1602,7 +1602,7 @@ void planed_oa_periodic_run(void)
 
 	if( eng_app_check_debug_sn() )
 	{
-		planed_oa_test();
+		//planed_oa_test();
 	}
 
 	if (planed_oa.test_on && from_wp_useful)
