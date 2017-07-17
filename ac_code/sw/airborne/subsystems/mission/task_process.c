@@ -1072,8 +1072,8 @@ void send_breakpoint_info(struct EnuCoor_i task_wp_0,struct EnuCoor_i temp_break
 	break_p_f.x=POS_FLOAT_OF_BFP(temp_breakpoint.x);
 	break_p_f.y=POS_FLOAT_OF_BFP(temp_breakpoint.y);
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	DOWNLINK_SEND_DEBUG_TASK(SecondChannel, SecondDevice, &task_wp_0.x,&task_wp_0.y,&start_p_f.x,&start_p_f.y,
-														  &temp_breakpoint.x,&temp_breakpoint.y,&break_p_f.x,&break_p_f.y);
+	DOWNLINK_SEND_DEBUG_TASK(DefaultChannel, DefaultDevice, &task_wp_0.x,&task_wp_0.y,&start_p_f.x,&start_p_f.y,
+															&temp_breakpoint.x,&temp_breakpoint.y,&break_p_f.x,&break_p_f.y);
 }
 
 
