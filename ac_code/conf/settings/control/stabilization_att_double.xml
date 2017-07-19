@@ -2,41 +2,22 @@
 
 <settings target="ap|nps">
   <dl_settings>
-
     <dl_settings NAME="Att Loop">
-      <dl_setting var="stabilization_gains.p.x" min="0" step="0.05" max="10"   module="stabilization/stabilization_attitude" shortname="pgain phi" param="STABILIZATION_ATTITUDE_PHI_PGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.i_rate.x" min="0" step="5" max="1500"    module="stabilization/stabilization_attitude" shortname="igain phi" param="STABILIZATION_ATTITUDE_PHI_IGAIN" persistent="true"/>
-      <!--dl_setting var="stabilization_gains.d.x" min="0" step="0.05" max="500"   module="stabilization/stabilization_attitude" shortname="dgain phi" param="STABILIZATION_ATTITUDE_PHI_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.dd.x" min="0" step="0.05" max="500"   module="stabilization/stabilization_attitude" shortname="ddgain phi" param="STABILIZATION_ATTITUDE_PHI_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.surface_p.x" min="0" step="0.05" max="500" module="stabilization/stabilization_attitude" shortname="phi_p" param="STABILIZATION_ATTITUDE_PHI_DGAIN_D" persistent="true"/>
-      <dl_setting var="stabilization_gains.surface_i.x" min="0" step="0.05" max="300" module="stabilization/stabilization_attitude" shortname="phi_i" param="STABILIZATION_ATTITUDE_PHI_DDGAIN" persistent="true"/-->
-      <dl_setting var="stabilization_gains.p_rate.x" min="0" step="5" max="2000"   module="stabilization/stabilization_attitude" shortname="pgainRate phi" param="STABILIZATION_ATTITUDE_PHIRATE_PGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.d_rate.x" min="0" step="0.1" max="200"   module="stabilization/stabilization_attitude" shortname="ddgainRate phi" param="STABILIZATION_ATTITUDE_PHIRATE_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.ff_rate.x" min="0" step="0.1" max="200"   module="stabilization/stabilization_attitude" shortname="rate_ff phi" param="STABILIZATION_ATTITUDE_PHIRATE_FFGAIN" persistent="true"/>
-      
-      <dl_setting var="stabilization_gains.p.y" min="0" step="0.05" max="10"   module="stabilization/stabilization_attitude" shortname="pgain theta" param="STABILIZATION_ATTITUDE_THETA_PGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.i_rate.y" min="0"  step="5" max="1500"    module="stabilization/stabilization_attitude" shortname="igain theta" param="STABILIZATION_ATTITUDE_THETA_IGAIN" persistent="true"/>
-      <!--dl_setting var="stabilization_gains.d.y" min="0" step="0.05" max="500"   module="stabilization/stabilization_attitude" shortname="dgain theta" param="STABILIZATION_ATTITUDE_THETA_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.dd.y" min="0" step="0.05" max="500"   module="stabilization/stabilization_attitude" shortname="ddgain theta" param="STABILIZATION_ATTITUDE_THETA_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.surface_p.y" min="0" step="0.05" max="500" module="stabilization/stabilization_attitude" shortname="theta_p" param="STABILIZATION_ATTITUDE_THETA_DGAIN_D" persistent="true"/>
-      <dl_setting var="stabilization_gains.surface_i.y" min="0"    step="0.05" max="300"  module="stabilization/stabilization_attitude" shortname="theta_i" param="STABILIZATION_ATTITUDE_THETA_DDGAIN" persistent="true"/-->
-      <dl_setting var="stabilization_gains.p_rate.y" min="0" step="5" max="2000"   module="stabilization/stabilization_attitude" shortname="pgainRate theta" param="STABILIZATION_ATTITUDE_THETARATE_PGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.d_rate.y" min="0" step="0.1" max="200"   module="stabilization/stabilization_attitude" shortname="ddgainRate theta" param="STABILIZATION_ATTITUDE_THETARATE_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.ff_rate.y" min="0" step="0.1" max="200"   module="stabilization/stabilization_attitude" shortname="rate_ff theta" param="STABILIZATION_ATTITUDE_THETARATE_FFGAIN" persistent="true"/>
-      
-      <dl_setting var="stabilization_gains.p.z" min="0" step="0.05" max="20"   module="stabilization/stabilization_attitude" shortname="pgain psi" param="STABILIZATION_ATTITUDE_PSI_PGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.i_rate.z" min="0"  step="5" max="1500"    module="stabilization/stabilization_attitude" shortname="igain psi" param="STABILIZATION_ATTITUDE_PSI_IGAIN" persistent="true"/>
-      <!--dl_setting var="stabilization_gains.d.z" min="0" step="0.05" max="500"   module="stabilization/stabilization_attitude" shortname="dgain psi" param="STABILIZATION_ATTITUDE_PSI_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.dd.z" min="0" step="0.05" max="500"   module="stabilization/stabilization_attitude" shortname="ddgain psi" param="STABILIZATION_ATTITUDE_PSI_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.surface_p.z" min="0" step="0.05" max="500" module="stabilization/stabilization_attitude" shortname="psi_p" param="STABILIZATION_ATTITUDE_PHI_DGAIN_D" persistent="true"/>
-      <dl_setting var="stabilization_gains.surface_i.z" min="0" step="0.05" max="500"  module="stabilization/stabilization_attitude" shortname="psi_i" param="STABILIZATION_ATTITUDE_PSI_DDGAIN" persistent="true"/-->
-      <dl_setting var="stabilization_gains.p_rate.z" min="0" step="5" max="2000"   module="stabilization/stabilization_attitude" shortname="pgainRate psi" param="STABILIZATION_ATTITUDE_PSIRATE_PGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.d_rate.z" min="0" step="0.1" max="200"   module="stabilization/stabilization_attitude" shortname="ddgainRate psi" param="STABILIZATION_ATTITUDE_PSIRATE_DGAIN" persistent="true"/>
-      <dl_setting var="stabilization_gains.ff_rate.z" min="0" step="0.1" max="200"   module="stabilization/stabilization_attitude" shortname="rate_ff psi" param="STABILIZATION_ATTITUDE_PSIRATE_FFGAIN" persistent="true"/>
-      
+      <dl_setting var="stabilization_gains.p.x" min="0" step="0.1" max="10"   module="stabilization/stabilization_attitude" shortname="p x"/>
+			<dl_setting var="stabilization_gains.p.y" min="0" step="0.1" max="10"   module="stabilization/stabilization_attitude" shortname="p y"/>
+			<dl_setting var="stabilization_gains.p.z" min="0" step="0.1" max="20"   module="stabilization/stabilization_attitude" shortname="p z"/>
 
-      
+			<dl_setting var="stabilization_gains.p_rate.x" min="0" step="10" max="2000"   module="stabilization/stabilization_attitude" shortname="p_rate x"/>
+			<dl_setting var="stabilization_gains.p_rate.y" min="0" step="10" max="2000"   module="stabilization/stabilization_attitude" shortname="p_rate y"/>
+			<dl_setting var="stabilization_gains.p_rate.z" min="0" step="10" max="2000"   module="stabilization/stabilization_attitude" shortname="p_rate z"/>
+
+      <dl_setting var="stabilization_gains.i_rate.x" min="0" step="10" max="2000"    module="stabilization/stabilization_attitude" shortname="i_rate x"/>
+      <dl_setting var="stabilization_gains.i_rate.y" min="0"  step="10" max="2000"    module="stabilization/stabilization_attitude" shortname="i_rate y"/>
+			<dl_setting var="stabilization_gains.i_rate.z" min="0"  step="10" max="2000"    module="stabilization/stabilization_attitude" shortname="i_rate z"/>
+
+      <dl_setting var="stabilization_gains.d_rate.x" min="0" step="1" max="500"   module="stabilization/stabilization_attitude" shortname="d_rate_x"/>                      
+      <dl_setting var="stabilization_gains.d_rate.y" min="0" step="1" max="500"   module="stabilization/stabilization_attitude" shortname="d_rate_y"/>                  
+      <dl_setting var="stabilization_gains.d_rate.z" min="0" step="1" max="500"   module="stabilization/stabilization_attitude" shortname="d_rate_z"/>        
     </dl_settings>
-
   </dl_settings>
 </settings>

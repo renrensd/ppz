@@ -169,10 +169,10 @@ bool_t land_motion(bool_t reset)
 		break;
 	case 3:
 		//not use agl_sonar detect touching ground,once on_ground,thrust will deline
-		if (stabilization_cmd[COMMAND_THRUST] < 1000)
+		if (stabilization_cmd[COMMAND_THRUST] < 1500)
 		{
 			thrust_counter++;
-			if (thrust_counter > 32)   //32hz periodic,8:0.33s
+			if (thrust_counter > 40)   //32hz periodic,8:0.33s
 			{
 				NavAttitude(RadOfDeg(0), RadOfDeg(0));
 				NavVerticalThrottleMode(9600 * (0));
