@@ -72,7 +72,7 @@ extern void ops_start_spraying(void);
 extern void ops_stop_spraying(void);
 extern uint8_t get_spray_switch_state(void);
 extern void ops_msg_config_param(void);
-
+extern void ops_msg_extra_function(void);
 extern void ops_request_software_version(void);
 extern void ops_msg_self_clean(void);
 extern void ops_msg_direct_open_spray(void);

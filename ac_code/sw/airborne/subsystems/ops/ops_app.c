@@ -508,14 +508,14 @@ void ops_flowmeter_cali_response(uint8_t *param)
 		{
 			uint8_t response_status= *(param + 1);
 			ops_info.num_cali_flowmeter = cali_step;
-			xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
-			tm_create_timer(TIMER_GCS_FLOWMETER_CALI_INFO, (1000 MSECONDS), TIMER_PERIODIC,0);
+			ops_info.extra_func_id = FLOWMETER_CALI;
+			tm_create_timer(TIMER_OPS_MSG_EXTRA_FUNCTION, (1000 MSECONDS), TIMER_PERIODIC,0);
 			break;
 		}
 		case FLOWMETER_CALI_END_RES:
 		{
 			uint8_t ops_flowmeter_cali_res[18];
-			tm_kill_timer(TIMER_GCS_FLOWMETER_CALI_INFO);
+			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
 			for(uint8_t i = 0; i < 16; i++)
 			{
 				ops_flowmeter_cali_res[i] = *(param + 1 + i);
