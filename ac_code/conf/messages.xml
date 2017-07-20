@@ -2430,14 +2430,15 @@
   </message>
   <!-- 252 is free -->
   <message name="DEBUG_TASK" id="252">
-		<field name="task0_enu_i_x"   type="int32"/>
-		<field name="task0_enu_i_y"   type="int32"/>
+	
 		<field name="task0_enu_f_x"   type="float"/>
 		<field name="task0_enu_f_y"   type="float"/>
-		<field name="breakpoint_enu_i_x"   type="int32"/>
-		<field name="breakpoint_enu_i_y"   type="int32"/>
+		<field name="task0_lla_d_x"   type="double"/>
+		<field name="task0_lla_d_y"   type="double"/>
 		<field name="breakpoint_enu_f_x"   type="float"/>
 		<field name="breakpoint_enu_f_y"   type="float"/>
+		<field name="breakpoint_lla_d_x"   type="double"/>
+		<field name="breakpoint_lla_d_y"   type="double"/>
   </message>
 
   <message name="I2C_ERRORS" id="253">
