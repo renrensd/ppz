@@ -2144,6 +2144,7 @@
     <field name="em_cmd" type="uint8" values="none|hover|home|land"/>
     <field name="alert_grade" type="uint8" values="ok|low|middle|high"/>
     <field name="em_code" type="uint32"/>
+    <field name="baro_aver" type="float"/>
   </message>
 
   <!--message name="VIDEO_SYNC" id="225">

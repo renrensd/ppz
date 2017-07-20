@@ -20,6 +20,7 @@
 
 /**** System include files ****/
 #include "subsystems/monitoring/monitoring_misc.h"
+#include "subsystems/monitoring/monitoring_height.h"
 #include "subsystems/monitoring/monitoring.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "subsystems/electrical.h"
@@ -495,9 +496,10 @@ void mode_convert_check(void)
 uint8_t autopilot_ground_check(void)
 {
 	//uint8_t check_code=0;
-	if( !ahrs_ground_check() ) return 0;
-	if( !ins_ground_check() ) return 0;
-	else return 1;
+	if( !ahrs_ground_check() ) return 1;
+	if( !ins_ground_check() ) return 2;
+	if( h_moni.baro_status )  return 3;
+	else return 0;
 }
 
 static uint8_t ahrs_ground_check(void)

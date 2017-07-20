@@ -33,7 +33,7 @@
 #include "uart_ops_if.h"
 #include "ops_msg_uart_def.h"
 #include "ops_comm_if.h"
-
+#include "subsystems/datalink/downlink.h"
 #include "firmwares/rotorcraft/navigation.h"
 
 
@@ -116,7 +116,51 @@ void ops_msg_stop_spraying(void)
 	//ops_comm_send_frame(OPS_REQ_ACK_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 	ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_SPRAYING_CONTROL,2, &arg[0]);
 }
+/*******************************************************************************
+**  FUNCTION      : ops_msg_extra_function
+**  DESCRIPTION   : extra function : open all spray head. flowmeter  
+**  PARAMETERS    : void
+**  RETURN        : void
+*******************************************************************************/
+void ops_msg_extra_function(void)
+{
+	switch(ops_info.extra_func_id)
+	{
+		case OPEN_SIX_SPRAY:
+		{
+			if(flight_direct == NAV_FORWARD)
+			{
+				flight_direct = NAV_BACKWARD;
+			}
+			else 
+			{
+				flight_direct = NAV_FORWARD;
+			}
+			ops_info.ops_debug = TRUE;
+			ops_msg_start_spraying();
+			break;
+		}
+		case FLOWMETER_INFO:
+		{
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_SEND_FLOWMETER_INFO(SecondChannel, SecondDevice,
+																			&ops_info.spraying_flow[0],
+																			&ops_info.spraying_flow[1],
+																			&ops_info.spraying_flow[2],
+																			&ops_info.spraying_flow[3]);
+			break;
+		}
+		case FLOWMETER_CALI:
+		{
+			uint8_t flowmeter_cali_pram[16];
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_FLOWMETER_CALI_ACK(SecondChannel, SecondDevice, &ops_info.num_cali_flowmeter, 16, ops_info.flowmeter1_cali_info);
+			break;
+		}
+	}
+}
 
+/*******************************************************************************
 /*******************************************************************************
 **  FUNCTION      : ops_msg_request_sv(void)
 **  DESCRIPTION   : void

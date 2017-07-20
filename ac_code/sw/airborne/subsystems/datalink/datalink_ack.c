@@ -276,7 +276,9 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 			if(!autopilot_in_flight)
 			{
 				ops_msg_start_selfclean();
-				tm_create_timer(TIMER_GCS_FLOWMETER_INFO, (2000 MSECONDS), TIMER_PERIODIC,0);
+				ops_info.extra_func_id = FLOWMETER_INFO;
+				tm_create_timer(TIMER_OPS_MSG_EXTRA_FUNCTION, (2000 MSECONDS), TIMER_PERIODIC,0);
+				//tm_create_timer(TIMER_GCS_FLOWMETER_INFO, (2000 MSECONDS), TIMER_PERIODIC,0);
 			}
 			else
 			{
@@ -286,17 +288,21 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 		else
 		{
 			ops_msg_stop_selfclean();
-			tm_kill_timer((uint8_t)TIMER_GCS_FLOWMETER_INFO);
+			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
+			//tm_kill_timer((uint8_t)TIMER_GCS_FLOWMETER_INFO);
 		}
 		break;
 
 	case OPS_SPRAY_CONTROL:
 		if(pt_value)
 		{
+			ops_info.extra_func_id = OPEN_SIX_SPRAY;
 			ops_msg_direct_open_spray();
+			tm_create_timer(TIMER_OPS_MSG_EXTRA_FUNCTION, (2000 MSECONDS), TIMER_PERIODIC,0);
 		}
 		else
 		{
+			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
 			ops_msg_direct_stop_spray();
 		}
 		break;
@@ -341,21 +347,3 @@ bool_t DlSetMCCommand(uint8_t id, uint8_t pt_value)
 	return response;
 }
 #endif
-
-void send_flowmeter_information(void)
-{
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
-	DOWNLINK_SEND_SEND_FLOWMETER_INFO(SecondChannel, SecondDevice,
-											&ops_info.spraying_flow[0],
-											&ops_info.spraying_flow[1],
-											&ops_info.spraying_flow[2],
-											&ops_info.spraying_flow[3]);
-}
-
-void send_flowmeter_cali_info(void)
-{
-	uint8_t flowmeter_cali_pram[16];
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
-	DOWNLINK_SEND_FLOWMETER_CALI_ACK(SecondChannel, SecondDevice, &ops_info.num_cali_flowmeter, 16, ops_info.flowmeter1_cali_info);
-}
-
