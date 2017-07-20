@@ -1561,7 +1561,7 @@
     <field name="cur_stage" type="uint8"/>
     <field name="horizontal_mode" type="uint8"/>
     <field name="spray_status" type="uint8"/>
-    <field name="spray_area" type="uint16"  unit="m2"/>
+    <field name="tp_status" type="uint8"/>
   </message>
 
   <message name="ROTORCRAFT_RADIO_CONTROL" id="160">

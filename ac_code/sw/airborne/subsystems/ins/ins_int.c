@@ -605,8 +605,12 @@ static void switch_to_ublox(void)
 void ins_int_task(void)
 {
 	gpss_state_update();
-
+#if DEBUG_VRC
+	if(1)
+#else 
 	if((ins_int.gpss_state == RTK_VALID) || (ins_int.gpss_state == RTK_UBLOX_VALID)) // RTK valid
+#endif
+
 	{
 		if (ins_int.rtk_gps_update)
 		{

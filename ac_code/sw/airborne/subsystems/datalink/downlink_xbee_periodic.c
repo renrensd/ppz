@@ -25,7 +25,7 @@
 #include "subsystems/monitoring/monitoring.h"
 
 #include "datalink_ack.h"
-
+#include "subsystems/gps.h"
 //#include "subsystems/datalink/downlink.h"
 //#include "uplink_ac.h"
 
@@ -140,8 +140,8 @@ void send_heart_beat_A2G_msg(void)
 	DOWNLINK_SEND_HEART_BEAT_AC_GCS_STATE(SecondChannel, SecondDevice,
 																				&system_time,
 																				&link_gcs_quality,
-																				&link_rc_quality,
-																				&link_rssi,
+																				&gps.head_stanum,
+																				&gps.num_sv,
 																				&gcs_cmd_state,
 																				&fl_status,
 																				&heading,

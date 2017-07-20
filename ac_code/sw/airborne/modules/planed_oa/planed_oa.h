@@ -129,5 +129,5 @@ extern void planed_oa_prepare(void);
 extern void planed_oa_data_reset(void);
 extern bool_t oa_task_nav_path( struct EnuCoor_i p_start_wp, struct EnuCoor_i p_end_wp );
 extern bool_t planed_oa_search_valid(void);
-
+extern void test_send_to_pprz(void);
 #endif

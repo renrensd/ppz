@@ -98,8 +98,8 @@
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
     <field name="link_gcs_quality" type="uint8" unit="percent"/>  <!--reserve-->
-    <field name="link_rc_quality" type="uint8" unit="percent"/>   <!--reserve-->
-    <field name="link_ac_quality" type="uint8" unit="percent"/>   <!--reserve-->
+    <field name="heading_num" type="uint8"/>   <!--reserve-->
+    <field name="pos_num" type="uint8"/>   <!--reserve-->
     <field name="command_status" type="uint8"/>  <!--gcs_cmd  value: none=0; start=1; pause=2; continual=3; back_home=4; reserve_land=5; direct_land=6-->     
     <field name="flight_status" type="uint16"/>              
     <field name="heading" type="float" unit="deg"/>
@@ -147,18 +147,16 @@
     <field name="waypoints_lon" type="int32[]" unit="e8,rad"/>  
     <field name="waypoints_lat" type="int32[]" unit="e8,rad"/>  
   </message>
-  
-  <!--edit 160612-->
-  <!--message name="EXCEPTION_TASK_STATE" id="107"> 
-    <description>link="A2G" 
-                 exception_task_type:  hover=1, home=2, land_reserve=3, land_force=4, run_out=5
-                 (exception error_code is sended by heart_beat msg)
-                 emergency trigger 
-    </description>
-    <field name="sys_time" type="uint16" unit="s"/>
-    <field name="exception_task_type" type="uint8"/>
-  </message-->
 
+  <message name="SEND_FLOWMETER_INFO" id="107">
+    <description>link="A2G" 
+    </description>
+    <field name="spraying_flow1" type="uint8"/>
+    <field name="spraying_flow2" type="uint8"/>
+	<field name="spraying_flow3" type="uint8"/>
+    <field name="spraying_flow4" type="uint8"/>
+  </message>
+  
   <!--edit 160612-->
   <!--message name="MANUAL_TASK_STATE" id="108">
     <description>link="A2G" 
@@ -313,6 +311,49 @@
     </description>
     <field name="type" type="uint8"/>
     <field name="status" type="uint8"/>
+  </message>
+
+  <message name="FLOWMETER_CALI_ACK" id="226">
+    <description>link="A2G"
+    ac response when flowmeter calibate
+    DATA1:step
+    DATA2:response data
+
+ step:
+ 	0x11 = response start cali
+response data:
+	1 = running
+	2 = ok
+	3 = fail
+
+step:	
+	0x13 = flowmeter1
+ 	0x15 = flowmeter2
+ 	0x17 = flowmeter3
+ 	0x19 = flowmeter4
+response data:
+DATA2-DATA5 = flowmeter1 pulse count
+DATA6-DATA9 = flowmeter2 pulse count
+DATA10-DATA13 = flowmeter3 pulse count
+DATA14-DATA17 = flowmeter4 pulse count
+
+step:
+	0x1b = response end cali
+response data:
+DATA0-DATA3 = flowmeter1 pulse count
+DATA4-DATA7 = flowmeter2 pulse count
+DATA8-DATA11 = flowmeter3 pulse count
+DATA12-DATA15 = flowmeter4 pulse count
+DATA16:
+	1 = running
+	2 = ok
+	3 = fail
+DATA17:
+	whitch flowmeter (1,2,3,4)
+
+    </description>
+    <field name="step" type="uint8"/>
+    <field name="data" type="uint8[]"/>
   </message>
 
   
@@ -533,6 +574,33 @@
     <field name="type" type="uint8"/>
     <field name="check_data" type="uint8[7]"/>
   </message>
+
+	<message name="FLOWMETER_CALI" id="226">
+	    <description>link="G2A"
+	    GCS send calirate cmd:
+	    DATA1: step
+	    DATA2: data
+
+	step:
+	    0x10 = request calibrate
+	    
+	    0x12 = begin calibrate1 flowmeter   
+	    0x14 = begin calibrate2 flowmeter
+	    0x16 = begin calibrate3 flowmeter
+	    0x18 = begin calibrate4 flowmeter
+
+	    0x1A = stop calibrate
+
+	data:
+		50 = 1000mL  (50--250)=(1000--5000)mL
+		when request data:(0,1,2,3...)
+		when end     data:(0)
+	
+	    </description>
+	    <field name="step" type="uint8"/>
+	    <field name="data" type="uint8"/>
+	  </message>
+  
  </msg_class>
 
 

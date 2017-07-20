@@ -20,6 +20,11 @@
 #include "subsystems/actuators/motor_mixing.h"
 #endif
 
+#include "modules/system/timer_if.h"
+#include "modules/system/timer_class.h"
+#include "modules/system/timer_def.h"
+#include "mcu_periph/sys_time.h"
+
 void send_heart_beat_A2R_msg(void)
 {
 	uint16_t system_time = sys_time.nb_sec;
@@ -271,6 +276,7 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 			if(!autopilot_in_flight)
 			{
 				ops_msg_start_selfclean();
+				tm_create_timer(TIMER_GCS_FLOWMETER_INFO, (2000 MSECONDS), TIMER_PERIODIC,0);
 			}
 			else
 			{
@@ -280,6 +286,7 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 		else
 		{
 			ops_msg_stop_selfclean();
+			tm_kill_timer((uint8_t)TIMER_GCS_FLOWMETER_INFO);
 		}
 		break;
 
@@ -335,4 +342,20 @@ bool_t DlSetMCCommand(uint8_t id, uint8_t pt_value)
 }
 #endif
 
+void send_flowmeter_information(void)
+{
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+	DOWNLINK_SEND_SEND_FLOWMETER_INFO(SecondChannel, SecondDevice,
+											&ops_info.spraying_flow[0],
+											&ops_info.spraying_flow[1],
+											&ops_info.spraying_flow[2],
+											&ops_info.spraying_flow[3]);
+}
+
+void send_flowmeter_cali_info(void)
+{
+	uint8_t flowmeter_cali_pram[16];
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+	DOWNLINK_SEND_FLOWMETER_CALI_ACK(SecondChannel, SecondDevice, &ops_info.num_cali_flowmeter, 16, ops_info.flowmeter1_cali_info);
+}
 

@@ -525,6 +525,35 @@ void dl_parse_msg(void)
 			break;
 		}
 
+		case DL_FLOWMETER_CALI:
+		{
+			uint8_t cali_step = DL_FLOWMETER_CALI_step(dl_buffer);
+			uint8_t cali_data = DL_FLOWMETER_CALI_data(dl_buffer);
+			uint8_t Param[3]={OPS_PRIO_GENERAL,cali_step,cali_data};
+			switch(cali_step)
+			{
+				case FLOWMETER_CALI_START:
+				{
+					ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_FLOWMETER_CALI_ID,3, Param);
+					break;
+				}
+				case FLOWMETER_CALI_NO1:
+				case FLOWMETER_CALI_NO2:
+				case FLOWMETER_CALI_NO3:
+				case FLOWMETER_CALI_NO4:
+				{
+					ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_FLOWMETER_CALI_ID,3, Param);
+					break;
+				}
+				case FLOWMETER_CALI_END:
+				{
+					ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_FLOWMETER_CALI_ID,2, Param);
+					break;
+				}
+			}
+			break;
+		}
+		
 #ifdef UPGRADE_OPTION
 		case DL_REQUEST_UPGRADE:
 		{

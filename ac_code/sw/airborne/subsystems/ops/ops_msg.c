@@ -219,6 +219,9 @@ void ops_uart_msg_handle(U8 const *frame)
 	case OPS_UPGRADE_SERVICE:
 		ops_msg_device_manage_handler(&ops_uart_frame);
 		break;
+	case OPS_CALIBRATE_FLOWMETER:
+		ops_msg_device_manage_handler(&ops_uart_frame);
+		break;
 	default:
 		break;
 	}
@@ -330,6 +333,11 @@ void ops_msg_device_manage_handler(OPS_UART_FRAME *ops_msg)
 	}
 	break;
 #endif
+	case OPS_FLOWMETER_CALI_ID:
+	{
+		ops_flowmeter_cali_response(ops_msg->param + 1);
+		break;
+	}
 	default:
 		break;
 
