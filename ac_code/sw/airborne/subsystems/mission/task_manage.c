@@ -121,6 +121,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 		else if(oa_ok == 0)
 		{
 			// no obstacles
+			test_send_to_pprz();
 		}
 		else
 		{
@@ -138,7 +139,6 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			}
 		}
 #endif
-		test_send_to_pprz();
 		//pause to start need add confirm
 		if ((GCS_CMD_PAUSE == gcs_task_cmd && FALSE == from_wp_useful)
 				|| GCS_CMD_NONE == gcs_task_cmd

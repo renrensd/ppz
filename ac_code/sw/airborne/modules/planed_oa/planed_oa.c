@@ -1582,15 +1582,13 @@ void planed_oa_prepare(void)
 	planed_oa_geometry_prepare();
 	update_obstacles_info();
 	update_vaild_spray_edge();
-	//send_point_to_pprz();
+	send_point_to_pprz();
 	planed_oa.planed_oa_ready = TRUE;
 }
 
 void test_send_to_pprz(void)
 {
-	planed_oa_data_reset();
 	planed_oa_geometry_prepare();
-	update_vaild_spray_edge();
 	send_point_to_pprz();
 }
 /*
