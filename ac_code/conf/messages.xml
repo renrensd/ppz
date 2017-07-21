@@ -2420,8 +2420,15 @@
   </message>
   <!-- 252 is free -->
   <message name="DEBUG_TASK" id="252">
-      <field name="heading_align"   type="uint8" values="FALSE|TRUE" />
-      <field name="height_align"   type="uint8" values="FALSE|TRUE" />
+	
+		<field name="task0_enu_f_x"   type="float"/>
+		<field name="task0_enu_f_y"   type="float"/>
+		<field name="task0_lla_d_x"   type="double"/>
+		<field name="task0_lla_d_y"   type="double"/>
+		<field name="breakpoint_enu_f_x"   type="float"/>
+		<field name="breakpoint_enu_f_y"   type="float"/>
+		<field name="breakpoint_lla_d_x"   type="double"/>
+		<field name="breakpoint_lla_d_y"   type="double"/>
   </message>
 
   <message name="I2C_ERRORS" id="253">

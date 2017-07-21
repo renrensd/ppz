@@ -149,8 +149,8 @@ bool_t spray_break_and_continual(void)
 void spray_break_continual_msg(void)
 {
 	uint8_t wp_type = 1;  //default lla coordinate
-	int32_t pos_break_lon = (int32_t)( (int64_t)(spray_continual_info.break_pos_lla.lon) * 174533/1000000 );
-	int32_t pos_break_lat = (int32_t)( (int64_t)(spray_continual_info.break_pos_lla.lat) * 174533/1000000 );
+	double pos_break_lon = (double)( (int64_t)(spray_continual_info.break_pos_lla.lon) /10000000.0 );
+	double pos_break_lat = (double)( (int64_t)(spray_continual_info.break_pos_lla.lat) /10000000.0 );
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
 	DOWNLINK_SEND_EMERGENCY_RECORD_STATE(SecondChannel, SecondDevice,
 																			 &wp_type,

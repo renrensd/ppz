@@ -43,6 +43,8 @@
 #include "subsystems/navigation/waypoints.h"
 #endif
 
+#include "subsystems/mission/task_spray_misc.h" //TODO:for debug
+
 #define FLIGHT_PATH  1
 #define SPRAY_PATH  2
 
@@ -67,7 +69,7 @@ float current_sprayed_distance = 0.0f;
 //from_wp and next_wp are request can't be changed before recover
 struct EnuCoor_i current_wp_scene;    /*use to save pos for exceptional interrupt, no use now*/
 struct EnuCoor_i interrupt_wp_scene;    /*use to save pos of ac exceptional interrupt hover */
-
+struct EnuCoor_i first_task_wp;		//todo:for debug
 struct EnuCoor_i home_wp_enu;
 struct EnuCoor_i vertipad_enu;
 struct EnuCoor_i reland_wp_enu;
@@ -94,7 +96,7 @@ static float set_path_flight_info(uint8_t type);
 
 void send_current_task_state(uint8_t wp_state);
 void send_current_task(uint8_t wp_state);
-
+void send_breakpoint_info(struct EnuCoor_i task_wp_0, struct LlaCoor_d wp0_lla,struct EnuCoor_i temp_breakpoint,struct LlaCoor_i breakpoint_lla_i);//todo:for debug
 
 void avoid_obstacle_init()
 {
@@ -198,6 +200,7 @@ bool_t get_start_line(void)
 		}
 		else                         //vertipad=wp_home  (direct to first task point)
 		{
+			VECT2_COPY(first_task_wp, task_wp[0].wp_en); //todo:for debug
 			achieve_next_wp();
 			VECT2_COPY(from_wp.wp_en, vertipad);
 			from_wp.action = FLIGHT_LINE;
@@ -307,6 +310,7 @@ Gcs_State gcs_task_run(void)
 	case GCS_CMD_BHOME:
 		gcs_state = GCS_RUN_HOME;
 		AC_action = TERMINATION;
+		RunOnceEvery(16, send_breakpoint_info(first_task_wp,wp0_lla,current_wp_scene,spray_continual_info.break_pos_lla));//todo:for debug
 		if( gcs_hover_enter() )
 		{
 			transfer_step = 0;
@@ -1061,6 +1065,22 @@ void send_current_task_state(uint8_t wp_state)
 																	 &nb_unexecuted_wp);
 }
 
+void send_breakpoint_info(struct EnuCoor_i task_wp_0, struct LlaCoor_d wp0_lla,struct EnuCoor_i temp_breakpoint,struct LlaCoor_i breakpoint_lla_i)
+{
+	struct FloatVect2 break_p_f,start_p_f;
+	struct LlaCoor_d breakpoint_lla_d;
+	double pos_break_lon = (double)( (int64_t)(breakpoint_lla_i.lon) /10000000.0 );
+	double pos_break_lat = (double)( (int64_t)(breakpoint_lla_i.lat) /10000000.0 );
+	start_p_f.x=POS_FLOAT_OF_BFP(task_wp_0.x);
+	start_p_f.y=POS_FLOAT_OF_BFP(task_wp_0.y);
+	break_p_f.x=POS_FLOAT_OF_BFP(temp_breakpoint.x);
+	break_p_f.y=POS_FLOAT_OF_BFP(temp_breakpoint.y);
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
+	DOWNLINK_SEND_DEBUG_TASK(DefaultChannel, DefaultDevice, &start_p_f.x,&start_p_f.y,&wp0_lla.lon,&wp0_lla.lat,
+															&break_p_f.x,&break_p_f.y,&pos_break_lon,&pos_break_lat);
+}
+
+
 void send_current_task(uint8_t wp_state)
 {
 	if(1 == wp_state)/*reach from_wp,interrupt send*/
@@ -1070,14 +1090,7 @@ void send_current_task(uint8_t wp_state)
 	else  /*send 2s periodic*/
 	{
 		RunOnceEvery(64, send_current_task_state(wp_state));
-		//RunOnceEvery(50, send_task_info_pc());
 	}
-#if 0//PERIODIC_TELEMETRY
-	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	DOWNLINK_SEND_DEBUG_TASK(DefaultChannel, DefaultDevice,
-													 &heading_align,
-													 &height_align        );
-#endif
 }
 
 

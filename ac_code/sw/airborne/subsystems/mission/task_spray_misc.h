@@ -44,7 +44,7 @@ typedef struct Spray_Continual
 } Spray_Conti_Info;
 
 extern Spray_Convert_Info spray_convert_info;
-
+extern Spray_Conti_Info spray_continual_info;
 extern void task_spray_misc_init(void);
 extern uint8_t spray_convert_caculate(void);
 extern bool_t spray_break_and_continual(void);
