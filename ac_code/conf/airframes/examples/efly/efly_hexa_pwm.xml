@@ -228,26 +228,25 @@
     <define name="REF_MAX_RDOT" value="RadOfDeg(360.)"/>   
     
     <define name="PHI_PGAIN" value="4"/>
-		<define name="PHIRATE_PGAIN" value="1200"/>
+    <define name="PHI_DGAIN" value="0"/>
+		<define name="PHIRATE_PGAIN" value="2000"/>
     <define name="PHIRATE_IGAIN" value="800"/>   
     <define name="PHIRATE_DGAIN" value="45"/>
     <define name="PHIRATE_FFGAIN" value="0.0"/>
 
     <define name="THETA_PGAIN" value="4"/>
-		<define name="THETARATE_PGAIN" value="1200"/>
+    <define name="THETA_DGAIN" value="0"/>
+		<define name="THETARATE_PGAIN" value="2000"/>
     <define name="THETARATE_IGAIN" value="800"/> 
     <define name="THETARATE_DGAIN" value="45"/>
     <define name="THETARATE_FFGAIN" value="0.0"/>
 
     <define name="PSI_PGAIN" value="15.0"/>
-		<define name="PSIRATE_PGAIN" value="1200"/>
+    <define name="PSI_DGAIN" value="0.0"/>
+		<define name="PSIRATE_PGAIN" value="2500"/>
     <define name="PSIRATE_IGAIN" value="700"/> 
     <define name="PSIRATE_DGAIN" value="50"/>
     <define name="PSIRATE_FFGAIN" value="0"/>
-
-
-
-
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
