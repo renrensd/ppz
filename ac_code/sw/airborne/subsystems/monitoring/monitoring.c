@@ -371,6 +371,7 @@ void ground_monitoring_init(void)
 void ground_monitoring(void)
 {
 	static uint32_t time_record;
+	static bool_t last_stable = FALSE;
 	uint8_t check_state;
 
 	if (get_sys_time_msec() < 5000)
@@ -479,7 +480,13 @@ void ground_monitoring(void)
 		}
 		break;
 	case RTK_CHECK:
-		if (rtk_power_up_stable() && ((get_sys_time_msec() - time_record) > 5000))
+		if( (rtk_power_up_stable() == TRUE) && (last_stable == FALSE) )
+		{
+			time_record = get_sys_time_msec();
+		}
+		last_stable = rtk_power_up_stable();
+
+		if (rtk_power_up_stable() && ((get_sys_time_msec() - time_record) > 10000))
 		{
 			monitoring_fail_code = PASS;
 			ground_check_step++;  //next step
