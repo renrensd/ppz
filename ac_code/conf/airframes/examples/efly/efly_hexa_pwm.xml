@@ -206,7 +206,7 @@
     <!-- setpoints -->
     <define name="SP_MAX_PHI" value="30." unit="deg"/>
     <define name="SP_MAX_THETA" value="30." unit="deg"/>
-    <define name="SP_MAX_R" value="40." unit="deg/s"/>
+    <define name="SP_MAX_R" value="50." unit="deg/s"/>
     <define name="DEADBAND_A" value="2"/>
     <define name="DEADBAND_E" value="2"/>
     <define name="DEADBAND_R" value="250"/>
@@ -229,23 +229,23 @@
     
     <define name="PHI_PGAIN" value="4"/>
     <define name="PHI_DGAIN" value="0"/>
-		<define name="PHIRATE_PGAIN" value="2000"/>
-    <define name="PHIRATE_IGAIN" value="800"/>   
-    <define name="PHIRATE_DGAIN" value="45"/>
-    <define name="PHIRATE_FFGAIN" value="0.0"/>
+		<define name="PHIRATE_PGAIN" value="2200"/>
+    <define name="PHIRATE_IGAIN" value="1000"/>
+    <define name="PHIRATE_DGAIN" value="100"/>
+    <define name="PHIRATE_FFGAIN" value="0"/>
 
     <define name="THETA_PGAIN" value="4"/>
     <define name="THETA_DGAIN" value="0"/>
-		<define name="THETARATE_PGAIN" value="2000"/>
-    <define name="THETARATE_IGAIN" value="800"/> 
-    <define name="THETARATE_DGAIN" value="45"/>
-    <define name="THETARATE_FFGAIN" value="0.0"/>
+		<define name="THETARATE_PGAIN" value="2200"/>
+    <define name="THETARATE_IGAIN" value="1000"/>
+    <define name="THETARATE_DGAIN" value="100"/>
+    <define name="THETARATE_FFGAIN" value="0"/>
 
-    <define name="PSI_PGAIN" value="15.0"/>
-    <define name="PSI_DGAIN" value="0.0"/>
-		<define name="PSIRATE_PGAIN" value="2500"/>
-    <define name="PSIRATE_IGAIN" value="700"/> 
-    <define name="PSIRATE_DGAIN" value="50"/>
+    <define name="PSI_PGAIN" value="5"/>
+    <define name="PSI_DGAIN" value="0"/>
+		<define name="PSIRATE_PGAIN" value="12000"/>
+    <define name="PSIRATE_IGAIN" value="3000"/>
+    <define name="PSIRATE_DGAIN" value="100"/>
     <define name="PSIRATE_FFGAIN" value="0"/>
   </section>
 

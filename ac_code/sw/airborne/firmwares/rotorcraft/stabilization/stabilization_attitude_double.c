@@ -128,6 +128,8 @@ void stabilization_attitude_init(void)
 							 STABILIZATION_ATTITUDE_THETARATE_FFGAIN,
 							 STABILIZATION_ATTITUDE_PSIRATE_FFGAIN);
 
+	stabilization_gains.psi_guid_p = 0.006;
+
 	FLOAT_EULERS_ZERO(stab_d_rate_sum_err);
 
 #if PERIODIC_TELEMETRY
@@ -196,14 +198,23 @@ void stabilization_attitude_set_body_cmd_f(float phi, float theta, float psi)
 
 static void attitude_ref_update(void)
 {
+	static float last_guid_err = 0;
 	//float sp_psi = stab_att_sp_euler.psi;
 	FLOAT_ANGLE_NORMALIZE(stab_att_sp_euler.psi);
 	FLOAT_ANGLE_NORMALIZE(att_ref_euler_f.euler.psi);
 	float guid_err = stab_att_sp_euler.psi - att_ref_euler_f.euler.psi;
 	FLOAT_ANGLE_NORMALIZE(guid_err);
-	if( guid_err > 0 )
+
+	float guid_Ud = last_guid_err - guid_err;
+	FLOAT_ANGLE_NORMALIZE(guid_Ud);
+
+	float step = guid_err * stabilization_gains.psi_guid_p;
+	Bound(step, -MAX_GUID_R_RATE/(float)PERIODIC_FREQUENCY, +MAX_GUID_R_RATE/(float)PERIODIC_FREQUENCY);
+	float step_abs = fabsf(step);
+
+	if( step > 0 )
 	{
-		att_ref_euler_f.euler.psi += (MAX_GUID_R_RATE / (float) PERIODIC_FREQUENCY);
+		att_ref_euler_f.euler.psi += step_abs;
 		FLOAT_ANGLE_NORMALIZE(att_ref_euler_f.euler.psi);
 		float err = stab_att_sp_euler.psi - att_ref_euler_f.euler.psi;
 		FLOAT_ANGLE_NORMALIZE(err);
@@ -214,7 +225,7 @@ static void attitude_ref_update(void)
 	}
 	else
 	{
-		att_ref_euler_f.euler.psi -= (MAX_GUID_R_RATE / (float) PERIODIC_FREQUENCY);
+		att_ref_euler_f.euler.psi -= step_abs;
 		FLOAT_ANGLE_NORMALIZE(att_ref_euler_f.euler.psi);
 		float err = stab_att_sp_euler.psi - att_ref_euler_f.euler.psi;
 		FLOAT_ANGLE_NORMALIZE(err);
