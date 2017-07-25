@@ -288,10 +288,10 @@ Gcs_State gcs_task_run(void)
 			save_task_cmd = last_task_cmd;
 		}
 
-		//gcs_hover_enter();   //for stop spray
 		set_auto_stop_brake();
 		if( !gcs_hover_enter() )
 		{
+			save_task_scene();
 			spray_switch_flag = FALSE;
 			struct FloatVect2 target_wp;
 			target_wp.x = POS_FLOAT_OF_BFP(navigation_target.y);
@@ -464,7 +464,10 @@ bool_t gcs_hover_enter(void)
 
 	if( last_task_cmd != gcs_task_cmd)
 	{
-		save_task_scene();
+		if( gcs_task_cmd != GCS_CMD_PAUSE )
+		{
+			save_task_scene();
+		}
 		steady_counter = 0;
 		return TRUE;
 	}

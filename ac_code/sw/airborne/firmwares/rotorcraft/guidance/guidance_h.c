@@ -803,6 +803,10 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 				traj.guid_speed_2 = traj.guid_speed_1;
 			}
 		}
+		if(traj.emergency_brake)
+		{
+			traj.guid_speed_2 = 0;
+		}
 		Bound(traj.guid_speed_2, 0, 10);
 
 	}
