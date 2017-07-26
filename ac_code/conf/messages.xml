@@ -251,6 +251,7 @@
     <field name="gps_heading"    type="float" unit="deg"/>
     <field name="mag_heading"    type="float" unit="deg"/>
     <field name="mlkf_heading"    type="float" unit="deg"/>
+    <field name="diff_heading"    type="float" unit="deg"/>
     <field name="gps_pos_sd_x"    type="int32" unit="m*10000"/>
     <field name="gps_pos_sd_y"    type="int32" unit="m*10000"/>
     <field name="gps_pos_sd_z"    type="int32" unit="m*10000"/>

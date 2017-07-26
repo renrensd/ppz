@@ -182,7 +182,7 @@ void battery_flight_check(void)
 ***********************************************************************/
 void gps_flight_check(void)
 {
-	static uint16_t count = 0;
+	static uint16_t diff_count = 0;
 	static float diff_sum = 0;
 	static bool_t diff_err = FALSE;
 
@@ -252,22 +252,39 @@ void gps_flight_check(void)
 
 		if ( mag_cali.cali_ok && ground_check_pass )
 		{
-			diff_sum += fabsf(ahrs_mlkf.diff_heading);
-			if (++count >= (10))	// 2s
+			float diff_abs = fabsf(DegOfRad(ahrs_mlkf.diff_heading_rad));
+
+			if( diff_err )
 			{
-				diff_sum /= (float) (10);
-				if (diff_sum > 20)
+				if( diff_abs < 15 )
 				{
-					diff_err = TRUE;
-					set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-					force_use_heading_redundency(TRUE);
+					if( diff_count++ > 10 ) //2s
+					{
+						diff_count = 0;
+						diff_err = FALSE;
+					}
 				}
 				else
 				{
-					diff_err = FALSE;
+					diff_count = 0;
 				}
-				count = 0;
-				diff_sum = 0;
+			}
+			else
+			{
+				if( diff_abs > 25 )
+				{
+					if( diff_count++ > 20 ) //4s
+					{
+						diff_count = 0;
+						diff_err = TRUE;
+						set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+						force_use_heading_redundency(TRUE);
+					}
+				}
+				else
+				{
+					diff_count = 0;
+				}
 			}
 		}
 	}

@@ -202,15 +202,22 @@ void ahrs_mlkf_update_accel(struct Int32Vect3 *accel)
 
 	struct FloatEulers ltp_to_imu_euler;
 	float_eulers_of_quat(&ltp_to_imu_euler, &ahrs_mlkf.ltp_to_imu_quat);
-	ahrs_mlkf.mlkf_heading = LimitAngleTo_0_2pi(ltp_to_imu_euler.psi) * (180.0f/3.1415926f);
+	ahrs_mlkf.mlkf_heading = DegOfRad(LimitAngleTo_0_2pi(ltp_to_imu_euler.psi));
 }
 
 /*mag update function: caculate K, update P(k+1|k+1), get X(k+1|k+1)*/
 void ahrs_mlkf_update_mag(struct Int32Vect3 *mag)
 {
-	ahrs_mlkf.mag_heading = LimitAngleTo_0_2pi(atan2f(-mag->y, mag->x)) * (180.0f/3.1415926f);
-	ahrs_mlkf.diff_heading = gps.heading - ahrs_mlkf.mag_heading;
-	NormRadAngle(ahrs_mlkf.diff_heading);
+	static float mag_heading_rad_hist_time = 0;
+	static bool_t stamp_ini = FALSE;
+	static uint32_t mag_last_stamp;
+
+	ahrs_mlkf.mag_heading_rad = LimitAngleTo_0_2pi(atan2f(-mag->y, mag->x));
+	ahrs_mlkf.mag_heading = DegOfRad(ahrs_mlkf.mag_heading_rad);
+	ahrs_mlkf.gps_heading_rad = RadOfDeg(gps.heading);
+	ahrs_mlkf.diff_heading_rad = ahrs_mlkf.gps_heading_rad - ahrs_mlkf.mag_heading_rad;
+	NormRadAngle(ahrs_mlkf.diff_heading_rad);
+	ahrs_mlkf.diff_heading = DegOfRad(ahrs_mlkf.diff_heading_rad);
 
 	if(ahrs_mlkf.heading_state == AMHS_MAG)
 	{
