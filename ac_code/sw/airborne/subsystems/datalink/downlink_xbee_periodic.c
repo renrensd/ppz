@@ -148,7 +148,7 @@ void send_heart_beat_A2G_msg(void)
 	Bound(battery_remain, 0, 100);
 	int8_t  pesticides_remain = (int8_t)(ops_info.res_cap&0x00FF);
 
-	uint32_t error_code = em_code;   //no remove gcs lost error
+	uint64_t error_code = em_code;   //no remove gcs lost error
 	uint16_t selftest_code = (ground_check_step<<8)|(monitoring_fail_code&0x00FF);
 
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);	 //ack processing need handle later

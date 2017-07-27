@@ -148,7 +148,7 @@ static bool_t run_monitoring_flag;        //if poweron selftest fail set false t
 bool_t ground_check_pass;                 //global var use to sign ground monitoring result
 
 uint16_t monitoring_fail_code;            //poweron selftest error code
-uint32_t em_code; /*one bit express one emergency in EPT_MS_NB sequence*/
+uint64_t em_code; /*one bit express one emergency in EPT_MS_NB sequence*/
 
 struct except_mission em[EPT_MS_NB];      //emergency var, store raw info
 
@@ -781,7 +781,7 @@ static inline void alert_grade_update(void)
 			{
 				em_alert_grade = em[i].alert_grade;
 			}
-			em_code = em_code | (1 << i);
+			em_code = em_code | ((uint64_t)1 << i);
 		}
 	}
 }

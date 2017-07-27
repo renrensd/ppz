@@ -88,7 +88,10 @@
 			P_IN_OBS_AREA   	26
 			NO_VALID_P      	27
 			OBS_INFO_ERROR  	28
-
+			FLOWMETER_NO1		29		
+			FLOWMETER_NO2		30
+			FLOWMETER_NO3		31
+			FLOWMETER_NO4		32
                          reserve other bits keep 0	
                   selftest_code: express ac power on selftest information
                          high8bit  1=battery_check;  2=board_check;  3=imu_check;  4=baro_check;   5=ops_check;   
@@ -109,7 +112,7 @@
     <field name="pos_lat" type="double" unit="deg"/>    
     <field name="battery_remain"  type="int8"  unit="percent"/>
     <field name="pesticides_remain" type="int8" unit="percent"/>   
-    <field name="error_code" type="uint32"/>
+    <field name="error_code" type="uint64"/>
     <field name="selftest_code" type="uint16"/>
     <field name="task_action" type="uint8"/>
   </message>
@@ -202,7 +205,7 @@
     <field name="home_state"        type="uint8" values="stop_home|home"/>
     <field name="lock_state"        type="uint8" values="unlocked|locked"/>
     <field name="ac_ready"          type="uint8" values="unready|ready"/>
-    <field name="error_code"        type="uint8" />
+    <field name="error_code"        type="uint64" />
     <field name="alert_grade"       type="uint8" values="ok|low|medium|high"/>
     <field name="spray_state"       type="uint8" values="stop|open" />
   </message>
@@ -379,6 +382,7 @@ DATA17:
                                3=delete all task(if AC in_flight,gived gcs_cmd=pause before delete)
                                4=ops self clean(value: start=1; stop=0)
                                5=ops channel control, bit of value express the channel, eg.0x0F set four channels open
+                               6=display flowmeter value(1=enable)
     </description>
     <field name="command_id" type="uint8"/>
     <field name="command_value" type="uint8"/>

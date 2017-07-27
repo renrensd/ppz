@@ -54,7 +54,8 @@ enum Set_GCS_Command
 	DELETE_ALL_TASK = 3,
 	OPS_SELFCLEAN = 4,
 	OPS_SPRAY_CONTROL = 5,
-	OPS_CHANNEL_CONTROL = 6
+	//OPS_CHANNEL_CONTROL = 6
+	OPS_FLOWMETER_VALUE
 };
 
 /* task_ack_type: add = 0, update = 1, delete = 2, get = 3; */
