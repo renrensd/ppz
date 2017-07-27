@@ -42,6 +42,7 @@ let c_type = fun format ->
     | "Uint16" -> "uint16_t"
     | "Uint8" -> "uint8_t"
     | "Char" -> "char"
+    | "Uint64" -> "uint64_t"
     | _ -> failwith (sprintf "gen_messages.c_type: unknown format '%s'" format)
 
 let dl_type = fun format ->
@@ -55,6 +56,7 @@ let dl_type = fun format ->
     | "Uint16" -> "DL_TYPE_UINT16"
     | "Uint8" -> "DL_TYPE_UINT8"
     | "Char" -> "DL_TYPE_CHAR"
+    | "Uint64" -> "DL_TYPE_UINT64"
     | _ -> failwith (sprintf "gen_messages.dl_type: unknown format '%s'" format)
 
 type field = _type  * string * format option

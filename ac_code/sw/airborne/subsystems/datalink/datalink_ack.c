@@ -62,10 +62,10 @@ void send_heart_beat_A2VR_msg(void)
 {
 	uint16_t system_time = sys_time.nb_sec;
 	uint8_t ac_state = (uint8_t)autopilot_in_flight;
-	uint8_t battery_remain = 85;      //unit=percent, need update from battery module
+	uint8_t battery_remain = ops_info.o_bat_rep_percent;      //unit=percent, need update from battery module
 	uint8_t pesticides_remain = (uint8_t)(ops_info.res_cap&0xFF);   //unit=percent,need updata from spray working module
 	uint8_t ac_ready = (uint8_t)ground_check_pass;
-	uint8_t error_code = 0;
+	uint64_t error_code = em_code;
 	uint8_t spray_flag;
 	if(get_spray_switch_state())
 	{
@@ -307,10 +307,21 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 		}
 		break;
 
-	case OPS_CHANNEL_CONTROL:
+/*	case OPS_CHANNEL_CONTROL:
 		ops_set_config_param(pt_value, PARAM_SPRAY_CHANNEL);
 		ops_update_config_param();
-
+*/
+	case OPS_FLOWMETER_VALUE:
+		if(pt_value)
+		{
+			ops_info.extra_func_id = FLOWMETER_INFO;
+			tm_create_timer(TIMER_OPS_MSG_EXTRA_FUNCTION, (2000 MSECONDS), TIMER_PERIODIC,0);
+		}
+		else 
+		{
+			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
+		}
+		break;
 	default:
 		response = 1;
 		break;

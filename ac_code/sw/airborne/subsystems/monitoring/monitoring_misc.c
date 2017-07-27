@@ -383,6 +383,18 @@ void ops_flight_check(void)
 			em[OPS_BLOCKED].active = FALSE;
 			em[OPS_BLOCKED].finished = FALSE;
 		}
+		for(uint8_t i = 0;i < 4; i++)
+		{
+			if(ops_info.sys_error & (1<<(4+i)))
+			{
+				set_except_mission(FLOWMETER1_ERROR+i, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+			}
+			else
+			{
+				em[FLOWMETER1_ERROR+i].active = FALSE;
+				em[FLOWMETER1_ERROR+i].finished = FALSE;
+			}
+		}
 	}
 }
 

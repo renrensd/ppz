@@ -27,6 +27,7 @@
 #define TEST_MSG 1
 
 //below is emergency type
+/*
 #define BAT_LOW 0
 #define BAT_CRITICAL 1
 #define BAT_OTHER 2
@@ -57,7 +58,7 @@
 #define OBS_INFO_ERROR  27
 
 #define EPT_MS_NB 28
-
+*/
 /*use for monitor_cmd*/
 #define CM_NONE 0
 #define CM_HOVER 1
@@ -65,6 +66,43 @@
 #define CM_LAND 3   //direct land in current position
 #define CM_LOCK 4   //lock motors in flight,not use now ,dangerous
 
+enum EMERGENCY_TYPE
+{
+	BAT_LOW,	//0
+	BAT_CRITICAL,
+	BAT_OTHER,
+	IMU_MOMENTARY,
+	GPS_HEADING,
+	IMU_CRITICAL, //5
+	HEIGHT_SONAR,
+	HEIGHT_BARO,
+	HEIGHT_BOTH,
+	BOARD_TEMP,
+	BOARD_OUT,	//10
+	GCS_COM_LOST,
+	RC_COM_LOST,
+	GPS_ACC,
+	GPS_LOST,
+	OPS_EMPTY,	//15
+	OPS_LOST,
+	LIFT_POWER,
+	TASK_NO,
+	TASK_PARSE,
+	TASK_BREAK,		//20
+	MODE_CONVERT_A2M,
+	OPS_BLOCKED,
+	GPS_UBLOX_FAIL,
+	NO_AVOID_PATH,
+	P_IN_OBS_AREA,	//25
+	NO_VALID_P,
+	OBS_INFO_ERROR,
+	FLOWMETER1_ERROR,
+	FLOWMETER2_ERROR,
+	FLOWMETER3_ERROR,	//30
+	FLOWMETER4_ERROR,
+
+	EPT_MS_NB 
+};
 struct hover_ms
 {
 	bool_t hover;
@@ -104,7 +142,7 @@ extern uint16_t monitoring_fail_code;
 #define CHECK_INTERVAL(_x, _sta, _deta)  ((_x)>((_sta)-(_deta)) && (_x)<((_sta)+(_deta)))
 
 extern struct except_mission em[EPT_MS_NB];
-extern uint32_t em_code;
+extern uint64_t em_code;
 extern bool_t rc_cmd_interrupt;
 extern bool_t gcs_cmd_interrupt;
 extern bool_t mode_convert_a2m;

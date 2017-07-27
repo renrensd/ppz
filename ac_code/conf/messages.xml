@@ -2116,7 +2116,7 @@
     <field name="gps_flight" type="uint8" values="ok|pacc|nofix"/>
     <field name="em_cmd" type="uint8" values="none|hover|home|land"/>
     <field name="alert_grade" type="uint8" values="ok|low|middle|high"/>
-    <field name="em_code" type="uint32"/>
+    <field name="em_code" type="uint64"/>
     <field name="baro_aver" type="float"/>
   </message>
 
