@@ -20,6 +20,7 @@
     </description>
     <field name="serial_code"   type="char[10]"/>
     <field name="ac_sn"         type="char[12]"/>
+    <field name="msg_version"   type="uint16"/>
   </message>
 
   <message name="AIRCRAFT_INFO_STATE" id="102">

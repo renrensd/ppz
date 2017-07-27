@@ -43,6 +43,7 @@
 #endif	/* FRAM_OPTION */
 
 #include "subsystems/eng/eng_app_if.h"
+#include "subsystems/fram/fram_data.h"
 
 #ifdef XBEE_RESET_GPIO
 #include "mcu_periph/gpio.h"
@@ -345,7 +346,7 @@ void xbee_msg_aircraft_ready_broadcast(void)
 	const char serialcode[] = A2G_SERIAL_CODE;
 	//const char ac_sn[] = AC_SN_CODE;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_BC);
-	DOWNLINK_SEND_AIRCRAFT_BIND_STATE(SecondChannel, SecondDevice, serialcode, &xbee_con_info.ac_sn_code[0]);
+	DOWNLINK_SEND_AIRCRAFT_BIND_STATE(SecondChannel, SecondDevice, serialcode, &xbee_con_info.ac_sn_code[0],&gcs_msg_version);
 }
 #endif
 
