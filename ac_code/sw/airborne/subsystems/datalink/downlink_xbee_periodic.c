@@ -25,7 +25,9 @@
 #include "subsystems/monitoring/monitoring.h"
 
 #include "datalink_ack.h"
+#include "subsystems/gps.h"
 
+#include "math/pprz_geodetic_double.h"
 //#include "subsystems/datalink/downlink.h"
 //#include "uplink_ac.h"
 
@@ -124,31 +126,44 @@ void send_heart_beat_A2G_msg(void)
 	 i++;
 	 if(i==20)  i=1;
 	*/
-	int32_t pos_lon, pos_lat;
-	pos_lon = (int32_t)( (int64_t)(stateGetPositionLla_i()->lon) * 17453293/100000000 );
-	pos_lat = (int32_t)( (int64_t)(stateGetPositionLla_i()->lat) * 17453293/100000000 );
-
+	int32_t pos_lon, pos_lat,pos_alt;
+	struct LlaCoor_d pos_temp_d;
+	struct LlaCoor_i pos_temp_i;
+	struct LlaCoor_f pos_temp_f;
+	struct EnuCoor_i enu_i_pos,enu_i_temp;
+	struct FloatVect2 enu_f_pos;
+	//pos_lon = (int32_t)( (int64_t)(stateGetPositionLla_i()->lon) * 17453293/100000000 );
+	//pos_lat = (int32_t)( (int64_t)(stateGetPositionLla_i()->lat) * 17453293/100000000 );
+	//pos_alt = (int32_t)( (int64_t)(stateGetPositionLla_i()->alt) * 17453293/100000000 );
+	pos_temp_d.lon = (double)(stateGetPositionLla_i()->lon)/10000000.0;
+	pos_temp_d.lat = (double)(stateGetPositionLla_i()->lat)/10000000.0;
+	//pos_temp_d.alt = (double)(stateGetPositionLla_i()->alt);
+	//pos_temp_i.alt = pos_temp_d.alt * 100000000;
+	//task_lla_to_enu_convert(&enu_i_pos, &pos_temp_i);
+	//enu_i_temp = *stateGetPositionEnu_i();
+	//enu_f_pos.x = POS_FLOAT_OF_BFP(enu_i_pos.x);
+	//enu_f_pos.y = POS_FLOAT_OF_BFP(enu_i_pos.y);
 
 	int8_t  battery_remain = electrical.remain_percent; //(int8_t)((electrical.vsupply-420)*100/60);
 	Bound(battery_remain, 0, 100);
 	int8_t  pesticides_remain = (int8_t)(ops_info.res_cap&0x00FF);
 
-	uint32_t error_code = em_code;   //no remove gcs lost error
+	uint64_t error_code = em_code;   //no remove gcs lost error
 	uint16_t selftest_code = (ground_check_step<<8)|(monitoring_fail_code&0x00FF);
 
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);	 //ack processing need handle later
 	DOWNLINK_SEND_HEART_BEAT_AC_GCS_STATE(SecondChannel, SecondDevice,
 																				&system_time,
 																				&link_gcs_quality,
-																				&link_rc_quality,
-																				&link_rssi,
+																				&gps.head_stanum,
+																				&gps.num_sv,
 																				&gcs_cmd_state,
 																				&fl_status,
 																				&heading,
 																				&speed,
 																				&flight_alt,
-																				&pos_lon,
-																				&pos_lat,
+																				&pos_temp_d.lon,
+																				&pos_temp_d.lat,
 																				&battery_remain,
 																				&pesticides_remain,
 																				&error_code,

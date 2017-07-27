@@ -61,7 +61,7 @@ void ops_task(void)
 	ops_comm_read_polling();
 	ops_comm_send_polling();
 
-	if(ops_info.ops_debug == FALSE)
+	if((ops_info.ops_debug == FALSE)&&(Flag_AC_Flight_Ready == TRUE))
 	{
 		ops_spray_msg_handler();
 	}
@@ -216,26 +216,37 @@ void ops_heart_beat_handler(uint8_t *param)
 	ops_info.work_state = *(param+2);
 	ops_info.spray_state = *(param+3);
 
-#ifdef OPS_BAT_OPTION
-	ops_info.o_bat_mv = (*(param+5) << 8 | *(param+4));
-	ops_info.o_bat_ma = (*(param+7) << 8 | *(param+6));
-	ops_info.o_bat_cap = (*(param+9) << 8 | *(param+8));
-	ops_info.o_bat_rep = (*(param+11) << 8 | *(param+10));
-	ops_info.o_bat_tem = (*(param+13) << 8 | *(param+12));
-	ops_info.fw_version = (*(param+15) << 8 | *(param+14));
-	ops_info.cycle_count = (*(param+17) << 8 | *(param+16));
-	ops_info.spraying_flow[0] = *(param+18);
-	ops_info.spraying_flow[1] = *(param+19);
-	ops_info.spraying_flow[2] = *(param+20);
-	ops_info.spraying_flow[3] = *(param+21);
-	ops_info.sys_error = *(param+22);
-	ops_info.mcu_info = *(param+23);
-	if(ops_info.o_bat_cap < 1)
+	ops_info.flag_flowmeter_cali = ops_info.mcu_info = *(param+23);
+	if(ops_info.flag_flowmeter_cali == FALSE)
 	{
-		ops_info.o_bat_cap = 1;
+	#ifdef OPS_BAT_OPTION
+		ops_info.o_bat_mv = (*(param+5) << 8 | *(param+4));
+		ops_info.o_bat_ma = (*(param+7) << 8 | *(param+6));
+		ops_info.o_bat_cap = (*(param+9) << 8 | *(param+8));
+		ops_info.o_bat_rep = (*(param+11) << 8 | *(param+10));
+		ops_info.o_bat_tem = (*(param+13) << 8 | *(param+12));
+		ops_info.fw_version = (*(param+15) << 8 | *(param+14));
+		ops_info.cycle_count = (*(param+17) << 8 | *(param+16));
+		ops_info.spraying_flow[0] = *(param+18);
+		ops_info.spraying_flow[1] = *(param+19);
+		ops_info.spraying_flow[2] = *(param+20);
+		ops_info.spraying_flow[3] = *(param+21);
+		ops_info.sys_error = *(param+22);
+		//ops_info.mcu_info = *(param+23);
+		if(ops_info.o_bat_cap < 1)
+		{
+			ops_info.o_bat_cap = 1;
+		}
+		ops_info.o_bat_rep_percent = ops_info.o_bat_rep*100/ops_info.o_bat_cap;
+	#endif
 	}
-	ops_info.o_bat_rep_percent = ops_info.o_bat_rep*100/ops_info.o_bat_cap;
-#endif
+	else if(ops_info.flag_flowmeter_cali ==0x55)
+	{
+		for(uint8_t i = 0; i < 16; i++)
+		{
+			ops_info.flowmeter1_cali_info[i] = *(param+4+i);
+		}
+	}
 	ops_info.con_flag = OPS_CONNECTED;
 
 	if(ops_info.init_status == OPS_CONF_NOT_CONNECT)
@@ -477,6 +488,47 @@ void ops_request_update_response(uint8_t *param)
 	}
 }
 #endif
+
+void ops_flowmeter_cali_response(uint8_t *param)
+{
+	uint8_t cali_step= *(param);
+	switch (cali_step)
+	{
+		case FLOWMETER_CALI_START_RES:
+		{
+			uint8_t response_status= *(param + 1);
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_FLOWMETER_CALI_ACK(SecondChannel, SecondDevice, &cali_step, 1, &response_status);
+			break;
+		}
+		case FLOWMETER_CALI_NO1_RES:
+		case FLOWMETER_CALI_NO2_RES:
+		case FLOWMETER_CALI_NO3_RES:
+		case FLOWMETER_CALI_NO4_RES:
+		{
+			uint8_t response_status= *(param + 1);
+			ops_info.num_cali_flowmeter = cali_step;
+			ops_info.extra_func_id = FLOWMETER_CALI;
+			tm_create_timer(TIMER_OPS_MSG_EXTRA_FUNCTION, (1000 MSECONDS), TIMER_PERIODIC,0);
+			break;
+		}
+		case FLOWMETER_CALI_END_RES:
+		{
+			uint8_t ops_flowmeter_cali_res[18];
+			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
+			for(uint8_t i = 0; i < 16; i++)
+			{
+				ops_flowmeter_cali_res[i] = *(param + 1 + i);
+			}
+			ops_flowmeter_cali_res[16] =  *(param + 17);
+			ops_flowmeter_cali_res[17] =  *(param + 18);
+			xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_FLOWMETER_CALI_ACK(SecondChannel, SecondDevice, &cali_step, 18, ops_flowmeter_cali_res);
+			break;
+		}
+		
+	}
+}
 
 /**************** END OF FILE *****************************************/
 

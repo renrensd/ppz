@@ -31,7 +31,12 @@
 #define MAX_OPS_SV_VERSION_LEN  30
 
 /**** Definition of types ****/
-
+enum ops_func_id
+{
+	OPEN_SIX_SPRAY,
+	FLOWMETER_INFO,
+	FLOWMETER_CALI
+};
 /**** Definition of macros ****/
 struct OPS_INFO
 {
@@ -47,6 +52,7 @@ struct OPS_INFO
 	uint8_t con_flag;	//the flag that aircraft connected to ops.
 	uint8_t selfclean_flag;
 	uint8_t ops_debug;
+	enum ops_func_id extra_func_id;
 	//#ifdef OPS_BAT_OPTION
 	uint16_t  o_bat_mv;
 	uint16_t  o_bat_ma;
@@ -58,6 +64,9 @@ struct OPS_INFO
 	uint16_t fw_version;
 	uint16_t cycle_count;
 	uint8_t spraying_flow[4];
+	uint8_t flag_flowmeter_cali;
+	uint8_t num_cali_flowmeter;
+	uint8_t flowmeter1_cali_info[32];
 	uint8_t  sys_error;
 	uint8_t  mcu_info;
 

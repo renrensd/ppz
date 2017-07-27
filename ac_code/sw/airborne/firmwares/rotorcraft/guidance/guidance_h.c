@@ -497,7 +497,7 @@ void guidance_h_trajectory_tracking_set_ref_speed(float speed)
 void guidance_h_trajectory_tracking_set_emergency_brake_acc(float acc)
 {
 	traj.emergency_brake_acc = acc;
-	Bound(traj.emergency_brake_acc, 1.0f, 5.0f);
+	Bound(traj.emergency_brake_acc, 1.0f, 10.0f);
 }
 
 void guidance_h_trajectory_tracking_set_max_acc(float acc)
@@ -686,7 +686,7 @@ static void guidance_h_trajectory_tracking_ini(void)
 	guidance_h_trajectory_tracking_set_min_brake_len(5.0f);
 	guidance_h_trajectory_tracking_set_pre_brake_len(15.0f);
 	guidance_h_trajectory_tracking_set_pre_brake_speed(3.0f);
-	guidance_h_trajectory_tracking_set_emergency_brake_acc(3.0f);
+	guidance_h_trajectory_tracking_set_emergency_brake_acc(10.0f);
 	traj.test_length = 20.0f;
 	traj.max_acc_backup = traj.max_acc;
 }
@@ -802,6 +802,10 @@ static void guidance_h_trajectory_tracking_state_machine(void)
 			{
 				traj.guid_speed_2 = traj.guid_speed_1;
 			}
+		}
+		if(traj.emergency_brake)
+		{
+			traj.guid_speed_2 = 0;
 		}
 		Bound(traj.guid_speed_2, 0, 10);
 

@@ -69,6 +69,9 @@ struct AhrsMlkf
 	bool_t virtual_rtk_heading_valid;
 	bool_t rtk_gps_update;
 	enum _e_ahrs_mlkf_heading_status heading_state;
+	float mag_heading_rad;
+	float gps_heading_rad;
+	float diff_heading_rad;
 	float mag_heading;
 	float mlkf_heading;
 	float diff_heading;

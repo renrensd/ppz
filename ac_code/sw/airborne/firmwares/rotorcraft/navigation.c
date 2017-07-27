@@ -46,6 +46,7 @@
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 
 #include "math/pprz_algebra_int.h"
+#include "math/pprz_algebra_float.h"
 
 #include "subsystems/datalink/downlink.h"
 #include "messages.h"
@@ -155,7 +156,7 @@ static void send_nav_status(struct transport_tx *trans, struct link_device *dev)
 																			&dist_home, &dist_wp,
 																			&nav_block, &nav_stage,
 																			&horizontal_mode,
-																			&ops_info.spray_state, &ops_info.treated_area);
+																			&ops_info.spray_state, &p_transfer_useful);
 	if (horizontal_mode == HORIZONTAL_MODE_ROUTE)
 	{
 		float sx = POS_FLOAT_OF_BFP(nav_segment_start.x);
@@ -912,7 +913,13 @@ bool_t nav_set_heading_forward_line(struct EnuCoor_i *wp_from,struct EnuCoor_i *
 	// don't change heading if closer than 0.5m to target
 	if( abs(pos_diff.x)>65 || abs(pos_diff.y)>65 )
 	{
-		nav_heading  = int32_atan2(pos_diff.x, pos_diff.y);
+		struct FloatVect2 pos_diff_f;
+		pos_diff_f.x = POS_FLOAT_OF_BFP(pos_diff.x);
+		pos_diff_f.y = POS_FLOAT_OF_BFP(pos_diff.y);
+		float_vect2_normalize(&pos_diff_f);
+		float pre_heading_f = atan2f(pos_diff_f.x, pos_diff_f.y);
+		int32_t pre_heading = ANGLE_BFP_OF_REAL(pre_heading_f);
+		nav_heading  = pre_heading;
 	}
 	return FALSE;
 }
@@ -925,7 +932,13 @@ bool_t nav_set_heading_parallel_line(struct EnuCoor_i *wp_from,struct EnuCoor_i 
 	// don't change heading if closer than 0.5m to target
 	if( abs(pos_diff.x)>65 || abs(pos_diff.y)>65 )
 	{
-		int32_t pre_heading = int32_atan2(pos_diff.x, pos_diff.y);
+		struct FloatVect2 pos_diff_f;
+		pos_diff_f.x = POS_FLOAT_OF_BFP(pos_diff.x);
+		pos_diff_f.y = POS_FLOAT_OF_BFP(pos_diff.y);
+		float_vect2_normalize(&pos_diff_f);
+		float pre_heading_f = atan2f(pos_diff_f.x, pos_diff_f.y);
+		int32_t pre_heading = ANGLE_BFP_OF_REAL(pre_heading_f);
+
 		int32_t sp_heading = nav_heading;
 		INT32_ANGLE_NORMALIZE(pre_heading);
 		INT32_ANGLE_NORMALIZE(nav_heading);

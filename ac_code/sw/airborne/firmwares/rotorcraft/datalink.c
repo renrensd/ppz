@@ -102,13 +102,13 @@
 /*use for corret gen_message.ml generate dynamic array*/
 #define DL_ADD_TASK_waypoints_lon_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+9+DL_ADD_TASK_wp_action_length(_payload))))
 
-#define DL_ADD_TASK_waypoints_lon_cor(_payload)        ((int32_t*)(_payload+10+DL_ADD_TASK_wp_action_length(_payload)))
+#define DL_ADD_TASK_waypoints_lon_cor(_payload)        ((int8_t*)(_payload+10+DL_ADD_TASK_wp_action_length(_payload)))
 
 #define DL_ADD_TASK_waypoints_lat_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+10+DL_ADD_TASK_wp_action_length(_payload) \
-	                                                     +4*DL_ADD_TASK_waypoints_lon_length_cor(_payload))))
+	                                                     +8*DL_ADD_TASK_waypoints_lon_length_cor(_payload))))
 
-#define DL_ADD_TASK_waypoints_lat_cor(_payload) ((int32_t*)(_payload+11+DL_ADD_TASK_wp_action_length(_payload) \
-	                                                     +4*DL_ADD_TASK_waypoints_lon_length_cor(_payload)))
+#define DL_ADD_TASK_waypoints_lat_cor(_payload) ((int8_t*)(_payload+11+DL_ADD_TASK_wp_action_length(_payload) \
+	                                                     +8*DL_ADD_TASK_waypoints_lon_length_cor(_payload)))
 
 
 #define DL_UPDATE_TASK_waypoints_lon_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+9+DL_UPDATE_TASK_wp_action_length(_payload))))
@@ -124,21 +124,22 @@
 
 #define DL_LAND_TASK_waypoints_lon_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+5+DL_LAND_TASK_land_type_length(_payload))))
 
-#define DL_LAND_TASK_waypoints_lon_cor(_payload) ((int32_t*)(_payload+6+DL_LAND_TASK_land_type_length(_payload)))
+#define DL_LAND_TASK_waypoints_lon_cor(_payload) ((int8_t*)(_payload+6+DL_LAND_TASK_land_type_length(_payload)))
 
 #define DL_LAND_TASK_waypoints_lat_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+6+DL_LAND_TASK_land_type_length(_payload) \
-	                                                     +4*DL_LAND_TASK_waypoints_lon_length_cor(_payload))))
+	                                                     +8*DL_LAND_TASK_waypoints_lon_length_cor(_payload))))
 
-#define DL_LAND_TASK_waypoints_lat_cor(_payload) ((int32_t*)(_payload+7+DL_LAND_TASK_land_type_length(_payload) \
-	                                                     +4*DL_LAND_TASK_waypoints_lon_length_cor(_payload)))
+#define DL_LAND_TASK_waypoints_lat_cor(_payload) ((int8_t*)(_payload+7+DL_LAND_TASK_land_type_length(_payload) \
+	                                                     +8*DL_LAND_TASK_waypoints_lon_length_cor(_payload)))
 
 
+#define DL_ADD_BORDER_INFO_bp_points_lon_cor(_payload) ((int8_t*)(_payload+5))
+#define DL_ADD_BORDER_INFO_bp_points_lat_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+5+8*DL_ADD_BORDER_INFO_bp_points_lon_length(_payload))))
+#define DL_ADD_BORDER_INFO_bp_points_lat_cor(_payload) ((int8_t*)(_payload+6+8*DL_ADD_BORDER_INFO_bp_points_lon_length(_payload)))
 
-#define DL_ADD_BORDER_INFO_bp_points_lat_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+5+4*DL_ADD_BORDER_INFO_bp_points_lon_length(_payload))))
-#define DL_ADD_BORDER_INFO_bp_points_lat_cor(_payload) ((int32_t*)(_payload+6+4*DL_ADD_BORDER_INFO_bp_points_lon_length(_payload)))
-
-#define DL_ADD_OBSTACLE_INFO_op_points_lat_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+5+4*DL_ADD_OBSTACLE_INFO_op_points_lon_length(_payload))))
-#define DL_ADD_OBSTACLE_INFO_op_points_lat_cor(_payload) ((int32_t*)(_payload+6+4*DL_ADD_OBSTACLE_INFO_op_points_lon_length(_payload)))
+#define DL_ADD_OBSTACLE_INFO_op_points_lon_cor(_payload) ((int8_t*)(_payload+5))
+#define DL_ADD_OBSTACLE_INFO_op_points_lat_length_cor(_payload) ((uint8_t)(*((uint8_t*)_payload+5+8*DL_ADD_OBSTACLE_INFO_op_points_lon_length(_payload))))
+#define DL_ADD_OBSTACLE_INFO_op_points_lat_cor(_payload) ((int8_t*)(_payload+6+8*DL_ADD_OBSTACLE_INFO_op_points_lon_length(_payload)))
 
 #endif //GCS_V1_OPTION
 
@@ -296,7 +297,7 @@ void dl_parse_msg(void)
 			if((dl_bp_info.length_bp_lon == dl_bp_info.length_bp_lat)
 					&&(dl_bp_info.length_bp_lon <= OA_MAX_BOUNDARY_VERTICES_NUM))
 			{
-				dl_bp_info.bp_points_lon = DL_ADD_BORDER_INFO_bp_points_lon(dl_buffer);
+				dl_bp_info.bp_points_lon = DL_ADD_BORDER_INFO_bp_points_lon_cor(dl_buffer);
 				dl_bp_info.bp_points_lat = DL_ADD_BORDER_INFO_bp_points_lat_cor(dl_buffer);
 				response = parse_add_border(dl_bp_info);
 			}
@@ -323,7 +324,7 @@ void dl_parse_msg(void)
 			if((dl_op_info.length_op_lat == dl_op_info.length_op_lat)
 					&& (dl_op_info.length_op_lat <= (OA_MAX_OBSTACLES_NUM * OA_OBSTACLE_CORNER_NUM)))
 			{
-				dl_op_info.op_points_lon = DL_ADD_OBSTACLE_INFO_op_points_lon(dl_buffer);
+				dl_op_info.op_points_lon = DL_ADD_OBSTACLE_INFO_op_points_lon_cor(dl_buffer);
 				dl_op_info.op_points_lat = DL_ADD_OBSTACLE_INFO_op_points_lat_cor(dl_buffer);
 				response = parse_add_obstacle(dl_op_info);
 			}
@@ -525,6 +526,35 @@ void dl_parse_msg(void)
 			break;
 		}
 
+		case DL_FLOWMETER_CALI:
+		{
+			uint8_t cali_step = DL_FLOWMETER_CALI_step(dl_buffer);
+			uint8_t cali_data = DL_FLOWMETER_CALI_data(dl_buffer);
+			uint8_t Param[3]={OPS_PRIO_GENERAL,cali_step,cali_data};
+			switch(cali_step)
+			{
+				case FLOWMETER_CALI_START:
+				{
+					ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_FLOWMETER_CALI_ID,3, Param);
+					break;
+				}
+				case FLOWMETER_CALI_NO1:
+				case FLOWMETER_CALI_NO2:
+				case FLOWMETER_CALI_NO3:
+				case FLOWMETER_CALI_NO4:
+				{
+					ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_FLOWMETER_CALI_ID,3, Param);
+					break;
+				}
+				case FLOWMETER_CALI_END:
+				{
+					ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_FLOWMETER_CALI_ID,2, Param);
+					break;
+				}
+			}
+			break;
+		}
+		
 #ifdef UPGRADE_OPTION
 		case DL_REQUEST_UPGRADE:
 		{

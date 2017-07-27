@@ -20,6 +20,7 @@
 
 /**** System include files ****/
 #include "subsystems/monitoring/monitoring_misc.h"
+#include "subsystems/monitoring/monitoring_height.h"
 #include "subsystems/monitoring/monitoring.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "subsystems/electrical.h"
@@ -181,7 +182,7 @@ void battery_flight_check(void)
 ***********************************************************************/
 void gps_flight_check(void)
 {
-	static uint16_t count = 0;
+	static uint16_t diff_count = 0;
 	static float diff_sum = 0;
 	static bool_t diff_err = FALSE;
 
@@ -198,7 +199,7 @@ void gps_flight_check(void)
 	else
 	{
 		rtk_pos_valid = ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid() && rtk_power_up_stable();
-		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid() && rtk_power_up_stable();
+		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid();
 		ublox_valid = ins_int_is_ublox_pos_valid();
 	}
 
@@ -251,22 +252,39 @@ void gps_flight_check(void)
 
 		if ( mag_cali.cali_ok && ground_check_pass )
 		{
-			diff_sum += fabsf(ahrs_mlkf.diff_heading);
-			if (++count >= (10))	// 2s
+			float diff_abs = fabsf(DegOfRad(ahrs_mlkf.diff_heading_rad));
+
+			if( diff_err )
 			{
-				diff_sum /= (float) (10);
-				if (diff_sum > 20)
+				if( diff_abs < 15 )
 				{
-					diff_err = TRUE;
-					set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-					force_use_heading_redundency(TRUE);
+					if( diff_count++ > 10 ) //2s
+					{
+						diff_count = 0;
+						diff_err = FALSE;
+					}
 				}
 				else
 				{
-					diff_err = FALSE;
+					diff_count = 0;
 				}
-				count = 0;
-				diff_sum = 0;
+			}
+			else
+			{
+				if( diff_abs > 25 )
+				{
+					if( diff_count++ > 20 ) //4s
+					{
+						diff_count = 0;
+						diff_err = TRUE;
+						set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+						force_use_heading_redundency(TRUE);
+					}
+				}
+				else
+				{
+					diff_count = 0;
+				}
 			}
 		}
 	}
@@ -382,6 +400,18 @@ void ops_flight_check(void)
 			em[OPS_BLOCKED].active = FALSE;
 			em[OPS_BLOCKED].finished = FALSE;
 		}
+		for(uint8_t i = 0;i < 4; i++)
+		{
+			if(ops_info.sys_error & (1<<(4+i)))
+			{
+				set_except_mission(FLOWMETER1_ERROR+i, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+			}
+			else
+			{
+				em[FLOWMETER1_ERROR+i].active = FALSE;
+				em[FLOWMETER1_ERROR+i].finished = FALSE;
+			}
+		}
 	}
 }
 
@@ -495,9 +525,10 @@ void mode_convert_check(void)
 uint8_t autopilot_ground_check(void)
 {
 	//uint8_t check_code=0;
-	if( !ahrs_ground_check() ) return 0;
-	if( !ins_ground_check() ) return 0;
-	else return 1;
+	if( !ahrs_ground_check() ) return 1;
+	if( !ins_ground_check() ) return 2;
+	if( h_moni.baro_status )  return 3;
+	else return 0;
 }
 
 static uint8_t ahrs_ground_check(void)
@@ -556,7 +587,7 @@ static bool_t lift_lost_detect(void)
 static bool_t yaw_command_monitor(void)
 {
 	static uint16_t counter = 0;
-	if( abs(stabilization_cmd[COMMAND_YAW]) > MAX_ERROR_YAW_COMMAND )
+	if( stabilization_attitude_get_yaw_error_1() )
 	{
 		counter++;
 		if(counter > MONITORING_FREQUENCY * 5)  //continual 5s

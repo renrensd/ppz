@@ -61,20 +61,24 @@ static void send_att(struct transport_tx *trans, struct link_device *dev)
 	//float foo = 0.0;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_STAB_ATTITUDE_FLOAT(trans, dev, AC_ID,
-																		&(body_rate->p), &(body_rate->q), &(body_rate->r),
-																		&(att->phi), &(att->theta), &(att->psi),
-																		&stab_att_sp_euler.phi,
-																		&stab_att_sp_euler.theta,
-																		&stab_att_sp_euler.psi,
-																		&stab_d_rate_sum_err.phi,
-																		&stab_d_rate_sum_err.theta,
-																		&stab_d_rate_sum_err.psi,
-																		&stabilization_att_fb_cmd[COMMAND_ROLL],
-																		&stabilization_att_fb_cmd[COMMAND_PITCH],
-																		&stabilization_att_fb_cmd[COMMAND_YAW],
 																		&desired_rate.p,
 																		&desired_rate.q,
 																		&desired_rate.r,
+																		&(body_rate->p),
+																		&(body_rate->q),
+																		&(body_rate->r),
+																		&stab_att_sp_euler.phi,
+																		&stab_att_sp_euler.theta,
+																		&stab_att_sp_euler.psi,
+																		&att_ref_euler_f.euler.phi,
+																		&att_ref_euler_f.euler.theta,
+																		&att_ref_euler_f.euler.psi,
+																		&(att->phi),
+																		&(att->theta),
+																		&(att->psi),
+																		&stab_d_rate_sum_err.phi,
+																		&stab_d_rate_sum_err.theta,
+																		&stab_d_rate_sum_err.psi,
 																		&stabilization_cmd[COMMAND_ROLL],
 																		&stabilization_cmd[COMMAND_PITCH],
 																		&stabilization_cmd[COMMAND_YAW]);
@@ -84,18 +88,8 @@ static void send_att_ref(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_STAB_ATTITUDE_REF_FLOAT(trans, dev, AC_ID,
-																				&stab_att_sp_euler.phi,
-																				&stab_att_sp_euler.theta,
 																				&stab_att_sp_euler.psi,
-																				&att_ref_euler_f.euler.phi,
-																				&att_ref_euler_f.euler.theta,
-																				&att_ref_euler_f.euler.psi,
-																				&att_ref_euler_f.rate.p,
-																				&att_ref_euler_f.rate.q,
-																				&att_ref_euler_f.rate.r,
-																				&att_ref_euler_f.accel.p,
-																				&att_ref_euler_f.accel.q,
-																				&att_ref_euler_f.accel.r);
+																				&att_ref_euler_f.euler.psi);
 }
 #endif
 
@@ -108,16 +102,11 @@ void stabilization_attitude_init(void)
 							 STABILIZATION_ATTITUDE_PHI_PGAIN,
 							 STABILIZATION_ATTITUDE_THETA_PGAIN,
 							 STABILIZATION_ATTITUDE_PSI_PGAIN);
-	/*
+
 	VECT3_ASSIGN(stabilization_gains.d,
-	             STABILIZATION_ATTITUDE_PHI_DGAIN,
-	             STABILIZATION_ATTITUDE_THETA_DGAIN,
-	             STABILIZATION_ATTITUDE_PSI_DGAIN);
-	VECT3_ASSIGN(stabilization_gains.dd,
-	             STABILIZATION_ATTITUDE_PHI_DDGAIN,
-	             STABILIZATION_ATTITUDE_THETA_DDGAIN,
-	             STABILIZATION_ATTITUDE_PSI_DDGAIN);
-	*/
+								 STABILIZATION_ATTITUDE_PHI_DGAIN,
+								 STABILIZATION_ATTITUDE_THETA_DGAIN,
+								 STABILIZATION_ATTITUDE_PSI_DGAIN);
 
 	VECT3_ASSIGN(stabilization_gains.p_rate,
 							 STABILIZATION_ATTITUDE_PHIRATE_PGAIN,
@@ -138,6 +127,8 @@ void stabilization_attitude_init(void)
 							 STABILIZATION_ATTITUDE_PHIRATE_FFGAIN,
 							 STABILIZATION_ATTITUDE_THETARATE_FFGAIN,
 							 STABILIZATION_ATTITUDE_PSIRATE_FFGAIN);
+
+	stabilization_gains.psi_guid_p = 0.006;
 
 	FLOAT_EULERS_ZERO(stab_d_rate_sum_err);
 
@@ -198,35 +189,75 @@ void stabilization_attitude_set_body_cmd_f(float phi, float theta, float psi)
 }
 
 
-#define MAX_SUM_ERR 1000
+#define MAX_SUM_PQ_ERR ((float)MAX_PPRZ*0.8f)
+#define MAX_SUM_R_ERR ((float)MAX_PPRZ*0.5f)
 
-#define MAX_DESIRED_RATE 50.0
-void stabilization_attitude_run(bool_t  in_flight)
+#define MAX_DESIRED_PQ_RATE (4 * M_PI)
+#define MAX_DESIRED_R_RATE (1 * M_PI)
+#define MAX_GUID_R_RATE (0.2f * M_PI)
+
+#define MAX_PQ_CMD	(MAX_PPRZ)
+#define MAX_R_CMD		(MAX_PPRZ/2)
+
+static void attitude_ref_update(void)
 {
+	static float last_guid_err = 0;
+	//float sp_psi = stab_att_sp_euler.psi;
+	FLOAT_ANGLE_NORMALIZE(stab_att_sp_euler.psi);
+	FLOAT_ANGLE_NORMALIZE(att_ref_euler_f.euler.psi);
+	float guid_err = stab_att_sp_euler.psi - att_ref_euler_f.euler.psi;
+	FLOAT_ANGLE_NORMALIZE(guid_err);
 
-#if USE_ATT_REF
-	static const float _dt = (1./PERIODIC_FREQUENCY);
-	attitude_ref_euler_float_update(&att_ref_euler_f, &stab_att_sp_euler, _dt);
+	float guid_Ud = last_guid_err - guid_err;
+	FLOAT_ANGLE_NORMALIZE(guid_Ud);
+
+	float step = guid_err * stabilization_gains.psi_guid_p;
+	Bound(step, -MAX_GUID_R_RATE/(float)PERIODIC_FREQUENCY, +MAX_GUID_R_RATE/(float)PERIODIC_FREQUENCY);
+	float step_abs = fabsf(step);
+
+	if( step > 0 )
+	{
+		att_ref_euler_f.euler.psi += step_abs;
+		FLOAT_ANGLE_NORMALIZE(att_ref_euler_f.euler.psi);
+		float err = stab_att_sp_euler.psi - att_ref_euler_f.euler.psi;
+		FLOAT_ANGLE_NORMALIZE(err);
+		if(err < 0)
+		{
+			att_ref_euler_f.euler.psi = stab_att_sp_euler.psi;
+		}
+	}
+	else
+	{
+		att_ref_euler_f.euler.psi -= step_abs;
+		FLOAT_ANGLE_NORMALIZE(att_ref_euler_f.euler.psi);
+		float err = stab_att_sp_euler.psi - att_ref_euler_f.euler.psi;
+		FLOAT_ANGLE_NORMALIZE(err);
+		if(err > 0)
+		{
+			att_ref_euler_f.euler.psi = stab_att_sp_euler.psi;
+		}
+	}
+
 	att_ref_euler_f.euler.phi = stab_att_sp_euler.phi;
 	att_ref_euler_f.euler.theta = stab_att_sp_euler.theta;
+}
+
+void stabilization_attitude_run(bool_t  in_flight)
+{
+#if USE_ATT_REF
+	//static const float _dt = (1./PERIODIC_FREQUENCY);
+	//attitude_ref_euler_float_update(&att_ref_euler_f, &stab_att_sp_euler, _dt);
+	//att_ref_euler_f.euler.phi = stab_att_sp_euler.phi;
+	//att_ref_euler_f.euler.theta = stab_att_sp_euler.theta;
+	attitude_ref_update();
 #else
 	EULERS_COPY(att_ref_euler_f.euler, stab_att_sp_euler);
 	FLOAT_RATES_ZERO(att_ref_euler_f.rate);
 	FLOAT_RATES_ZERO(att_ref_euler_f.accel);
 #endif
 
-	/*below is double control loop from apm2.9*/
-	float scaler = 1.0;
-
-	static uint32_t _last_t = 0;
-	uint32_t tnow = get_sys_time_usec();
-	int32_t dt = tnow - _last_t;
-	if (dt < 0 || dt > 10000)
-	{
-		dt = 1000000/PERIODIC_FREQUENCY;
-	}
-	_last_t = tnow;
-	float delta_time = (float)dt / 1000000.0;  //unit:second
+	float delta_time = 1.0f/(float)PERIODIC_FREQUENCY;  //unit:second
+	float inv_deta_t = 1.0/delta_time;
 
 	struct FloatEulers att_float = *stateGetNedToBodyEulers_f();
 	struct FloatEulers att_err;
@@ -234,59 +265,42 @@ void stabilization_attitude_run(bool_t  in_flight)
 	FLOAT_ANGLE_NORMALIZE(att_err.psi);
 
 	/*rate filter*/
-	const float RC = 1.0/(2*M_PI*20);  //use 20hz low filter
-	const float s = delta_time / (RC + delta_time);
-	static struct FloatRates _last_rate;
 	struct FloatRates rate_float = *stateGetBodyRates_f();
-	struct FloatRates rate_err;
-	RATES_DIFF(rate_err, rate_float, _last_rate);
-	RATES_SUM_SCALED(rate_float, _last_rate, rate_err, s);
-	RATES_COPY(_last_rate, rate_float);
 
 	desired_rate.p = stabilization_gains.p.x  * att_err.phi;
 	desired_rate.q = stabilization_gains.p.y  * att_err.theta;
 	desired_rate.r = stabilization_gains.p.z  * att_err.psi;
 
-	BoundAbs(desired_rate.p, MAX_DESIRED_RATE);
-	BoundAbs(desired_rate.q, MAX_DESIRED_RATE);
-	BoundAbs(desired_rate.r, MAX_DESIRED_RATE);
+	BoundAbs(desired_rate.p, MAX_DESIRED_PQ_RATE);
+	BoundAbs(desired_rate.q, MAX_DESIRED_PQ_RATE);
+	BoundAbs(desired_rate.r, MAX_DESIRED_R_RATE);
 
 	//struct FloatVect3 rate_err;
+	struct FloatRates rate_err;
 	rate_err.p = desired_rate.p - rate_float.p;
 	rate_err.q = desired_rate.q - rate_float.q;
 	rate_err.r = desired_rate.r - rate_float.r;
 
-	//struct FloatVect3 fb_cmd;
-	//stabilization_att_fb_cmd[COMMAND_ROLL] = (stabilization_gains.d.x * rate_err.p  + stabilization_gains.dd.x * desired_rate.p);
-	//stabilization_att_fb_cmd[COMMAND_PITCH] = (stabilization_gains.d.y * rate_err.q  + stabilization_gains.dd.y * desired_rate.q);
-	//stabilization_att_fb_cmd[COMMAND_YAW] = (stabilization_gains.d.z * rate_err.r  + stabilization_gains.dd.z * desired_rate.r);
-
 	//cpz-rate_loop-P+D
-	static struct FloatRates rate_float_prev;//???\BF??\C7\CB?\C8???
-	static struct FloatRates desired_rate_prev;//???\BF??\C7\CB??\F8\B6\A8?
-
-	const float inv_deta_t = 1.0/delta_time;
+	static struct FloatRates rate_float_prev;
+	static struct FloatRates desired_rate_prev;
 
 	stabilization_att_fb_cmd[COMMAND_ROLL] = stabilization_gains.p_rate.x * rate_err.p
-			+ stabilization_gains.d_rate.x*(rate_float_prev.p-rate_float.p)*inv_deta_t
-			+ stabilization_gains.ff_rate.x*(desired_rate.p-desired_rate_prev.p)*inv_deta_t ;
+			+ stabilization_gains.d_rate.x*(rate_float_prev.p-rate_float.p)*inv_deta_t;
 
 	stabilization_att_fb_cmd[COMMAND_PITCH] = stabilization_gains.p_rate.y * rate_err.q
-			+ stabilization_gains.d_rate.y*(rate_float_prev.q-rate_float.q)*inv_deta_t
-			+ stabilization_gains.ff_rate.y*(desired_rate.q-desired_rate_prev.q)*inv_deta_t ;
+			+ stabilization_gains.d_rate.y*(rate_float_prev.q-rate_float.q)*inv_deta_t;
 
 	stabilization_att_fb_cmd[COMMAND_YAW] = stabilization_gains.p_rate.z * rate_err.r
-																					+ stabilization_gains.d_rate.z*(rate_float_prev.r-rate_float.r)*inv_deta_t
-																					+ stabilization_gains.ff_rate.z*(desired_rate.r-desired_rate_prev.r)*inv_deta_t ;
+			+ stabilization_gains.d_rate.z*(rate_float_prev.r-rate_float.r)*inv_deta_t;
+
 	RATES_COPY(desired_rate_prev, desired_rate);
 	RATES_COPY(rate_float_prev, rate_float);
-	//cpz-rate_loop-P+D
-
 
 	/*caculate intergrate*/
 	if(in_flight)
 	{
-		if( stabilization_cmd[COMMAND_THRUST] > 4500 )
+		if( stabilization_cmd[COMMAND_THRUST] > 1500 )
 		{
 			stab_sum_flag = TRUE;
 		}
@@ -307,23 +321,34 @@ void stabilization_attitude_run(bool_t  in_flight)
 			-MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_PITCH], MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_PITCH]);
 		Bound(stab_d_rate_sum_err.psi,
 		    -MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_YAW], MAX_SUM_ERR-stabilization_att_fb_cmd[COMMAND_YAW]);*/
-		Bound(stab_d_rate_sum_err.phi,-MAX_SUM_ERR, MAX_SUM_ERR);
-		Bound(stab_d_rate_sum_err.theta,-MAX_SUM_ERR, MAX_SUM_ERR);
-		Bound(stab_d_rate_sum_err.psi,-MAX_SUM_ERR, MAX_SUM_ERR);
-
+		Bound(stab_d_rate_sum_err.phi,-MAX_SUM_PQ_ERR, MAX_SUM_PQ_ERR);
+		Bound(stab_d_rate_sum_err.theta,-MAX_SUM_PQ_ERR, MAX_SUM_PQ_ERR);
+		Bound(stab_d_rate_sum_err.psi,-MAX_SUM_R_ERR, MAX_SUM_R_ERR);
 	}
 
-	stabilization_cmd[COMMAND_ROLL]  = (int32_t)( (stabilization_att_fb_cmd[COMMAND_ROLL] + stab_d_rate_sum_err.phi) * scaler);
-	stabilization_cmd[COMMAND_PITCH] = (int32_t)( (stabilization_att_fb_cmd[COMMAND_PITCH] + stab_d_rate_sum_err.theta) * scaler);
-	stabilization_cmd[COMMAND_YAW]   = (int32_t)( (stabilization_att_fb_cmd[COMMAND_YAW] + stab_d_rate_sum_err.psi) * scaler);
+	stabilization_cmd[COMMAND_ROLL]  = (int32_t)( (stabilization_att_fb_cmd[COMMAND_ROLL] + stab_d_rate_sum_err.phi));
+	stabilization_cmd[COMMAND_PITCH] = (int32_t)( (stabilization_att_fb_cmd[COMMAND_PITCH] + stab_d_rate_sum_err.theta));
+	stabilization_cmd[COMMAND_YAW]   = (int32_t)( (stabilization_att_fb_cmd[COMMAND_YAW] + stab_d_rate_sum_err.psi));
 
 	/* bound the result */
-	BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
-	BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
-	BoundAbs(stabilization_cmd[COMMAND_YAW], (MAX_PPRZ/2));
+	BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PQ_CMD);
+	BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PQ_CMD);
+	BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_R_CMD);
 #if 0
 	stabilization_cmd[COMMAND_ROLL] = 0;
 	stabilization_cmd[COMMAND_PITCH] = 0;
 	stabilization_cmd[COMMAND_YAW] = 0;
 #endif
+}
+
+bool_t stabilization_attitude_get_yaw_error_1(void)
+{
+	if( fabsf(stabilization_cmd[COMMAND_YAW]) > ((float) MAX_R_CMD * 0.8f) )
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }

@@ -51,7 +51,7 @@ struct FloatAttitudeGains
 	struct FloatVect3  i_rate;
 	struct FloatVect3  ff_rate;
 	//cpz------P+D
-
+	float psi_guid_p;
 };
 
 extern float stabilization_att_fb_cmd[COMMANDS_NB];

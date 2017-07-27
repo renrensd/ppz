@@ -148,7 +148,7 @@ static bool_t run_monitoring_flag;        //if poweron selftest fail set false t
 bool_t ground_check_pass;                 //global var use to sign ground monitoring result
 
 uint16_t monitoring_fail_code;            //poweron selftest error code
-uint32_t em_code; /*one bit express one emergency in EPT_MS_NB sequence*/
+uint64_t em_code; /*one bit express one emergency in EPT_MS_NB sequence*/
 
 struct except_mission em[EPT_MS_NB];      //emergency var, store raw info
 
@@ -307,7 +307,8 @@ static inline void monitoring_msg_handle(void)
 													 &gps_flight,
 													 &monitor_cmd,
 													 &em_alert_grade,
-													 &em_code);
+													 &em_code,
+													 &h_moni.baro_aver);
 #endif
 #endif
 	}
@@ -370,6 +371,7 @@ void ground_monitoring_init(void)
 void ground_monitoring(void)
 {
 	static uint32_t time_record;
+	static bool_t last_stable = FALSE;
 	uint8_t check_state;
 
 	if (get_sys_time_msec() < 5000)
@@ -478,7 +480,13 @@ void ground_monitoring(void)
 		}
 		break;
 	case RTK_CHECK:
-		if (rtk_power_up_stable() && ((get_sys_time_msec() - time_record) > 5000))
+		if( (rtk_power_up_stable() == TRUE) && (last_stable == FALSE) )
+		{
+			time_record = get_sys_time_msec();
+		}
+		last_stable = rtk_power_up_stable();
+
+		if (rtk_power_up_stable() && ((get_sys_time_msec() - time_record) > 10000))
 		{
 			monitoring_fail_code = PASS;
 			ground_check_step++;  //next step
@@ -511,7 +519,7 @@ void ground_monitoring(void)
 		break;
 
 	case AUTOPILOT_CHECK:
-		if (autopilot_ground_check())
+		if (!autopilot_ground_check())
 		{
 			ground_check_step++;  //next step
 		}
@@ -773,7 +781,7 @@ static inline void alert_grade_update(void)
 			{
 				em_alert_grade = em[i].alert_grade;
 			}
-			em_code = em_code | (1 << i);
+			em_code = em_code | ((uint64_t)1 << i);
 		}
 	}
 }

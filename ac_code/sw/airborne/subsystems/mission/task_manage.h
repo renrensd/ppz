@@ -25,6 +25,7 @@
 #include "math/pprz_algebra.h"
 #include "math/pprz_algebra_int.h"
 #include "math/pprz_geodetic_int.h"
+#include "math/pprz_geodetic_double.h" //TODO:for debug
 
 
 #define NB_TASK 50
@@ -91,9 +92,9 @@ struct Task_Info
 	uint8_t length_wp_action;
 	uint8_t *wp_action;
 	uint8_t length_wp_lon;
-	int32_t *waypoints_lon;
+	int8_t *waypoints_lon;
 	uint8_t length_wp_lat;
-	int32_t *waypoints_lat;
+	int8_t *waypoints_lat;
 };
 
 /*
@@ -109,9 +110,9 @@ struct bp_Info
 	uint8_t task_code;
 	uint8_t total_bp_num;
 	uint8_t length_bp_lon;
-	int32_t *bp_points_lon;
+	int8_t *bp_points_lon;
 	uint8_t length_bp_lat;
-	int32_t *bp_points_lat;
+	int8_t *bp_points_lat;
 };
 
 /*
@@ -128,9 +129,9 @@ struct op_Info
 	uint8_t task_code;
 	uint8_t total_op_num;
 	uint8_t length_op_lon;
-	int32_t *op_points_lon;
+	int8_t *op_points_lon;
 	uint8_t length_op_lat;
-	int32_t *op_points_lat;
+	int8_t *op_points_lat;
 };
 
 struct _s_oa_data
@@ -160,8 +161,8 @@ struct Land_Info
 	uint8_t land_type_length;
 	uint8_t waypoints_length;
 	uint8_t *land_type;
-	int32_t *waypoints_lon;
-	int32_t *waypoints_lat;
+	int8_t  *waypoints_lon; //start add
+	int8_t  *waypoints_lat;
 };
 
 struct Task_Wp
@@ -188,7 +189,7 @@ struct Task_Wp_Enu
 
 extern struct Task_Wp task_wp[NB_TASK];
 extern uint16_t nb_pending_wp;
-
+extern struct LlaCoor_d wp0_lla;	//todo:for debug
 extern struct Int32Vect2 wp_home;
 extern bool_t wp_home_useful;
 extern struct Int32Vect2 vertipad;

@@ -20,6 +20,11 @@
 #include "subsystems/actuators/motor_mixing.h"
 #endif
 
+#include "modules/system/timer_if.h"
+#include "modules/system/timer_class.h"
+#include "modules/system/timer_def.h"
+#include "mcu_periph/sys_time.h"
+
 void send_heart_beat_A2R_msg(void)
 {
 	uint16_t system_time = sys_time.nb_sec;
@@ -57,10 +62,10 @@ void send_heart_beat_A2VR_msg(void)
 {
 	uint16_t system_time = sys_time.nb_sec;
 	uint8_t ac_state = (uint8_t)autopilot_in_flight;
-	uint8_t battery_remain = 85;      //unit=percent, need update from battery module
+	uint8_t battery_remain = ops_info.o_bat_rep_percent;      //unit=percent, need update from battery module
 	uint8_t pesticides_remain = (uint8_t)(ops_info.res_cap&0xFF);   //unit=percent,need updata from spray working module
 	uint8_t ac_ready = (uint8_t)ground_check_pass;
-	uint8_t error_code = 0;
+	uint64_t error_code = em_code;
 	uint8_t spray_flag;
 	if(get_spray_switch_state())
 	{
@@ -271,6 +276,9 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 			if(!autopilot_in_flight)
 			{
 				ops_msg_start_selfclean();
+				ops_info.extra_func_id = FLOWMETER_INFO;
+				tm_create_timer(TIMER_OPS_MSG_EXTRA_FUNCTION, (2000 MSECONDS), TIMER_PERIODIC,0);
+				//tm_create_timer(TIMER_GCS_FLOWMETER_INFO, (2000 MSECONDS), TIMER_PERIODIC,0);
 			}
 			else
 			{
@@ -280,24 +288,40 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 		else
 		{
 			ops_msg_stop_selfclean();
+			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
+			//tm_kill_timer((uint8_t)TIMER_GCS_FLOWMETER_INFO);
 		}
 		break;
 
 	case OPS_SPRAY_CONTROL:
 		if(pt_value)
 		{
+			ops_info.extra_func_id = OPEN_SIX_SPRAY;
 			ops_msg_direct_open_spray();
+			tm_create_timer(TIMER_OPS_MSG_EXTRA_FUNCTION, (2000 MSECONDS), TIMER_PERIODIC,0);
 		}
 		else
 		{
+			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
 			ops_msg_direct_stop_spray();
 		}
 		break;
 
-	case OPS_CHANNEL_CONTROL:
+/*	case OPS_CHANNEL_CONTROL:
 		ops_set_config_param(pt_value, PARAM_SPRAY_CHANNEL);
 		ops_update_config_param();
-
+*/
+	case OPS_FLOWMETER_VALUE:
+		if(pt_value)
+		{
+			ops_info.extra_func_id = FLOWMETER_INFO;
+			tm_create_timer(TIMER_OPS_MSG_EXTRA_FUNCTION, (2000 MSECONDS), TIMER_PERIODIC,0);
+		}
+		else 
+		{
+			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
+		}
+		break;
 	default:
 		response = 1;
 		break;
@@ -334,5 +358,3 @@ bool_t DlSetMCCommand(uint8_t id, uint8_t pt_value)
 	return response;
 }
 #endif
-
-

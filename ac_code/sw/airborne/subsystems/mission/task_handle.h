@@ -21,11 +21,12 @@
 #define _TASK_HANDLE_H_
 
 #include "subsystems/mission/task_manage.h"
-
+#include "math/pprz_geodetic_double.h"
 extern uint8_t get_max_pending_id(void);
 extern int8_t get_task_wp_offset(uint8_t id);
 extern uint8_t check_task_wp_id(uint8_t id);
 extern uint8_t task_lla_to_enu_convert(struct EnuCoor_i *enu, struct LlaCoor_i *lla);
+extern uint8_t task_lla_d_to_enu_i_convert(struct EnuCoor_i *enu, struct LlaCoor_d *lla);
 
 #endif /*_TASK_HANDLE_H_*/
 

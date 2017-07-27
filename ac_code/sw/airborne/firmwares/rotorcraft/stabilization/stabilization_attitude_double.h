@@ -38,4 +38,6 @@ extern struct FloatEulers stab_d_rate_sum_err;
 extern struct FloatEulers stab_att_sp_euler;
 extern struct AttRefEulerFloat att_ref_euler_f;
 
+extern bool_t stabilization_attitude_get_yaw_error_1(void);
+
 #endif /* STABILIZATION_ATTITUDE_EULER_FLOAT_H */
