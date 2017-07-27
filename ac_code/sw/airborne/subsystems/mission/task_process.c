@@ -682,6 +682,10 @@ bool_t run_normal_task(void)
 			{
 				hover_flag = FALSE;
 				VECT2_COPY(home_wp_enu, wp_home);
+
+#ifdef USE_PLANED_OA
+				planed_oa.wp_move_done_flag = TRUE;
+#endif
 			}
 		}
 		else
@@ -835,6 +839,13 @@ bool_t task_wp_empty_handle(void)
 		VECT2_COPY(from_wp.wp_en, next_wp.wp_en);
 		from_wp.action = next_wp.action;
 		from_wp.wp_id = next_wp.wp_id;
+
+#ifdef USE_PLANED_OA
+		if( TERMINATION == from_wp.action )
+		{
+			planed_oa.wp_move_done_flag = FALSE;
+		}
+#endif
 		hover_flag = TRUE;
 		send_current_task(1);
 		return TRUE;
