@@ -575,7 +575,7 @@ static bool_t lift_lost_detect(void)
 static bool_t yaw_command_monitor(void)
 {
 	static uint16_t counter = 0;
-	if( abs(stabilization_cmd[COMMAND_YAW]) > MAX_ERROR_YAW_COMMAND )
+	if( stabilization_attitude_get_yaw_error_1() )
 	{
 		counter++;
 		if(counter > MONITORING_FREQUENCY * 5)  //continual 5s

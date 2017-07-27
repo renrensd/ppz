@@ -196,6 +196,9 @@ void stabilization_attitude_set_body_cmd_f(float phi, float theta, float psi)
 #define MAX_DESIRED_R_RATE (1 * M_PI)
 #define MAX_GUID_R_RATE (0.2f * M_PI)
 
+#define MAX_PQ_CMD	(MAX_PPRZ)
+#define MAX_R_CMD		(MAX_PPRZ/2)
+
 static void attitude_ref_update(void)
 {
 	static float last_guid_err = 0;
@@ -328,12 +331,24 @@ void stabilization_attitude_run(bool_t  in_flight)
 	stabilization_cmd[COMMAND_YAW]   = (int32_t)( (stabilization_att_fb_cmd[COMMAND_YAW] + stab_d_rate_sum_err.psi));
 
 	/* bound the result */
-	BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
-	BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
-	BoundAbs(stabilization_cmd[COMMAND_YAW], (MAX_PPRZ/2));
+	BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PQ_CMD);
+	BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PQ_CMD);
+	BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_R_CMD);
 #if 0
 	stabilization_cmd[COMMAND_ROLL] = 0;
 	stabilization_cmd[COMMAND_PITCH] = 0;
 	stabilization_cmd[COMMAND_YAW] = 0;
 #endif
+}
+
+bool_t stabilization_attitude_get_yaw_error_1(void)
+{
+	if( fabsf(stabilization_cmd[COMMAND_YAW]) > ((float) MAX_R_CMD * 0.8f) )
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }
