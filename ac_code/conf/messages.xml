@@ -596,8 +596,8 @@
   </message>
 
   <message name="TASK_INFO" id="61">
-    <field name="nb_pending_wp" type="uint8" />
-    <field name="wp_id"  type="uint8" />
+    <field name="nb_pending_wp" type="uint16" />
+    <field name="wp_id"  type="uint16" />
     <field name="action" type="uint8" values="none|line|spray|convert|hover|termination"/>
     <field name="wp_E" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
     <field name="wp_N" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
