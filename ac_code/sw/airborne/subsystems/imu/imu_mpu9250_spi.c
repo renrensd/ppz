@@ -124,6 +124,7 @@ PRINT_CONFIG_VAR(IMU_MPU9250_Z_SIGN)
 #endif	/* QMC5883_OPTION */
 
 struct ImuMpu9250 imu_mpu9250;
+struct ImuMpu9250 imu2_mpu9250;
 
 void mpu_wait_slave4_ready(void);
 void mpu_wait_slave4_ready_cb(struct spi_transaction *t);
@@ -193,6 +194,52 @@ void imu_impl_init(void)
 #endif /* HMC5983_OPTION */
 }
 
+void imu2_impl_init(void)
+{
+	/* MPU9250 */
+	mpu9250_spi_init(&imu2_mpu9250.mpu, &(IMU_MPU9250_SPI_DEV), IMU2_MPU9250_SPI_SLAVE_IDX);
+	// change the default configuration
+	imu2_mpu9250.mpu.config.smplrt_div = IMU_MPU9250_SMPLRT_DIV;
+	imu2_mpu9250.mpu.config.dlpf_gyro_cfg = IMU_MPU9250_GYRO_LOWPASS_FILTER;
+	imu2_mpu9250.mpu.config.dlpf_accel_cfg = IMU_MPU9250_ACCEL_LOWPASS_FILTER;
+	imu2_mpu9250.mpu.config.gyro_range = IMU_MPU9250_GYRO_RANGE;
+	imu2_mpu9250.mpu.config.accel_range = IMU_MPU9250_ACCEL_RANGE;
+
+	//intial selftest
+	imu2_mpu9250.selftest.result = FALSE;
+	imu2_mpu9250.selftest.state = UNTESTED;
+	imu2_mpu9250.selftest.static_counter = 0;
+	imu2_mpu9250.selftest.test_counter = 0;
+
+	/* set callback function to configure mag */
+	imu2_mpu9250.mpu.config.slaves[0].configure = &imu_mpu9250_configure_mag_slave;
+
+	/* Set MPU I2C master clock */
+	imu2_mpu9250.mpu.config.i2c_mst_clk = MPU9250_MST_CLK_400KHZ;
+	/* Enable I2C slave0 delayed sample rate */
+	imu2_mpu9250.mpu.config.i2c_mst_delay = 1;
+
+
+	/* configure spi transaction for wait_slave4 */
+	imu2_mpu9250.wait_slave4_trans.cpol = SPICpolIdleHigh;
+	imu2_mpu9250.wait_slave4_trans.cpha = SPICphaEdge2;
+	imu2_mpu9250.wait_slave4_trans.dss = SPIDss8bit;
+	imu2_mpu9250.wait_slave4_trans.bitorder = SPIMSBFirst;
+	imu2_mpu9250.wait_slave4_trans.cdiv = SPIDiv64;
+
+	imu2_mpu9250.wait_slave4_trans.select = SPISelectUnselect;
+	imu2_mpu9250.wait_slave4_trans.slave_idx = IMU_MPU9250_SPI_SLAVE_IDX;
+	imu2_mpu9250.wait_slave4_trans.output_length = 1;
+	imu2_mpu9250.wait_slave4_trans.input_length = 2;
+	imu2_mpu9250.wait_slave4_trans.before_cb = NULL;
+	imu2_mpu9250.wait_slave4_trans.after_cb = mpu_wait_slave4_ready_cb;
+	imu2_mpu9250.wait_slave4_trans.input_buf = &(imu_mpu9250.wait_slave4_rx_buf[0]);
+	imu2_mpu9250.wait_slave4_trans.output_buf = &(imu_mpu9250.wait_slave4_tx_buf[0]);
+
+	imu2_mpu9250.wait_slave4_trans.status = SPITransDone;
+	imu2_mpu9250.slave4_ready = FALSE;
+
+}
 void imu_selftest_init(void)
 {
 	imu_mpu9250.selftest.result = FALSE;
@@ -361,6 +408,31 @@ void imu_periodic(void)
 #endif /* HMC5983_OPTION */
 }
 
+
+void imu2_periodic(void)
+{
+	switch(imu2_mpu9250.selftest.state)
+	{
+	case GET_STATIC_DATA:
+		if(mpu9250_spi_start_self_test(&imu2_mpu9250.mpu))
+		{
+			imu2_mpu9250.selftest.state++;
+		}
+		break;
+	case CONFIG_RECOVER:
+		if(mpu9250_spi_end_self_test(&imu2_mpu9250.mpu))
+		{
+			imu2_mpu9250.selftest.state++;
+		}
+		break;
+	default:
+		mpu9250_spi_periodic(&imu2_mpu9250.mpu);
+		break;
+	}
+
+}
+
+
 #define Int16FromBuf(_buf,_idx) ((int16_t)(_buf[_idx] | (_buf[_idx+1] << 8)))
 void imu_mpu9250_event(void)
 {
@@ -403,17 +475,17 @@ void imu_mpu9250_event(void)
 		if(1)//imu_selftest_handle(accel, rates))
 		{
 			// unscaled vector
-			VECT3_COPY(imu.accel_unscaled, accel);
+		//	VECT3_COPY(imu.accel_unscaled, accel);
 			RATES_COPY(imu.gyro_unscaled, rates);
 
 			imu_mpu9250.mpu.data_available = FALSE;
 			imu_scale_gyro(&imu);
-			imu_scale_accel(&imu);
+		//	imu_scale_accel(&imu);
 
 			AbiSendMsgIMU_GYRO_INT32(IMU_MPU9250_ID, now_ts, &imu.gyro);
-			AbiSendMsgIMU_ACCEL_INT32(IMU_MPU9250_ID, now_ts, &imu.accel);
+		//	AbiSendMsgIMU_ACCEL_INT32(IMU_MPU9250_ID, now_ts, &imu.accel);
 			AbiSendMsgIMU_GYRO_MONI(IMU_MPU9250_ID, now_ts, &imu.gyro_scaled);
-			AbiSendMsgIMU_ACCEL_MONI(IMU_MPU9250_ID, now_ts, &imu.accel_scaled);
+		//	AbiSendMsgIMU_ACCEL_MONI(IMU_MPU9250_ID, now_ts, &imu.accel_scaled);
 		}
 	}
 
@@ -487,6 +559,49 @@ void imu_mpu9250_event(void)
 		AbiSendMsgIMU_MAG_MONI(IMU_MPU9250_ID, now_ts, &imu.mag_scaled);
 	}
 #endif /* HMC5983_OPTION */
+
+}
+
+
+void imu2_mpu9250_event(void)
+{
+	uint32_t now_ts = get_sys_time_usec();
+
+	// If the MPU9250 SPI transaction has succeeded: convert the data
+	mpu9250_spi_event(&imu2_mpu9250.mpu);
+
+	if (imu2_mpu9250.mpu.data_available)
+	{
+		struct Int32Vect3 accel =
+		{
+			- (int32_t)(imu2_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Y]),
+			- (int32_t)(imu2_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_X]),
+			- (int32_t)(imu2_mpu9250.mpu.data_accel.value[IMU_MPU9250_CHAN_Z])
+		};
+		struct Int32Rates rates =
+		{
+			- (int32_t)(imu2_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Y]),
+			- (int32_t)(imu2_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_X]),
+			- (int32_t)(imu2_mpu9250.mpu.data_rates.value[IMU_MPU9250_CHAN_Z])
+		};
+
+
+		if(1)//imu_selftest_handle(accel, rates))
+		{
+			// unscaled vector
+			VECT3_COPY(imu.accel_unscaled, accel);
+			//RATES_COPY(imu.gyro_unscaled, rates);
+
+			imu2_mpu9250.mpu.data_available = FALSE;
+			//imu_scale_gyro(&imu);
+			imu_scale_accel(&imu);
+
+		//	AbiSendMsgIMU_GYRO_INT32(IMU_MPU9250_ID, now_ts, &imu.gyro);
+			AbiSendMsgIMU_ACCEL_INT32(IMU_MPU9250_ID, now_ts, &imu.accel);
+		//	AbiSendMsgIMU_GYRO_MONI(IMU_MPU9250_ID, now_ts, &imu.gyro_scaled);
+			AbiSendMsgIMU_ACCEL_MONI(IMU_MPU9250_ID, now_ts, &imu.accel_scaled);
+		}
+	}
 
 }
 

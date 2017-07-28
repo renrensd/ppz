@@ -43,8 +43,6 @@ struct Task_Wp_Enu next_wp;       //end wp of current flight line
 
 struct _s_oa_data oa_data;
 
-struct LlaCoor_d wp0_lla;	//todo:for debug
-uint8_t flag_first_record = 0;
 bool_t Flag_AC_Flight_Ready;
 
 #ifdef USE_PLANED_OA
@@ -247,7 +245,6 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 		response = 3;
 	}
 
-	if(flag_first_record == 0) flag_first_record = 1; //todo:for debug
    /* wp_type: coordinate   wgs84 = 1, relative_ENU = 2 */
 	uint8_t nb_wp =m_task_info.wp_end_id - m_task_info.wp_start_id + 1;
 	uint8_t last_nb_pending_wp = nb_pending_wp;
@@ -517,7 +514,6 @@ static uint8_t convert_data_to_double(struct LlaCoor_d *lla_d,int32_t lon_start_
 static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 {
 	int8_t response =0;
-	struct FloatVect2 land_enu_f,temp_pos_enu_f,diff_pos_enu_f;
 	//vertipad
 	if( 1 <= dl_land_info.waypoints_length )
 	{
