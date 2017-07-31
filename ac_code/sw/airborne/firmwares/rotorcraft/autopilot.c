@@ -208,6 +208,8 @@ static void send_utc_time(struct transport_tx *trans, struct link_device *dev)
 	}
 }
 
+#endif
+
 static void send_actuators_pwm(struct transport_tx *trans, struct link_device *dev)
 {
 	pprz_msg_send_ACTUATORS_PWM(trans, dev, AC_ID ,
@@ -218,7 +220,7 @@ static void send_actuators_pwm(struct transport_tx *trans, struct link_device *d
 															&actuators_pwm_values[4],
 															&actuators_pwm_values[5]      );
 }
-#endif
+
 static void send_attitude(struct transport_tx *trans, struct link_device *dev)
 {
 	struct FloatEulers *att = stateGetNedToBodyEulers_f();
@@ -436,8 +438,8 @@ void autopilot_init(void)
 #endif
 #ifdef BBOX_OPTION
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_UTC_TIME, send_utc_time);
-	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS_PWM, send_actuators_pwm);
 #endif
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS_PWM, send_actuators_pwm);
 #ifdef ACTUATORS
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
 #endif
