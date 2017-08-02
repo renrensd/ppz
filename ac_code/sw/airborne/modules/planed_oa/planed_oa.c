@@ -1517,8 +1517,8 @@ static void send_point_to_pprz(void)
 	struct FloatVect2 temp;
 	if(p_transfer_useful == TRUE)
 	{
-		temp.x = POS_FLOAT_OF_BFP(vertipad.x);
-		temp.y = POS_FLOAT_OF_BFP(vertipad.y);
+		temp.x = POS_FLOAT_OF_BFP(vertipad_takeoff.x);
+		temp.y = POS_FLOAT_OF_BFP(vertipad_takeoff.y);
 		waypoint_set_vect2(WP_TP, &temp);
 	}
 		temp.x = POS_FLOAT_OF_BFP(wp_home.x);
