@@ -248,10 +248,10 @@
     <field name="h_stable"    type="uint8"/>
     <field name="pos_sv_num"    type="uint8"/>      
     <field name="heading_sv_num"    type="uint8"/>
-    <field name="gps_heading"    type="float" unit="deg"/>
-    <field name="mag_heading"    type="float" unit="deg"/>
-    <field name="mlkf_heading"    type="float" unit="deg"/>
-    <field name="diff_heading"    type="float" unit="deg"/>
+    <field name="gps_heading"    type="float"/>
+    <field name="mag_heading"    type="float"/>
+    <field name="mlkf_heading"    type="float"/>
+    <field name="diff_heading"    type="float"/>
     <field name="gps_pos_sd_x"    type="int32" unit="m*10000"/>
     <field name="gps_pos_sd_y"    type="int32" unit="m*10000"/>
     <field name="gps_pos_sd_z"    type="int32" unit="m*10000"/>
@@ -596,8 +596,8 @@
   </message>
 
   <message name="TASK_INFO" id="61">
-    <field name="nb_pending_wp" type="uint8" />
-    <field name="wp_id"  type="uint8" />
+    <field name="nb_pending_wp" type="uint16" />
+    <field name="wp_id"  type="uint16" />
     <field name="action" type="uint8" values="none|line|spray|convert|hover|termination"/>
     <field name="wp_E" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
     <field name="wp_N" type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
