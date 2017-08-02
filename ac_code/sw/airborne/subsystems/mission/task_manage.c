@@ -147,9 +147,16 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 				|| GCS_CMD_NONE == gcs_task_cmd
 				|| GCS_CMD_START == gcs_task_cmd)
 		{
-			gcs_task_cmd = GCS_CMD_START;
-			Flag_AC_Flight_Ready = TRUE;	//add by lg
-			gcs_cmd_interrupt = TRUE;    //record command interrupt to get rid of emergency
+			if( !ins_int_all_using_rtk() )
+			{
+				response = 2;
+			}
+			else
+			{
+				gcs_task_cmd = GCS_CMD_START;
+				Flag_AC_Flight_Ready = TRUE;	//add by lg
+				gcs_cmd_interrupt = TRUE; //record command interrupt to get rid of emergency
+			}
 		}
 		else
 		{
@@ -173,7 +180,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 	case GCS_CMD_CONTI:
 		if (GCS_CMD_CONTI == gcs_task_cmd || GCS_CMD_PAUSE == gcs_task_cmd)
 		{
-			if (em_alert_grade > 2)
+			if (!ins_int_all_using_rtk())
 			{
 				response = 2;
 			}
