@@ -229,23 +229,23 @@
     
     <define name="PHI_PGAIN" value="4"/>
     <define name="PHI_DGAIN" value="0"/>
-		<define name="PHIRATE_PGAIN" value="2200"/>
+		<define name="PHIRATE_PGAIN" value="1700"/>
     <define name="PHIRATE_IGAIN" value="1000"/>
-    <define name="PHIRATE_DGAIN" value="100"/>
+    <define name="PHIRATE_DGAIN" value="80"/>
     <define name="PHIRATE_FFGAIN" value="0"/>
 
     <define name="THETA_PGAIN" value="4"/>
     <define name="THETA_DGAIN" value="0"/>
-		<define name="THETARATE_PGAIN" value="2200"/>
+		<define name="THETARATE_PGAIN" value="1700"/>
     <define name="THETARATE_IGAIN" value="1000"/>
-    <define name="THETARATE_DGAIN" value="100"/>
+    <define name="THETARATE_DGAIN" value="80"/>
     <define name="THETARATE_FFGAIN" value="0"/>
 
     <define name="PSI_PGAIN" value="5"/>
     <define name="PSI_DGAIN" value="0"/>
-		<define name="PSIRATE_PGAIN" value="12000"/>
+		<define name="PSIRATE_PGAIN" value="7500"/>
     <define name="PSIRATE_IGAIN" value="3000"/>
-    <define name="PSIRATE_DGAIN" value="100"/>
+    <define name="PSIRATE_DGAIN" value="10"/>
     <define name="PSIRATE_FFGAIN" value="0"/>
   </section>
 
