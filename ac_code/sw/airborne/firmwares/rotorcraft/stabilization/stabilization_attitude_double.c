@@ -128,7 +128,7 @@ void stabilization_attitude_init(void)
 							 STABILIZATION_ATTITUDE_THETARATE_FFGAIN,
 							 STABILIZATION_ATTITUDE_PSIRATE_FFGAIN);
 
-	stabilization_gains.psi_guid_p = 0.006;
+	stabilization_gains.psi_guid_p = 0.004;
 
 	FLOAT_EULERS_ZERO(stab_d_rate_sum_err);
 

@@ -122,14 +122,14 @@ static void guidance_v_controller_ini(void)
 	pid_set_out_range(&guid_v.pos_z_pid, -1, 1);
 	pid_set_Ui_range(&guid_v.pos_z_pid, -1, 1);
 
-	guid_v.acc_z_pid.Kp = 0.01f;
-	guid_v.acc_z_pid.Ki = 0.4f;
+	guid_v.acc_z_pid.Kp = 0.02f;
+	guid_v.acc_z_pid.Ki = 0.2f;
 	guid_v.speed_z_pid.Kp = 2.0f;
-	guid_v.speed_z_pid.Kd = 0.01f;
+	guid_v.speed_z_pid.Kd = 0.0f;
 	guid_v.pos_z_pid.Kp = 1.0f;
-	guid_v.pos_z_pid.Kd = 0.3f;
+	guid_v.pos_z_pid.Kd = 0.0f;
 
-	guid_v.acc_filter_fc = 1;
+	guid_v.acc_filter_fc = 5;
 	init_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc),
 															1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
 	init_butterworth_2_low_pass(&guid_v.hover_throttle_filter, 1, 1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
@@ -375,7 +375,7 @@ static void run_hover_loop(bool_t in_flight)
 			{
 				guid_v.ref_acc_z = guid_v.src_acc_sp;
 			}
-			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.UP_z_acc, 0, 0);
+			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter), 0, 0);
 
 			normalized_cmd = guid_v.acc_z_pid.out;
 		}
@@ -394,13 +394,13 @@ static void run_hover_loop(bool_t in_flight)
 											get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
 
 			guid_v.ref_acc_z = guid_v.speed_z_pid.out;
-			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.UP_z_acc, 0, 0);
+			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter), 0, 0);
 
 			normalized_cmd = guid_v.acc_z_pid.out;
 		}
 		else if (guid_v.mode == GUIDANCE_V_MODE_ACC_LAND)
 		{
-			pid_loop_calc_2(&guid_v.acc_z_pid, -0.1f, guid_v.UP_z_acc, 0, 0);
+			pid_loop_calc_2(&guid_v.acc_z_pid, -0.1f, get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter), 0, 0);
 
 			normalized_cmd = guid_v.acc_z_pid.out;
 		}
@@ -442,7 +442,7 @@ static void run_hover_loop(bool_t in_flight)
 			pid_loop_calc_2(&guid_v.speed_z_pid, guid_v.ref_speed_z, guid_v.UP_z_speed, 0,
 											get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter));
 			guid_v.ref_acc_z = guid_v.speed_z_pid.out;
-			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, guid_v.UP_z_acc, 0, 0);
+			pid_loop_calc_2(&guid_v.acc_z_pid, guid_v.ref_acc_z, get_butterworth_2_low_pass(&guid_v.UP_z_acc_filter), 0, 0);
 
 			normalized_cmd = guid_v.acc_z_pid.out;
 		}
