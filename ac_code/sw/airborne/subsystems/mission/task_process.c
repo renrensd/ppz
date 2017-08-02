@@ -28,6 +28,7 @@
 
 #include "subsystems/datalink/downlink.h"
 
+#include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "firmwares/rotorcraft/guidance/guidance_h_ref.h"
 #include "uplink_ac.h"
 
@@ -98,7 +99,7 @@ void send_current_task_state(uint8_t wp_state);
 void send_current_task(uint8_t wp_state);
 void send_breakpoint_info(struct EnuCoor_i task_wp_0, struct LlaCoor_d wp0_lla,struct EnuCoor_i temp_breakpoint,struct LlaCoor_i breakpoint_lla_i);//todo:for debug
 
-void avoid_obstacle_init()
+void avoid_obstacle_init(void)
 {
 	oa_data.spray_boundary_valid = FALSE;
 	oa_data.obstacles_valid = FALSE;
@@ -151,10 +152,10 @@ bool_t achieve_next_wp(void)
 	VECT2_COPY(from_wp.wp_en, next_wp.wp_en);
 	from_wp.action = next_wp.action;
 	from_wp.wp_id = next_wp.wp_id;
-	struct EnuCoor_i distance_wp;
+	//struct EnuCoor_i distance_wp;
 
 
-	VECT2_DIFF(distance_wp,from_wp.wp_en,task_wp[0].wp_en);
+	//VECT2_DIFF(distance_wp,from_wp.wp_en,task_wp[0].wp_en);
 	/*get waypoint info from task_wp*/
 	VECT2_COPY(next_wp.wp_en, task_wp[0].wp_en);
 	next_wp.action = task_wp[0].action;
@@ -196,7 +197,7 @@ bool_t get_start_line(void)
 			VECT2_COPY(next_wp.wp_en, wp_home);
 			from_wp.action = TRANSFER;
 			next_wp.action = FLIGHT_LINE;
-			next_wp.wp_id = NULL;
+			next_wp.wp_id = 0;
 		}
 		else                         //vertipad=wp_home  (direct to first task point)
 		{
@@ -206,7 +207,7 @@ bool_t get_start_line(void)
 			from_wp.action = FLIGHT_LINE;
 		}
 		from_wp_useful = TRUE;
-		from_wp.wp_id = NULL;
+		from_wp.wp_id = 0;
 		return TRUE;
 	}
 	return FALSE;
@@ -309,7 +310,6 @@ Gcs_State gcs_task_run(void)
 	case GCS_CMD_BHOME:
 		gcs_state = GCS_RUN_HOME;
 		AC_action = TERMINATION;
-		RunOnceEvery(16, send_breakpoint_info(first_task_wp,wp0_lla,current_wp_scene,spray_continual_info.break_pos_lla));//todo:for debug
 		if( gcs_hover_enter() )
 		{
 			transfer_step = 0;
@@ -1078,6 +1078,7 @@ void send_current_task_state(uint8_t wp_state)
 																	 &nb_unexecuted_wp);
 }
 
+/*
 void send_breakpoint_info(struct EnuCoor_i task_wp_0, struct LlaCoor_d wp0_lla,struct EnuCoor_i temp_breakpoint,struct LlaCoor_i breakpoint_lla_i)
 {
 	struct FloatVect2 break_p_f,start_p_f;
@@ -1092,6 +1093,7 @@ void send_breakpoint_info(struct EnuCoor_i task_wp_0, struct LlaCoor_d wp0_lla,s
 	DOWNLINK_SEND_DEBUG_TASK(DefaultChannel, DefaultDevice, &start_p_f.x,&start_p_f.y,&wp0_lla.lon,&wp0_lla.lat,
 															&break_p_f.x,&break_p_f.y,&pos_break_lon,&pos_break_lat);
 }
+*/
 
 
 void send_current_task(uint8_t wp_state)

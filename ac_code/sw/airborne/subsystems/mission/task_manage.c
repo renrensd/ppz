@@ -43,8 +43,6 @@ struct Task_Wp_Enu next_wp;       //end wp of current flight line
 
 struct _s_oa_data oa_data;
 
-struct LlaCoor_d wp0_lla;	//todo:for debug
-uint8_t flag_first_record = 0;
 bool_t Flag_AC_Flight_Ready;
 
 #ifdef USE_PLANED_OA
@@ -245,48 +243,42 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 	/* waypoints space check */
 	if( (nb_pending_wp + m_task_info.length_wp_action) > NB_TASK )
 	{
-		response = 2;  /*space is not enought*/
+		response = 2; /*space is not enought*/
 		return response;
 	}
 	uint16_t max_pending_id = get_max_pending_id();
-	if(m_task_info.wp_end_id <= max_pending_id)
+	if( m_task_info.wp_end_id <= max_pending_id )
 	{
 		response = 3;
 	}
 
-	if(flag_first_record == 0) flag_first_record = 1; //todo:for debug
-   /* wp_type: coordinate   wgs84 = 1, relative_ENU = 2 */
-	uint8_t nb_wp =m_task_info.wp_end_id - m_task_info.wp_start_id + 1;
+	/* wp_type: coordinate   wgs84 = 1, relative_ENU = 2 */
+	uint8_t nb_wp = m_task_info.wp_end_id - m_task_info.wp_start_id + 1;
 	uint8_t last_nb_pending_wp = nb_pending_wp;
 	
-   if( 1 == m_task_info.wp_type )
-   {
-   		struct LlaCoor_i lla;   /* rad, e8 */
-		struct LlaCoor_d lla_d;   /* rad*/
+	if( 1 == m_task_info.wp_type )
+	{
+		struct LlaCoor_i lla; /* rad, e8 */
+		struct LlaCoor_d lla_d; /* rad*/
 		struct EnuCoor_i temp1_enu;
-		for(uint8_t i=0; i < nb_wp; i++ )
+		for (uint8_t i = 0; i < nb_wp; i++)
 		{
-			int32_t lon_start_add = m_task_info.waypoints_lon+i*8;
-			int32_t lat_start_add = m_task_info.waypoints_lat+i*8;
-			convert_data_to_double(&lla_d,lon_start_add,lat_start_add);
-			if(!flag_first_record) //todo:for debug
+			int32_t lon_start_add = m_task_info.waypoints_lon + i * 8;
+			int32_t lat_start_add = m_task_info.waypoints_lat + i * 8;
+			convert_data_to_double(&lla_d, lon_start_add, lat_start_add);
+			if( (task_lla_d_to_enu_i_convert(&temp1_enu, &lla_d))
+					&& ((m_task_info.wp_start_id + i) > max_pending_id) )
 			{
-				 wp0_lla.lon = lla_d.lon;
-				 wp0_lla.lat = lla_d.lat;
-				 flag_first_record = 1;
-			}
-	   		if(( task_lla_d_to_enu_i_convert(&temp1_enu, &lla_d) )&&((m_task_info.wp_start_id + i)>max_pending_id))
-	   		{
 				VECT2_COPY(task_wp[nb_pending_wp].wp_en, temp1_enu);
-				task_wp[nb_pending_wp].action = (enum Task_Action)( *(m_task_info.wp_action + i) );
+				task_wp[nb_pending_wp].action = (enum Task_Action) (*(m_task_info.wp_action + i));
 				task_wp[nb_pending_wp].wp_id = m_task_info.wp_start_id + i;
 				nb_pending_wp++;
-	   		}
+			}
 			else
 			{
-				response =4;
+				response = 4;
 				nb_pending_wp = last_nb_pending_wp;
-				break;   /* jump out the loop */
+				break; /* jump out the loop */
 			}
 		}
 	}
@@ -294,23 +286,23 @@ int8_t parse_add_task(struct Task_Info m_task_info)
 	else if( 2 == m_task_info.wp_type )
 	{
 		struct EnuCoor_i temp2_enu;
-		for(uint8_t i=0; i < nb_wp; i++ )
+		for (uint8_t i = 0; i < nb_wp; i++)
 		{
-			temp2_enu.x = POS_BFP_OF_REAL(*(m_task_info.waypoints_lon + i))/1000;
-			temp2_enu.y = POS_BFP_OF_REAL(*(m_task_info.waypoints_lat + i)) /1000;
+			temp2_enu.x = POS_BFP_OF_REAL(*(m_task_info.waypoints_lon + i)) / 1000;
+			temp2_enu.y = POS_BFP_OF_REAL(*(m_task_info.waypoints_lat + i)) / 1000;
 			if( temp2_enu.x < POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100)
-					&&temp2_enu.y < POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100) )
+					&& temp2_enu.y < POS_BFP_OF_REAL(POINT_MAX_DISTANCE/100) )
 			{
 				VECT2_COPY(task_wp[nb_pending_wp].wp_en, temp2_enu);
-				task_wp[nb_pending_wp].action = (enum Task_Action)( *(m_task_info.wp_action + i) );
+				task_wp[nb_pending_wp].action = (enum Task_Action) (*(m_task_info.wp_action + i));
 				task_wp[nb_pending_wp].wp_id = m_task_info.wp_start_id + i;
 				nb_pending_wp++;
 			}
 			else
 			{
-				response =4;
+				response = 4;
 				nb_pending_wp = last_nb_pending_wp;
-				break;   /* jump out the loop */
+				break; /* jump out the loop */
 			}
 		}
 	}
@@ -511,12 +503,6 @@ static uint8_t convert_data_to_double(struct LlaCoor_d *lla_d,int32_t lon_start_
 		lon_d.buffer[i] = *(int8_t*)(lon_start_add+i);
 		lat_d.buffer[i] = *(int8_t*)(lat_start_add+i);
 	}
-	if(flag_first_record == 1)	//todo:for debug
-	{
-		wp0_lla.lon = lon_d.d;
-		wp0_lla.lat = lat_d.d;
-		flag_first_record =2;
-	}
 	lla_d->lon = RadOfDeg(lon_d.d);
 	lla_d->lat = RadOfDeg(lat_d.d);
 }
@@ -524,7 +510,6 @@ static uint8_t convert_data_to_double(struct LlaCoor_d *lla_d,int32_t lon_start_
 static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 {
 	int8_t response =0;
-	struct FloatVect2 land_enu_f,temp_pos_enu_f,diff_pos_enu_f;
 	//vertipad
 	if( 1 <= dl_land_info.waypoints_length )
 	{

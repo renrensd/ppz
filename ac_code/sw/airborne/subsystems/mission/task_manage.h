@@ -189,7 +189,6 @@ struct Task_Wp_Enu
 
 extern struct Task_Wp task_wp[NB_TASK];
 extern uint16_t nb_pending_wp;
-extern struct LlaCoor_d wp0_lla;	//todo:for debug
 extern struct Int32Vect2 wp_home;
 extern bool_t wp_home_useful;
 extern struct Int32Vect2 vertipad;
