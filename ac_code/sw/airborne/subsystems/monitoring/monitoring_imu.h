@@ -42,6 +42,7 @@ struct Imu_Monitor
 	struct Int32Vect3 accel_aver;    //inspect average
 	struct Int32Rates gyro_aver;
 	struct Int32Vect3 mag_aver;
+	int32_t mag_xy_unscaled_aver;
 	struct Uint16Vect3 accel_interval_counter;  //interval out counter
 	struct Uint16Vect3 gyro_interval_counter;
 	struct Uint16Vect3 mag_interval_counter;
