@@ -568,6 +568,7 @@ void autopilot_set_mode(uint8_t new_autopilot_mode)
 		case AP_MODE_KILL:
 			autopilot_in_flight = FALSE;
 			autopilot_in_flight_counter = 0;
+			nav_flight_init(); 
 			guidance_h_mode_changed(GUIDANCE_H_MODE_KILL);
 			break;
 		case AP_MODE_RC_DIRECT:
