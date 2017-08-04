@@ -58,7 +58,8 @@ struct Imu
 	struct Int32Vect3 mag_unscaled;     ///< unscaled magnetometer measurements
 	struct OrientationReps body_to_imu; ///< rotation from body to imu frame
 	struct FloatVect3 mag_sens;
-
+	int32_t mag_xy_unscaled;
+	int32_t mag_xy_scaled;
 	struct FloatVect3 acc_sens;
 
 	/** flag for adjusting body_to_imu via settings.
