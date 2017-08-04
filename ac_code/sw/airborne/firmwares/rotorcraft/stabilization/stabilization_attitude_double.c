@@ -35,6 +35,7 @@
 #include "math/pprz_algebra_float.h"
 #include "state.h"
 #include "mcu_periph/sys_time.h"
+#include "filters/low_pass_filter.h"
 
 #ifndef USE_ATT_REF
 #define USE_ATT_REF 1
@@ -51,12 +52,18 @@ struct FloatRates desired_rate;
 
 static bool_t stab_sum_flag;
 
+Butterworth2LowPass rate_p_filter;
+Butterworth2LowPass rate_q_filter;
+Butterworth2LowPass rate_r_filter;
+
+struct FloatRates rate;
+struct FloatRates rate_filtered;
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 static void send_att(struct transport_tx *trans, struct link_device *dev)
 {
-	struct FloatRates *body_rate = stateGetBodyRates_f();
 	struct FloatEulers *att = stateGetNedToBodyEulers_f();
 	//float foo = 0.0;
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
@@ -64,9 +71,12 @@ static void send_att(struct transport_tx *trans, struct link_device *dev)
 																		&desired_rate.p,
 																		&desired_rate.q,
 																		&desired_rate.r,
-																		&(body_rate->p),
-																		&(body_rate->q),
-																		&(body_rate->r),
+																		&(rate.p),
+																		&(rate.q),
+																		&(rate.r),
+																		&(rate_filtered.p),
+																		&(rate_filtered.q),
+																		&(rate_filtered.r),
 																		&stab_att_sp_euler.phi,
 																		&stab_att_sp_euler.theta,
 																		&stab_att_sp_euler.psi,
@@ -97,6 +107,10 @@ void stabilization_attitude_init(void)
 {
 	stab_sum_flag = FALSE;
 	attitude_ref_euler_float_init(&att_ref_euler_f);
+
+	init_butterworth_2_low_pass(&rate_p_filter, low_pass_filter_get_tau(20), 1.0f / (float) PERIODIC_FREQUENCY, 0);
+	init_butterworth_2_low_pass(&rate_q_filter, low_pass_filter_get_tau(20), 1.0f / (float) PERIODIC_FREQUENCY, 0);
+	init_butterworth_2_low_pass(&rate_r_filter, low_pass_filter_get_tau(20), 1.0f / (float) PERIODIC_FREQUENCY, 0);
 
 	VECT3_ASSIGN(stabilization_gains.p,
 							 STABILIZATION_ATTITUDE_PHI_PGAIN,
@@ -265,7 +279,15 @@ void stabilization_attitude_run(bool_t  in_flight)
 	FLOAT_ANGLE_NORMALIZE(att_err.psi);
 
 	/*rate filter*/
-	struct FloatRates rate_float = *stateGetBodyRates_f();
+	rate = *stateGetBodyRates_f();
+
+	update_butterworth_2_low_pass(&rate_p_filter, rate.p);
+	update_butterworth_2_low_pass(&rate_q_filter, rate.q);
+	update_butterworth_2_low_pass(&rate_r_filter, rate.r);
+
+	rate_filtered.p = get_butterworth_2_low_pass(&rate_p_filter);
+	rate_filtered.q = get_butterworth_2_low_pass(&rate_q_filter);
+	rate_filtered.r = get_butterworth_2_low_pass(&rate_r_filter);
 
 	desired_rate.p = stabilization_gains.p.x  * att_err.phi;
 	desired_rate.q = stabilization_gains.p.y  * att_err.theta;
@@ -277,25 +299,25 @@ void stabilization_attitude_run(bool_t  in_flight)
 
 	//struct FloatVect3 rate_err;
 	struct FloatRates rate_err;
-	rate_err.p = desired_rate.p - rate_float.p;
-	rate_err.q = desired_rate.q - rate_float.q;
-	rate_err.r = desired_rate.r - rate_float.r;
+	rate_err.p = desired_rate.p - rate_filtered.p;
+	rate_err.q = desired_rate.q - rate_filtered.q;
+	rate_err.r = desired_rate.r - rate_filtered.r;
 
 	//cpz-rate_loop-P+D
 	static struct FloatRates rate_float_prev;
 	static struct FloatRates desired_rate_prev;
 
 	stabilization_att_fb_cmd[COMMAND_ROLL] = stabilization_gains.p_rate.x * rate_err.p
-			+ stabilization_gains.d_rate.x*(rate_float_prev.p-rate_float.p)*inv_deta_t;
+			+ stabilization_gains.d_rate.x*(rate_float_prev.p-rate_filtered.p)*inv_deta_t;
 
 	stabilization_att_fb_cmd[COMMAND_PITCH] = stabilization_gains.p_rate.y * rate_err.q
-			+ stabilization_gains.d_rate.y*(rate_float_prev.q-rate_float.q)*inv_deta_t;
+			+ stabilization_gains.d_rate.y*(rate_float_prev.q-rate_filtered.q)*inv_deta_t;
 
 	stabilization_att_fb_cmd[COMMAND_YAW] = stabilization_gains.p_rate.z * rate_err.r
-			+ stabilization_gains.d_rate.z*(rate_float_prev.r-rate_float.r)*inv_deta_t;
+			+ stabilization_gains.d_rate.z*(rate_float_prev.r-rate_filtered.r)*inv_deta_t;
 
 	RATES_COPY(desired_rate_prev, desired_rate);
-	RATES_COPY(rate_float_prev, rate_float);
+	RATES_COPY(rate_float_prev, rate_filtered);
 
 	/*caculate intergrate*/
 	if(in_flight)
