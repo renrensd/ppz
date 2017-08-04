@@ -3,7 +3,7 @@
 <settings target="ap|nps">
   <dl_settings>
 
-    <dl_settings NAME="Vert Loop">    
+    <dl_settings NAME="Vert Loop">
       <dl_setting var="guid_v.pid_loop_mode_gcs" min="0" step="1" max="2" module="guidance/guidance_v" shortname="pid_mode" values="ACC|ACC_SPEED|ACC_SPEED_POS" persistent="true"/>
       <dl_setting var="guid_v.acc_filter_fc"    min="1" step="1" max="25"     module="guidance/guidance_v" shortname="acc_flt" handler="SetAccCutoff" />       
       <dl_setting var="guid_v.acc_z_pid.Kp"    min="0" step="0.001" max="0.1"     module="guidance/guidance_v" shortname="acc_z_Kp" />   
