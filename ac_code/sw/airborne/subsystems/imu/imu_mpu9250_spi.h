@@ -111,7 +111,6 @@ struct ImuMpu9250
 };
 
 extern struct ImuMpu9250 imu_mpu9250;
-extern struct ImuMpu9250 imu2_mpu9250;
 
 extern void imu_mpu9250_event(void);
 

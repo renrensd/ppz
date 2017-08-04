@@ -171,7 +171,6 @@ void imu_init(void)
 #endif // DOWNLINK
 
 	imu_impl_init();
-	imu2_impl_init();
 }
 
 

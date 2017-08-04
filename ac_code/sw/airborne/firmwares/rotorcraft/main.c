@@ -406,7 +406,6 @@ STATIC_INLINE void main_periodic(void)
 
 #if USE_IMU
 	imu_periodic();
-	imu2_periodic();
 #endif
 
 	//FIXME: temporary hack, remove me
@@ -562,7 +561,6 @@ STATIC_INLINE void main_event(void)
 
 #if USE_IMU
 	ImuEvent();
-	imu2_mpu9250_event();
 #endif
 
 #ifdef InsEvent
