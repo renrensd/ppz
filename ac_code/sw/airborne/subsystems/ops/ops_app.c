@@ -217,7 +217,7 @@ void ops_heart_beat_handler(uint8_t *param)
 	ops_info.spray_state = *(param+3);
 
 	ops_info.flag_flowmeter_cali = ops_info.mcu_info = *(param+23);
-	if(ops_info.flag_flowmeter_cali == FALSE)
+	if(ops_info.flag_flowmeter_cali == 0xFF)
 	{
 	#ifdef OPS_BAT_OPTION
 		ops_info.o_bat_mv = (*(param+5) << 8 | *(param+4));
