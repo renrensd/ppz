@@ -443,6 +443,23 @@ static void gcs_mode_enter(void)
 * INPUTS      : new mode
 * RETURN      : void
 ***********************************************************************/
+uint8_t check_ready_status(uint64_t param_em_code)
+{
+	uint8_t ready_state;
+	uint64_t forbid_status = (((uint64_t)1<<GPS_HEADING)|
+								((uint64_t)1<<GPS_LOST)|
+								((uint64_t)1<<GPS_ACC)|
+								((uint64_t)1<<IMU_CRITICAL));
+	
+	if((param_em_code & forbid_status) != 0)
+	{
+		ready_state = FALSE;
+	}
+	else
+	{
+		ready_state = TRUE;
+	}
+}
 uint16_t get_flight_status(void)
 {
 	/*flight_status:
@@ -459,7 +476,25 @@ uint16_t get_flight_status(void)
 	flight_status = 0;   //reset 0 use for update
 	if(ground_check_pass)
 	{
-		flight_status |=(1<<0);
+		if(!autopilot_in_flight)	//on ground
+		{
+			if(ground_check_pass)
+			{
+				flight_status |=(1<<0);	//ready
+			}
+			if(check_ready_status(em_code))
+			{
+				flight_status &= ~(1<<0);	// not ready
+			}
+			flight_status |=(1<<0);	//ready
+		}
+		else 					//in flight
+		{
+			if(check_ready_status(em_code))
+			{
+				flight_status &= ~(1<<0);	// not ready
+			}
+		}
 	}
 	if(autopilot_motors_on)
 	{
@@ -572,6 +607,6 @@ static void  ac_config_set_default(void)
 	ac_config_info.spray_wide = 3.0;
 	ac_config_info.spray_speed = 3.0;
 	ac_config_info.spray_convert_type = WAYPOINT_P2P;
-	ac_config_info.rocker_remote_status=TRUE;
+	ac_config_info.rocker_remote_status=FALSE;
 	ac_config_info.force_redun_status = FALSE;
 }

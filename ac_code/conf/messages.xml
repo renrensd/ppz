@@ -1947,6 +1947,8 @@
     <field name="mx" type="int32" unit="adc"/>
     <field name="my" type="int32" unit="adc"/>
     <field name="mz" type="int32" unit="adc"/>
+    <field name="mag_xy_unscaled" type="int32"/>
+    <field name="mag_xy_scaled" type="int32"/>
   </message>
 
   <message name="IMU_MAG_SETTINGS" id="206">

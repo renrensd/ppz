@@ -50,9 +50,14 @@ enum Gcs_Task_Cmd
 
 enum Land_Type
 {
-	LAND_POINT = 1,
-	RESERVE_LAND = 2,
+	VERTIPAD_TAKEOFF_POINT = 1,
+	VERTIPAD_LAND_POINT = 2,
 	TRANS_POINT = 3
+};
+enum Task_Type
+{
+	NORMAL_POLYGON = 0,
+	POINTS_MISSION
 };
 
 //operation_type: add=1, update=2, delete=3
@@ -191,10 +196,13 @@ extern struct Task_Wp task_wp[NB_TASK];
 extern uint16_t nb_pending_wp;
 extern struct Int32Vect2 wp_home;
 extern bool_t wp_home_useful;
-extern struct Int32Vect2 vertipad;
+extern struct Int32Vect2 vertipad_takeoff;
+extern struct Int32Vect2 vertipad_land;
 extern bool_t p_transfer_useful;
-extern struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];
-extern uint8_t nb_pending_reland;
+extern enum Task_Type flight_task_type;
+
+//extern struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];//todo:for debug
+//extern uint8_t nb_pending_reland;	//todo:for debug
 
 extern struct Task_Wp_Enu from_wp;
 extern struct Task_Wp_Enu next_wp;

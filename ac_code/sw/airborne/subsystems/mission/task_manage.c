@@ -32,10 +32,12 @@ uint16_t nb_pending_wp;             //number of waypoints in  unfinished task
 
 struct Int32Vect2 wp_home;
 bool_t wp_home_useful;             //record home waypoint got
-struct Int32Vect2 vertipad;
+struct Int32Vect2 vertipad_takeoff;
+struct Int32Vect2 vertipad_land;
 bool_t p_transfer_useful;
-struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];    //reserve
-uint8_t nb_pending_reland;                             //reserve
+enum Task_Type flight_task_type;
+//struct Int32Vect2 wp_reserve_land[NB_RESERVE_LAND];    //reserve  //todo:for debug
+//uint8_t nb_pending_reland;                             //reserve	//todo:for debug
 
 struct EnuCoor_i temp_enu[20];    //only use for update_task
 struct Task_Wp_Enu from_wp;       //start wp of current flight line
@@ -50,8 +52,8 @@ struct Task_Wp_Enu oa_from_wp; //use for store from waypoint
 struct Task_Wp_Enu oa_next_wp; //use for store next waypoint
 #endif
 
-static int8_t parse_land_task_home(struct Land_Info dl_land_info);
-static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t offset);
+static int8_t parse_task_vertipad_takeoff(struct Land_Info dl_land_info);
+static int8_t parse_task_vertipad_land(struct Land_Info dl_land_info, uint8_t offset);
 static int8_t parse_trans_point(struct Land_Info dl_land_info, uint8_t offset);
 static uint8_t convert_data_to_double(struct LlaCoor_d *lla_d,int32_t lon_start_add,int32_t lat_start_add);
 
@@ -60,8 +62,6 @@ void task_manage_init(void)
 	nb_pending_wp = 0;           //use to sign task clean
 	wp_home_useful = FALSE;
 	p_transfer_useful = FALSE;
-	nb_pending_reland = 0;
-
 }
 
 /***********************************************************************
@@ -107,12 +107,16 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 		return response;
 	}
 
-	int8_t oa_ok;
+	int8_t oa_ok = 0;
 	switch (gcs_cmd)
 	{
 	case GCS_CMD_START:
 #ifdef USE_PLANED_OA
-		oa_ok = check_oa_data_valid();
+		if((flight_task_type == NORMAL_POLYGON)&&(oa_data.obstacles_num > 0))
+		{
+			oa_ok = check_oa_data_valid();
+		}
+		
 		planed_oa.test_on = FALSE;
 		if (oa_ok < 0)
 		{
@@ -198,18 +202,6 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 		spray_switch_flag = FALSE;
 		gcs_task_cmd = GCS_CMD_BHOME;
 		gcs_cmd_interrupt = TRUE;
-		break;
-
-	case GCS_CMD_RELAND:
-		if (0 >= nb_pending_reland)
-		{
-			response = 2;
-		}
-		else
-		{
-			gcs_task_cmd = GCS_CMD_RELAND;
-			gcs_cmd_interrupt = TRUE;
-		}
 		break;
 
 	case GCS_CMD_DLAND:
@@ -444,50 +436,47 @@ int8_t parse_land_task(struct Land_Info dl_land_info)
 
 	//enum Land_Type m_land_type = (enum Land_Type)dl_land_info.land_type;
 
-	uint8_t home_offset = 0;
+	uint8_t point_offset = 0;
 	/*first land type is home,parse home waypoint*/
-	if( *(dl_land_info.land_type)==LAND_POINT)
+	if( *(dl_land_info.land_type)==VERTIPAD_TAKEOFF_POINT)
 	{
-		response = parse_land_task_home(dl_land_info);
+		response = parse_task_vertipad_takeoff(dl_land_info);
 		if(response)
 		{
 			return response;
 		}
-		home_offset = 1;
+		point_offset = 1;
 	}
-
-	/*parse reserve land*/
-	if( dl_land_info.land_type_length >= (1+home_offset) )
+	if( *(dl_land_info.land_type + point_offset) == VERTIPAD_LAND_POINT)
 	{
-		for(uint8_t i=0; i<(dl_land_info.land_type_length-home_offset); i++)
+		response = parse_task_vertipad_land(dl_land_info, point_offset);
+		if(response)
 		{
-			if(*(dl_land_info.land_type+i+home_offset) == RESERVE_LAND)  /*check all land_type */
-			{
-				response = parse_land_task_reserve(dl_land_info, home_offset);
-
-			}
-			else if(*(dl_land_info.land_type+i+home_offset) == TRANS_POINT)
-			{
-				response = parse_trans_point(dl_land_info,home_offset);
-			}
-			else
-			{
-				response = 2;
-				return response;
-			}
+			return response;
 		}
-
+		point_offset = 2;
 	}
-	else //no transfer
+	if( dl_land_info.land_type_length > point_offset)
 	{
-		VECT2_COPY(wp_home, vertipad);
+		if(*(dl_land_info.land_type+point_offset) == VERTIPAD_LAND_POINT)
+		{
+			response = parse_trans_point(dl_land_info,point_offset);
+		}
+		if(response)
+		{
+			return response;
+		}
+		point_offset = 2;
+	}
+	else
+	{
+		VECT2_COPY(wp_home, vertipad_takeoff);
 		wp_home_useful = TRUE;  //home waypoint receive success
 		p_transfer_useful = FALSE;
 		oa_data.home.x = POS_FLOAT_OF_BFP(wp_home.x);
 		oa_data.home.y = POS_FLOAT_OF_BFP(wp_home.y);
 		oa_data.home_valid = TRUE;
 	}
-
 	return response;
 }
 
@@ -507,26 +496,25 @@ static uint8_t convert_data_to_double(struct LlaCoor_d *lla_d,int32_t lon_start_
 	lla_d->lat = RadOfDeg(lat_d.d);
 }
 
-static int8_t parse_land_task_home(struct Land_Info dl_land_info)
+static int8_t parse_task_vertipad_takeoff(struct Land_Info dl_land_info)
 {
 	int8_t response =0;
-	//vertipad
 	if( 1 <= dl_land_info.waypoints_length )
 	{
-		struct EnuCoor_i enu_land;
-		struct LlaCoor_d lla_d_land;
-		convert_data_to_double(&lla_d_land,dl_land_info.waypoints_lon,dl_land_info.waypoints_lat);
-		if( task_lla_d_to_enu_i_convert(&enu_land, &lla_d_land))
+		struct EnuCoor_i enu_takeoff;
+		struct LlaCoor_d lla_d_takeoff;
+		convert_data_to_double(&lla_d_takeoff,dl_land_info.waypoints_lon,dl_land_info.waypoints_lat);
+		if( task_lla_d_to_enu_i_convert(&enu_takeoff, &lla_d_takeoff))
 		{
-			VECT2_COPY(vertipad, enu_land);
+			VECT2_COPY(vertipad_takeoff, enu_takeoff);
 
 			//replace current pos with wp_home, if pos error <1m!!!
 			struct EnuCoor_i temp_pos = *stateGetPositionEnu_i();
 			struct EnuCoor_i diff_pos;
-			VECT2_DIFF(diff_pos, temp_pos, enu_land);
+			VECT2_DIFF(diff_pos, temp_pos, enu_takeoff);
 			if( abs(diff_pos.x)<POS_BFP_OF_REAL(1.0) && abs(diff_pos.y)<POS_BFP_OF_REAL(1.0) )
 			{
-				VECT2_COPY(vertipad, temp_pos);
+				VECT2_COPY(vertipad_takeoff, temp_pos);
 			}
 		}
 		else
@@ -541,103 +529,79 @@ static int8_t parse_land_task_home(struct Land_Info dl_land_info)
 	return response;
 
 }
-static int8_t parse_trans_point(struct Land_Info dl_land_info, uint8_t offset)
+
+static int8_t parse_task_vertipad_land(struct Land_Info dl_land_info, uint8_t offset)
 {
 	int8_t response =0;
-	struct LlaCoor_i lla_tp;   /* rad, e8 */
-	struct LlaCoor_d lla_d_tp;
-	struct EnuCoor_i enu_tp;
-	int32_t lon_start_add = dl_land_info.waypoints_lon+(offset+nb_pending_reland)*8;
-	int32_t lat_start_add = dl_land_info.waypoints_lat+(offset+nb_pending_reland)*8;
-	convert_data_to_double(&lla_d_tp,lon_start_add,lat_start_add);
-	if( task_lla_d_to_enu_i_convert(&enu_tp, &lla_d_tp) )
+	if( dl_land_info.waypoints_length > offset )
 	{
-		VECT2_COPY(wp_home, enu_tp);
-		wp_home_useful = TRUE;  //home waypoint receive success
-		p_transfer_useful = TRUE;
-		oa_data.home.x = POS_FLOAT_OF_BFP(wp_home.x);
-		oa_data.home.y = POS_FLOAT_OF_BFP(wp_home.y);
-		oa_data.home_valid = TRUE;
+		struct EnuCoor_i enu_land;
+		struct LlaCoor_d lla_d_land;
+		int32_t lon_start_add = dl_land_info.waypoints_lon+offset*8;
+		int32_t lat_start_add = dl_land_info.waypoints_lat+offset*8;
+		convert_data_to_double(&lla_d_land,lon_start_add,lat_start_add);
+		if( task_lla_d_to_enu_i_convert(&enu_land, &lla_d_land))
+		{
+			VECT2_COPY(vertipad_land, enu_land);
+
+			//replace current pos with wp_home, if pos error <1m!!!
+			struct EnuCoor_i temp_pos = *stateGetPositionEnu_i();
+			struct EnuCoor_i diff_pos;
+			VECT2_DIFF(diff_pos, temp_pos, enu_land);
+			if( abs(diff_pos.x)<POS_BFP_OF_REAL(1.0) && abs(diff_pos.y)<POS_BFP_OF_REAL(1.0) )
+			{
+				VECT2_COPY(vertipad_land, temp_pos);
+			}
+			VECT2_DIFF(diff_pos, vertipad_land, vertipad_takeoff);
+			if(( abs(diff_pos.x) != 0 || abs(diff_pos.y) != 0 ))
+			{
+				flight_task_type = POINTS_MISSION;
+			}
+			else 
+			{
+				flight_task_type = NORMAL_POLYGON;
+			}
+		}
+		else
+		{
+			response = 7; //waypoint convert fail
+		}
 	}
 	else
 	{
-		response = 5;
+		response = 8;  //home waypoint can't accept||waypoints is empty
 	}
 	return response;
+	
 }
-/*reserve*/
-static int8_t parse_land_task_reserve(struct Land_Info dl_land_info, uint8_t offset)
+
+static int8_t parse_trans_point(struct Land_Info dl_land_info, uint8_t offset)
 {
-	int8_t response = 0;
-	uint8_t reserve_wp_length = dl_land_info.waypoints_length - offset;
-	/*add waypoints*/
-	if( LAND_TASK_ADD==dl_land_info.operation_type )
+	int8_t response =0;
+	if( dl_land_info.waypoints_length > offset )
 	{
-		if( reserve_wp_length < (NB_RESERVE_LAND-nb_pending_reland) )
+		int8_t response =0;
+		struct LlaCoor_i lla_tp;   /* rad, e8 */
+		struct LlaCoor_d lla_d_tp;
+		struct EnuCoor_i enu_tp;
+		int32_t lon_start_add = dl_land_info.waypoints_lon+offset*8;
+		int32_t lat_start_add = dl_land_info.waypoints_lat+offset*8;
+		convert_data_to_double(&lla_d_tp,lon_start_add,lat_start_add);
+		if( task_lla_d_to_enu_i_convert(&enu_tp, &lla_d_tp) )
 		{
-			struct LlaCoor_i lla_re;   /* rad, e8 */
-			struct LlaCoor_i lla_d_re;   /* rad */
-			struct EnuCoor_i enu_re;
-			uint8_t last_nb_pending_reland = nb_pending_reland;
-			for(uint8_t i=0; i<reserve_wp_length; i++ )
-			{
-				int32_t lon_start_add = dl_land_info.waypoints_lon+(i+offset)*8;
-				int32_t lat_start_add = dl_land_info.waypoints_lat+(i+offset)*8;
-				convert_data_to_double(&lla_d_re,lon_start_add,lat_start_add);
-				//lla_re.lon = *(dl_land_info.waypoints_lon+i+offset);
-				//lla_re.lat = *(dl_land_info.waypoints_lat+i+offset);
-				if( task_lla_d_to_enu_i_convert(&enu_re, &lla_d_re) )
-				{
-					VECT2_COPY(wp_reserve_land[nb_pending_reland], enu_re);
-					nb_pending_reland++;
-				}
-				else
-				{
-					response = 4;
-					nb_pending_reland = last_nb_pending_reland;
-					break;  /*convert error,jump out loop*/
-				}
-			}
+			VECT2_COPY(wp_home, enu_tp);
+			wp_home_useful = TRUE;  //home waypoint receive success
+			p_transfer_useful = TRUE;
+			oa_data.home.x = POS_FLOAT_OF_BFP(wp_home.x);
+			oa_data.home.y = POS_FLOAT_OF_BFP(wp_home.y);
+			oa_data.home_valid = TRUE;
 		}
 		else
 		{
-			response = 6;  /*reserve land waypoints space is no enought*/
-		}
+			response = 5;
+		}	
 	}
-	/*update waypoints*/
-	else if( LAND_TASK_UPDATE==dl_land_info.operation_type )
-	{
-		if(reserve_wp_length == nb_pending_reland)
-		{
-			struct LlaCoor_i lla_re;   /* rad, e8 */
-			for(uint8_t i=0; i<reserve_wp_length; i++ )
-			{
-				lla_re.lon = *(dl_land_info.waypoints_lon+i+offset);
-				lla_re.lat = *(dl_land_info.waypoints_lat+i+offset);
-				if( !task_lla_to_enu_convert(&temp_enu[i], &lla_re) )
-				{
-					response =4;
-					break;   /* jump out the loop */
-				}
-			}
-			if(!response)
-			{
-				for(uint8_t i=0; i<reserve_wp_length; i++ )
-				{
-					VECT2_COPY(wp_reserve_land[i], temp_enu[i]);
-				}
-			}
-		}
-		/*update waypoints number is wrong*/
-		else
-		{
-			response = 7;
-		}
-	}
-	else if( LAND_TASK_DELETE==dl_land_info.operation_type )
-	{
-		nb_pending_reland = 0; /*reset number of reland waypoint*/
-	}
+	
 	return response;
 }
 

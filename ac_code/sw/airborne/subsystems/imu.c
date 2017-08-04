@@ -98,7 +98,7 @@ static void send_mag_raw(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_IMU_MAG_RAW(trans, dev, AC_ID,
-														&imu.mag_unscaled.x, &imu.mag_unscaled.y, &imu.mag_unscaled.z);
+														&imu.mag_unscaled.x, &imu.mag_unscaled.y, &imu.mag_unscaled.z, &imu.mag_xy_unscaled, &imu_moni.mag_xy_unscaled_aver);
 }
 
 static void send_mag_scaled(struct transport_tx *trans, struct link_device *dev)

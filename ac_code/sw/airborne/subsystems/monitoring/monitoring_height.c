@@ -293,18 +293,21 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 		if( h_moni.baro_aver < (ground_pressure_aver-FLIGHT_RANGE) ||
 				h_moni.baro_aver > (ground_pressure_aver+FLIGHT_RANGE/2) )
 		{
-			h_moni.baro_code |=0x10;
-			h_moni.baro_status = 1;     //set fail
-#if TEST_MSG
-			baro_flight_range = 1;
-#endif
+			h_moni.baro_flight_counter ++;
+			if(h_moni.baro_flight_counter > 10)
+			{
+				h_moni.baro_code |=0x10;
+				h_moni.baro_status = 1;     //set fail
+				baro_flight_range = 1;
+			}
+
 		}
 		else
 		{
 			//h_moni.baro_code &=0xEF;  //reset normal
 		}
 	}
-	else  //on ground
+	else if((!autopilot_in_flight) && (!ground_check_pass))//during selfcheck
 	{
 		if(h_moni.baro_ground_check == TRUE)
 		{

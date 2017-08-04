@@ -72,8 +72,9 @@ struct EnuCoor_i current_wp_scene;    /*use to save pos for exceptional interrup
 struct EnuCoor_i interrupt_wp_scene;    /*use to save pos of ac exceptional interrupt hover */
 struct EnuCoor_i first_task_wp;		//todo:for debug
 struct EnuCoor_i home_wp_enu;
-struct EnuCoor_i vertipad_enu;
-struct EnuCoor_i reland_wp_enu;
+struct EnuCoor_i vertipad_takeoff_enu;
+struct EnuCoor_i vertipad_land_enu;
+//struct EnuCoor_i reland_wp_enu;
 
 enum Task_Action AC_action;
 
@@ -193,7 +194,7 @@ bool_t get_start_line(void)
 	{
 		if(p_transfer_useful == TRUE) //vertipad -- transfer -- first task point
 		{
-			VECT2_COPY(from_wp.wp_en, vertipad);
+			VECT2_COPY(from_wp.wp_en, vertipad_takeoff);
 			VECT2_COPY(next_wp.wp_en, wp_home);
 			from_wp.action = TRANSFER;
 			next_wp.action = FLIGHT_LINE;
@@ -203,7 +204,7 @@ bool_t get_start_line(void)
 		{
 			VECT2_COPY(first_task_wp, task_wp[0].wp_en); //todo:for debug
 			achieve_next_wp();
-			VECT2_COPY(from_wp.wp_en, vertipad);
+			VECT2_COPY(from_wp.wp_en, vertipad_takeoff);
 			from_wp.action = FLIGHT_LINE;
 		}
 		from_wp_useful = TRUE;
@@ -354,7 +355,7 @@ Gcs_State gcs_task_run(void)
 						}
 						else
 						{
-							VECT2_COPY(vertipad_enu, vertipad);
+							VECT2_COPY(vertipad_takeoff_enu, vertipad_takeoff);
 							transfer_step++;
 						}
 
@@ -369,19 +370,19 @@ Gcs_State gcs_task_run(void)
 			}
 			else if(transfer_step == 1)
 			{
-				if(task_nav_pre_path(home_wp_enu, vertipad_enu, FLIGHT_PATH))
+				if(task_nav_pre_path(home_wp_enu, vertipad_takeoff_enu, FLIGHT_PATH))
 				{
-					if( !task_nav_path(home_wp_enu, vertipad_enu) )
+					if( !task_nav_path(home_wp_enu, vertipad_takeoff_enu) )
 					{
-						task_nav_hover(vertipad_enu);
+						task_nav_hover(vertipad_takeoff_enu);
 						gcs_state = GCS_RUN_LANDING;
 					}
 				}
 			}
 		}
 		break;
-
-	case GCS_CMD_RELAND:
+/*		//todo:for debug
+	case GCS_CMD_RELAND: 
 		gcs_state = GCS_RUN_RELAND;
 		if( gcs_hover_enter() )
 		{
@@ -396,14 +397,14 @@ Gcs_State gcs_task_run(void)
 				release_stop_brake();
 				if( !task_nav_path(interrupt_wp_scene, reland_wp_enu) )
 				{
-					/*no more task_wp to run, do land motion*/
+					//no more task_wp to run, do land motion//
 					task_nav_hover(reland_wp_enu);
 					gcs_state = GCS_RUN_LANDING;
 				}
 			}
 		}
 		break;
-
+*/
 	case GCS_CMD_DLAND:
 		if( gcs_hover_enter() )
 		{
@@ -521,6 +522,7 @@ void set_auto_stop_brake(void)
 }
 
 /*reseve*/
+/*//todo:for debug
 void get_shortest_reland_wp(void)
 {
 	float distance_cur_reland[NB_RESERVE_LAND];
@@ -541,7 +543,7 @@ void get_shortest_reland_wp(void)
 		}
 	}
 }
-
+*/
 /***********************************************************************
 * FUNCTION    : run_normal_task
 * DESCRIPTION : execute task according to from_wp.action
@@ -680,7 +682,7 @@ bool_t run_normal_task(void)
 			if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
 			{
 				hover_flag = FALSE;
-				VECT2_COPY(home_wp_enu, wp_home);
+				VECT2_COPY(home_wp_enu, vertipad_land);
 
 #ifdef USE_PLANED_OA
 				planed_oa.wp_move_done_flag = TRUE;
@@ -709,7 +711,7 @@ bool_t run_normal_task(void)
 					{
 						from_wp.wp_en = home_wp_enu;
 						from_wp.action = TRANSFER;
-						VECT2_COPY(next_wp.wp_en, vertipad);
+						VECT2_COPY(next_wp.wp_en, vertipad_land);
 					}
 				}
 			}
@@ -726,8 +728,8 @@ bool_t run_normal_task(void)
 			{
 				if( !achieve_next_wp() )
 				{
-					VECT2_COPY(vertipad_enu, vertipad);
-					task_nav_hover(vertipad_enu);
+					VECT2_COPY(vertipad_land_enu, vertipad_land);
+					task_nav_hover(vertipad_land_enu);
 					return TRUE;
 				}
 				else
@@ -1136,7 +1138,7 @@ bool_t nav_vrc_back_home(bool_t reset)
 					}
 					else
 					{
-						VECT2_COPY(vertipad_enu, vertipad);
+						VECT2_COPY(vertipad_takeoff_enu, vertipad_takeoff);
 						transfer_step++;
 					}
 				}
@@ -1144,11 +1146,11 @@ bool_t nav_vrc_back_home(bool_t reset)
 		}
 		else if (transfer_step == 1)
 		{
-			if (task_nav_pre_path(home_wp_enu, vertipad_enu, FLIGHT_PATH))
+			if (task_nav_pre_path(home_wp_enu, vertipad_takeoff_enu, FLIGHT_PATH))
 			{
-				if (!task_nav_path(home_wp_enu, vertipad_enu))
+				if (!task_nav_path(home_wp_enu, vertipad_takeoff_enu))
 				{
-					task_nav_hover(vertipad_enu);
+					task_nav_hover(vertipad_takeoff_enu);
 					return TRUE;
 				}
 			}
