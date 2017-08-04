@@ -682,7 +682,7 @@ bool_t run_normal_task(void)
 			if(stateGetHorizontalSpeedNorm_f() < 0.3) /*make sure hover motion setted*/
 			{
 				hover_flag = FALSE;
-				VECT2_COPY(home_wp_enu, wp_home);
+				VECT2_COPY(home_wp_enu, vertipad_land);
 
 #ifdef USE_PLANED_OA
 				planed_oa.wp_move_done_flag = TRUE;
