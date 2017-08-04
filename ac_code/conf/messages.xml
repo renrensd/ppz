@@ -1145,7 +1145,10 @@
     <field name="sp_r"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
     <field name="est_p"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
     <field name="est_q"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
-    <field name="est_r"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/> 
+    <field name="est_r"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
+    <field name="est_p_filtered"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
+    <field name="est_q_filtered"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/>
+    <field name="est_r_filtered"         type="float" alt_unit="deg/s" alt_unit_coef="57.29578"/> 
     <field name="sp_phi"       type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
     <field name="sp_theta"     type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
     <field name="sp_psi"       type="float" alt_unit="deg" alt_unit_coef="57.29578"/>
