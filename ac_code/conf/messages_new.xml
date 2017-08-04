@@ -448,10 +448,9 @@ DATA17:
   <message name="LAND_TASK" id="8">
     <description>link="G2A"
                  operation_type: add=1, update=2(all update), delete=3(all delete)
-                 land_type: home=1, reserve_land=2  ,transfer_point=3   
+                 land_type: home(vertipad_takeoff)=1, land(vertipad_land)=2  ,transfer_point=3   
                  wp_type: coordinate   wgs84 = 1, relative_ENU = 2            
                  aircraft will ack with "LAND_TASK_ACK_STATE" message
-                 note:home waypoint is requested and unique, reserve_land waypoints are optional(numbers:0--5)
     </description>
     <field name="operation_type" type="uint8"/>
     <field name="wp_type"  type="uint8"/>
