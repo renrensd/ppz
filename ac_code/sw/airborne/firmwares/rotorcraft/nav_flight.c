@@ -480,7 +480,7 @@ uint16_t get_flight_status(void)
 		{
 			flight_status |=(1<<0);	//ready
 		}
-		if(!check_ready_status(em_code))
+		if((!check_ready_status(em_code))||(!ground_check_pass))
 		{
 			flight_status &= ~(1<<0);	// not ready
 		}
