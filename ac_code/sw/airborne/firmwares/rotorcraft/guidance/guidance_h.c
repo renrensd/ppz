@@ -1038,6 +1038,7 @@ void guidance_h_read_rc(bool_t in_flight)
 void guidance_h_run(bool_t  in_flight)
 {
 	struct FloatVect2 rc_vel_sp_i;
+	static bool_t last_in_flight = FALSE;
 
 	guidance_h_state_update(in_flight);
 
@@ -1078,7 +1079,7 @@ void guidance_h_run(bool_t  in_flight)
 		break;
 
 	case GUIDANCE_H_MODE_NAV:
-		if (!in_flight)
+		if( (last_in_flight != in_flight) && (in_flight == TRUE) )
 		{
 			guidance_h_nav_enter();
 		}
@@ -1132,6 +1133,8 @@ void guidance_h_run(bool_t  in_flight)
 	default:
 		break;
 	}
+
+	last_in_flight = in_flight;
 }
 
 #include "firmwares/rotorcraft/nav_flight.h"
