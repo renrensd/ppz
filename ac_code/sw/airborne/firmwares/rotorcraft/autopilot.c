@@ -407,7 +407,7 @@ void autopilot_init(void)
 	gpio_clear(POWER_SWITCH_GPIO); // POWER OFF
 #endif
 
-  autopilot_rc = FALSE;   //stop radio event task add by lg
+  autopilot_rc = TRUE;   //stop radio event task add by lg
   autopilot_arming_init();
 
 	nav_init();

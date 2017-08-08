@@ -149,7 +149,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 				|| GCS_CMD_NONE == gcs_task_cmd
 				|| GCS_CMD_START == gcs_task_cmd)
 		{
-			if( !ins_int_all_using_rtk() )
+			if(( !ins_int_all_using_rtk() )&&(!eng_app_check_debug_sn()))
 			{
 				response = 2;
 			}
@@ -458,7 +458,7 @@ int8_t parse_land_task(struct Land_Info dl_land_info)
 	}
 	if( dl_land_info.land_type_length > point_offset)
 	{
-		if(*(dl_land_info.land_type+point_offset) == VERTIPAD_LAND_POINT)
+		if(*(dl_land_info.land_type+point_offset) == TRANS_POINT)
 		{
 			response = parse_trans_point(dl_land_info,point_offset);
 		}

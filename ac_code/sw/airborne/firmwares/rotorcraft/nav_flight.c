@@ -473,27 +473,28 @@ uint16_t get_flight_status(void)
 	   bit8: 0=spray_stop;         1=spray_open
 	 other bits keep 0
 	 */
-	flight_status = 0;   //reset 0 use for update
-	if(ground_check_pass)
+	flight_status &= 0x01; //reset 0 use for update
+	if(!autopilot_in_flight)	//on ground
 	{
-		if(!autopilot_in_flight)	//on ground
+		if(ground_check_pass)
 		{
-			if(ground_check_pass)
-			{
-				flight_status |=(1<<0);	//ready
-			}
-			if(check_ready_status(em_code))
-			{
-				flight_status &= ~(1<<0);	// not ready
-			}
 			flight_status |=(1<<0);	//ready
 		}
-		else 					//in flight
+		if(!check_ready_status(em_code))
 		{
-			if(check_ready_status(em_code))
-			{
-				flight_status &= ~(1<<0);	// not ready
-			}
+			flight_status &= ~(1<<0);	// not ready
+		}
+		else
+		{
+			flight_status |=(1<<0);	//ready
+		}
+		
+	}
+	else 					//in flight
+	{
+		if(!check_ready_status(em_code))
+		{
+			flight_status &= ~(1<<0);	// not ready
 		}
 	}
 	if(autopilot_motors_on)
@@ -607,6 +608,6 @@ static void  ac_config_set_default(void)
 	ac_config_info.spray_wide = 3.0;
 	ac_config_info.spray_speed = 3.0;
 	ac_config_info.spray_convert_type = WAYPOINT_P2P;
-	ac_config_info.rocker_remote_status=FALSE;
+	ac_config_info.rocker_remote_status=TRUE;
 	ac_config_info.force_redun_status = FALSE;
 }
