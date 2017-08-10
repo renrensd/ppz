@@ -2109,9 +2109,9 @@
     <field name="fix_imu" type="uint8" values="ok|gyro|accel|mag"/>
     <field name="g_range_imu" type="uint8" values="ok|gyro|accel|mag"/>
     <field name="g_noise_imu" type="uint8" values="ok|gyro|accel|mag"/>
-    <field name="mag_emi_counter" type="uint8"/>
-    <field name="mag_emi" type="uint8" values="ok|fail"/>
-    <field name="sonar_error_data" type="uint8" values="ok|fail"/>
+    <field name="imu_error0" type="uint8"/>
+    <field name="imu_error1" type="uint8"/>
+    <field name="imu_error2" type="uint8"/>
     <field name="height_fix" type="uint8" values="ok|sonar|baro"/>
     <field name="height_noise" type="uint8" values="ok|sonar|baro"/>
     <field name="height_fre" type="uint8" values="ok|sonar|baro"/>
