@@ -76,6 +76,7 @@ struct GpsNmea
 	enum Xyzmsg_Pos_Type pos_type;
 
 	uint8_t sol_tatus;          ///< gps heading status
+	bool heading_timeout;
 	uint8_t num_sta_use;        ///< number of sta in used
 	int32_t msg_len;
 	float heading;

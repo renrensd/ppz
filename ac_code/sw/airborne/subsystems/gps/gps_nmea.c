@@ -945,7 +945,7 @@ void get_gps_heading_stable(void)
 
 	if ((now_time - gps_nmea.last_tramsg_time) > MSG_TIME_OUT)
 	{
-		gps_nmea.sol_tatus = 0;
+		gps_nmea.sol_tatus = 6;
 		gps.h_stable = FALSE;
 		counter = 0;
 	}

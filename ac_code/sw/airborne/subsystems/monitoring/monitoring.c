@@ -294,14 +294,14 @@ static inline void monitoring_msg_handle(void)
 													 &fix_imu,
 													 &g_range_imu,
 													 &g_noise_imu,
-													 &mag_emi_counter,
-													 &mag_emi,
-													 &sonar_error_data,
+													 &mag_emi_counter,		//no use
+													 &mag_emi,		//no use
+													 &sonar_error_data,		//no use
 													 &height_fix,
 													 &height_noise,
 													 &height_fre,
 													 &baro_flight_range,
-													 &sonar_bound,
+													 &sonar_bound,			//no use
 													 &baro_status,
 													 &bat_flight,
 													 &gps_flight,
