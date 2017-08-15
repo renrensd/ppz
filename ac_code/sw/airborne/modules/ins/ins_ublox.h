@@ -30,7 +30,7 @@ struct _s_ins_ublox
 	DECLARE_SGDF(vel_z_sgdf, NED_VEL_SGDF_WIN_SIZE);
 	struct LtpDef_f ltpDef;
 	bool_t ltpDef_initialized;
-	//bool_t ublox_stable;
+	bool_t stable;
 	bool_t ublox_signal_stable;
 	uint16_t ublox_stable_count;
 	bool_t ublox_stable_first_time;
@@ -43,5 +43,6 @@ extern struct _s_ins_ublox ins_ublox;
 void ins_ublox_init(void);
 void ins_ublox_event(void);
 void ins_ublox_periodic(void);
+bool_t ins_ublox_stable(void);
 
 #endif /* SW_AIRBORNE_MODULES_INS_INS_UBLOX_H_ */

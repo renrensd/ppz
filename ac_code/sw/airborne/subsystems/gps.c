@@ -25,11 +25,10 @@
  */
 
 #include "subsystems/gps.h"
+#include "led.h"
 #ifdef USE_GPS_NMEA
 #include "subsystems/gps/gps_nmea.h"
 #endif
-
-#include "led.h"
 
 #ifdef GPS_POWER_GPIO
 #include "mcu_periph/gpio.h"
@@ -44,6 +43,11 @@
 struct GpsState gps;
 
 struct GpsTimeSync gps_time_sync;
+
+//static void get_gps_pos_stable(void);
+//static void get_gps_heading_stable(void);
+static void gps_pos_state_update(void);
+static void gps_head_state_update(void);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -124,11 +128,9 @@ static void send_gps_int(struct transport_tx *trans, struct link_device *dev)
 												&gps.pacc, &gps.sacc,
 												&gps.tow,
 												&gps.pdop,
-												&gps.num_sv,
+												&gps.pos_sv,
 												&gps.fix,
-												&gps.heading,
-												&gps.h_stable,
-												&gps.head_stanum);
+												&gps.heading);
 	// send SVINFO for available satellites that have new data
 	send_svinfo_available(trans, dev);
 }
@@ -146,10 +148,42 @@ static void send_gps_lla(struct transport_tx *trans, struct link_device *dev)
 												&gps.fix, &err);
 }
 
-static void send_gps_sol(struct transport_tx *trans, struct link_device *dev)
+static void send_gps_origin(struct transport_tx *trans, struct link_device *dev)
 {
+	float Px = gps_nmea.BESTXYZ.Px;
+	float Py = gps_nmea.BESTXYZ.Py;
+	float Pz = gps_nmea.BESTXYZ.Pz;
+	float Vx = gps_nmea.BESTXYZ.Vx;
+	float Vy = gps_nmea.BESTXYZ.Vy;
+	float Vz = gps_nmea.BESTXYZ.Vz;
+
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	pprz_msg_send_GPS_SOL(trans, dev, AC_ID, &gps.pacc, &gps.sacc, &gps.pdop, &gps.num_sv);
+	pprz_msg_send_GPS_ORIGIN(trans, dev, AC_ID,
+			&gps_nmea.BESTXYZ.error.PV_type_empty,
+			&gps_nmea.BESTXYZ.error.PV_empty,
+			&gps_nmea.BESTXYZ.P_sol,
+			&gps_nmea.BESTXYZ.P_type,
+			&Px,
+			&Py,
+			&Pz,
+			&gps_nmea.BESTXYZ.Px_sd,
+			&gps_nmea.BESTXYZ.Py_sd,
+			&gps_nmea.BESTXYZ.Pz_sd,
+			&gps_nmea.BESTXYZ.V_sol,
+			&gps_nmea.BESTXYZ.V_type,
+			&Vx,
+			&Vy,
+			&Vz,
+			&gps_nmea.BESTXYZ.Vx_sd,
+			&gps_nmea.BESTXYZ.Vy_sd,
+			&gps_nmea.BESTXYZ.Vz_sd,
+			&gps_nmea.BESTXYZ.SV_tracked,
+			&gps_nmea.BESTXYZ.SV_used,
+			&gps_nmea.GPTRA.error.sol_empty,
+			&gps_nmea.GPTRA.error.heading_empty,
+			&gps_nmea.GPTRA.heading,
+			&gps_nmea.GPTRA.sol,
+			&gps_nmea.GPTRA.SV_used);
 }
 #endif
 
@@ -159,13 +193,14 @@ void gps_init(void)
 	gps.week = 0;
 	gps.tow = 0;
 	gps.cacc = 0;
-	gps.p_stable = FALSE;
-	gps.h_stable = FALSE;
 	gps.last_3dfix_ticks = 0;
 	gps.last_3dfix_time = 0;
 	gps.last_msg_ticks = 0;
 	gps.last_msg_time = 0;
 	gps.alive = FALSE;
+
+	gps.pos_timeout = TRUE;
+	gps.head_timeout = TRUE;
 #ifdef GPS_POWER_GPIO
 	gpio_setup_output(GPS_POWER_GPIO);
 	GPS_POWER_GPIO_ON(GPS_POWER_GPIO);
@@ -181,7 +216,7 @@ void gps_init(void)
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS, send_gps);
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_INT, send_gps_int);
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_LLA, send_gps_lla);
-	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_SOL, send_gps_sol);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GPS_ORIGIN, send_gps_origin);
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SVINFO, send_svinfo);
 #endif
 }
@@ -210,9 +245,9 @@ void gps_periodic_check(void)
 		gps.p_stable = FALSE;
 	}
 #else
-	get_gps_pos_stable();
+	gps_pos_state_update();
 #ifdef USE_GPS_HEADING
-	get_gps_heading_stable();
+	gps_head_state_update();
 #endif
 #endif
 }
@@ -249,4 +284,76 @@ uint32_t gps_tow_from_sys_ticks(uint32_t sys_ticks)
 void WEAK gps_inject_data(uint8_t packet_id __attribute__((unused)), uint8_t length __attribute__((unused)), uint8_t *data __attribute__((unused)))
 {
 
+}
+
+#define MSG_TIME_OUT 1000  //unit:ms
+/*run 20hz,use 2s time no fix pos set unstable*/
+
+static void gps_pos_state_update(void)
+{
+	uint32_t now_time = get_sys_time_msec();
+
+	gps.pos_timeout = ((now_time - gps_nmea.last_xyzmsg_time) > MSG_TIME_OUT);
+}
+
+static void gps_head_state_update(void)
+{
+	uint32_t now_time = get_sys_time_msec();
+
+	gps.head_timeout = ((now_time - gps_nmea.last_tramsg_time) > MSG_TIME_OUT);
+}
+
+static bool_t gps_pos_valid(void)
+{
+	if( gps.pos_timeout )
+	{
+		return FALSE;
+	}
+
+	if( !BESTXYZ_data_valid() )
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static bool_t gps_head_valid(void)
+{
+	if( gps.head_timeout )
+	{
+		return FALSE;
+	}
+
+	if( !GPTRA_heading_valid() )
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+bool_t rtk_pos_stable(void)
+{
+	return gps_pos_valid() && (gps.pos_sv > 4);
+}
+
+bool_t rtk_head_stable(void)
+{
+	return gps_head_valid() && (gps.head_sv > 4);
+}
+
+bool_t rtk_stable(void)
+{
+	return (rtk_pos_stable() && rtk_head_stable());
+}
+
+bool_t rtk_power_up_stable(void)
+{
+	return (rtk_stable() &&
+			(gps_nmea.BESTXYZ.P_type == NARROW_INT) &&
+			(gps_nmea.BESTXYZ.V_type == NARROW_INT) &&
+			(gps_nmea.GPTRA.sol == 4) &&
+			(gps.pos_sv >= RTK_MIN_POS_SV_NUM) &&
+			(gps.head_sv >= RTK_MIN_HEADING_SV_NUM));
 }

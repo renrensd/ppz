@@ -25,7 +25,7 @@ static void send_gps2_ublox(struct transport_tx *trans, struct link_device *dev)
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_GPS2_UBLOX(trans, dev, AC_ID,
 													 &gps2.tow,
-													 &gps2.num_sv,
+													 &gps2.pos_sv,
 													 &gps2.fix,
 													 &gps2.ecef_pos.x,
 													 &gps2.ecef_pos.y,
@@ -118,7 +118,7 @@ static void gps2_ublox_update(struct _s_ubx_parser *parser, struct GpsState *gps
 		gps_s->ecef_vel.z = parser->SOL.ecefVZ;
 		gps_s->sacc = parser->SOL.sAcc;
 		gps_s->pdop = parser->SOL.pDOP;
-		gps_s->num_sv = parser->SOL.numSV;
+		gps_s->pos_sv = parser->SOL.numSV;
 
 		parser->SOL_available = FALSE;
 

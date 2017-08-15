@@ -895,7 +895,7 @@ void autopilot_on_rc_frame(void)
 		new_autopilot_mode = radio_ap_mode;
 #endif
 		/* don't enter NAV mode if GPS is lost (this also prevents mode oscillations) */
-		if (!(new_autopilot_mode == AP_MODE_NAV && GpsIsLost()))
+		if (!(new_autopilot_mode == AP_MODE_NAV && !rtk_power_up_stable()))
 		{
 			/* always allow to switch to manual */
 			if (new_autopilot_mode == MODE_MANUAL)

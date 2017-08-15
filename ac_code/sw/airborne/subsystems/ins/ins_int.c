@@ -267,27 +267,21 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 static void send_debug_gps(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
-	DOWNLINK_SEND_DEBUG_GPS(DefaultChannel, DefaultDevice,
+	pprz_msg_send_DEBUG_GPS(trans, dev, AC_ID,
 													&ins_int.gpss_state,
 													&ins_int.ekf_state,
 													&ahrs_mlkf.heading_state,
 													&ins_int.gps_type,
-													&gps_nmea.gps_qual,
-													&gps_nmea.pos_type,
-													&RTK_GPS.p_stable,
-													&gps_nmea.sol_tatus,
-													&RTK_GPS.h_stable,
-													&RTK_GPS.num_sv,
-													&RTK_GPS.head_stanum,
+													&gps_nmea.BESTXYZ.P_type,
+													&gps_nmea.GPTRA.sol,
+													&RTK_GPS.pos_sv,
+													&RTK_GPS.head_sv,
 													&RTK_GPS.heading,
 													&ahrs_mlkf.mag_heading,
 													&ahrs_mlkf.mlkf_heading,
 													&ahrs_mlkf.diff_heading,
-													&ins_int.rtk_gps_sd_ned.x,
-													&ins_int.rtk_gps_sd_ned.y,
-													&ins_int.rtk_gps_sd_ned.z,
 													&UBLOX_GPS.tow,
-													&UBLOX_GPS.num_sv,
+													&UBLOX_GPS.pos_sv,
 													&UBLOX_GPS.fix);
 }
 
@@ -373,7 +367,7 @@ void ins_int_SetForceRedun(uint8_t force)
 
 static inline void gpss_state_update(void)
 {
-	if(RTK_GPS.p_stable)
+	if( rtk_pos_stable() )
 	{
 		if(ins_int_is_ublox_pos_valid())
 		{
@@ -450,24 +444,17 @@ bool_t ins_int_check_hf_realign_done(void)
 
 bool_t ins_int_is_rtk_best_accu(void)
 {
-	if((gps_nmea.gps_qual == 52) && (gps.num_sv >= RTK_MIN_POS_SV_NUM) && gps.p_stable)
-	{
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
+	return rtk_power_up_stable();
 }
 
 bool_t ins_int_is_rtk_pos_xy_valid(void)
 {
-	return (gps.p_stable && ins_int.ltp_initialized && (gps_nmea.pos_type > PSRDIFF) && ins_int.virtual_rtk_pos_xy_valid);
+	return (rtk_pos_stable() && ins_int.ltp_initialized && ins_int.virtual_rtk_pos_xy_valid);
 }
 
 bool_t ins_int_is_rtk_pos_z_valid(void)
 {
-	if(gps.p_stable && ins_int.ltp_initialized && ins_int.vf_stable && ins_int.virtual_rtk_pos_z_valid)
+	if( rtk_pos_stable() && ins_int.ltp_initialized && ins_int.vf_stable && ins_int.virtual_rtk_pos_z_valid )
 	{
 		float r_unstable = (float) ins_int.rtk_gps_sd_ned.z / 10000.0;
 		r_unstable = r_unstable * r_unstable;
@@ -486,7 +473,7 @@ bool_t ins_int_is_baro_valid(void)
 
 bool_t ins_int_is_ublox_pos_valid(void)
 {
-	return (UBLOX_GPS.p_stable && ins_int.virtual_ublox_pos_valid);
+	return (ins_ublox_stable() && ins_int.virtual_ublox_pos_valid);
 }
 
 static void ins_int_record_rtk_z_hist(void)
@@ -1133,7 +1120,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 
 	ins_int.rtk_gps_update = TRUE;
 
-	if(gps_s->p_stable)
+	if( rtk_pos_stable() )
 	{
 		if (!ins_int.ltp_initialized)
 		{
@@ -1201,7 +1188,7 @@ static void gps2_cb(uint8_t sender_id __attribute__((unused)),
 	}
 	last_stamp = stamp;
 
-	if (gps_s->p_stable && ins_ublox.ltpDef_initialized)
+	if (ins_ublox_stable() && ins_ublox.ltpDef_initialized)
 	{
 		ins_int.ublox_gps_update = TRUE;
 	}

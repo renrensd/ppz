@@ -45,6 +45,7 @@
     <subsystem name="stabilization" type="float_double"/>
     <subsystem name="gps" type="nmea">
        <define name="USE_GPS_HEADING"/>
+       <define name="USE_BESTXYZ"/>  
        <define name="GPS_INSTALL_BIAS"/>
     </subsystem>
     <subsystem name="imu" type="mpu9250_spi">

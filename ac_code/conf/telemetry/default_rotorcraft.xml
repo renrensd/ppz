@@ -10,6 +10,7 @@
       <message name="IMU_MAG_RAW"       			period="0.05"/>
       <message name="VFF_EXTENDED"      			period="0.02"/>
       <message name="DEBUG_GPS"  	     				period="0.2"/>
+      <message name="GPS_ORIGIN"  	     				period="0.2"/>
       <message name="INS"                    period="0.05"/>
       <message name="INS_Z"                  period="0.05"/>
       <message name="INS_REF"                period="5.0"/>

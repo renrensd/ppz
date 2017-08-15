@@ -203,7 +203,7 @@ void gps_flight_check(void)
 		ublox_valid = ins_int_is_ublox_pos_valid();
 	}
 
-	if(GpsFixValid())
+	if(1)
 	{
 		if (rtk_pos_valid)
 		{
