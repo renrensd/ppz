@@ -50,6 +50,8 @@ struct VffExtended
 	float z_meas_baro; ///< last z measurement from baro in m
 
 	float S;
+	float K0;
+	float K1;
 	float K2;
 
 	float z_ltp_meas;  ///< accel z of ltp, after butterworth filter

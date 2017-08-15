@@ -1437,6 +1437,8 @@
     <field name="ekf_acc_bias"    type="float" unit="m/s2"/>
     <field name="raw_baro_offset"    type="float" unit="m"/>
     <field name="ekf_baro_offset"    type="float" unit="m"/>
+    <field name="dt"    type="float"/>
+    <field name="max_dt"    type="float"/>
   </message>
 
   <message name="PCAP01_STATUS" id="152">
@@ -1556,8 +1558,11 @@
       <field name="ekf_acc"       type="float"/>
       <field name="ekf_acc_bias"              type="float"/>
       <field name="P00"             type="float"/>
+      <field name="P10"             type="float"/>
       <field name="P20"             type="float"/>
       <field name="S"            type="float"/>
+      <field name="K0"            type="float"/>
+      <field name="K1"           type="float"/>
       <field name="K2"           type="float"/>
       <field name="ekf_speed"         type="float"/>
       <field name="gps_pos"         type="float"/>
@@ -1941,6 +1946,9 @@
     <field name="ax" type="int32" unit="adc"/>
     <field name="ay" type="int32" unit="adc"/>
     <field name="az" type="int32" unit="adc"/>
+    <field name="ax_max" type="int32"/>
+    <field name="ay_max" type="int32"/>
+    <field name="az_max" type="int32"/>
   </message>
 
   <message name="IMU_MAG_RAW" id="205">

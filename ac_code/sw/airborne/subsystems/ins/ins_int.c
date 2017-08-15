@@ -193,6 +193,8 @@ static void radar24_cb(uint8_t sender_id, float distance);
 struct InsInt ins_int;
 
 int32_t ins_body_rate_z;
+float accel_max_dt = 0;
+float accel_dt = 0;
 
 /** ABI binding for VELOCITY_ESTIMATE.
  * Usually this is coming from opticflow.
@@ -245,7 +247,9 @@ static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
 											&vff.zdot,
 											&vff.bias,
 											&raw_baro_offset,
-											&vff.offset            );
+											&vff.offset,
+											&accel_dt,
+											&accel_max_dt);
 }
 
 static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
@@ -1066,11 +1070,21 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
 	/* timestamp in usec when last callback was received */
 	static uint32_t last_stamp = 0;
 
-	if (last_stamp > 0)
+	float dt = (float) (stamp - last_stamp) * 1e-6;
+	accel_dt = dt;
+	if( dt > accel_max_dt )
 	{
-		float dt = (float)(stamp - last_stamp) * 1e-6;
+		accel_max_dt = dt;
+	}
+	if( dt > 0.005f )
+	{
+		dt = 0.005f;
+	}
+	if( dt > 0 )
+	{
 		ins_int_propagate(accel, dt);
 	}
+
 	last_stamp = stamp;
 }
 

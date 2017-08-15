@@ -12,6 +12,8 @@
 #include "firmwares/rotorcraft/stabilization.h"
 #include "subsystems/ins/ins_int.h"
 #include "firmwares/rotorcraft/nav_flight.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
+#include "firmwares/rotorcraft/guidance/guidance_v.h"
 
 struct EnuCoor_i wp_ToL;  //waypoint for takeoff or land
 
@@ -101,6 +103,10 @@ bool_t take_off_motion(bool_t reset)
 			wp_ToL = *stateGetPositionEnu_i();
 			NavGotoWaypoint_wp(wp_ToL);
 			NavVerticalAltitudeMode(Height(ac_config_info.max_flight_height), 0.);
+			stabilization_gains.p_rate.z = STABILIZATION_ATTITUDE_PSIRATE_PGAIN / 3;
+			//stabilization_gains.i_rate.z = STABILIZATION_ATTITUDE_PSIRATE_IGAIN / 3;
+			guid_v.acc_z_pid.Ki = (float)GUIDANCE_V_ACC_Z_KI * 0.7f;
+			guid_v.speed_z_pid.Kp = (float)GUIDANCE_V_SPEED_Z_KP * 0.7f;
 			//NavVerticalClimbMode(1.0f);
 			return TRUE;
 		}
@@ -116,11 +122,14 @@ bool_t take_off_motion(bool_t reset)
 			if (fabsf(stateGetSpeedEnu_f()->z) < 0.2f)
 			{
 				step_t = 0;   //reset
+				stabilization_gains.p_rate.z = STABILIZATION_ATTITUDE_PSIRATE_PGAIN;
+				//stabilization_gains.i_rate.z = STABILIZATION_ATTITUDE_PSIRATE_IGAIN;
+				guid_v.acc_z_pid.Ki = GUIDANCE_V_ACC_Z_KI;
+				guid_v.speed_z_pid.Kp = GUIDANCE_V_SPEED_Z_KP;
 				return FALSE;   //finish take off motion
 			}
 		}
 		break;
-
 	default:
 		break;
 	}

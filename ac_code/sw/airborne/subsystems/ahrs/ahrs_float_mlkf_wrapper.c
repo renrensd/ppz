@@ -129,22 +129,22 @@ static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
 	/* timestamp in usec when last callback was received */
 	static uint32_t last_stamp = 0;
 
-	if (last_stamp > 0 && ahrs_mlkf.is_aligned)
+	if( !ahrs_mlkf.is_aligned )
 	{
-		int32_t deta_t = stamp - last_stamp;
-		if(deta_t < 0)
-		{
-			deta_t +=0xFFFFFFFF;
-		}
-		if(deta_t > 3000)
-		{
-			deta_t = 3000;
-		}
-		float dt = (float)(deta_t) * 1e-6;
+		return;
+	}
 
+	float dt = (float) (stamp - last_stamp) * 1e-6;
+	if( dt > 0.005f )
+	{
+		dt = 0.005f;
+	}
+	if( dt > 0 )
+	{
 		ahrs_mlkf_propagate(gyro, dt);
 		set_body_state_from_quat();
 	}
+
 	last_stamp = stamp;
 #else
 	PRINT_CONFIG_MSG("Using fixed AHRS_PROPAGATE_FREQUENCY for AHRS_MLKF propagation.")

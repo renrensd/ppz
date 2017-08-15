@@ -77,8 +77,11 @@ static void send_vffe(struct transport_tx *trans, struct link_device *dev)
 														 &vff.zdotdot,
 														 &vff.bias,
 														 &(vff.P[0][0]),
+														 &(vff.P[1][0]),
 														 &(vff.P[2][0]),
 														 &(vff.S),
+														 &(vff.K0),
+														 &(vff.K1),
 														 &(vff.K2),
 														 &vff.zdot,
 														 &vff.z_meas,
@@ -278,6 +281,7 @@ static void update_alt_conf(float z_meas, float conf)
 
 	const float y = z_meas - vff.z;
 	vff.S = vff.P[0][0] + conf;
+	// force S > conf to constrain P/S
 	if (fabsf(vff.S) < conf)
 	{
 		if(vff.S < 0)
@@ -289,13 +293,13 @@ static void update_alt_conf(float z_meas, float conf)
 			vff.S = conf;
 		}
 	}
-	const float K0 = vff.P[0][0] * 1 / vff.S;
-	const float K1 = vff.P[1][0] * 1 / vff.S;
+	vff.K0 = vff.P[0][0] * 1 / vff.S;
+	vff.K1 = vff.P[1][0] * 1 / vff.S;
 	vff.K2 = vff.P[2][0] * 1 / vff.S;
 	const float K3 = vff.P[3][0] * 1 / vff.S;
 
-	vff.z       = vff.z       + K0 * y;
-	vff.zdot    = vff.zdot    + K1 * y;
+	vff.z       = vff.z       + vff.K0 * y;
+	vff.zdot    = vff.zdot    + vff.K1 * y;
 	vff.bias    = vff.bias    + vff.K2 * y;
 	vff.offset  = vff.offset  + K3 * y;
 
@@ -304,14 +308,14 @@ static void update_alt_conf(float z_meas, float conf)
 	const float P2 = vff.P[0][2];
 	const float P3 = vff.P[0][3];
 
-	vff.P[0][0] -= K0 * P0;
-	vff.P[0][1] -= K0 * P1;
-	vff.P[0][2] -= K0 * P2;
-	vff.P[0][3] -= K0 * P3;
-	vff.P[1][0] -= K1 * P0;
-	vff.P[1][1] -= K1 * P1;
-	vff.P[1][2] -= K1 * P2;
-	vff.P[1][3] -= K1 * P3;
+	vff.P[0][0] -= vff.K0 * P0;
+	vff.P[0][1] -= vff.K0 * P1;
+	vff.P[0][2] -= vff.K0 * P2;
+	vff.P[0][3] -= vff.K0 * P3;
+	vff.P[1][0] -= vff.K1 * P0;
+	vff.P[1][1] -= vff.K1 * P1;
+	vff.P[1][2] -= vff.K1 * P2;
+	vff.P[1][3] -= vff.K1 * P3;
 	vff.P[2][0] -= vff.K2 * P0;
 	vff.P[2][1] -= vff.K2 * P1;
 	vff.P[2][2] -= vff.K2 * P2;
