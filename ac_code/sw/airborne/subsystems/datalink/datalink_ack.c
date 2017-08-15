@@ -97,7 +97,7 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 	switch(id)
 	{
 	case CONFIG_ALL:
-		if(length==13)
+		if(length==14)
 		{
 			uint8_t i = 0;
 			ac_config_info.spray_height = ((float)((uint16_t)(*((uint8_t*)pt_value+i)|*((uint8_t*)pt_value+i+1)<<8)))/100.0;
@@ -123,6 +123,17 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 			ac_config_info.atomization_grade = (uint8_t)(*((uint8_t*)pt_value+i));
 			ops_set_config_param(ac_config_info.atomization_grade, PARAM_SPRAY_ATOM);
 			ops_update_config_param();
+
+			i+=1;
+			ac_config_info.landfrom_mode = (uint8_t)(*((uint8_t*)pt_value+i));
+			if(ac_config_info.landfrom_mode != 0)
+			{
+				ac_config_info.landfrom_track = 1;
+			}
+			else 
+			{
+				ac_config_info.landfrom_track = 0;
+			}
 		}
 		break;
 
@@ -164,7 +175,17 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 		ac_config_info.force_redun_status = (uint8_t)(*((uint8_t*)pt_value));
 		ac_config_info.force_redun_status = force_use_all_redundency_and_vrc(ac_config_info.force_redun_status);
 		break;
-
+	case LANDFROM_MODE:
+		ac_config_info.landfrom_mode = (uint8_t)(*((uint8_t*)pt_value));
+		if(ac_config_info.landfrom_mode == 0)
+		{
+			ac_config_info.landfrom_track = 1;
+		}
+		else 
+		{
+			ac_config_info.landfrom_track = 0;
+		}
+		break;
 	default:
 		break;
 	}

@@ -370,7 +370,7 @@ DATA17:
   <message name="SET_CONFIG" id="1">  <!--edit 160612-->
     <description>link="G2A" 0:all info; 1:spray_height,cm(uint16); 2:spray_wide(uint16),cm; 3:spray_concentration(uint16),ml/1000m2; 
       4:spray_speed(uint16),cm/s; 5:max_flight_speed(uint16),cm/s; 6:max_flight_height(uint16),cm; 7:atomization_grade(uint8), 1-2-3...
-      8:joystick_enable(uint8_t) 1=enable,0=disable 9:u-blox_enable(uint8_t) 1=enable,0=disable;
+      8:joystick_enable(uint8_t) 1=enable,0=disable 9:u-blox_enable(uint8_t) 1=enable,0=disable; 10:landfrom_mode(uint8_t)   0=disable  1=terrace 2=sloping
                  aircraft will ack "AIRCRAFT_INFO_STATE" message
     </description>
     <field name="parameter_id" type="uint8"/>
