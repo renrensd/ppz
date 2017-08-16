@@ -143,11 +143,9 @@ extern void gps_impl_init(void);
 extern void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data);
 
 /** GPS timeout in seconds */
-#ifndef GPS_TIMEOUT
-#define GPS_TIMEOUT 2
-#endif
-
-
+#define GPS_ALL_MSG_TIMEOUT_S 	(2)
+#define GPS_BESTXYZ_TIME_OUT_MS (2000)
+#define GPS_GPTRA_TIME_OUT_MS 	(2000)
 /** Periodic GPS check.
  * Marks GPS as lost when no GPS message was received for GPS_TIMEOUT seconds
  */

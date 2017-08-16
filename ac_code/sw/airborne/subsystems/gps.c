@@ -224,7 +224,7 @@ void gps_init(void)
 /*call by failsaft function, 20hz*/
 void gps_periodic_check(void)
 {
-	if (sys_time.nb_sec - gps.last_msg_time > GPS_TIMEOUT)
+	if (sys_time.nb_sec - gps.last_msg_time > GPS_ALL_MSG_TIMEOUT_S)
 	{
 		gps.fix = GPS_FIX_NONE;
 		gps.alive = FALSE;
@@ -286,21 +286,18 @@ void WEAK gps_inject_data(uint8_t packet_id __attribute__((unused)), uint8_t len
 
 }
 
-#define MSG_TIME_OUT 1000  //unit:ms
-/*run 20hz,use 2s time no fix pos set unstable*/
-
 static void gps_pos_state_update(void)
 {
 	uint32_t now_time = get_sys_time_msec();
 
-	gps.pos_timeout = ((now_time - gps_nmea.last_xyzmsg_time) > MSG_TIME_OUT);
+	gps.pos_timeout = ((now_time - gps_nmea.last_xyzmsg_time) > GPS_BESTXYZ_TIME_OUT_MS);
 }
 
 static void gps_head_state_update(void)
 {
 	uint32_t now_time = get_sys_time_msec();
 
-	gps.head_timeout = ((now_time - gps_nmea.last_tramsg_time) > MSG_TIME_OUT);
+	gps.head_timeout = ((now_time - gps_nmea.last_tramsg_time) > GPS_GPTRA_TIME_OUT_MS);
 }
 
 static bool_t gps_pos_valid(void)

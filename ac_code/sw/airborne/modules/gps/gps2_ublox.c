@@ -66,7 +66,7 @@ void gps2_ublox_event(void)
 
 static void gps2_ublox_alive_check(struct GpsState *gps_s)
 {
-	if ((sys_time.nb_sec - gps_s->last_msg_time) > GPS_TIMEOUT)
+	if ((sys_time.nb_sec - gps_s->last_msg_time) > GPS_ALL_MSG_TIMEOUT_S)
 	{
 		gps_s->fix = GPS_FIX_NONE;
 		gps_s->alive = FALSE;
