@@ -141,45 +141,6 @@ void gps_impl_init(void)
 	gps_nmea.msg_len = 0;
 	nmea_parse_prop_init();
 	nmea_configure();
-
-	//TEST_CASE
-
-	char *test_string1 =
-			"#BESTXYZA,COM1,0,55.0,FINESTEERING,1419,340033.000,00000040,D821,\
-2724;SOL_COMPUTED,IONOFREE_FLOAT,-1634531.5683,,\
-4942496.3270,0.0099,0.0219,0.0115,SOL_COMPUTED,NARROW_INT,0.0011,\
--0.0049,-0.0001,0.0199,0.0439,0.0230,\"AAAA\",0.250,1.000,0.000,\
-12,11,11,11,0,01,0,33*E9EAFECA";
-	char *test_string2 = "$GPRMC,144326.00,A,5107.0017737,N,11402.3291611,W,0.080,323.3,210307,0.0,E,A*20";
-	char *test_string3 = "$GPTRA,063027.30,101.78,071.19,-00.00,2,10,0.00,0004*51";
-	/*
-	 char *test_string =
-	 "#BESTXYZA,COM1,0,55.0,FINESTEERING,1419,340033.000,00000040,D821,\
-2724;SOL_COMPUTED,NARROW_INT,,-3664618.0326,\
-4942496.3270,0.0099,0.0219,0.0115,SOL_COMPUTED,NARROW_INT,0.0011,\
--0.0049,-0.0001,0.0199,0.0439,0.0230,\"AAAA\",0.250,1.000,0.000,\
-12,11,11,11,0,01,0,33*E9EAFECA";
-	 */
-	gps_nmea.msg_len = strlen(test_string1);
-	for (int n = 0; n < gps_nmea.msg_len; ++n)
-	{
-		gps_nmea.msg_buf[n] = test_string1[n];
-	}
-	nmea_parse_XYZ();
-
-	gps_nmea.msg_len = strlen(test_string2);
-	for (int n = 0; n < gps_nmea.msg_len; ++n)
-	{
-		gps_nmea.msg_buf[n] = test_string2[n];
-	}
-	nmea_parse_RMC();
-
-	gps_nmea.msg_len = strlen(test_string3);
-	for (int n = 0; n < gps_nmea.msg_len; ++n)
-	{
-		gps_nmea.msg_buf[n] = test_string3[n];
-	}
-	nmea_parse_TRA();
 }
 
 void gps_nmea_msg(void)
