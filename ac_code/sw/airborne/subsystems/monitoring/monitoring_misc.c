@@ -174,6 +174,50 @@ void battery_flight_check(void)
 
 }
 
+void report_rtk_em(void)
+{
+	//pos
+	if(gps_nmea.pos_type == TIME_OUT)
+	{
+		set_except_mission(RTK_POS_DATA_TIMEOUT, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+	}
+	else
+	{
+		if(gps_nmea.pos_type < WIDE_INT)
+		{
+			set_except_mission(RTK_POS_TYPE, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+		if(gps.num_sv < 10)
+		{
+			set_except_mission(RTK_POS_NUM, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+		/*
+		if(gps_nmea.gps_qual != 52)
+		{
+			set_except_mission(RTK_QUALITY, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+		*/
+	}
+	
+	//heading
+	if(gps_nmea.sol_tatus == 6)
+	{
+		set_except_mission(RTK_H_DATA_TIMEOUT, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+	}
+	else
+	{
+		if(gps_nmea.sol_tatus != 4)
+		{
+			set_except_mission(RTK_SOL_STATUS, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+		if(gps.head_stanum < 8)
+		{
+			set_except_mission(RTK_H_NUM, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+	}
+	
+	
+}
 /***********************************************************************
 * FUNCTIONS   : gps flight check
 * DESCRIPTION : ept_ms could close by gps recover
@@ -234,7 +278,8 @@ void gps_flight_check(void)
 	}
 	else
 	{
-		set_except_mission(GPS_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		report_rtk_em();
+		//set_except_mission(GPS_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 #if TEST_MSG
 		gps_flight = 2;
 #endif
@@ -277,7 +322,7 @@ void gps_flight_check(void)
 					{
 						diff_count = 0;
 						diff_err = TRUE;
-						set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+						set_except_mission(RTK_DIFF, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 						force_use_heading_redundency(TRUE);
 					}
 				}
@@ -290,7 +335,8 @@ void gps_flight_check(void)
 	}
 	else
 	{
-		set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		report_rtk_em();
+		//set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
 #endif
 
