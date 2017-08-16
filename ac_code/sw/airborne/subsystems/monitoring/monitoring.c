@@ -527,7 +527,7 @@ void ground_monitoring(void)
 		{
 			if ((get_sys_time_msec() - time_record) > 10000)
 			{
-				monitoring_fail_code = 1; //fail
+				monitoring_fail_code = autopilot_ground_check(); //fail
 			}
 		}
 		break;

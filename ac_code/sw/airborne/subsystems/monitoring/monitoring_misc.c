@@ -560,7 +560,6 @@ void mode_convert_check(void)
 		em[MODE_CONVERT_A2M].active = FALSE;
 	}
 }
-
 /***********************************************************************
 * FUNCTIONS   : autopilot ground check
 * DESCRIPTION : part of ground check,after other modules pass needed check
@@ -574,6 +573,7 @@ uint8_t autopilot_ground_check(void)
 	if( !ahrs_ground_check() ) return 1;
 	if( !ins_ground_check() ) return 2;
 	if( h_moni.baro_status )  return 3;
+	if(fabsf(ahrs_mlkf.diff_heading) > 25) return 4;
 	else return 0;
 }
 

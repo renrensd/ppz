@@ -43,11 +43,9 @@
 
 #define DATA_FIX_MAX 50
 
-#define MAG_MIN_XY_UNSCALED 500
-#define MAG_MAX_XY_UNSCALED 15000
 
-#define MAG_MIN_XY_SCALED 
-#define MAG_MAX_XY_SCALED 
+#define MAG_MIN_XY_SCALED 500
+#define MAG_MAX_XY_SCALED 2500
 
 /*---Global-----------------------------------------------------------*/
 struct Imu_Monitor imu_moni;
@@ -567,8 +565,10 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 {
 	static struct Int32Vect3 mag_last;
 	static uint32_t last_ts;
-	imu.mag_xy_unscaled = abs(imu.mag_unscaled.x) + abs(imu.mag_unscaled.y);
-	imu.mag_xy_scaled = abs(imu.mag_scaled.x) + abs(imu.mag_scaled.y);
+	//imu.mag_xy_unscaled = abs(imu.mag_unscaled.x) + abs(imu.mag_unscaled.y);
+	imu.mag_xy_unscaled = (uint32_t)sqrtf(imu.mag_unscaled.x * imu.mag_unscaled.x + imu.mag_unscaled.y * imu.mag_unscaled.y);
+	//imu.mag_xy_scaled = abs(imu.mag_scaled.x) + abs(imu.mag_scaled.y);
+	imu.mag_xy_scaled = (uint32_t) sqrtf(imu.mag_scaled.x * imu.mag_scaled.x + imu.mag_scaled.y * imu.mag_scaled.y);
 	imu_moni.mag_xy_unscaled_aver = (imu.mag_xy_unscaled + imu_moni.mag_xy_unscaled_aver* SUM_RATIO)/(SUM_RATIO +1 );
 	if(get_sys_time_msec() <5000)  return;  //15s later begin run(data is not stable before
 	imu_moni.mag_update_counter++;    //reset to 0 in main monitoring
@@ -591,24 +591,27 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 	imu_moni.mag_ground_check = TRUE;
 
 //		imu_moni.mag_aver.y = (imu.mag_xy_unscaled + imu_moni.mag_aver.y * SUM_RATIO)/(SUM_RATIO +1 );
-		
-	if((imu_moni.mag_xy_unscaled_aver < MAG_MIN_XY_UNSCALED)||(imu_moni.mag_xy_unscaled_aver > MAG_MAX_XY_UNSCALED))
+	if(mag_cali.cali_ok == TRUE)
 	{
-		if( (get_sys_time_msec()-last_ts) < 2000 )
+		if((imu.mag_xy_scaled < MAG_MIN_XY_SCALED)||(imu.mag_xy_scaled > MAG_MAX_XY_SCALED))
 		{
-			imu_moni.mag_interval_counter.x ++;
-		}
-		else 
-		{
-			imu_moni.mag_interval_counter.x = 0;
-		}
-		last_ts = get_sys_time_msec();
-		if(imu_moni.mag_interval_counter.x > 4)
-		{
-			imu_moni.imu_error[2] |= 0x08;
-			imu_moni.imu_status = 0;
-		}
+			if( (get_sys_time_msec()-last_ts) < 2000 )
+			{
+				imu_moni.mag_interval_counter.x ++;
+			}
+			else 
+			{
+				imu_moni.mag_interval_counter.x = 0;
+			}
+			last_ts = get_sys_time_msec();
+			if(imu_moni.mag_interval_counter.x > 4)
+			{
+				imu_moni.imu_error[2] |= 0x08;
+				imu_moni.imu_status = 0;
+			}
+		}	
 	}
+	
 #if 0 //stop other mag monitoring for use gps heading
 	static uint32_t mag_len2_aver, last_ts;
 	uint32_t mag_len2;
