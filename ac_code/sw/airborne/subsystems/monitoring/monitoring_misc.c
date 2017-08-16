@@ -550,7 +550,6 @@ void mode_convert_check(void)
 		em[MODE_CONVERT_A2M].active = FALSE;
 	}
 }
-
 /***********************************************************************
 * FUNCTIONS   : autopilot ground check
 * DESCRIPTION : part of ground check,after other modules pass needed check
