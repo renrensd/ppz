@@ -46,6 +46,7 @@
 
 #define MAG_MIN_XY_SCALED 500
 #define MAG_MAX_XY_SCALED 2500
+#define MAG_MIN_UNSCALED 200
 
 /*---Global-----------------------------------------------------------*/
 struct Imu_Monitor imu_moni;
@@ -589,8 +590,30 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 	VECT3_COPY(mag_last, *mag);
 
 	imu_moni.mag_ground_check = TRUE;
+	if(!ground_check_pass)
+	{
+		if((imu.mag_unscaled.x < MAG_MIN_UNSCALED)&&(imu.mag_unscaled.y < MAG_MIN_UNSCALED)&&(imu.mag_unscaled.z < MAG_MIN_UNSCALED))
+		{
+			if( (get_sys_time_msec()-last_ts) < 2000 )
+			{
+				imu_moni.mag_interval_counter.x ++;
+			}
+			else
+			{
+				imu_moni.mag_interval_counter.x = 0;
+			}
+			last_ts = get_sys_time_msec();
+			if(imu_moni.mag_interval_counter.x > 10)
+			{
+				imu_moni.imu_error[2] |= 0x08;
+				imu_moni.imu_status = 0;
+			}
+		}
+	}
+	
 
 //		imu_moni.mag_aver.y = (imu.mag_xy_unscaled + imu_moni.mag_aver.y * SUM_RATIO)/(SUM_RATIO +1 );
+/*
 	if(mag_cali.cali_ok == TRUE)
 	{
 		if((imu.mag_xy_scaled < MAG_MIN_XY_SCALED)||(imu.mag_xy_scaled > MAG_MAX_XY_SCALED))
@@ -611,7 +634,7 @@ static void mag_moni_cb(uint8_t sender_id __attribute__((unused)),
 			}
 		}	
 	}
-	
+*/	
 #if 0 //stop other mag monitoring for use gps heading
 	static uint32_t mag_len2_aver, last_ts;
 	uint32_t mag_len2;
