@@ -90,7 +90,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 {
 	if(!mag_cali.declination_ok)
 	{
-		if(gps_s->p_stable)
+		if(rtk_stable())
 		{
 			double lat = (double) gps_s->lla_pos.lat / (double) 1e7;
 			double lon = (double) gps_s->lla_pos.lon / (double) 1e7;
@@ -327,7 +327,7 @@ void mag_cali_periodic(void)
 
 	if (!is_mag_cali_done())
 	{
-		if (!gps.h_stable)	// stop calibration if gps heading unstable
+		if (!rtk_head_stable())	// stop calibration if gps heading unstable
 		{
 			mag_cali_stop(FALSE);
 		}

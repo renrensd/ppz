@@ -27,7 +27,6 @@
 #ifndef GPS_H
 #define GPS_H
 
-
 #include "std.h"
 #include "math/pprz_geodetic_int.h"
 
@@ -44,10 +43,14 @@
 #define GPS_FIX_DGPS 0x04     ///< DGPS fix
 #define GPS_FIX_RTK  0x05     ///< RTK GPS fix
 
-#define GpsFixValid() (gps.fix >= GPS_FIX_3D)
-#if USE_GPS
-#define GpsIsLost() !GpsFixValid()
+static inline bool_t GpsFixValid(void)
+{
+#ifdef USE_BESTXYZ
+	return FALSE;
+#else
+	return gps.fix >= GPS_FIX_3D;
 #endif
+}
 
 #ifndef GPS_NB_CHANNELS
 #define GPS_NB_CHANNELS 1
@@ -83,8 +86,14 @@ struct GpsState
 	struct LlaCoor_i lla_pos;      ///< position in LLA (lat,lon: deg*1e7; alt: mm over ellipsoid)
 	struct UtmCoor_i utm_pos;      ///< position in UTM (north,east: cm; alt: mm over ellipsoid)
 	struct EcefCoor_i ecef_vel;    ///< speed ECEF in cm/s
+	struct EcefCoor_i ecef_vel_sd; ///< position stander diviation, 10000*m/s
 	struct NedCoor_i ned_vel;      ///< speed NED in cm/s
+	float heading;
 	struct Gps_Time gps_time;
+
+	bool_t pos_timeout;
+	bool_t head_timeout;
+
 	int32_t hmsl;                  ///< height above mean sea level in mm
 	uint16_t gspeed;               ///< norm of 2d ground speed in cm/s
 	uint16_t speed_3d;             ///< norm of 3d speed in cm/s
@@ -93,8 +102,9 @@ struct GpsState
 	uint32_t sacc;                 ///< speed accuracy in cm/s
 	uint32_t cacc;                 ///< course accuracy in rad*1e7
 	uint16_t pdop;                 ///< position dilution of precision scaled by 100
-	uint8_t num_sv;                ///< number of sat in fix
 	uint8_t fix;                   ///< status of fix
+	uint8_t pos_sv;
+	uint8_t head_sv;
 	uint16_t week;                 ///< GPS week
 	uint32_t tow;                  ///< GPS time of week in ms
 
@@ -106,12 +116,9 @@ struct GpsState
 	uint32_t last_msg_ticks;       ///< cpu time ticks at last received GPS message
 	uint32_t last_msg_time;        ///< cpu time in sec at last received GPS message
 	uint16_t reset;                ///< hotstart, warmstart, coldstart
-	bool_t p_stable;                 ///< position stable flag
 
-	float heading;
-	bool_t h_stable;              ///< heading stable flag
-	uint8_t head_stanum;
-
+	//bool_t p_stable;                 ///< position stable flag
+	//bool_t h_stable;              ///< heading stable flag
 	bool_t alive;
 };
 
@@ -136,15 +143,17 @@ extern void gps_impl_init(void);
 extern void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data);
 
 /** GPS timeout in seconds */
-#ifndef GPS_TIMEOUT
-#define GPS_TIMEOUT 2
-#endif
-
-
+#define GPS_ALL_MSG_TIMEOUT_S 	(2)
+#define GPS_BESTXYZ_TIME_OUT_MS (2000)
+#define GPS_GPTRA_TIME_OUT_MS 	(2000)
 /** Periodic GPS check.
  * Marks GPS as lost when no GPS message was received for GPS_TIMEOUT seconds
  */
 extern void gps_periodic_check(void);
+extern bool_t rtk_pos_stable(void);
+extern bool_t rtk_head_stable(void);
+extern bool_t rtk_stable(void);
+extern bool_t rtk_power_up_stable(void);
 
 /**
  * GPS Reset

@@ -116,7 +116,6 @@ struct InsInt
 	enum _e_ins_gps_type gps_type;
 	enum _e_ins_gpss_status gpss_state;
 
-	//
 	struct NedCoor_i rtk_gps_pos_cm_ned;
 	struct NedCoor_i rtk_gps_speed_cm_ned;
 	struct NedCoor_i rtk_gps_sd_ned;

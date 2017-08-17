@@ -60,7 +60,7 @@
 #define MAX_GROUND_INS_A  0.5
 #define MAX_GROUND_INS_Z  0.6
 
-#define MAX_FLIGHT_TIME 780   //13min
+#define MAX_FLIGHT_TIME (13*60)   //13min
 #define BAT_LIMIT_VOL  432   //unit:0.1v
 #define BAT_LIMIT_CAP  20  //unit:percent
 
@@ -72,7 +72,14 @@ static bool_t yaw_command_monitor(void);
 static bool_t thrust_command_monitor(void);
 static bool_t lift_lost_detect(void);
 
-
+static void clear_em(enum EMERGENCY_TYPE id)
+{
+	if( id < EPT_MS_NB )
+	{
+		em[id].active = 0;
+		em[id].finished = 0;
+	}
+}
 
 /*===FUNCTIONS========================================================*/
 
@@ -166,14 +173,47 @@ void battery_flight_check(void)
 	}
 	if(!flag_trigger)
 	{
-		em[BAT_CRITICAL].active =0;
-		em[BAT_CRITICAL].finished =0;
-		em[BAT_OTHER].active=0;
-		em[BAT_OTHER].finished=0;
+		clear_em(BAT_CRITICAL);
+		clear_em(BAT_OTHER);
 	}
-
 }
 
+void report_rtk_em(void)
+{
+	//pos
+	if( gps.pos_timeout )
+	{
+		set_except_mission(RTK_POS_DATA_TIMEOUT, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+	}
+	else
+	{
+		if( (gps_nmea.BESTXYZ.P_type < NARROW_INT) || (gps_nmea.BESTXYZ.V_type < NARROW_INT) )
+		{
+			set_except_mission(RTK_POS_TYPE, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+		if( gps.pos_sv <= 4 )
+		{
+			set_except_mission(RTK_POS_NUM, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+	}
+	
+	//heading
+	if( gps.head_timeout )
+	{
+		set_except_mission(RTK_H_DATA_TIMEOUT, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+	}
+	else
+	{
+		if( gps_nmea.GPTRA.sol != 4 )
+		{
+			set_except_mission(RTK_SOL_STATUS, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+		if( gps.head_sv <= 4 )
+		{
+			set_except_mission(RTK_H_NUM, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
+	}
+}
 /***********************************************************************
 * FUNCTIONS   : gps flight check
 * DESCRIPTION : ept_ms could close by gps recover
@@ -190,7 +230,7 @@ void gps_flight_check(void)
 	bool_t rtk_heading_valid = FALSE;
 	bool_t ublox_valid = FALSE;
 
-	if(autopilot_in_flight)
+	if( autopilot_in_flight )
 	{
 		rtk_pos_valid = ins_int_is_rtk_pos_xy_valid() && ins_int_is_rtk_pos_z_valid();
 		rtk_heading_valid = ahrs_mlkf_is_rtk_heading_valid();
@@ -203,34 +243,82 @@ void gps_flight_check(void)
 		ublox_valid = ins_int_is_ublox_pos_valid();
 	}
 
-	if(GpsFixValid())
+	if( gps.alive )
 	{
-		if (rtk_pos_valid)
+		clear_em(GPS_LOST);
+
+		if( rtk_pos_valid )
 		{
-			//could be recovered
-			em[GPS_ACC].active = 0;
-			em[GPS_ACC].finished = 0;
-			em[GPS_LOST].active = 0;
-			em[GPS_LOST].finished = 0;
+			clear_em(RTK_POS_DATA_TIMEOUT);
+			clear_em(RTK_POS_NUM);
+			clear_em(RTK_POS_TYPE);
 #if TEST_MSG
 			gps_flight = 0;
 #endif
 		}
 		else
 		{
-			if (gps.pacc < 6000)
-			{
-				em[GPS_ACC].alert_grade = 2;
-			}
-			else
-			{
-				em[GPS_ACC].alert_grade = 3;
-			}
-			set_except_mission(GPS_ACC, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+			report_rtk_em();
 #if TEST_MSG
 			gps_flight = 1;
 #endif
 		}
+
+#ifdef USE_GPS_HEADING
+		if( rtk_heading_valid )
+		{
+			if( !diff_err )
+			{
+				clear_em(RTK_H_DATA_TIMEOUT);
+				clear_em(RTK_H_NUM);
+				clear_em(RTK_SOL_STATUS);
+				clear_em(RTK_DIFF);
+				force_use_heading_redundency(FALSE);
+			}
+
+			if( mag_cali.cali_ok && ground_check_pass )
+			{
+				float diff_abs = fabsf(DegOfRad(ahrs_mlkf.diff_heading_rad));
+
+				if( diff_err )
+				{
+					if( diff_abs < 15 )
+					{
+						if( diff_count++ > 10 ) //2s
+						{
+							diff_count = 0;
+							diff_err = FALSE;
+						}
+					}
+					else
+					{
+						diff_count = 0;
+					}
+				}
+				else
+				{
+					if( diff_abs > 25 )
+					{
+						if( diff_count++ > 20 ) //4s
+						{
+							diff_count = 0;
+							diff_err = TRUE;
+							set_except_mission(RTK_DIFF, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+							force_use_heading_redundency(TRUE);
+						}
+					}
+					else
+					{
+						diff_count = 0;
+					}
+				}
+			}
+		}
+		else
+		{
+			report_rtk_em();
+		}
+#endif
 	}
 	else
 	{
@@ -240,109 +328,57 @@ void gps_flight_check(void)
 #endif
 	}
 
-#ifdef USE_GPS_HEADING
-	if(rtk_heading_valid)
-	{
-		if(!diff_err)
-		{
-			em[GPS_HEADING].active = 0;
-			em[GPS_HEADING].finished = 0;
-			force_use_heading_redundency(FALSE);
-		}
-
-		if ( mag_cali.cali_ok && ground_check_pass )
-		{
-			float diff_abs = fabsf(DegOfRad(ahrs_mlkf.diff_heading_rad));
-
-			if( diff_err )
-			{
-				if( diff_abs < 15 )
-				{
-					if( diff_count++ > 10 ) //2s
-					{
-						diff_count = 0;
-						diff_err = FALSE;
-					}
-				}
-				else
-				{
-					diff_count = 0;
-				}
-			}
-			else
-			{
-				if( diff_abs > 25 )
-				{
-					if( diff_count++ > 20 ) //4s
-					{
-						diff_count = 0;
-						diff_err = TRUE;
-						set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-						force_use_heading_redundency(TRUE);
-					}
-				}
-				else
-				{
-					diff_count = 0;
-				}
-			}
-		}
-	}
-	else
-	{
-		set_except_mission(GPS_HEADING, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-	}
-#endif
-
 #ifdef USE_GPS2_UBLOX
-	if(ublox_valid)
+	if( gps2.alive )
 	{
-		em[GPS_UBLOX_FAIL].active = 0;
-		em[GPS_UBLOX_FAIL].finished = 0;
+		clear_em(UBLOX_LOST);
+
+		if( ublox_valid )
+		{
+			clear_em(UBLOX_FAIL);
+		}
+		else
+		{
+			set_except_mission(UBLOX_FAIL, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+		}
 	}
 	else
 	{
-		set_except_mission(GPS_UBLOX_FAIL, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+		set_except_mission(UBLOX_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 	}
+
 #endif
 
 #ifdef USE_PLANED_OA
-	if(planed_oa_search_valid())
+	if( planed_oa_search_valid() )
 	{
-		em[NO_AVOID_PATH].active = 0;
-		em[NO_AVOID_PATH].finished = 0;
-
-		em[P_IN_OBS_AREA].active = 0;
-		em[P_IN_OBS_AREA].finished = 0;
-
-		em[NO_VALID_P].active = 0;
-		em[NO_VALID_P].finished = 0;
-
-		em[OBS_INFO_ERROR].active = 0;
-		em[OBS_INFO_ERROR].finished = 0;
+		clear_em(NO_AVOID_PATH);
+		clear_em(P_IN_OBS_AREA);
+		clear_em(NO_VALID_P);
+		clear_em(OBS_INFO_ERROR);
 	}
 	else
 	{
-		switch( oa_wp_search_state )
+		switch (oa_wp_search_state)
 		{
-		case search_error_no_path:
-			set_except_mission(NO_AVOID_PATH, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-			break;
+			case search_error_no_path:
+				set_except_mission(NO_AVOID_PATH, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+				break;
 
-		case search_error_obstacle_invaild:
-			set_except_mission(P_IN_OBS_AREA, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-			break;
+			case search_error_obstacle_invaild:
+				set_except_mission(P_IN_OBS_AREA, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+				break;
 
-		case search_error_no_vaild_insert_wp:
-			set_except_mission(NO_VALID_P, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-			break;
+			case search_error_no_vaild_insert_wp:
+				set_except_mission(NO_VALID_P, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+				break;
 
-		case search_error_obstacle_flag_wrong:
-			set_except_mission(OBS_INFO_ERROR, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-			break;
+			case search_error_obstacle_flag_wrong:
+				set_except_mission(OBS_INFO_ERROR, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
 	}
 #endif
@@ -514,7 +550,6 @@ void mode_convert_check(void)
 		em[MODE_CONVERT_A2M].active = FALSE;
 	}
 }
-
 /***********************************************************************
 * FUNCTIONS   : autopilot ground check
 * DESCRIPTION : part of ground check,after other modules pass needed check

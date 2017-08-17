@@ -524,7 +524,7 @@ STATIC_INLINE void failsafe_check(void)
 		//radio lost,will set mode kill
 		if(autopilot_mode == AP_MODE_ATTITUDE_DIRECT)
 		{
-			if(gps.p_stable && autopilot_in_flight)
+			if(rtk_stable() && autopilot_in_flight)
 			{
 				autopilot_set_mode(AP_MODE_HOVER_Z_HOLD);
 			}

@@ -44,6 +44,9 @@
 #endif
 
 static bool_t gyro_offset_success;
+static int32_t acc_x_max = 0;
+static int32_t acc_y_max = 0;
+static int32_t acc_z_max = 0;
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -52,7 +55,8 @@ static void send_accel_raw(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_IMU_ACCEL_RAW(trans, dev, AC_ID,
-															&imu.accel_unscaled.x, &imu.accel_unscaled.y, &imu.accel_unscaled.z);
+															&imu.accel_unscaled.x, &imu.accel_unscaled.y, &imu.accel_unscaled.z,
+															&acc_x_max, &acc_y_max, &acc_z_max);
 }
 
 static void send_accel_scaled(struct transport_tx *trans, struct link_device *dev)
@@ -98,7 +102,7 @@ static void send_mag_raw(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	pprz_msg_send_IMU_MAG_RAW(trans, dev, AC_ID,
-														&imu.mag_unscaled.x, &imu.mag_unscaled.y, &imu.mag_unscaled.z, &imu.mag_xy_unscaled, &imu_moni.mag_xy_unscaled_aver);
+														&imu.mag_unscaled.x, &imu.mag_unscaled.y, &imu.mag_unscaled.z, &imu.mag_xy_unscaled, &imu.mag_xy_scaled);
 }
 
 static void send_mag_scaled(struct transport_tx *trans, struct link_device *dev)
@@ -261,6 +265,19 @@ void WEAK imu_scale_gyro(struct Imu *_imu)
 void WEAK imu_scale_accel(struct Imu *_imu)
 {
 	VECT3_COPY(_imu->accel_prev, _imu->accel);
+
+	if( abs(_imu->accel_unscaled.x) > acc_x_max )
+	{
+		acc_x_max = fabsf(_imu->accel_unscaled.x);
+	}
+	if( abs(_imu->accel_unscaled.y) > acc_y_max )
+	{
+		acc_y_max = fabsf(_imu->accel_unscaled.y);
+	}
+	if( abs(_imu->accel_unscaled.z) > acc_z_max )
+	{
+		acc_z_max = fabsf(_imu->accel_unscaled.z);
+	}
 
 	_imu->accel.x = (int32_t)((float)(_imu->accel_unscaled.x-(_imu->accel_neutral.x * ACC_NEUTRAL_COEF)) * _imu->acc_sens.x * ACC_SENS_COEF);
 	_imu->accel.y = (int32_t)((float)(_imu->accel_unscaled.y-(_imu->accel_neutral.y * ACC_NEUTRAL_COEF)) * _imu->acc_sens.y * ACC_SENS_COEF);

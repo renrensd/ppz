@@ -45,6 +45,7 @@
     <subsystem name="stabilization" type="float_double"/>
     <subsystem name="gps" type="nmea">
        <define name="USE_GPS_HEADING"/>
+       <define name="USE_BESTXYZ"/>  
        <define name="GPS_INSTALL_BIAS"/>
     </subsystem>
     <subsystem name="imu" type="mpu9250_spi">
@@ -255,8 +256,8 @@
     <define name="REF_MIN_ZD" value="-1.0"/>        <!-- max descent speed in m/s -->
     <define name="REF_MAX_ZD" value="1.0"/>         <!-- max climb speed in m/s -->
     <define name="ADAPT_NOISE_FACTOR" value="0.7"/>
-    <define name="ACC_Z_KI" value="0.6"/>
-    <define name="SPEED_Z_KP" value="4.0"/>
+    <define name="ACC_Z_KI" value="0.5"/>
+    <define name="SPEED_Z_KP" value="3.0"/>
     <define name="HOVER_KD" value="0"/>
     <define name="HOVER_KI" value="0"/>
     <define name="GUIDANCE_V_MAX_SUM_ERR" value="2000000"/>   <!-- add to limit I_SUM/true is 30-->

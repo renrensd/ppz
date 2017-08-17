@@ -491,15 +491,15 @@ void ground_monitoring(void)
 			monitoring_fail_code = PASS;
 			ground_check_step++;  //next step
 		}
-		else if (gps_nmea.pos_type < 16)
+		else if (gps_nmea.BESTXYZ.P_type < SINGLE)
 		{
 			monitoring_fail_code = GPS_WAITING_FIX;
 		}
-		else if (gps_nmea.pos_type == 16)
+		else if (gps_nmea.BESTXYZ.P_type == SINGLE)
 		{
 			monitoring_fail_code = GPS_SINGLE_STATUS;
 		}
-		else if (gps_nmea.pos_type < 49)
+		else if (gps_nmea.BESTXYZ.P_type < NARROW_INT)
 		{
 			monitoring_fail_code = GPS_FLOAT_STATUS;
 		}

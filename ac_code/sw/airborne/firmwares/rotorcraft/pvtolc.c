@@ -104,9 +104,9 @@ bool_t take_off_motion(bool_t reset)
 			NavGotoWaypoint_wp(wp_ToL);
 			NavVerticalAltitudeMode(Height(ac_config_info.max_flight_height), 0.);
 			stabilization_gains.p_rate.z = STABILIZATION_ATTITUDE_PSIRATE_PGAIN / 3;
-			stabilization_gains.i_rate.z = STABILIZATION_ATTITUDE_PSIRATE_IGAIN / 3;
-			guid_v.acc_z_pid.Ki = GUIDANCE_V_ACC_Z_KI / 2;
-			guid_v.speed_z_pid.Kp = GUIDANCE_V_SPEED_Z_KP / 2;
+			//stabilization_gains.i_rate.z = STABILIZATION_ATTITUDE_PSIRATE_IGAIN / 3;
+			guid_v.acc_z_pid.Ki = (float)GUIDANCE_V_ACC_Z_KI * 0.7f;
+			guid_v.speed_z_pid.Kp = (float)GUIDANCE_V_SPEED_Z_KP * 0.7f;
 			//NavVerticalClimbMode(1.0f);
 			return TRUE;
 		}
@@ -123,7 +123,7 @@ bool_t take_off_motion(bool_t reset)
 			{
 				step_t = 0;   //reset
 				stabilization_gains.p_rate.z = STABILIZATION_ATTITUDE_PSIRATE_PGAIN;
-				stabilization_gains.i_rate.z = STABILIZATION_ATTITUDE_PSIRATE_IGAIN;
+				//stabilization_gains.i_rate.z = STABILIZATION_ATTITUDE_PSIRATE_IGAIN;
 				guid_v.acc_z_pid.Ki = GUIDANCE_V_ACC_Z_KI;
 				guid_v.speed_z_pid.Kp = GUIDANCE_V_SPEED_Z_KP;
 				return FALSE;   //finish take off motion

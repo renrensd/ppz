@@ -21,7 +21,7 @@ static void send_ins_ublox(struct transport_tx *trans, struct link_device *dev)
 {
 	xbee_tx_header(XBEE_NACK, XBEE_ADDR_PC);
 	pprz_msg_send_INS_UBLOX(trans, dev, AC_ID,
-													&gps2.p_stable,
+													&ins_ublox.stable,
 													&ins_ublox.ned_pos.x,
 													&ins_ublox.ned_pos.y,
 													&ins_ublox.ned_pos.z,
@@ -89,6 +89,7 @@ void ins_ublox_init(void)
 
 	ins_ublox.ltpDef_initialized = FALSE;
 	ins_ublox.ublox_stable_first_time = TRUE;
+	ins_ublox.stable = FALSE;
 }
 
 void ins_ublox_event(void)
@@ -102,7 +103,7 @@ void ins_ublox_event(void)
 		{
 			float dt = (float) (stamp - last_stamp) * 1e-6;
 
-			ins_ublox.ublox_signal_stable = ((gps2.fix >= GPS_FIX_3D) && (gps2.num_sv >= 5));
+			ins_ublox.ublox_signal_stable = ((gps2.fix >= GPS_FIX_3D) && (gps2.pos_sv >= 5));
 			ins_ublox.ublox_update = TRUE;
 
 			// get ecef pos (cm) and scale to unit(m)
@@ -119,7 +120,7 @@ void ins_ublox_event(void)
 
 			if (!ins_ublox.ltpDef_initialized)
 			{
-				if (gps2.p_stable)
+				if (ins_ublox.stable)
 				{
 					ltp_def_from_ecef_f(&ins_ublox.ltpDef, &ins_ublox.ublox_ecef_pos);
 					ins_ublox.ltpDef_initialized = TRUE;
@@ -158,7 +159,7 @@ void ins_ublox_periodic(void)
 	{
 		if(++ins_ublox.ublox_update_lost_count > INS_UBLOX_PERIODIC_FREQ)
 		{
-			gps2.p_stable = FALSE;
+			ins_ublox.stable = FALSE;
 			ins_ublox.ublox_update_lost_count = 0;
 		}
 	}
@@ -178,7 +179,7 @@ void ins_ublox_periodic(void)
 
 			if(++ins_ublox.ublox_stable_count > stable_tick)
 			{
-				gps2.p_stable = TRUE;
+				ins_ublox.stable = TRUE;
 				if (ins_ublox.ublox_stable_first_time)
 				{
 					ins_ublox.ublox_stable_first_time = FALSE;
@@ -188,10 +189,15 @@ void ins_ublox_periodic(void)
 		}
 		else
 		{
-			gps2.p_stable = FALSE;
+			ins_ublox.stable = FALSE;
 			ins_ublox.ublox_stable_count = 0;
 		}
 	}
 	ins_ublox.ublox_update = FALSE;
+}
+
+bool_t ins_ublox_stable(void)
+{
+	return ins_ublox.stable;
 }
 

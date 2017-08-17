@@ -164,13 +164,6 @@
      <field name="airspeed" type="float" format="%.1f"  unit="m/s"></field>
    </message>
 
-   <message name="GPS_SOL" id="17">
-     <field name="Pacc" type="uint32" unit="cm"/>
-     <field name="Sacc" type="uint32" unit="cm/s"/>
-     <field name="PDOP" type="uint16"/>
-     <field name="numSV" type="uint8"/>
-   </message>
-
    <!--message name="ADC_GENERIC" id="18">
      <field name="val1" type="uint16"/>
      <field name="val2" type="uint16"/>
@@ -241,24 +234,46 @@
     <field name="baro_sw"    type="uint8" values="INS_Z_EKF_GPS|INS_Z_EKF_GPS_TO_BARO|INS_Z_EKF_BARO|INS_Z_EKF_BARO_TO_GPS|INS_Z_EKF_PURE_ACC"/>
     <field name="mag_sw"     type="uint8" values="AMHS_GPS|AMHS_MAG|AMHS_SWITCHING"/>
     <field name="gps_sw"     type="uint8" values="NONE|RTK|UBLOX"/>
-    <field name="gps_qual"    type="uint8"/>
     <field name="pos_type"    type="uint8"/>
-    <field name="p_stable"    type="uint8"/>  
     <field name="sol_tatus"    type="uint8"/>
-    <field name="h_stable"    type="uint8"/>
     <field name="pos_sv_num"    type="uint8"/>      
     <field name="heading_sv_num"    type="uint8"/>
     <field name="gps_heading"    type="float"/>
     <field name="mag_heading"    type="float"/>
     <field name="mlkf_heading"    type="float"/>
     <field name="diff_heading"    type="float"/>
-    <field name="gps_pos_sd_x"    type="int32" unit="m*10000"/>
-    <field name="gps_pos_sd_y"    type="int32" unit="m*10000"/>
-    <field name="gps_pos_sd_z"    type="int32" unit="m*10000"/>
     <field name="UBLOX_tow"     type="uint32"/>
   	<field name="UBLOX_numsv"   type="uint8"/>
     <field name="UBLOX_fix"     type="uint8" values="NONE|NA|2D|3D|DGPS|RTK"/>
   </message>
+  
+  <message name="GPS_ORIGIN" id="17">
+  	 <field name="PV_type_empty" type="uint8"/>
+  	 <field name="PV_empty" type="uint8"/>
+     <field name="P_sol" type="uint8"/>
+     <field name="P_type" type="uint8"/>
+     <field name="Px" type="float"/>
+     <field name="Py" type="float"/>
+     <field name="Pz" type="float"/>
+     <field name="Px_sd" type="float"/>
+     <field name="Py_sd" type="float"/>
+     <field name="Pz_sd" type="float"/>
+     <field name="V_sol" type="uint8"/>
+     <field name="V_type" type="uint8"/>
+     <field name="Vx" type="float"/>
+     <field name="Vy" type="float"/>
+     <field name="Vz" type="float"/>
+     <field name="Vx_sd" type="float"/>
+     <field name="Vy_sd" type="float"/>
+     <field name="Vz_sd" type="float"/>
+     <field name="P_SV_tracked" type="uint8"/>
+     <field name="P_SV_used" type="uint8"/>
+     <field name="sol_empty" type="uint8"/>
+     <field name="heading_empty" type="uint8"/>
+     <field name="heading" type="float"/>
+     <field name="H_sol" type="uint8"/>
+     <field name="H_SV_used" type="uint8"/>
+   </message>
 
   <message name="SURVEY" id="27">
     <field name="east" type="float" unit="m"/>
@@ -1437,6 +1452,8 @@
     <field name="ekf_acc_bias"    type="float" unit="m/s2"/>
     <field name="raw_baro_offset"    type="float" unit="m"/>
     <field name="ekf_baro_offset"    type="float" unit="m"/>
+    <field name="dt"    type="float"/>
+    <field name="max_dt"    type="float"/>
   </message>
 
   <message name="PCAP01_STATUS" id="152">
@@ -1480,8 +1497,6 @@
     <field name="numsv"   type="uint8"/>
     <field name="fix"     type="uint8" values="NONE|NA|2D|3D|DGPS|RTK"/>
     <field name="heading" type="float" />
-    <field name="slo_tatus" type="uint8" values="unvalid|valid"/>
-    <field name="head_stanum"   type="uint8"/>
   </message>
 
   <message name="AHRS_EULER_INT" id="156">
@@ -1556,8 +1571,11 @@
       <field name="ekf_acc"       type="float"/>
       <field name="ekf_acc_bias"              type="float"/>
       <field name="P00"             type="float"/>
+      <field name="P10"             type="float"/>
       <field name="P20"             type="float"/>
       <field name="S"            type="float"/>
+      <field name="K0"            type="float"/>
+      <field name="K1"           type="float"/>
       <field name="K2"           type="float"/>
       <field name="ekf_speed"         type="float"/>
       <field name="gps_pos"         type="float"/>
@@ -1941,6 +1959,9 @@
     <field name="ax" type="int32" unit="adc"/>
     <field name="ay" type="int32" unit="adc"/>
     <field name="az" type="int32" unit="adc"/>
+    <field name="ax_max" type="int32"/>
+    <field name="ay_max" type="int32"/>
+    <field name="az_max" type="int32"/>
   </message>
 
   <message name="IMU_MAG_RAW" id="205">

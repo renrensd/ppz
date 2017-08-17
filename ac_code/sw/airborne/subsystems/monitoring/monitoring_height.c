@@ -214,8 +214,9 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 												 uint32_t __attribute__((unused)) stamp,
 												 float pressure, float temp)
 {
-	static float last_pressure, ground_pressure_aver;
+	static float last_pressure, ground_pressure_aver,takeoff_pressure_aver;
 	static uint32_t last_ts;
+	static uint8_t  last_ac_state;
 	h_moni.baro_update_counter++;
 
 	h_moni.baro_aver = (pressure + h_moni.baro_aver * SUM_RATIO)/(SUM_RATIO +1 );
@@ -290,11 +291,15 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 
 	if(autopilot_in_flight)
 	{
-		if( h_moni.baro_aver < (ground_pressure_aver-FLIGHT_RANGE) ||
-				h_moni.baro_aver > (ground_pressure_aver+FLIGHT_RANGE/2) )
+		if(last_ac_state != autopilot_in_flight)
+		{
+			takeoff_pressure_aver = h_moni.baro_aver;
+		}
+		if( h_moni.baro_aver < (takeoff_pressure_aver-FLIGHT_RANGE) ||
+				h_moni.baro_aver > (takeoff_pressure_aver+FLIGHT_RANGE) )
 		{
 			h_moni.baro_flight_counter ++;
-			if(h_moni.baro_flight_counter > 10)
+			if(h_moni.baro_flight_counter > 20)
 			{
 				h_moni.baro_code |=0x10;
 				h_moni.baro_status = 1;     //set fail
@@ -332,7 +337,7 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 		}
 		
 	}
-
+	last_ac_state = autopilot_in_flight;
 }
 
 
