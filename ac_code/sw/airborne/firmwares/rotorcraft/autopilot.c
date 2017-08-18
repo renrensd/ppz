@@ -407,7 +407,7 @@ void autopilot_init(void)
 	gpio_clear(POWER_SWITCH_GPIO); // POWER OFF
 #endif
 
-  autopilot_rc = FALSE;   //stop radio event task add by lg
+  autopilot_rc = TRUE;   //stop radio event task add by lg
   autopilot_arming_init();
 
 	nav_init();
@@ -902,7 +902,7 @@ void autopilot_on_rc_frame(void)
 		new_autopilot_mode = radio_ap_mode;
 #endif
 		/* don't enter NAV mode if GPS is lost (this also prevents mode oscillations) */
-		if (!(new_autopilot_mode == AP_MODE_NAV && !rtk_power_up_stable()))
+		if( !(new_autopilot_mode == AP_MODE_NAV && (!check_ground_monitoring())) )
 		{
 			/* always allow to switch to manual */
 			if (new_autopilot_mode == MODE_MANUAL)

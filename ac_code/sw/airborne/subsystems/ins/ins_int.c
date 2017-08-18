@@ -563,10 +563,12 @@ bool_t ins_int_all_using_rtk(void)
 
 static void switch_to_baro(void)
 {
+	/*
 	if (!ins_int.baro_initialized)
 	{
 		return;
 	}
+	*/
 
 	if (ins_int_is_baro_valid())
 	{
@@ -578,7 +580,14 @@ static void switch_to_baro(void)
 	else
 	{
 		ins_int.ekf_state = INS_EKF_PURE_ACC;
-		autopilot_set_mode(AP_MODE_FAILSAFE);
+		if( autopilot_in_flight )
+		{
+			autopilot_set_mode(AP_MODE_FAILSAFE);
+		}
+		else
+		{
+			autopilot_set_mode(AP_MODE_KILL);
+		}
 	}
 }
 
@@ -594,7 +603,14 @@ static void switch_to_ublox(void)
 	else
 	{
 		ins_int.gps_type = GPS_NONE;
-		autopilot_set_mode(AP_MODE_FAILSAFE);
+		if( autopilot_in_flight )
+		{
+			autopilot_set_mode(AP_MODE_FAILSAFE);
+		}
+		else
+		{
+			autopilot_set_mode(AP_MODE_KILL);
+		}
 	}
 }
 

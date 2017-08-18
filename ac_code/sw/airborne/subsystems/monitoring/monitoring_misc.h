@@ -51,8 +51,10 @@ extern void lift_flight_check(void);
 extern void task_running_check(void);
 extern void mode_convert_check(void);
 extern uint8_t autopilot_ground_check(void);
-
-
+extern bool_t flight_timeout(void);
+extern bool_t rtk_mag_heading_diff(void);
+extern bool_t vrc_com_lost(void);
+extern bool_t gcs_com_lost(void);
 #endif /*_MONITORING_MISC_H_ */
 
 /****************************** END OF FILE ***************************/

@@ -187,6 +187,7 @@ extern void ground_monitoring(void);
 extern void flight_monitoring(void);
 extern int8_t monitoring_reset_emer(void);
 extern void set_mdebug_att_flag(uint8_t value);
+extern bool_t check_ground_monitoring(void);
 
 #endif /*_MONITORING_H_*/
 

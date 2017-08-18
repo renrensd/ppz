@@ -834,5 +834,74 @@ void set_mdebug_att_flag(uint8_t value)
 	mdebug_att_flag = value;
 }
 
+bool_t check_ground_monitoring(void)
+{
+	if( imu_moni.imu_status == 0 )
+	{
+		return FALSE;
+	}
+
+	if( !ins_int_is_baro_valid() )
+	{
+		return FALSE;
+	}
+
+	//battery
+
+	if( flight_timeout() )
+	{
+		return FALSE;
+	}
+
+	if( !gps.alive )
+	{
+		return FALSE;
+	}
+
+	if( !ins_int_is_rtk_pos_xy_valid() )
+	{
+		return FALSE;
+	}
+
+	if( !ins_int_is_rtk_pos_z_valid() )
+	{
+		return FALSE;
+	}
+
+	if( !ins_int_is_rtk_best_accu() )
+	{
+		return FALSE;
+	}
+
+	if( rtk_mag_heading_diff() )
+	{
+		return FALSE;
+	}
+
+	if( !gps2.alive )
+	{
+		return FALSE;
+	}
+
+	if( !ins_int_is_ublox_pos_valid() )
+	{
+		return FALSE;
+	}
+
+	if( vrc_com_lost() )
+	{
+		return FALSE;
+	}
+
+	if( gcs_com_lost() )
+	{
+		return FALSE;
+	}
+
+	//TASK
+
+	return TRUE;
+}
+
 /**************** END OF FILE *****************************************/
 
