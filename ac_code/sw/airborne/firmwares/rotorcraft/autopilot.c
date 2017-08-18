@@ -564,7 +564,14 @@ void autopilot_set_mode(uint8_t new_autopilot_mode)
 		case AP_MODE_FAILSAFE:
 #ifndef KILL_AS_FAILSAFE
 			stabilization_attitude_set_failsafe_setpoint();
-			guidance_h_mode_changed(GUIDANCE_H_MODE_ATTITUDE);
+			if( ins_int_h_ekf_open_loop() )
+			{
+				guidance_h_mode_changed(GUIDANCE_H_MODE_ATTITUDE);
+			}
+			else
+			{
+				guidance_h_mode_changed(GUIDANCE_H_MODE_HOVER);
+			}
 			break;
 #endif
 		case AP_MODE_KILL:

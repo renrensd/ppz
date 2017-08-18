@@ -551,6 +551,11 @@ bool_t ins_int_v_ekf_open_loop(void)
 	return (ins_int.ekf_state == INS_EKF_PURE_ACC);
 }
 
+bool_t ins_int_h_ekf_open_loop(void)
+{
+	return (ins_int.gps_type == GPS_NONE);
+}
+
 bool_t ins_int_all_using_rtk(void)
 {
 	return (ins_int.ekf_state == INS_EKF_GPS) && (ins_int.gps_type == GPS_RTK) && (ahrs_mlkf.heading_state == AMHS_GPS);
