@@ -551,6 +551,11 @@ bool_t ins_int_v_ekf_open_loop(void)
 	return (ins_int.ekf_state == INS_EKF_PURE_ACC);
 }
 
+bool_t ins_int_h_ekf_open_loop(void)
+{
+	return (ins_int.gps_type == GPS_NONE);
+}
+
 bool_t ins_int_all_using_rtk(void)
 {
 	return (ins_int.ekf_state == INS_EKF_GPS) && (ins_int.gps_type == GPS_RTK) && (ahrs_mlkf.heading_state == AMHS_GPS);
@@ -558,10 +563,12 @@ bool_t ins_int_all_using_rtk(void)
 
 static void switch_to_baro(void)
 {
+	/*
 	if (!ins_int.baro_initialized)
 	{
 		return;
 	}
+	*/
 
 	if (ins_int_is_baro_valid())
 	{
@@ -573,7 +580,14 @@ static void switch_to_baro(void)
 	else
 	{
 		ins_int.ekf_state = INS_EKF_PURE_ACC;
-		autopilot_set_mode(AP_MODE_FAILSAFE);
+		if( autopilot_in_flight )
+		{
+			autopilot_set_mode(AP_MODE_FAILSAFE);
+		}
+		else
+		{
+			autopilot_set_mode(AP_MODE_KILL);
+		}
 	}
 }
 
@@ -589,7 +603,14 @@ static void switch_to_ublox(void)
 	else
 	{
 		ins_int.gps_type = GPS_NONE;
-		autopilot_set_mode(AP_MODE_FAILSAFE);
+		if( autopilot_in_flight )
+		{
+			autopilot_set_mode(AP_MODE_FAILSAFE);
+		}
+		else
+		{
+			autopilot_set_mode(AP_MODE_KILL);
+		}
 	}
 }
 
@@ -653,6 +674,10 @@ void ins_int_task(void)
 					vff_update_offset_conf(ins_int.rtk_ned_z - ins_int.baro_ned_z, ins_int.R_baro_offset);
 					ins_update_from_vff();
 					ins_ned_to_state();
+				}
+				else if (ins_int.ekf_state == INS_EKF_PURE_ACC)
+				{
+					ins_int.ekf_state = INS_EKF_GPS;
 				}
 				ins_int_record_rtk_z_hist();
 			}

@@ -35,7 +35,7 @@
 
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
 #include "firmwares/rotorcraft/stabilization.h"
-
+#include "firmwares/rotorcraft/stabilization/stabilization_attitude_double.h"
 #include "state.h"
 
 #include "subsystems/ahrs/ahrs_float_mlkf.h"
@@ -160,7 +160,7 @@ void battery_flight_check(void)
 	}
 	else
 	{
-		if( autopilot_flight_time >MAX_FLIGHT_TIME)
+		if( flight_timeout() )
 		{
 			//hover 10s,back home
 			flag_trigger = 1;   //record error trigger
@@ -220,11 +220,16 @@ void report_rtk_em(void)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
+static bool_t diff_err = FALSE;
+
+bool_t rtk_mag_heading_diff(void)
+{
+	return diff_err;
+}
+
 void gps_flight_check(void)
 {
 	static uint16_t diff_count = 0;
-	static float diff_sum = 0;
-	static bool_t diff_err = FALSE;
 
 	bool_t rtk_pos_valid = FALSE;
 	bool_t rtk_heading_valid = FALSE;
@@ -457,9 +462,14 @@ void ops_flight_check(void)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
+bool_t vrc_com_lost(void)
+{
+	return (rc_lost && (flight_mode == nav_rc_mode));
+}
+
 void rc_communication_flight_check(void)
 {
-	if(rc_lost && flight_mode == nav_rc_mode )
+	if( vrc_com_lost() )
 	{
 		set_except_mission(RC_COM_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
@@ -477,9 +487,14 @@ void rc_communication_flight_check(void)
 * INPUTS      : none
 * RETURN      : none
 ***********************************************************************/
+bool_t gcs_com_lost(void)
+{
+	return (gcs_lost && (flight_mode == nav_gcs_mode));
+}
+
 void gcs_communication_flight_check(void)
 {
-	if(gcs_lost && flight_mode == nav_gcs_mode )
+	if( gcs_com_lost() )
 	{
 		set_except_mission(GCS_COM_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
@@ -679,6 +694,11 @@ static bool_t thrust_command_monitor(void)
 	{
 		return FALSE;
 	}
+}
+
+bool_t flight_timeout(void)
+{
+	return (autopilot_flight_time > MAX_FLIGHT_TIME);
 }
 /**************** END OF FILE *****************************************/
 

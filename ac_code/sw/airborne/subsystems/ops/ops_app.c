@@ -257,7 +257,7 @@ void ops_heart_beat_handler(uint8_t *param)
 
 	tm_create_timer(TIMER_OPS_HB_POLL, (3000 MSECONDS), TIMER_ONE_SHOT,0);
 
-#if defined (PERIODIC_TELEMETRY) && defined (BBOX_OPTION)
+#if defined (PERIODIC_TELEMETRY)
 	xbee_tx_header(XBEE_NACK,XBEE_ADDR_PC);
 	DOWNLINK_SEND_OPS_INFO_BBOX(DefaultChannel, DefaultDevice,
 															&ops_info.o_bat_mv,

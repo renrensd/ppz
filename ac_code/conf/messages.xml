@@ -2188,9 +2188,9 @@
   <message name="OPS_INFO_BBOX" id="229">
     <field name="volatage"   type="uint16"/>
     <field name="current"    type="uint16"/>
-    <field name="spray_status" type="uint8"/>
+    <field name="total_cap"  type="uint16"/>
     <field name="remain_cap" type="uint16"/>
-    <field name="temper"     type="uint16"/>
+    <field name="temperature"     type="uint16"/>
     <field name="error"      type="uint8"/>
     <field name="mcu"        type="uint8"/>
   </message>
