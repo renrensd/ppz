@@ -659,6 +659,10 @@ void ins_int_task(void)
 					ins_update_from_vff();
 					ins_ned_to_state();
 				}
+				else if (ins_int.ekf_state == INS_EKF_PURE_ACC)
+				{
+					ins_int.ekf_state = INS_EKF_GPS;
+				}
 				ins_int_record_rtk_z_hist();
 			}
 			else
