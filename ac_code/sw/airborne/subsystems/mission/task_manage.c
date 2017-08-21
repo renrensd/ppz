@@ -149,15 +149,16 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 				|| GCS_CMD_NONE == gcs_task_cmd
 				|| GCS_CMD_START == gcs_task_cmd)
 		{
-			if(( !ins_int_all_using_rtk() )&&(!eng_app_check_debug_sn()))
-			{
-				response = 2;
-			}
-			else
+			bool_t check_ok = check_ground_monitoring() && ins_int_all_using_rtk();
+			if( eng_app_check_debug_sn() || check_ok )
 			{
 				gcs_task_cmd = GCS_CMD_START;
 				Flag_AC_Flight_Ready = TRUE;	//add by lg
 				gcs_cmd_interrupt = TRUE; //record command interrupt to get rid of emergency
+			}
+			else
+			{
+				response = 2;
 			}
 		}
 		else

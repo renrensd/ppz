@@ -75,7 +75,10 @@ enum OPS_CONNECT_PARAM
 
 /**** Declaration of functions ****/
 void ops_spray_msg_handler(void);
-
+#ifdef UPGRADE_OPTION
+extern void ops_request_update_response(uint8_t *param);
+extern void ops_flowmeter_cali_response(uint8_t *param);
+#endif
 
 #endif /*_OPS_APP_H_*/
 

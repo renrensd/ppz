@@ -153,6 +153,7 @@ extern bool_t ins_int_is_ublox_pos_valid(void);
 extern bool_t ins_int_is_rtk_best_accu(void);
 extern bool_t ins_int_is_baro_valid(void);
 extern bool_t ins_int_v_ekf_open_loop(void);
+extern bool_t ins_int_h_ekf_open_loop(void);
 extern bool_t ins_int_all_using_rtk(void);
 extern void ins_int_SetForceRedun(uint8_t force);
 
