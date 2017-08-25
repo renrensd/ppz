@@ -563,12 +563,10 @@ bool_t ins_int_all_using_rtk(void)
 
 static void switch_to_baro(void)
 {
-	/*
 	if (!ins_int.baro_initialized)
 	{
 		return;
 	}
-	*/
 
 	if (ins_int_is_baro_valid())
 	{
@@ -677,7 +675,13 @@ void ins_int_task(void)
 				}
 				else if (ins_int.ekf_state == INS_EKF_PURE_ACC)
 				{
-					ins_int.ekf_state = INS_EKF_GPS;
+					if( !autopilot_in_flight )
+					{
+						if( ins_int.ekf_state == INS_EKF_BARO )
+						{
+							ins_int.ekf_state = INS_EKF_GPS;
+						}
+					}
 				}
 				ins_int_record_rtk_z_hist();
 			}
