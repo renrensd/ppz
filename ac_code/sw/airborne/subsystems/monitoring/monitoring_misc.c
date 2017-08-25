@@ -578,6 +578,7 @@ uint8_t autopilot_ground_check(void)
 	if( !ahrs_ground_check() ) return 1;
 	if( !ins_ground_check() ) return 2;
 	if( h_moni.baro_status )  return 3;
+	if( !ins_int_all_using_rtk() )  return 4;
 	else return 0;
 }
 
