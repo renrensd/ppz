@@ -873,6 +873,11 @@ bool_t check_ground_monitoring(void)
 		return FALSE;
 	}
 
+	if( !ins_int_all_using_rtk() )
+	{
+		return FALSE;
+	}
+
 	if( rtk_mag_heading_diff() )
 	{
 		return FALSE;
