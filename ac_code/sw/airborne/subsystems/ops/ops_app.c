@@ -135,6 +135,8 @@ void ops_msg_stop_selfclean(void)
 {
 	ops_info.selfclean_flag = FALSE;
 	ops_stop_spraying();
+	ops_msg_stop_spraying();
+	
 }
 
 
