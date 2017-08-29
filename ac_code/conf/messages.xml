@@ -2137,7 +2137,7 @@
     <field name="height_noise" type="uint8" values="ok|sonar|baro"/>
     <field name="height_fre" type="uint8" values="ok|sonar|baro"/>
     <field name="baro_flight_range" type="uint8" values="ok|fail"/>
-    <field name="sonar_status" type="uint8" values="ok|dead|out|error"/>
+    <field name="baro_error" type="uint8"/>
     <field name="baro_status" type="uint8" values="ok|fail"/>
     <field name="bat_flight" type="uint8" values="ok|low|critical|other"/>
     <field name="gps_flight" type="uint8" values="ok|pacc|nofix"/>

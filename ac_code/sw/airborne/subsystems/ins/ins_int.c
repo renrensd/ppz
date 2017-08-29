@@ -858,7 +858,7 @@ static void ins_int_propagate(struct Int32Vect3 *accel, float dt)
 
 #if USE_BARO_BOARD   //change default using bar
 
-static float baro_get_height(float press, float temp)
+float baro_get_height(float press, float temp)
 {
 	float tmp_float;
 	float alt;

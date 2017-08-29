@@ -33,7 +33,8 @@
 
 #define SUM_RATIO 3
 #define DETA_BARO          20.0 //20pa
-#define FLIGHT_RANGE       500.0  //pa
+
+#define FLIGHT_RANGE      10.0 //10m
 
 #define BARO_MIN 60000.0  //unit =pa
 #define BARO_MAX 110000.0
@@ -214,11 +215,11 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 												 uint32_t __attribute__((unused)) stamp,
 												 float pressure, float temp)
 {
-	static float last_pressure, ground_pressure_aver,takeoff_pressure_aver;
+	static float last_pressure, ground_pressure_aver;
 	static uint32_t last_ts;
 	static uint8_t  last_ac_state;
 	h_moni.baro_update_counter++;
-
+//	ins_int.baro_ned_z = -baro_get_height(pressure, temperature); // - for NED
 	h_moni.baro_aver = (pressure + h_moni.baro_aver * SUM_RATIO)/(SUM_RATIO +1 );
 	if(get_sys_time_msec() <15000)  return;  //15s later begin run(data is not stable before
 
@@ -289,14 +290,16 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 		}
 	}
 
-	if(autopilot_in_flight)
+	if(flight_state == cruising)
 	{
-		if(last_ac_state != autopilot_in_flight)
+		h_moni.baro_ned_z = -baro_get_height(pressure, temp); // - for NED
+		if(last_ac_state != flight_state)
 		{
-			takeoff_pressure_aver = h_moni.baro_aver;
+			h_moni.baro_ned_z_last = -baro_get_height(h_moni.baro_aver, temp); // - for NED
+			h_moni.last_time = get_sys_time_msec();
 		}
-		if( h_moni.baro_aver < (takeoff_pressure_aver-FLIGHT_RANGE) ||
-				h_moni.baro_aver > (takeoff_pressure_aver+FLIGHT_RANGE) )
+		if( h_moni.baro_ned_z < (h_moni.baro_ned_z_last-FLIGHT_RANGE) ||
+				h_moni.baro_ned_z > (h_moni.baro_ned_z_last+FLIGHT_RANGE) )
 		{
 			h_moni.baro_flight_counter ++;
 			if(h_moni.baro_flight_counter > 20)
@@ -310,6 +313,11 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 		else
 		{
 			//h_moni.baro_code &=0xEF;  //reset normal
+		}
+		if(abs( get_sys_time_msec() - h_moni.last_time) >30000)
+		{
+			 h_moni.last_time =  get_sys_time_msec();
+			 h_moni.baro_ned_z_last = -baro_get_height(h_moni.baro_aver, temp); // - for NED
 		}
 	}
 	else if((!autopilot_in_flight) && (!ground_check_pass))//during selfcheck
@@ -337,7 +345,7 @@ static void baro_moni_cb(uint8_t __attribute__((unused)) sender_id,
 		}
 		
 	}
-	last_ac_state = autopilot_in_flight;
+	last_ac_state = flight_state;
 }
 
 
