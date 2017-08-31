@@ -48,6 +48,7 @@
 #define GUIDANCE_V_MAX_NORMALIZED_THROTTLE	(0.8f)
 #define GUIDANCE_V_HOVER_MAX_NORMALIZED_THROTTLE	(0.85f)
 #define GUIDANCE_V_MAX_ACC_LOOP_ERR	(0.8f)
+#define GUIDANCE_V_VIRTUAL_HOVER_THROTTLE	(0.5f)
 
 struct _s_guidance_v guid_v;
 
@@ -293,7 +294,8 @@ bool_t guidance_v_get_thrust_error_1(void)
 
 	if ((guid_v.mode == GUIDANCE_V_MODE_HOVER) || (guid_v.mode == GUIDANCE_V_MODE_NAV))
 	{
-		if (fabsf(guid_v.acc_z_pid.err) > GUIDANCE_V_MAX_ACC_LOOP_ERR)
+		if( (fabsf(guid_v.acc_z_pid.err) > GUIDANCE_V_MAX_ACC_LOOP_ERR) &&
+				(guid_v.acc_z_pid.out > GUIDANCE_V_VIRTUAL_HOVER_THROTTLE) )
 		{
 			err = TRUE;
 		}

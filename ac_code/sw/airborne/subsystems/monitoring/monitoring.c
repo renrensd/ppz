@@ -301,14 +301,14 @@ static inline void monitoring_msg_handle(void)
 													 &height_noise,
 													 &height_fre,
 													 &baro_flight_range,
-													 &sonar_bound,
+													 &h_moni.baro_code,
 													 &baro_status,
 													 &bat_flight,
 													 &gps_flight,
 													 &monitor_cmd,
 													 &em_alert_grade,
 													 &em_code,
-													 &h_moni.baro_aver);
+													 &h_moni.baro_ned_z_last );
 #endif
 #endif
 	}

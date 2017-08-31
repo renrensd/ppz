@@ -31,6 +31,9 @@ struct Height_Monitor
 	uint32_t baro_ground_counter;
 	uint8_t baro_flight_counter;
 	float baro_aver;
+	float baro_ned_z;
+	float baro_ned_z_last;
+	uint32_t last_time;
 	float ground_baro_aver;
 	uint32_t baro_update_counter;
 	uint16_t baro_interval_counter;

@@ -156,5 +156,6 @@ extern bool_t ins_int_v_ekf_open_loop(void);
 extern bool_t ins_int_h_ekf_open_loop(void);
 extern bool_t ins_int_all_using_rtk(void);
 extern void ins_int_SetForceRedun(uint8_t force);
+extern float baro_get_height(float press, float temp);
 
 #endif /* INS_INT_H */

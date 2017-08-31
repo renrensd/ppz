@@ -95,7 +95,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			response =2;
 			return response;
 		}
-		else if(FALSE==wp_home_useful || 2>nb_pending_wp || FALSE==ground_check_pass)
+		else if(FALSE==wp_home_useful || FALSE==ground_check_pass)
 		{
 			response =3;  /*can not take off*/
 			return response;
