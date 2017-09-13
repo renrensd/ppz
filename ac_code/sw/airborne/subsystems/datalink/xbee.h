@@ -68,8 +68,8 @@
 //#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x40,0xF5,0x4A,0xE2}  //no3
 //#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x41,0x46,0xF1,0xC1}  //no4
 //#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x41,0x54,0x1B,0xA6}  //no5
-#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x41,0x4F,0x0D,0x23}  //NEW DEBUG PC1
-//#define PPZCENTER_ADDR           {0x00,0x13,0xA2,0x00,0x41,0x52,0x02,0x16}   //DEBUG_PC2
+//#define PPZCENTER_ADDR          {0x00,0x13,0xA2,0x00,0x41,0x4F,0x0D,0x23}  //NEW DEBUG PC1
+#define PPZCENTER_ADDR           {0x00,0x13,0xA2,0x00,0x41,0x52,0x02,0x16}   //DEBUG_PC2
 //#define PPZCENTER_ADDR           {0x00,0x13,0xA2,0x00,0x40,0xfc,0xe0,0x7d}   //DEBUG_PC lg
 #define XBEE_ADDR_OFFSET 1
 #define XBEE_ADDR_LEN 8
@@ -115,6 +115,12 @@ struct xbee_transport
 	uint8_t cs_tx;
 };
 
+enum XBEE_RESET_STEP
+{
+	START = 0X5A,
+	RESETING,
+	FINISH
+};
 #ifdef GCS_V1_OPTION
 struct xbee_connect_info
 {
@@ -128,7 +134,8 @@ struct xbee_connect_info
 	uint8_t pair_state;
 	uint8_t pair_ok;
 	uint8_t init_state;
-
+	uint8_t reset_times;
+	enum XBEE_RESET_STEP reset_step;
 	uint8_t ac_sn_code[12];
 };
 extern uint8_t pprzcenter_addr[8];
@@ -180,7 +187,7 @@ void xbee_at_cmd_set_wr(void);
 void xbee_at_cmd_set_ac(void);
 extern void XbeeSetSuccessBind(void);
 extern void XbeeSetFailBind(void);
-
+extern void xbee_hardware_reset(void);
 #endif	/* COMM_DIRECT_CONNECT */
 
 

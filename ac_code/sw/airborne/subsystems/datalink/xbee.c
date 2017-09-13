@@ -50,6 +50,7 @@
 
 #ifndef XBEE_RESET_DISABLE
 #define XBEE_RESET_DISABLE gpio_set
+#define XBEE_RESET_ENABLE gpio_clear
 #endif
 #endif //XBEE_RESET_GPIO
 
@@ -269,6 +270,8 @@ void xbee_init(void)
 	{
 		dev->get_byte(dev->periph);
 	}
+
+	xbee_con_info.reset_step = FINISH;
 
 #ifdef COMM_DIRECT_CONNECT
 	xbee_con_info.pair_state = XBEE_PAIR_STATE_P2N;
@@ -904,5 +907,36 @@ void xbee_at_cmd_response_parse(struct xbee_transport *t)
 	}
 }
 #endif	/* COMM_DIRECT_CONNECT */
+void xbee_need_reset(void)
+{
+	xbee_con_info.reset_step = 0;
+}
+void xbee_hardware_reset(void)
+{
+	static uint32_t time_record;
+	switch (xbee_con_info.reset_step)
+	{
+		case START:
+		{
+			XBEE_RESET_ENABLE(XBEE_RESET_GPIO);	//
+			time_record = get_sys_time_msec();
+			xbee_con_info.reset_step = RESETING;
+			break;
+		}
+		case RESETING:
+		{
+			if((get_sys_time_msec() - time_record) > 1000)
+			{
+				XBEE_RESET_DISABLE(XBEE_RESET_GPIO);	//
+				xbee_con_info.reset_step = FINISH;
+				xbee_con_info.reset_times ++;
+			}
+			break;
+		}
+		default:
+			break;
+
+	}
 
 
+}
