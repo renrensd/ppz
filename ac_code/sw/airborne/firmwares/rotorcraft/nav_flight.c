@@ -207,7 +207,6 @@ void nav_flight(void)
 		/*rc mode*/
 		else if(flight_mode==nav_rc_mode && autopilot_in_flight)
 		{
-			AC_action = FLIGHT_LINE;
 			if(rc_set_info.vtol==TAKE_OFF)  /*take_off finished, convert to cruise*/
 			{
 				rc_set_info.vtol = CRUISE;
@@ -611,4 +610,6 @@ static void  ac_config_set_default(void)
 	ac_config_info.spray_convert_type = WAYPOINT_P2P;
 	ac_config_info.rocker_remote_status=FALSE;
 	ac_config_info.force_redun_status = FALSE;
+	ac_config_info.landfrom_track = FALSE;
+	ac_config_info.radar_oa_en = FALSE;
 }

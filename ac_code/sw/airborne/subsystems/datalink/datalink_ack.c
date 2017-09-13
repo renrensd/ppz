@@ -236,7 +236,7 @@ void send_aircraft_info_state(void)
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
 	//ac_config_info.landfrom_mode:0/1/2
 	uint8_t misc_status =((ac_config_info.rocker_remote_status)+(ac_config_info.force_redun_status<<1)
-														+(ac_config_info.landfrom_mode<<2)+(ac_config_info.radar_oa_en)<<4);
+												+(ac_config_info.landfrom_mode<<2)+(ac_config_info.radar_oa_en<<4));
 	char     ac_sn[12]="";
 	char     ac_sv[25]="";
 	char     ops_sv[25]="";
