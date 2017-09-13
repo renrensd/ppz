@@ -207,6 +207,7 @@ void nav_flight(void)
 		/*rc mode*/
 		else if(flight_mode==nav_rc_mode && autopilot_in_flight)
 		{
+			AC_action = FLIGHT_LINE;
 			if(rc_set_info.vtol==TAKE_OFF)  /*take_off finished, convert to cruise*/
 			{
 				rc_set_info.vtol = CRUISE;
