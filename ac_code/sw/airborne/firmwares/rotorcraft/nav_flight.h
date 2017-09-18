@@ -51,6 +51,9 @@ struct config_info
 	float max_flight_height;        //unit=m
 	uint8_t rocker_remote_status;	// 1:enable
 	uint8_t force_redun_status;			//1:enable
+	uint8_t landfrom_track;					//1:enable
+	uint8_t landfrom_mode;					// 1=terrace 2=sloping
+	uint8_t radar_oa_en;								//1:enable
 };
 
 extern uint8_t flight_mode;

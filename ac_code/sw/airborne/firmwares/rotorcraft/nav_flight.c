@@ -611,4 +611,6 @@ static void  ac_config_set_default(void)
 	ac_config_info.spray_convert_type = WAYPOINT_P2P;
 	ac_config_info.rocker_remote_status=FALSE;
 	ac_config_info.force_redun_status = FALSE;
+	ac_config_info.landfrom_track = FALSE;
+	ac_config_info.radar_oa_en = FALSE;
 }
