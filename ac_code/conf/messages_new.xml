@@ -25,7 +25,12 @@
   <message name="AIRCRAFT_INFO_STATE" id="102">
     <description> link="A2G",after binded,send serial number autopilot software and so on
                   engine_type : 1 = Electricity , 2 = Fuel, 3 = Hybrid
-                  misc_status: bit0:joystick-enable  bit1: u-blox_enable bit2-3 landfrom_mode(0/1/2) bit4: radar_enable 
+                  
+                  misc_status: bit0:joystick-enable  bit1: u-blox_enable 
+                  bit2: landfrom radar status 1=normal
+                  bit3-4 landfrom_mode 0=disable 1=terrace 2=sloping
+                  bit5: oa radar status 1=normal
+                  bit6-7: 1=radar_enable 0=disable 
     </description> 
     <field name="engine_type" type="uint8"/>
     <field name="max_voyage" type="uint16" unit="m"/>
