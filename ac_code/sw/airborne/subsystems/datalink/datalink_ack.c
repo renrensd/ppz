@@ -235,7 +235,7 @@ void send_aircraft_info_state(void)
 	uint16_t max_flight_speed = (uint16_t)(ac_config_info.max_flight_speed*100.0);
 	uint16_t spray_flight_speed = (uint16_t)(ac_config_info.spray_speed*100.0);
 	//ac_config_info.landfrom_mode:0/1/2
-	uint8_t landfrom_radar_status = 1;
+	uint8_t landfrom_radar_status = 0;
 	uint8_t oa_radar_status = 0;
 	uint8_t misc_status =((ac_config_info.rocker_remote_status)+(ac_config_info.force_redun_status<<1)
 												+(landfrom_radar_status<<2) + (ac_config_info.landfrom_mode<<3)
