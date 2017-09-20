@@ -499,6 +499,7 @@ void xbee_reset_start(void)
 }
 void gcs_communication_flight_check(void)
 {
+#ifndef BBOX_OPTION
 	xbee_hardware_reset();
 	if( gcs_com_lost() )
 	{
@@ -510,6 +511,7 @@ void gcs_communication_flight_check(void)
 		em[GCS_COM_LOST].active = FALSE;
 		em[GCS_COM_LOST].finished = FALSE;
 	}
+#endif
 }
 
 
