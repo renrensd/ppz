@@ -43,7 +43,7 @@ const uint8_t cl_software_version_array[SW_VERSION_LONGTH+1] =
 {
 	"23.01_170831_D  "  //for B2
 };
-const uint16_t gcs_msg_version = 5;
+const uint16_t gcs_msg_version = 6;
 
 /* update flag flag *///CL_SOFTWARE_UPDATE_FLAG
 const uint8_t cl_software_update_flag_array[] =
