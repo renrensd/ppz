@@ -502,7 +502,7 @@ void gcs_communication_flight_check(void)
 	xbee_hardware_reset();
 	if( gcs_com_lost() )
 	{
-		RunOnceEvery(120,xbee_reset_start());
+		RunOnceEvery(60,xbee_reset_start());
 		set_except_mission(GCS_COM_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
 	else
