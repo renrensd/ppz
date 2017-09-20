@@ -1,4 +1,3 @@
-<?xml version="1.0"?>
 <!DOCTYPE protocol SYSTEM "messages.dtd">
 <protocol>
 
@@ -26,7 +25,12 @@
   <message name="AIRCRAFT_INFO_STATE" id="102">
     <description> link="A2G",after binded,send serial number autopilot software and so on
                   engine_type : 1 = Electricity , 2 = Fuel, 3 = Hybrid
+                  
                   misc_status: bit0:joystick-enable  bit1: u-blox_enable 
+                  bit2: landfrom radar status 1=normal
+                  bit3-4 landfrom_mode 0=disable 1=terrace 2=sloping
+                  bit5: oa radar status 1=normal
+                  bit6-7: 1=radar_enable 0=disable 
     </description> 
     <field name="engine_type" type="uint8"/>
     <field name="max_voyage" type="uint16" unit="m"/>
@@ -370,8 +374,8 @@ DATA17:
   <message name="SET_CONFIG" id="1">  <!--edit 160612-->
     <description>link="G2A" 0:all info; 1:spray_height,cm(uint16); 2:spray_wide(uint16),cm; 3:spray_concentration(uint16),ml/1000m2; 
       4:spray_speed(uint16),cm/s; 5:max_flight_speed(uint16),cm/s; 6:max_flight_height(uint16),cm; 7:atomization_grade(uint8), 1-2-3...
-      8:joystick_enable(uint8_t) 1=enable,0=disable 9:u-blox_enable(uint8_t) 1=enable,0=disable;
-                 aircraft will ack "AIRCRAFT_INFO_STATE" message
+      8:joystick_enable(uint8_t) 1=enable,0=disable 9:u-blox_enable(uint8_t) 1=enable,0=disable; 10:landfrom_mode(uint8_t)   0=disable  1=terrace 2=sloping
+      11:radar_oa(uint8_t) 0:disable 1:enable           aircraft will ack "AIRCRAFT_INFO_STATE" message
     </description>
     <field name="parameter_id" type="uint8"/>
     <field name="parameter_value" type="int8[]"/>

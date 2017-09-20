@@ -236,9 +236,11 @@ bool_t get_start_line(void)
 ***********************************************************************/
 bool_t auto_task_ready_check(void)
 {
+/*	if( FALSE==wp_home_useful
+			|| 1>nb_pending_wp
+			|| TERMINATION==task_wp[0].action   )*/
 	if( FALSE==wp_home_useful
-			|| 2>nb_pending_wp
-			|| TERMINATION==task_wp[0].action   )
+				|| 1>nb_pending_wp   )
 	{
 		return FALSE;
 	}

@@ -39,6 +39,8 @@ enum set_cmd
 #define ATOMIZATION_GRADE      7    //atomization_grade
 #define JOYSTICK_ENABLE		   8	// 1:enable
 #define U_BLOX_ENABLE          9    // 1:enable 
+#define LANDFROM_MODE 		   10	// 1=terrace 2=sloping
+#define RADAR_OA						11 //1;ENABLE
 
 enum engine_type
 {

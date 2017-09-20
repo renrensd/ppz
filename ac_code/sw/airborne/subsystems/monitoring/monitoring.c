@@ -306,7 +306,7 @@ static inline void monitoring_msg_handle(void)
 													 &bat_flight,
 													 &gps_flight,
 													 &monitor_cmd,
-													 &em_alert_grade,
+													 &xbee_con_info.reset_times,
 													 &em_code,
 													 &h_moni.baro_ned_z_last );
 #endif

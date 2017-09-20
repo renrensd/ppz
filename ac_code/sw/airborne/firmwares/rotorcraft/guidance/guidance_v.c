@@ -133,7 +133,10 @@ static void guidance_v_controller_ini(void)
 	guid_v.acc_filter_fc = 1;
 	init_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, low_pass_filter_get_tau(guid_v.acc_filter_fc),
 															1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
-	init_butterworth_2_low_pass(&guid_v.hover_throttle_filter, 1, 1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
+	init_butterworth_2_low_pass(&guid_v.hover_throttle_filter, low_pass_filter_get_tau(0.1f),
+			1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
+	init_butterworth_2_low_pass(&guid_v.acc_z_pid_err_filter, low_pass_filter_get_tau(1.0f),
+			1.0f / (float) GUIDANCE_V_LOOP_FREQ, 0);
 }
 
 void guidance_v_SetAccCutoff(float fc)
@@ -294,7 +297,9 @@ bool_t guidance_v_get_thrust_error_1(void)
 
 	if ((guid_v.mode == GUIDANCE_V_MODE_HOVER) || (guid_v.mode == GUIDANCE_V_MODE_NAV))
 	{
-		if( (fabsf(guid_v.acc_z_pid.err) > GUIDANCE_V_MAX_ACC_LOOP_ERR) &&
+		float acc_z_pid_err_filter = get_butterworth_2_low_pass(&guid_v.acc_z_pid_err_filter);
+
+		if( (fabsf(acc_z_pid_err_filter) > GUIDANCE_V_MAX_ACC_LOOP_ERR) &&
 				(guid_v.acc_z_pid.out > GUIDANCE_V_VIRTUAL_HOVER_THROTTLE) )
 		{
 			err = TRUE;
@@ -332,6 +337,7 @@ static void state_update_loop(void)
 
 	update_butterworth_2_low_pass(&guid_v.UP_z_acc_filter, guid_v.UP_z_acc);
 	update_butterworth_2_low_pass(&guid_v.hover_throttle_filter, guid_v.acc_z_pid.Ui);
+	update_butterworth_2_low_pass(&guid_v.acc_z_pid_err_filter, guid_v.acc_z_pid.err);
 
 	guid_v.thrust_coef = FLOAT_OF_BFP(get_vertical_thrust_coeff(), INT32_TRIG_FRAC);
 	Bound(guid_v.thrust_coef, 0.8f, 1.0f);

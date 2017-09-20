@@ -29,6 +29,7 @@
 #include "subsystems/gps.h"
 #include "subsystems/rc_nav/rc_nav_xbee.h"
 #include "subsystems/mission/gcs_nav_xbee.h"
+#include "subsystems/datalink/xbee.h"
 #include "subsystems/ops/ops_app_if.h"
 #include "subsystems/ops/ops_app.h"
 #include "subsystems/mission/task_process.h"
@@ -492,10 +493,17 @@ bool_t gcs_com_lost(void)
 	return (gcs_lost && (flight_mode == nav_gcs_mode));
 }
 
+void xbee_reset_start(void)
+{
+	xbee_con_info.reset_step = START;
+}
 void gcs_communication_flight_check(void)
 {
+#ifndef BBOX_OPTION
+	xbee_hardware_reset();
 	if( gcs_com_lost() )
 	{
+		RunOnceEvery(60,xbee_reset_start());
 		set_except_mission(GCS_COM_LOST, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 	}
 	else
@@ -503,6 +511,7 @@ void gcs_communication_flight_check(void)
 		em[GCS_COM_LOST].active = FALSE;
 		em[GCS_COM_LOST].finished = FALSE;
 	}
+#endif
 }
 
 

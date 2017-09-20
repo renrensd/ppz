@@ -69,6 +69,7 @@ struct _s_guidance_v
 	float acc_filter_fc;
 	Butterworth2LowPass UP_z_acc_filter;
 	Butterworth2LowPass hover_throttle_filter;
+	Butterworth2LowPass acc_z_pid_err_filter;
 	float thrust_coef;
 
 	// src and vrc
