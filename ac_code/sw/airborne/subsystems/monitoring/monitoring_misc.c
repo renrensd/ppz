@@ -282,13 +282,25 @@ void gps_flight_check(void)
 				force_use_heading_redundency(FALSE);
 			}
 
-			if( mag_cali.cali_ok && ground_check_pass )
+			float low_thre, high_thre;
+			if( mag_cali.cali_ok )
+			{
+				low_thre = 15;
+				high_thre = 25;
+			}
+			else
+			{
+				low_thre = 35;
+				high_thre = 45;
+			}
+
+			if( ground_check_pass )
 			{
 				float diff_abs = fabsf(DegOfRad(ahrs_mlkf.diff_heading_rad));
 
 				if( diff_err )
 				{
-					if( diff_abs < 15 )
+					if( diff_abs < low_thre )
 					{
 						if( diff_count++ > 10 ) //2s
 						{
@@ -303,7 +315,7 @@ void gps_flight_check(void)
 				}
 				else
 				{
-					if( diff_abs > 25 )
+					if( diff_abs > high_thre )
 					{
 						if( diff_count++ > 20 ) //4s
 						{
