@@ -191,6 +191,7 @@ void DlSetConfig(uint8_t id, int8_t *pt_value ,uint8_t length)
 		break;
 	case RADAR_OA:
 		ac_config_info.radar_oa_en = (uint8_t)(*((uint8_t*)pt_value));
+		break;
 	default:
 		break;
 	}
