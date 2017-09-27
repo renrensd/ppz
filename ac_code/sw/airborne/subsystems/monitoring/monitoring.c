@@ -549,18 +549,22 @@ void ground_monitoring(void)
 	case BBOX_CHECK:
 		if(bbox_info.con_flag)
 		{
-			monitoring_fail_code = BBOX_PASS;
 			if(bbox_info.status == BBOX_IS_ERROR)
 			{
 				monitoring_fail_code = BBOX_ERROR;
+			}
+			else
+			{
+				monitoring_fail_code = BBOX_PASS;
+				monitoring_state = FLIGHT_MONITORING;    //turn to flight monitoring
+				ground_check_pass = TRUE;
 			}
 		}
 		else
 		{
 			monitoring_fail_code = BBOX_NO_LINK;
 		}
-		monitoring_state = FLIGHT_MONITORING;    //turn to flight monitoring
-		ground_check_pass = TRUE;
+
 		break;
 #endif /*BBOX_OPTION*/
 	default:
@@ -571,7 +575,7 @@ void ground_monitoring(void)
 	{
 		bool_t fail = FALSE;
 
-		if ((ground_check_step != UBLOX_CHECK) && (ground_check_step != RTK_CHECK) && (ground_check_step != BBOX_CHECK))
+		if ((ground_check_step != UBLOX_CHECK) && (ground_check_step != RTK_CHECK)&& (ground_check_step != BBOX_CHECK))
 		{
 			fail = TRUE;
 		}
