@@ -271,7 +271,7 @@ void gps_flight_check(void)
 		}
 
 #ifdef USE_GPS_HEADING
-		if( rtk_heading_valid )
+		if( rtk_heading_valid && !mag_cali_is_running() )
 		{
 			if( !diff_err )
 			{

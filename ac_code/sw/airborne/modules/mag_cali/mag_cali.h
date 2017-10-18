@@ -70,6 +70,7 @@ extern bool_t mag_cali_nav_loop(bool_t run);
 
 extern bool mag_cali_manufacture_start(void);
 extern void mag_cali_manufacture_stop(void);
+extern bool_t mag_cali_is_running(void);
 
 extern struct MagCali mag_cali;
 
