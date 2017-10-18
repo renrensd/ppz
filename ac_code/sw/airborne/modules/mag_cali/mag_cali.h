@@ -46,6 +46,7 @@ struct MagCali
 	bool_t persistent_store;
 	bool_t persistent_read;
 	int32_t nav_heading_ini;
+	bool_t manufacture_cali;
 
 	uint8_t grab_tick[MAG_CALI_GRAB_NUM];
 	float grab_sum[MAG_CALI_GRAB_NUM][2];
@@ -66,6 +67,9 @@ extern void mag_cali_event(void);
 extern bool_t mag_cali_load_to_imu(void);
 extern void mag_cali_imu_scale(struct Imu *_imu);
 extern bool_t mag_cali_nav_loop(bool_t run);
+
+extern bool mag_cali_manufacture_start(void);
+extern void mag_cali_manufacture_stop(void);
 
 extern struct MagCali mag_cali;
 

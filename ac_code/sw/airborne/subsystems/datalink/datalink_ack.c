@@ -24,6 +24,7 @@
 #include "modules/system/timer_class.h"
 #include "modules/system/timer_def.h"
 #include "mcu_periph/sys_time.h"
+#include "modules/mag_cali/mag_cali.h"
 
 void send_heart_beat_A2R_msg(void)
 {
@@ -352,6 +353,17 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 		else 
 		{
 			tm_kill_timer(TIMER_OPS_MSG_EXTRA_FUNCTION);
+		}
+		break;
+	case MANUFACTURE_MAG_CALI_CMD:
+		if( pt_value )
+		{
+			response = mag_cali_manufacture_start() ? 0 : 1;
+		}
+		else
+		{
+			mag_cali_manufacture_stop();
+			response = 0;
 		}
 		break;
 	default:
