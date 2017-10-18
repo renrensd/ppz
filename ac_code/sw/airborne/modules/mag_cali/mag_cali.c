@@ -23,6 +23,8 @@
 #include "subsystems/datalink/telemetry.h"
 #endif
 #include "subsystems/datalink/downlink.h"
+#include "subsystems/datalink/datalink_ack.h"
+#include "led.h"
 
 struct MagCali mag_cali;
 static abi_event mag_ev;
@@ -227,6 +229,7 @@ void mag_cali_init(void)
 	mag_cali.manual_fram_erase = FALSE;
 	mag_cali.manual_fram_erase_prev = FALSE;
 	mag_cali.state = MAG_CALI_IDLE;
+	mag_cali.manufacture_cali = FALSE;
 
 	mag_cali.gain[0] = 1;
 	mag_cali.gain[1] = 1;
@@ -314,8 +317,69 @@ void mag_cali_imu_scale(struct Imu *_imu)
 	_imu->mag.z = 0;
 }
 
+bool mag_cali_manufacture_start(void)
+{
+	if( !autopilot_in_flight && rtk_stable() )
+	{
+		mag_cali.manufacture_cali = TRUE;
+	}
+	else
+	{
+		mag_cali.manufacture_cali = FALSE;
+	}
+	return mag_cali.manufacture_cali;
+}
+
+void mag_cali_manufacture_stop(void)
+{
+	mag_cali.manufacture_cali = FALSE;
+	mag_cali_nav_loop(FALSE);
+}
+
 void mag_cali_periodic(void)
 {
+#define GREED_LED 3
+#define RED_LED 2
+
+	static uint32_t led_tick = 0;
+	static bool led_on = false;
+	uint8_t id = MANUFACTURE_MAG_CALI_CMD, value = 0;
+	int8_t response;
+
+	if( !autopilot_in_flight && mag_cali.manufacture_cali)
+	{
+		if(++led_tick > 5)
+		{
+			led_on = !led_on;
+			led_tick = 0;
+
+			if(led_on)
+			{
+				LED_ON(GREED_LED);
+				LED_ON(RED_LED);
+			}
+			else
+			{
+				LED_OFF(GREED_LED);
+				LED_OFF(RED_LED);
+			}
+		}
+		if( mag_cali_nav_loop(TRUE) )
+		{
+			mag_cali.manufacture_cali = FALSE;
+			if(mag_cali.cali_ok)
+			{
+				response = 0;
+			}
+			else
+			{
+				response = 1;
+			}
+			xbee_tx_header(XBEE_ACK,XBEE_ADDR_GCS);
+			DOWNLINK_SEND_SET_COMMAND_ACK_STATE(SecondChannel, SecondDevice, &id, &value, &response);
+		}
+	}
+
 	if(mag_cali.persistent_store)	// storge mag cali data when throttle killed
 	{
 		if(kill_throttle)

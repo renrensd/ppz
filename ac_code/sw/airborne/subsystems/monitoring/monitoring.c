@@ -22,6 +22,7 @@
 
 #include "firmwares/rotorcraft/autopilot.h"
 #include "subsystems/gps.h"
+#include "modules/mag_cali/mag_cali.h"
 
 #include "subsystems/monitoring/monitoring.h"
 #include "subsystems/monitoring/monitoring_imu.h"
@@ -230,6 +231,11 @@ int8_t monitoring_reset_emer(void)
  ***********************************************************************/
 static void monitoring_led_update(void)
 {
+	if(mag_cali.manufacture_cali)
+	{
+		return;
+	}
+
 	if (run_monitoring_flag)
 	{
 		if (monitoring_state == GROUND_MONITORING)
