@@ -262,6 +262,11 @@ static void mag_cali_heading_rotate(bool_t dir)
 	INT32_COURSE_NORMALIZE(nav_heading);
 }
 
+bool_t mag_cali_is_running(void)
+{
+	return (mag_cali.state != MAG_CALI_IDLE);
+}
+
 bool_t mag_cali_load_to_imu(void)
 {
 	// range check
