@@ -41,9 +41,9 @@ const uint8_t project_number_array[] =
 /* software version */
 const uint8_t cl_software_version_array[SW_VERSION_LONGTH+1] =
 {
-	"23.01_171018_D2I"  //for B2
+	"23.01_171205_D2I"  //for B2
 };
-const uint16_t gcs_msg_version = 6;
+const uint16_t gcs_msg_version = 7;
 
 /* update flag flag *///CL_SOFTWARE_UPDATE_FLAG
 const uint8_t cl_software_update_flag_array[] =
