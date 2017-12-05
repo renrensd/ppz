@@ -8,6 +8,8 @@
 
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "firmwares/rotorcraft/navigation.h"
+
 #include "subsystems/ahrs/ahrs_float_mlkf.h"
 #include "state.h"
 #include "firmwares/rotorcraft/autopilot.h"
@@ -114,7 +116,19 @@ void nav_flight(void)
 		/*gcs mode*/
 		if( flight_mode==nav_gcs_mode && !autopilot_in_flight )
 		{
-			lock_motion(FALSE);   /*lock motor, keep safe*/
+			if(Flag_Motor_Idling)
+			{
+				/*horizontal set attitude 0 */
+				NavAttitude(RadOfDeg(0), RadOfDeg(0));
+				/*vertical set throttle 0 */
+				//NavVerticalThrottleMode(9600 * (0))
+				NavResurrect();
+			}
+			else
+			{
+				lock_motion(FALSE);   /*lock motor, keep safe*/
+			}
+
 
 			if( auto_task_ready_check() )   /*get gcs start cmd*/
 			{

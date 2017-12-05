@@ -64,6 +64,7 @@ extern bool_t autopilot_rc;
 
 extern bool_t autopilot_power_switch;
 
+extern bool_t Flag_Motor_Idling;
 extern bool_t Flag_AC_Flight_Ready; //add by lg
 extern void autopilot_init(void);
 extern void autopilot_periodic(void);

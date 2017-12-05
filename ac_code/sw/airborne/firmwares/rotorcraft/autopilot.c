@@ -523,8 +523,13 @@ void autopilot_periodic(void)
 	}
 	else
 	{
-		guidance_v_run(autopilot_in_flight);
-		guidance_h_run(autopilot_in_flight);
+		if(Flag_Motor_Idling == FALSE)
+		{
+
+			guidance_v_run(autopilot_in_flight);
+			guidance_h_run(autopilot_in_flight);
+		}
+
 		/*set 4 channel of sta_cmd, for motor_mix_run*/
 		SetRotorcraftCommands(stabilization_cmd, autopilot_in_flight, autopilot_motors_on);
 	}
