@@ -127,7 +127,7 @@
                  state: reached=1(arriving at wp_current_id); passed=2(aready pass wp_current_id,flight to next wp);
     </description>
     <field name="sys_time" type="uint16" unit="s"/>
-    <field name="wp_current_id" type="uint8"/>
+    <field name="wp_current_id" type="uint16"/>
     <field name="wp_action" type="uint8"/>
     <field name="state" type="uint8"/>
     <field name="nb_unexecuted_wp" type="uint8"/>
@@ -149,8 +149,8 @@
     </description>
     <field name="task_code" type="uint8"/>
     <field name="wp_type"  type="uint8"/>
-    <field name="wp_start_id" type="uint8"/>
-    <field name="wp_end_id" type="uint8"/>    
+    <field name="wp_start_id" type="uint16"/>
+    <field name="wp_end_id" type="uint16"/>    
     <field name="wp_action" type="uint8[]"/>
     <field name="waypoints_lon" type="int32[]" unit="e8,rad"/>  
     <field name="waypoints_lat" type="int32[]" unit="e8,rad"/>  
@@ -389,6 +389,7 @@ DATA17:
                                5=ops channel control, bit of value express the channel, eg.0x0F set four channels open
                                6=display flowmeter value(1=enable)
                                7=compass calibrate (1=start 0=stop)   finish cali  ac return ack response(0=success 1=fail) 
+                               8=start task button (motor idling) (1=start 0=stop) response(0=success 1=fail) 
     </description>
     <field name="command_id" type="uint8"/>
     <field name="command_value" type="uint8"/>

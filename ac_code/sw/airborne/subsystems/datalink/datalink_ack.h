@@ -58,7 +58,8 @@ enum Set_GCS_Command
 	OPS_SPRAY_CONTROL = 5,
 	//OPS_CHANNEL_CONTROL = 6
 	OPS_FLOWMETER_VALUE,
-	MANUFACTURE_MAG_CALI_CMD
+	MANUFACTURE_MAG_CALI_CMD,
+	MOTOR_IDLING
 };
 
 /* task_ack_type: add = 0, update = 1, delete = 2, get = 3; */

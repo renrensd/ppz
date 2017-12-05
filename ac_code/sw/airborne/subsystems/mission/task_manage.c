@@ -45,7 +45,8 @@ struct Task_Wp_Enu next_wp;       //end wp of current flight line
 
 struct _s_oa_data oa_data;
 
-bool_t Flag_AC_Flight_Ready;
+bool_t Flag_AC_Flight_Ready;	//judge enter nav_mode
+bool_t Flag_Motor_Idling = FALSE;	//judge motor idling state without attitude control
 
 #ifdef USE_PLANED_OA
 struct Task_Wp_Enu oa_from_wp; //use for store from waypoint
@@ -154,6 +155,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 			{
 				gcs_task_cmd = GCS_CMD_START;
 				Flag_AC_Flight_Ready = TRUE;	//add by lg
+				Flag_Motor_Idling = FALSE;		//add attitude control
 				gcs_cmd_interrupt = TRUE; //record command interrupt to get rid of emergency
 			}
 			else
