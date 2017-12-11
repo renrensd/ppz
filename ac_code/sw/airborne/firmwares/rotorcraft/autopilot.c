@@ -529,6 +529,13 @@ void autopilot_periodic(void)
 			guidance_v_run(autopilot_in_flight);
 			guidance_h_run(autopilot_in_flight);
 		}
+		else
+		{
+			stabilization_cmd[COMMAND_ROLL] = 0;
+			stabilization_cmd[COMMAND_PITCH] = 0;
+			stabilization_cmd[COMMAND_YAW] = 0;
+			stabilization_cmd[COMMAND_THRUST] = 0;
+		}
 
 		/*set 4 channel of sta_cmd, for motor_mix_run*/
 		SetRotorcraftCommands(stabilization_cmd, autopilot_in_flight, autopilot_motors_on);
@@ -560,7 +567,13 @@ void autopilot_set_mode(uint8_t new_autopilot_mode)
 			return;
 		}
 	}
-
+	if(new_autopilot_mode == AP_MODE_NAV)
+	{
+		if(autopilot_in_flight)
+		{
+			return;
+		}
+	}
 	if (new_autopilot_mode != autopilot_mode)
 	{
 		/* horizontal mode */
