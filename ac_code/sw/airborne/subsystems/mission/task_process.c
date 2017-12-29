@@ -48,6 +48,7 @@
 
 #define FLIGHT_PATH  1
 #define SPRAY_PATH  2
+#define CONVERT_PATH 3
 
 
 enum Gcs_Task_Cmd gcs_task_cmd;
@@ -650,20 +651,24 @@ bool_t run_normal_task(void)
 		}
 		else  //ac_config_info.spray_convert_type==WAYPOINT_FORWARD/P2P
 		{
-			//task_nav_wp(struct EnuCoor_i first_wp)
-			/*if finish convert,get next_wp*/
-			if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) )
+			if(task_nav_pre_path(from_wp.wp_en, next_wp.wp_en, CONVERT_PATH))
 			{
-				/*no more task_wp to run*/
-				if( !achieve_next_wp() )
+				if( !task_nav_path(from_wp.wp_en, next_wp.wp_en) )
 				{
-					task_wp_empty_handle();
-				}
-				else
-				{
-					wp_state = 1;
+					/*no more task_wp to run*/
+					if( !achieve_next_wp() )
+					{
+						task_wp_empty_handle();
+					}
+					else
+					{
+						wp_state = 1;
+					}
 				}
 			}
+			//task_nav_wp(struct EnuCoor_i first_wp)
+			/*if finish convert,get next_wp*/
+
 		}
 		break;
 	}
@@ -883,6 +888,7 @@ static float set_path_flight_info(uint8_t type)
 		return ac_config_info.max_flight_height;
 
 	case SPRAY_PATH:
+	case CONVERT_PATH:
 		nav_set_flight_speed(ac_config_info.spray_speed);
 		return ac_config_info.spray_height;
 
@@ -957,18 +963,24 @@ static inline bool_t task_nav_pre_path(struct EnuCoor_i p_start_wp, struct EnuCo
 			height_align = TRUE;
 		}
 	}
-
-	if( ac_config_info.spray_convert_type == WAYPOINT_P2P
-			&& flight_type == SPRAY_PATH                      )
+	if(flight_type != CONVERT_PATH)
 	{
-		nav_set_heading_parallel_line(&p_start_wp, &p_end_wp);
+		if( ac_config_info.spray_convert_type == WAYPOINT_P2P
+				&& flight_type == SPRAY_PATH                      )
+		{
+			nav_set_heading_parallel_line(&p_start_wp, &p_end_wp);
+		}
+		else
+		{
+			nav_set_heading_forward_line(&p_start_wp, &p_end_wp);
+		}
+
+		heading_align = nav_check_heading();
 	}
 	else
 	{
-		nav_set_heading_forward_line(&p_start_wp, &p_end_wp);
+		heading_align = TRUE;
 	}
-
-	heading_align = nav_check_heading();
 	if( height_align && heading_align )
 	{
 		return TRUE;
