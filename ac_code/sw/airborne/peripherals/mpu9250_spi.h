@@ -84,7 +84,14 @@ static inline void mpu9250_spi_periodic(struct Mpu9250_Spi *mpu)
 {
 	if (mpu->config.initialized)
 	{
-		mpu9250_spi_read(mpu);
+		if(mpu->config.success)	//config success
+		{
+			mpu9250_spi_read(mpu);
+		}
+		else	//do config check
+		{
+			mpu9250_check_reg(mpu);
+		}
 	}
 	else
 	{

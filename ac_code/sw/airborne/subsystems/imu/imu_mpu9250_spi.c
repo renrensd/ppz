@@ -145,6 +145,8 @@ void imu_impl_init(void)
 	imu_mpu9250.mpu.config.gyro_range = IMU_MPU9250_GYRO_RANGE;
 	imu_mpu9250.mpu.config.accel_range = IMU_MPU9250_ACCEL_RANGE;
 
+	imu_mpu9250.mpu.config.check_status = CHECK_DONE + 1;
+
 	//intial selftest
 	imu_selftest_init();
 
@@ -204,6 +206,9 @@ void imu2_impl_init(void)
 	imu2_mpu9250.mpu.config.dlpf_accel_cfg = IMU_MPU9250_ACCEL_LOWPASS_FILTER;
 	imu2_mpu9250.mpu.config.gyro_range = IMU_MPU9250_GYRO_RANGE;
 	imu2_mpu9250.mpu.config.accel_range = IMU_MPU9250_ACCEL_RANGE;
+
+	imu2_mpu9250.mpu.config.check_status = CHECK_DONE + 1;
+
 
 	//intial selftest
 	imu2_mpu9250.selftest.result = FALSE;
@@ -393,8 +398,10 @@ void imu_periodic(void)
 		}
 		break;
 	default:
+	{
 		mpu9250_spi_periodic(&imu_mpu9250.mpu);
 		break;
+	}
 	}
 
 #ifdef HMC5983_OPTION
@@ -426,8 +433,11 @@ void imu2_periodic(void)
 		}
 		break;
 	default:
+	{
 		mpu9250_spi_periodic(&imu2_mpu9250.mpu);
 		break;
+	}
+
 	}
 
 }

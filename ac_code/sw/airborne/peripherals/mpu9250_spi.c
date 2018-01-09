@@ -106,7 +106,53 @@ void mpu9250_spi_read(struct Mpu9250_Spi *mpu)
 		spi_submit(mpu->spi_p, &(mpu->spi_trans));
 	}
 }
-
+void mpu9250_spi_read_reg(struct Mpu9250_Spi *mpu, uint8_t reg)
+{
+	if (mpu->config.initialized && mpu->spi_trans.status == SPITransDone)
+	{
+		mpu->spi_trans.output_length = 1;
+		mpu->spi_trans.input_length = 1 + 1;
+		/* set read bit and multiple byte bit, then address */
+		mpu->tx_buf[0] = reg | MPU9250_SPI_READ;
+		spi_submit(mpu->spi_p, &(mpu->spi_trans));
+	}
+}
+void mpu9250_check_reg(struct Mpu9250_Spi *mpu)
+{
+	switch (mpu->config.check_status)
+	{
+	case SMPLRT_DIV:
+	{
+		mpu9250_spi_read_reg(mpu, MPU9250_REG_PWR_MGMT_1);
+		break;
+	}
+	case DLPF_GYRO_CFG:
+	{
+		mpu9250_spi_read_reg(mpu, MPU9250_REG_CONFIG);
+		break;
+	}
+	case DLPF_ACCEL_CFG:
+	{
+		mpu9250_spi_read_reg(mpu, MPU9250_REG_ACCEL_CONFIG_2);
+		break;
+	}
+	case GYRO_RANGE:
+	{
+		mpu9250_spi_read_reg(mpu, MPU9250_REG_GYRO_CONFIG);
+		break;
+	}
+	case ACCECL_RANGE:
+	{
+		mpu9250_spi_read_reg(mpu, MPU9250_REG_ACCEL_CONFIG);
+		break;
+	}
+	default:
+	{
+		mpu->config.check_status = SMPLRT_DIV;
+		break;
+	}
+	}
+}
 #define Int16FromBuf(_buf,_idx) ((int16_t)((_buf[_idx]<<8) | _buf[_idx+1]))
 static inline bool_t DataValidCheck(uint8_t* buf)
 {
@@ -128,31 +174,88 @@ void mpu9250_spi_event(struct Mpu9250_Spi *mpu)
 		}
 		else if (mpu->spi_trans.status == SPITransSuccess)
 		{
-			// Successfull reading
-			if (bit_is_set(mpu->rx_buf[1], 0) && DataValidCheck(&(mpu->rx_buf[2])))
+			if(!mpu->config.success)
 			{
-				// new data
-				mpu->data_accel.vect.x = Int16FromBuf(mpu->rx_buf, 2);
-				mpu->data_accel.vect.y = Int16FromBuf(mpu->rx_buf, 4);
-				mpu->data_accel.vect.z = Int16FromBuf(mpu->rx_buf, 6);
-				mpu->data_rates.rates.p = Int16FromBuf(mpu->rx_buf, 10);
-				mpu->data_rates.rates.q = Int16FromBuf(mpu->rx_buf, 12);
-				mpu->data_rates.rates.r = Int16FromBuf(mpu->rx_buf, 14);
-
-				// if we are reading slaves, copy the ext_sens_data
-				if (mpu->config.nb_slaves > 0)
+				switch(mpu->config.check_status)
 				{
-					/* the buffer is volatile, since filled from ISR
-					 * but we know it's ok to use it here so we silence the warning
-					 */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-					memcpy(mpu->data_ext, (uint8_t *) &(mpu->rx_buf[16]), mpu->config.nb_bytes - 15);
-#pragma GCC diagnostic pop
+				case SMPLRT_DIV:
+				{
+					if(mpu->rx_buf[1] == ((mpu->config.clk_sel) | (0 << 6)))
+					{
+						mpu->config.check_status ++;
+					}
+					break;
 				}
-
-				mpu->data_available = TRUE;
+				case DLPF_GYRO_CFG:
+				{
+					if(mpu->rx_buf[1] == MPU9250_DLPF_GYRO_41HZ)
+					{
+						mpu->config.check_status ++;
+					}
+					break;
+				}
+				case DLPF_ACCEL_CFG:
+				{
+					if(mpu->rx_buf[1] == MPU9250_DLPF_ACCEL_41HZ)
+					{
+						mpu->config.check_status ++;
+					}
+					break;
+				}
+				case GYRO_RANGE:
+				{
+					if(mpu->rx_buf[1] == (MPU9250_GYRO_RANGE_1000 << 3))
+					{
+						mpu->config.check_status ++;
+					}
+					break;
+				}
+				case ACCECL_RANGE:
+				{
+					if(mpu->rx_buf[1] == (MPU9250_ACCEL_RANGE_16G  << 3))
+					{
+						mpu->config.check_status = CHECK_DONE;
+						mpu->config.success = TRUE;
+					}
+					break;
+				}
+				default :
+				{
+					mpu->config.check_status = SMPLRT_DIV;
+					break;
+				}
+				}
 			}
+			else
+			{
+				// Successfull reading
+				if (bit_is_set(mpu->rx_buf[1], 0) && DataValidCheck(&(mpu->rx_buf[2])))
+				{
+					// new data
+					mpu->data_accel.vect.x = Int16FromBuf(mpu->rx_buf, 2);
+					mpu->data_accel.vect.y = Int16FromBuf(mpu->rx_buf, 4);
+					mpu->data_accel.vect.z = Int16FromBuf(mpu->rx_buf, 6);
+					mpu->data_rates.rates.p = Int16FromBuf(mpu->rx_buf, 10);
+					mpu->data_rates.rates.q = Int16FromBuf(mpu->rx_buf, 12);
+					mpu->data_rates.rates.r = Int16FromBuf(mpu->rx_buf, 14);
+
+					// if we are reading slaves, copy the ext_sens_data
+					if (mpu->config.nb_slaves > 0)
+					{
+						/* the buffer is volatile, since filled from ISR
+						 * but we know it's ok to use it here so we silence the warning
+						 */
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wcast-qual"
+						memcpy(mpu->data_ext, (uint8_t *) &(mpu->rx_buf[16]), mpu->config.nb_bytes - 15);
+	#pragma GCC diagnostic pop
+					}
+
+					mpu->data_available = TRUE;
+				}
+			}
+
+
 			mpu->spi_trans.status = SPITransDone;
 		}
 	}

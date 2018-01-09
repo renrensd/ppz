@@ -88,9 +88,10 @@ void imu_moni_init(void)
 uint8_t imu_ground_check(void)
 {
 	uint8_t check_code;
+
 	if (imu_moni.accel_ground_check && imu_moni.gyro_ground_check && imu_moni.mag_ground_check)
 	{
-		if (imu_moni.imu_status == 1)
+		if ((imu_moni.imu_status == 1) && (imu_mpu9250.mpu.config.success) && (imu2_mpu9250.mpu.config.success))	//gyro acc
 			check_code = 1;  //pass
 		else
 			check_code = 2;  //fail
@@ -111,8 +112,16 @@ uint8_t imu_ground_check(void)
  ***********************************************************************/
 uint8_t imu_ground_check_code(void)
 {
+	if(!imu_mpu9250.mpu.config.success)
+	{
+		return 13;	//gyro config fail
+	}
+	else if(!imu2_mpu9250.mpu.config.success)
+	{
+		return 14;	//acc config fail
+	}
 	/*inspect data update first*/
-	if (imu_moni.imu_error[0] & 0x20)
+	else if (imu_moni.imu_error[0] & 0x20)
 	{
 		return 6;  //gyro no data
 	}

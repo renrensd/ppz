@@ -63,6 +63,15 @@ enum Mpu9250ConfStatus
 	MPU9250_CONF_DONE
 };
 
+enum Mpu9250_Check_Step
+{
+	CHECK_DONE,
+	SMPLRT_DIV,
+	DLPF_GYRO_CFG,
+	DLPF_ACCEL_CFG,
+	GYRO_RANGE,
+	ACCECL_RANGE
+};
 /// Configuration function prototype
 typedef void (*Mpu9250ConfigSet)(void *mpu, uint8_t _reg, uint8_t _val);
 
@@ -85,7 +94,9 @@ struct Mpu9250Config
 	uint8_t clk_sel;                      ///< Clock select
 	uint8_t nb_bytes;                     ///< number of bytes to read starting with MPU9250_REG_INT_STATUS
 	enum Mpu9250ConfStatus init_status;   ///< init status
+	enum Mpu9250_Check_Step check_status;
 	bool_t initialized;                   ///< config done flag
+	bool_t success;
 
 	/** Bypass MPU I2C.
 	 * Only effective if using the I2C implementation.
