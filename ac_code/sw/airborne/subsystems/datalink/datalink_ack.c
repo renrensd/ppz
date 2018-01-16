@@ -368,21 +368,29 @@ uint8_t DlSetGcsCommand(uint8_t id, uint8_t pt_value)
 		break;
 	case MOTOR_IDLING:
 	{
-		if( pt_value )	//motor idling
+		if(autopilot_in_flight == FALSE)
 		{
-			Flag_Motor_Idling = TRUE;
-			Flag_AC_Flight_Ready = TRUE;
-			NavResurrect();
-			autopilot_set_mode(autopilot_mode);
-		}
-		else		//motor stop
-		{
-			Flag_Motor_Idling = FALSE;
-			Flag_AC_Flight_Ready = FALSE;
-			NavKillThrottle();
-			NavKillMode();
+			if( pt_value )	//motor idling
+			{
+				Flag_Motor_Idling = TRUE;
+				Flag_AC_Flight_Ready = TRUE;
+				NavResurrect();
+				autopilot_set_mode(autopilot_mode);
+			}
+			else		//motor stop
+			{
+				Flag_Motor_Idling = FALSE;
+				Flag_AC_Flight_Ready = FALSE;
+				NavKillThrottle();
+				NavKillMode();
 
+			}
 		}
+		else
+		{
+			response = 1;
+		}
+
 		break;
 	}
 	default:
