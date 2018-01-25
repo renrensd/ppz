@@ -593,6 +593,6 @@ STATIC_INLINE void main_event(void)
 #endif	/* BBOX_OPTION */
 
 
-	read_motor_info();
+	read_motor_info(&(RADAR_DEVICE).device);
 
 }

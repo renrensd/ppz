@@ -24,6 +24,6 @@ struct UART_MOTOR_TYPE
 };
 
 extern struct UART_MOTOR_TYPE motor_info;
-extern void read_motor_info(void);
+extern void read_motor_info(struct link_device *dev);
 extern void motor_info_init(void);
 #endif

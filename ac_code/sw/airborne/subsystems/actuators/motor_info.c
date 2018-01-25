@@ -23,14 +23,19 @@ void motor_parse_char(uint8_t c)
 		if(c == START_BYTE2)
 		{
 			motor_info.rx_status = RX_DATA;
+			motor_info.rx_index = 0;
 			motor_info.cs += START_BYTE2;
+		}
+		else
+		{
+			goto error;
 		}
 		break;
 	}
 
 	case RX_DATA:
 	{
-		motor_info.data[motor_info.rx_index ++] = c;
+		motor_info.data[(motor_info.rx_index ++) % 12] = c;
 		motor_info.cs += c;
 		if(motor_info.rx_index == 12)
 		{
@@ -47,21 +52,31 @@ void motor_parse_char(uint8_t c)
 		}
 		else
 		{
-			motor_info.rx_available = FALSE;
-			motor_info.rx_index = 0;
+			goto error;
 		}
+		motor_info.rx_index = 0;
 		motor_info.rx_status = RX_IDLE;
 		break;
 	}
 	}
+	return;
+error:
+	motor_info.rx_index = 0;
+	motor_info.rx_status = RX_IDLE;
+	motor_info.rx_available = FALSE;
+
+
 }
-void read_motor_info(void)
+void read_motor_info(struct link_device *dev)
 {
-	struct link_device *dev = &((RADAR_DEVICE).device);
-	while (dev->char_available(dev->periph))
+//	struct link_device *dev = &((RADAR_DEVICE).device);
+	if(dev->char_available(dev->periph))
 	{
-		motor_parse_char(dev->get_byte(dev->periph));
-		if( motor_info.rx_available )
+		while((dev->char_available(dev->periph)) && (!motor_info.rx_available))
+		{
+			motor_parse_char(dev->get_byte(dev->periph));
+		}
+		if(motor_info.rx_available)
 		{
 			for(uint8_t i=0; i<6; i++)
 			{
@@ -74,4 +89,13 @@ void read_motor_info(void)
 void motor_info_init(void)
 {
 	motor_info.rx_available = FALSE;
+
+	struct link_device *dev = &((RADAR_DEVICE).device);
+
+	// Empty buffer before init process
+	while (dev->char_available(dev->periph))
+	{
+		dev->get_byte(dev->periph);
+	}
+
 }
