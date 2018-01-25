@@ -164,10 +164,16 @@
      <field name="airspeed" type="float" format="%.1f"  unit="m/s"></field>
    </message>
 
-   <!--message name="ADC_GENERIC" id="18">
-     <field name="val1" type="uint16"/>
-     <field name="val2" type="uint16"/>
-   </message-->
+   <message name="MOTOR_INFO" id="106">
+     <field name="motor1" type="uint16"/>
+     <field name="motor2" type="uint16"/>
+     <field name="motor3" type="uint16"/>
+     <field name="motor4" type="uint16"/>
+     <field name="motor5" type="uint16"/>
+     <field name="motor6" type="uint16"/>
+   </message>
+
+
    <message name="ACTUATORS_PWM" id="18">
      <field name="motor1" type="int32"/>
      <field name="motor2" type="int32"/>
@@ -944,16 +950,6 @@
     <field name="values" type="int16[]" unit="none"/>
   </message>
 
-  <!--106 is free -->
-    <message name="ENERGY_BQ34Z" id="106">
-    <field name="percent"      type="uint16" unit="none"/>
-    <field name="rem_capacity"      type="uint16" unit="mAh"/>
-    <field name="full_capacity"   type="uint16" unit="mAh"/>
-    <field name="volt"      type="uint16" unit="mv"/>
-    <field name="current"      type="int32" unit="mA"/>
-    <field name="average_current"   type="int32" unit="mA"/>
-    <field name="temp"      type="float" unit="'C"/>
-  </message>
   <!--107 is free -->
   <message name="LASER_DATA" id="107">
     <field name="dis"      type="uint16[11]" unit="mm"/>

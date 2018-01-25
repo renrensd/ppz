@@ -53,6 +53,10 @@
 #include "subsystems/gps.h"
 #endif
 
+
+#include "subsystems/actuators/motor_info.h"
+
+
 #if USE_BARO_BOARD
 #include "subsystems/sensors/baro.h"
 PRINT_CONFIG_MSG_VALUE("USE_BARO_BOARD is TRUE, reading onboard baro: ", BARO_BOARD)
@@ -260,7 +264,7 @@ STATIC_INLINE void main_init(void)
 	autopilot_init();
 
 	modules_init();
-
+	motor_info_init();
 	settings_init();
 
 	mcu_int_enable();
@@ -587,5 +591,8 @@ STATIC_INLINE void main_event(void)
 #ifdef BBOX_OPTION
 	bbox_task();
 #endif	/* BBOX_OPTION */
+
+
+	read_motor_info(&(RADAR_DEVICE).device);
 
 }

@@ -52,6 +52,8 @@
 #include "subsystems/ops/ops_msg_if.h"
 #include "subsystems/ops/ops_app_if.h"
 
+#include "subsystems/actuators/motor_info.h"
+
 #if USE_MOTOR_MIXING
 #include "subsystems/actuators/motor_mixing.h"
 #endif
@@ -220,7 +222,16 @@ static void send_actuators_pwm(struct transport_tx *trans, struct link_device *d
 															&actuators_pwm_values[4],
 															&actuators_pwm_values[5]      );
 }
-
+void send_motor_info(struct transport_tx *trans, struct link_device *dev)
+{
+	pprz_msg_send_MOTOR_INFO(trans, dev, AC_ID ,
+															&motor_info.speed[0],
+															&motor_info.speed[1],
+															&motor_info.speed[2],
+															&motor_info.speed[3],
+															&motor_info.speed[4],
+															&motor_info.speed[5]      );
+}
 static void send_attitude(struct transport_tx *trans, struct link_device *dev)
 {
 	struct FloatEulers *att = stateGetNedToBodyEulers_f();
@@ -440,6 +451,11 @@ void autopilot_init(void)
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_UTC_TIME, send_utc_time);
 #endif
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS_PWM, send_actuators_pwm);
+
+
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MOTOR_INFO, send_motor_info);
+
+
 #ifdef ACTUATORS
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
 #endif
