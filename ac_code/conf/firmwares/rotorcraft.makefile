@@ -51,7 +51,7 @@ ifndef NPS_OPTION
 $(TARGET).CFLAGS += -DFAULT_OPTION
 $(TARGET).CFLAGS += -DWDG_OPTION
 $(TARGET).CFLAGS += -DUPGRADE_OPTION
-# $(TARGET).CFLAGS += -DBBOX_OPTION=1
+ $(TARGET).CFLAGS += -DBBOX_OPTION=1
 # $(TARGET).CFLAGS += -DOPEN_PC_DATALINK=1
 $(TARGET).CFLAGS += -DFRAM_OPTION
 $(TARGET).CFLAGS += -DENG_OPTION
@@ -255,7 +255,7 @@ endif
 # include $(CFG_ROTORCRAFT)/telemetry_manu_debug.makefile 
 
 
-# include $(CFG_ROTORCRAFT)/telemetry_bbox.makefile
+ include $(CFG_ROTORCRAFT)/telemetry_bbox.makefile
  include $(CFG_ROTORCRAFT)/radar_board.makefile
 
 
