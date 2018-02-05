@@ -181,7 +181,7 @@ struct Task_Wp_Enu
 {
 	struct EnuCoor_i   wp_en;
 	enum Task_Action   action;
-	uint8_t            wp_id;
+	uint16_t            wp_id;
 };
 
 #define TASK_WP_LEFT_SHIFT(_id, _n) { \
