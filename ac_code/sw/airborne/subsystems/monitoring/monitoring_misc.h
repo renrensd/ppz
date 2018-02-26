@@ -45,6 +45,7 @@ extern void battery_flight_check(void);
 extern void gps_flight_check(void);
 extern bool_t ops_ground_check(void);
 extern void ops_flight_check(void);
+extern void bbox_flight_check(void);
 extern void rc_communication_flight_check(void);
 extern void gcs_communication_flight_check(void);
 extern void lift_flight_check(void);

@@ -555,7 +555,7 @@ void ground_monitoring(void)
 	case BBOX_CHECK:
 		if(bbox_info.con_flag)
 		{
-			if(bbox_info.status == BBOX_IS_ERROR)
+			if((bbox_info.status == BBOX_IS_ERROR) || (bbox_info.start_log == FALSE))
 			{
 				monitoring_fail_code = BBOX_ERROR;
 			}
@@ -622,6 +622,9 @@ void flight_monitoring(void)  //TODOM:need conside each step periodic
 	RunOnceEvery(MONITORING_FREQUENCY/2, height_flight_check());
 	RunOnceEvery(MONITORING_FREQUENCY/5, gps_flight_check());
 	RunOnceEvery(MONITORING_FREQUENCY, ops_flight_check());
+#ifdef BBOX_OPTION
+	RunOnceEvery(MONITORING_FREQUENCY, bbox_flight_check());
+#endif
 	RunOnceEvery(MONITORING_FREQUENCY/5, rc_communication_flight_check());
 	RunOnceEvery(MONITORING_FREQUENCY/2, gcs_communication_flight_check());
 	lift_flight_check();

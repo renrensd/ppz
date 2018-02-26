@@ -235,6 +235,10 @@ void bbox_msg_handle(uint16_t can_id, uint8_t *frame, uint8_t len)
 					{
 						bbox_info.start_log = TRUE;
 					}
+					else
+					{
+						bbox_info.start_log = FALSE;
+					}
 				}
 			}
 			break;

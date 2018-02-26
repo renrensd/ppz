@@ -32,6 +32,12 @@
 #include "subsystems/datalink/xbee.h"
 #include "subsystems/ops/ops_app_if.h"
 #include "subsystems/ops/ops_app.h"
+
+#ifdef BBOX_OPTION
+#include "subsystems/bbox/bbox_if.h"
+#include "subsystems/bbox/bbox_msg_def.h"
+#endif	//ifdef BBOX_OPTION
+
 #include "subsystems/mission/task_process.h"
 
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
@@ -469,6 +475,20 @@ void ops_flight_check(void)
 	}
 }
 
+#ifdef BBOX_OPTION
+void bbox_flight_check(void)
+{
+	if((bbox_info.status == BBOX_IS_ERROR) || (bbox_info.start_log == FALSE) || bbox_info.con_flag == FALSE)
+	{
+		set_except_mission(BOARD_OUT, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+	}
+	else
+	{
+		em[BOARD_OUT].active = FALSE;
+		em[BOARD_OUT].finished = FALSE;
+	}
+}
+#endif //ifdef BBOX_OPTION
 /***********************************************************************
 * FUNCTIONS   : rc flight check
 * DESCRIPTION : ept_ms could close by rc recover
