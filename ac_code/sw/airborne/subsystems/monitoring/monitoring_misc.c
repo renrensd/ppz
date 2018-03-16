@@ -21,6 +21,7 @@
 /**** System include files ****/
 #include "subsystems/monitoring/monitoring_misc.h"
 #include "subsystems/monitoring/monitoring_height.h"
+#include "subsystems/monitoring/monitoring_imu.h"
 #include "subsystems/monitoring/monitoring.h"
 #include "firmwares/rotorcraft/nav_flight.h"
 #include "subsystems/electrical.h"
@@ -322,7 +323,10 @@ void gps_flight_check(void)
 							diff_count = 0;
 							diff_err = TRUE;
 							set_except_mission(RTK_DIFF, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
-							force_use_heading_redundency(TRUE);
+							if(imu_moni.imu_error[2] == 0)
+							{
+								force_use_heading_redundency(TRUE);
+							}
 						}
 					}
 					else
