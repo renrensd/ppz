@@ -23,6 +23,7 @@
 #include "subsystems/mission/task_process.h"
 
 #include "firmwares/rotorcraft/autopilot.h"
+#include "firmwares/rotorcraft/nav_flight.h"
 #include "subsystems/monitoring/monitoring.h"
 #include "subsystems/datalink/downlink.h"
 #include "math/dim2_geometry.h"
@@ -170,7 +171,7 @@ uint8_t parse_gcs_cmd( uint8_t cmd)
 		break;
 
 	case GCS_CMD_PAUSE:
-		if (GCS_CMD_CONTI != gcs_task_cmd)
+		if ((GCS_CMD_CONTI != gcs_task_cmd) || (flight_state == cruising))
 		{
 			gcs_task_cmd = GCS_CMD_PAUSE;
 			gcs_cmd_interrupt = TRUE;
