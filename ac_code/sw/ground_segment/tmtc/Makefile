@@ -127,6 +127,8 @@ GTK_LDFLAGS =  $(shell pkg-config gtk+-2.0 --libs) $(shell pcre-config --libs)
 GLIBIVY_CFLAGS = -Wall -fPIC $(shell pkg-config --cflags ivy-glib)
 GLIBIVY_LDFLAGS = $(shell pkg-config --libs ivy-glib) $(shell pcre-config --libs)
 
+LINKFLAGS = -Wl,-rpath,$(HOME)/anaconda3/lib
+
 #
 # try to find include locations on OSX
 #
@@ -160,7 +162,7 @@ c_ivy_client_example_3: c_ivy_client_example_3.c
 
 ivy_serial_bridge: ivy_serial_bridge.c
 	@echo OL $@
-	$(Q)$(CC) $(GLIBIVY_CFLAGS) $(GTK_CFLAGS) -o $@ $< $(GLIBIVY_LDFLAGS) $(GTK_LDFLAGS)
+	$(Q)$(CC) $(GLIBIVY_CFLAGS) $(GTK_CFLAGS) -o $@ $< $(GLIBIVY_LDFLAGS) $(GTK_LDFLAGS) $(LINKFLAGS)
 
 
 .PHONY: all opt clean

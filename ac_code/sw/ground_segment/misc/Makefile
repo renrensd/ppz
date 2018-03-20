@@ -42,6 +42,8 @@ GTK_LDFLAGS = $(shell pkg-config gtk+-2.0 --libs) $(shell pkg-config --libs ivy-
 GLIBIVY_CFLAGS = $(shell pkg-config --cflags ivy-glib)
 GLIBIVY_LDFLAGS = $(shell pkg-config --libs ivy-glib) $(shell pcre-config --libs)
 
+LINKFLAGS = -Wl,-rpath,$(HOME)/anaconda3/lib
+
 # fallback to ivy-glib pkg-config info if there is no ivy-c.pc
 IVY_INC = $(shell pkg-config --cflags-only-I ivy-c 2> /dev/null)
 IVY_LDFLAGS = $(shell pkg-config --libs ivy-c 2> /dev/null)
@@ -80,11 +82,11 @@ sbp2ivy: sbp2ivy.o serial_port.o sbp.o edc.o
 
 video_synchronizer: video_synchronizer.c
 	@echo CC $@
-	$(Q)$(CC) $(CFLAGS) $(GTK_CFLAGS) $(LIBRARYS) $(INCLUDES) -o $@ $< $(GTK_LDFLAGS)
+	$(Q)$(CC) $(CFLAGS) $(GTK_CFLAGS) $(LIBRARYS) $(INCLUDES) -o $@ $< $(GTK_LDFLAGS) $(LINKFLAGS)
 
 sbs2ivy: sbs2ivy.o pprz_geodetic_double.o pprz_geodetic_float.o sbs_parser.o
 	@echo CC $@
-	$(Q)$(CC) $(CFLAGS) $(GTK_CFLAGS) -o $@ $^ $(LIBRARYS) $(GLIBIVY_LDFLAGS) $(GTK_LDFLAGS) -lm
+	$(Q)$(CC) $(CFLAGS) $(GTK_CFLAGS) -o $@ $^ $(LIBRARYS) $(GLIBIVY_LDFLAGS) $(GTK_LDFLAGS) -lm $(LINKFLAGS)
 
 pprz_algebra_double.o : $(PAPARAZZI_SRC)/sw/airborne/math/pprz_algebra_double.c
 	$(Q)$(CC) $(CFLAGS) -c -O2 -Wall $(INCLUDES) $<
