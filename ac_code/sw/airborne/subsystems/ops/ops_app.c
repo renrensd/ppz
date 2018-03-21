@@ -532,5 +532,13 @@ void ops_flowmeter_cali_response(uint8_t *param)
 	}
 }
 
+void ops_flow_cali_response(uint8_t *param)
+{
+	uint8_t cali_step= *(param);
+	uint8_t cali_response = *(param  + 1);
+	xbee_tx_header(XBEE_NACK,XBEE_ADDR_GCS);
+	DOWNLINK_SEND_FLOW_CALI_ACK(SecondChannel, SecondDevice, &cali_step, &cali_response);
+}
+
 /**************** END OF FILE *****************************************/
 

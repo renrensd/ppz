@@ -364,6 +364,36 @@ DATA17:
     <field name="data" type="uint8[]"/>
   </message>
 
+
+  <message name="FLOW_CALI_ACK" id="227">
+    <description>link="A2G"
+    ac response when flow calibate
+
+ step:
+ 	0x11 = response start cali
+response data:
+	1 = running
+	2 = ok
+	3 = fail
+
+step:	
+	0x13 = channel1 
+ 	0x15 = channel2 
+ 	0x17 = channel3 
+ 	0x19 = channel4 
+ 	0x1b = response end cali
+
+response data:
+
+data:
+	1 = running
+	2 = ok
+	3 = fail
+
+    </description>
+    <field name="step" type="uint8"/>
+    <field name="data" type="uint8"/>
+  </message>
   
  </msg_class>
 
@@ -610,6 +640,35 @@ DATA17:
 	    <field name="step" type="uint8"/>
 	    <field name="data" type="uint8"/>
 	  </message>
+	  
+<message name="FLOW_CALI" id="227">
+	    <description>link="G2A"
+	    GCS send calirate cmd:
+
+	step:
+	    0x10 = request calibrate
+	    
+	    0x12 = begin channel1
+	    0x14 = begin channel2
+	    0x16 = begin channel3
+	    0x18 = begin channel4
+
+	    0x1A = stop calibrate
+
+	data:
+	DATA0	duty ratio:0x64(100) or 0x3c(60)
+
+	when end cali:	
+	DATA1-DATA2 flow1 data
+	DATA3-DATA4 flow2 data
+	DATA5-DATA6 flow3 data
+	DATA7-DATA8 flow4 data
+	    </description>
+	    <field name="step" type="uint8"/>
+	    <field name="data" type="uint8[]"/>
+	  </message>
+	  
+	  
   
  </msg_class>
 

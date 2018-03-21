@@ -554,6 +554,19 @@ void dl_parse_msg(void)
 			}
 			break;
 		}
+		case DL_FLOW_CALI:
+		{
+			uint8_t cali_step = DL_FLOW_CALI_step(dl_buffer);
+			uint8_t cali_data_len = DL_FLOW_CALI_data_length(dl_buffer);
+			uint8_t *cali_data = DL_FLOW_CALI_data(dl_buffer);
+			uint8_t Param[11] = {OPS_PRIO_GENERAL,cali_step};
+			for(uint8_t i = 0; i < cali_data_len; i++)
+			{
+				Param[2 + i] = cali_data[i];
+			}
+			ops_comm_send_frame(OPS_REQ_ACK_NOT_NEEDED,OPS_FLOW_CALI_ID,cali_data_len + 2, Param);
+			break;
+		}
 		
 #ifdef UPGRADE_OPTION
 		case DL_REQUEST_UPGRADE:
