@@ -463,7 +463,7 @@ uint8_t check_ready_status(uint64_t param_em_code)
 	uint8_t ready_state;
 	uint64_t forbid_status = (((uint64_t)1<<GPS_HEADING)|
 								((uint64_t)1<<GPS_LOST)|
-								((uint64_t)1<<GPS_ACC)|
+								((uint64_t)1<<GPS_POS_SD)|
 								((uint64_t)1<<IMU_CRITICAL));
 	
 	if((param_em_code & forbid_status) != 0)

@@ -203,6 +203,10 @@ void report_rtk_em(void)
 		{
 			set_except_mission(RTK_POS_NUM, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
 		}
+		else
+		{
+			set_except_mission(GPS_POS_SD, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 3);
+		}
 	}
 	
 	//heading
@@ -484,12 +488,12 @@ void bbox_flight_check(void)
 {
 	if((bbox_info.status == BBOX_IS_ERROR) || (bbox_info.start_log == FALSE) || bbox_info.con_flag == FALSE)
 	{
-		set_except_mission(BOARD_OUT, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
+		set_except_mission(BBOX_ERR, TRUE, FALSE, TRUE, 0xFF, FALSE, FALSE, 2);
 	}
 	else
 	{
-		em[BOARD_OUT].active = FALSE;
-		em[BOARD_OUT].finished = FALSE;
+		em[BBOX_ERR].active = FALSE;
+		em[BBOX_ERR].finished = FALSE;
 	}
 }
 #endif //ifdef BBOX_OPTION
